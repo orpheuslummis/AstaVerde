@@ -1,0 +1,113 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+
+contract YourNFT is ERC721, Ownable {
+    using Counters for Counters.Counter;
+    
+    struct TokenInfo {
+        address producer;
+        string certificateNumber;
+        string uri;
+    }
+    
+    struct Batch {
+        uint256 id;
+        uint256 creationTime;
+        uint256 lastSoldOutTime;
+        uint256 price;
+        uint256 tokensRemaining;
+    }
+
+    Counters.Counter private _tokenIds;
+    Counters.Counter private _batchIds;
+    mapping(uint256 => Batch) public batches;
+    mapping(uint256 => TokenInfo) public tokenInfo;
+    
+    uint256 public basePrice = 1 ether; 
+    uint256 public priceDecreaseRate = 0.05 ether;
+    uint256 public minPrice = 0.4 ether;
+    uint256 public tokensPerBatch = 1000;
+    uint256 public timeToDecreasePrice = 1 days;
+    uint256 public increasePriceTime = 4 days;
+    uint256 public decreasePriceTime = 10 days;
+    
+    constructor() ERC721("YourNFT", "YNFT") {}
+
+    function mintBatch(string[] memory certificates, address[] memory producers, string[] memory uris) public onlyOwner {
+        require(certificates.length == tokensPerBatch && producers.length == tokensPerBatch && uris.length == tokensPerBatch, "Invalid input lengths");
+
+        _batchIds.increment();
+        uint256 batchId = _batchIds.current();
+        uint256 currentBatchPrice = basePrice;
+
+        if (batchId != 1) {
+            uint256 lastBatchSellOutTime = batches[batchId-1].lastSoldOutTime;
+            if (block.timestamp - lastBatchSellOutTime <= increasePriceTime) {
+                currentBatchPrice += 0.1 ether;
+            } else if (block.timestamp - lastBatchSellOutTime >= decreasePriceTime) {
+                currentBatchPrice -= 0.1 ether;
+            }
+        }
+
+        batches[batchId] = Batch({
+            id: batchId,
+            creationTime: block.timestamp,
+            lastSoldOutTime: 0,
+            price: currentBatchPrice,
+            tokensRemaining: tokensPerBatch
+        });
+
+        for (uint i = 0; i < tokensPerBatch; i++) {
+            _tokenIds.increment();
+            uint256 newTokenId = _tokenIds.current();
+            _safeMint(msg.sender, newTokenId);
+            tokenInfo[newTokenId] = TokenInfo({
+                producer: producers[i],
+                certificateNumber: certificates[i],
+                uri: uris[i]
+            });
+        }
+    }
+
+    function buyToken(uint256 batchId, uint256 tokenId) public payable {
+        require(_exists(tokenId), "ERC721: operator query for nonexistent token");
+        require(batchId <= _batchIds.current(), "Batch not yet created");
+        Batch storage batch = batches[batchId];
+        require(batch.tokensRemaining > 0, "Batch sold out");
+
+        uint256 currentPrice = batch.price;
+        uint256 timePassed = block.timestamp - batch.creationTime;
+        uint256 priceDecreaseTimes = timePassed / timeToDecreasePrice;
+        if (priceDecreaseTimes > 0) {
+            uint256 priceDecrease = priceDecreaseRate * priceDecreaseTimes;
+            if (currentPrice - priceDecrease < minPrice) {
+                currentPrice = minPrice;
+            } else {
+                currentPrice -= priceDecrease;
+            }
+        }
+
+        require(msg.value >= currentPrice, "Payment not enough");
+        _transfer(owner(), msg.sender, tokenId);
+        
+        TokenInfo memory token = tokenInfo[tokenId];
+        (bool sentToProducer,) = token.producer.call{value: msg.value * 70 / 100}("");
+        require(sentToProducer, "Failed to send Ether to producer");
+        
+        batch.tokensRemaining -= 1;
+        if (batch.tokensRemaining == 0) {
+            batch.lastSoldOutTime = block.timestamp;
+        }
+    }
+
+    function getTokenInfo(uint256 tokenId) public view returns (address producer, string memory certificateNumber, string memory uri) {
+        require(_exists(tokenId), "ERC721: operator query for nonexistent token");
+        TokenInfo storage token = tokenInfo[tokenId];
+        return (token.producer, token.certificateNumber, token.uri);
+    }
+}
