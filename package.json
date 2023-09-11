@@ -1,0 +1,21 @@
+{
+  "name": "astaverde",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run dev:testnet\" \"sleep 1 && npm run dev:contracts\" \"sleep 5 && npm run dev:webapp\"",
+    "dev:testnet": "anvil",
+    "dev:contracts": "cd contracts && forge create Counter --mnemonic \"test test test test test test test test test test test junk\"",
+    "dev:webapp": "cd webapp && npm start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.1"
+  }
+}
