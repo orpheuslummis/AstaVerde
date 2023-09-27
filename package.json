@@ -13,8 +13,8 @@
     "dev:webapp": "cd webapp && npm start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Orpheus Lummis <o@orpheuslummis.info>",
+  "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.1"
   }
