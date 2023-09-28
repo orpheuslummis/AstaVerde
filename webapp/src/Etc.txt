@@ -1,0 +1,92 @@
+
+/*
+
+import React from 'react';
+import { Route, Switch } from 'react-router-dom';
+
+import logo from './logo.svg';
+import './App.css';
+
+function Header() {
+  return (
+    <nav>
+    </nav>
+  );
+}
+
+
+function Main() {
+  return (
+    <Switch>
+      <Route path="/" component={HomePage} exact />
+      <Route path="/market" component={MarketPage} />
+    </Switch>
+  );
+}
+
+function MarketPage() {
+  return (
+    <div>
+      <h1>Market</h1>
+      <NFTList />
+    </div>
+  );
+}
+
+function NFTList() {
+  const nfts = useFetchNFTs(); // Custom hook to fetch NFTs.
+  return (
+    <div>
+      {nfts.map((nft) => (
+        <NFTCard key={nft.id} data={nft} />
+      ))}
+    </div>
+  );
+}
+
+function NFTCard({ data }) {
+  return (
+    <div>
+      <img src={data.image} alt={data.name} />
+      <p>{data.name}</p>
+      <p>{data.price} ETH</p>
+    </div>
+  );
+}
+
+function NFTDetailPage() {
+  const nft = useFetchNFTDetail(); // Fetch full NFT details.
+  return (
+    <div>
+      <NFTInfo data={nft} />
+      <PurchaseButton data={nft} />
+    </div>
+  );
+}
+
+function NFTInfo({ data }) {
+  return (
+    <div>
+    </div>
+  );
+}
+
+function PurchaseButton({ data }) {
+  const handlePurchase = () => {
+    // Implement purchase logic.
+  };
+
+  return (
+    <button onClick={handlePurchase}>Purchase for {data.price} ETH</button>
+  );
+}
+
+
+function App() {
+  return (
+    <Header />
+    <Main />
+    <Footer />
+  );
+}
+*/
