@@ -7,7 +7,6 @@ const PRICE_DECREASE_RATE = 1;
 const PRICE_FLOOR = 40;
 const STARTING_PRICE = 230;
 
-
 export function shouldBehaveLikeAstaVerde(): void {
   it("should reach basic deployment with default params", async function () {
     expect(await this.astaVerde.startingPrice()).to.equal(STARTING_PRICE);
@@ -18,11 +17,9 @@ export function shouldBehaveLikeAstaVerde(): void {
   });
 
   it("should mint a batch and check token balance", async function () {
-    console.log("batchID", await this.astaVerde.lastBatchID());
     const cids = ["cid1", "cid2"];
     await this.astaVerde.mintBatch(this.signers.producers, cids);
     const batchID = await this.astaVerde.lastBatchID();
-    console.log("batchID", batchID);
     const { tokenIds } = await this.astaVerde.getBatchInfo(batchID);
     expect(tokenIds.length).to.equal(2);
     // tokens are owned by contract at this point
@@ -31,67 +28,41 @@ export function shouldBehaveLikeAstaVerde(): void {
 
   it("should fail to mint a batch without producers", async function () {
     const cids: string[] = [];
-    await expect(this.astaVerde.mintBatch(this.signers.producers, cids)).to.be.revertedWith("Mismatch between producers and cids lengths");
+    await expect(this.astaVerde.mintBatch(this.signers.producers, cids)).to.be.revertedWith(
+      "Mismatch between producers and cids lengths",
+    );
   });
-
-
-  //   function testFail_MintBatchWithMismatchedProducersAndCids() public {
-  //     address[] memory producers = new address[](1);
-  //     producers[0] = address(this);
-  //     string[] memory cids = new string[](0);
-  //     bytes memory data = "";
-  //     astaVerde.mintBatch(producers, cids, data);
-  // }
 
   it("should fail to mint a batch with mismatched producers and cids", async function () {
     const cids = ["cid"];
-    await expect(this.astaVerde.mintBatch(this.signers.producers, cids)).to.be.revertedWith("Mismatch between producers and cids lengths");
+    await expect(this.astaVerde.mintBatch(this.signers.producers, cids)).to.be.revertedWith(
+      "Mismatch between producers and cids lengths",
+    );
   });
-
-
-  // function testFail_MintBatchWithBatchSizeTooLarge() public {
-  //   address[] memory producers = new address[](51);
-  //   string[] memory cids = new string[](51);
-  //   bytes memory data = "";
-  //   astaVerde.mintBatch(producers, cids, data);
-  // }
 
   it("should fail to mint a batch with batch size too large", async function () {
     const cids = new Array(MAX_BATCH_SIZE + 1).fill("cid");
-    await expect(this.astaVerde.mintBatch(this.signers.producers, cids)).to.be.revertedWith("Batch size exceeds max batch size");
+    await expect(this.astaVerde.mintBatch(this.signers.producers, cids)).to.be.revertedWith(
+      "Batch size exceeds max batch size",
+    );
   });
 
-
-  //   function test_GetCurrentPrice() public {
-  //     uint256 batchID = 1;
-  //     uint256 expectedPrice = 230; // Assuming the starting price is 230
-  //     assertEq(
-  //         astaVerde.getCurrentPrice(batchID),
-  //         expectedPrice,
-  //         "Current price does not match expected price"
-  //     );
-  // }
-  // it("should get current price", async function () {
-  //   // const batchID = 0;
-  //   // obtian latest batchId 
-  //   const batchID = await this.astaVerde.lastBatchID();
-  //   const expectedPrice = STARTING_PRICE;
-  //   expect(await this.astaVerde.getCurrentPrice(batchID)).to.equal(expectedPrice);
-  // });
-
-
-  // test: mintBatch should increment
-  it("should increment batchID after mintBatch", async function () {
+  it("should get current price", async function () {
     const cids = ["cid1", "cid2"];
-    const batchIDprev = await this.astaVerde.lastBatchID();
     await this.astaVerde.mintBatch(this.signers.producers, cids);
     const batchID = await this.astaVerde.lastBatchID();
-    expect(batchID).to.equal(batchIDprev + 1n);
+    expect(await this.astaVerde.getCurrentPrice(batchID)).to.equal(STARTING_PRICE);
   });
 
-
+  it("should increment batchID after mintBatch", async function () {
+    const cids = ["cid1", "cid2"];
+    await this.astaVerde.mintBatch(this.signers.producers, cids);
+    const batchIDZero = await this.astaVerde.lastBatchID();
+    await this.astaVerde.mintBatch(this.signers.producers, cids);
+    const batchID = await this.astaVerde.lastBatchID();
+    expect(batchID).to.equal(batchIDZero + 1n);
+  });
 }
-
 
 // paying with a non-USDC token should fail
 
@@ -100,8 +71,6 @@ export function shouldBehaveLikeAstaVerde(): void {
 // TBD onlyOwner works
 
 // mintBatch: should fail if not enough USDC
-
-
 
 /*
 it("should fail to mint a batch without producers", async function () {

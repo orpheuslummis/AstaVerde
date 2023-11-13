@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Pausable.sol";
 
+import "hardhat/console.sol";
+
 contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, ReentrancyGuard {
     IERC20 public usdcToken;
 
@@ -16,8 +18,11 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
     uint256 public platformSharePercentage;
     uint256 public maxBatchSize;
 
+    // batches are zero-indexed, so both the no batch and the first batch have ID 0
     uint256 public lastBatchID;
+
     uint256 public lastTokenID;
+
     uint256 public lastBatchSoldTime;
 
     uint256 public platformShareAccumulated;
@@ -183,9 +188,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         }
 
         batches.push(newBatch);
-        lastBatchID = lastBatchID + 1;
+        lastBatchID = batches.length - 1;
         _mintBatch(address(this), newTokenIds, amounts, "");
-        emit BatchCreated(batches.length - 1, newBatch.creationTime);
     }
 
     function getCurrentPrice(uint256 batchID) public view returns (uint256) {
@@ -202,6 +206,11 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
     // Updates the starting price of the next batch of tokens based on the last sale duration.
     // Increases by 10 if less than 4 days, decreases by 10 if more than 10 days, and sets to price floor if below it.
     function updateStartingPrice() internal {
+        // Skip the price update for the zero-index batch
+        if (lastBatchID == 0) {
+            return;
+        }
+
         uint256 lastSaleDuration = block.timestamp - lastBatchSoldTime;
 
         if (lastSaleDuration < SECONDS_IN_A_DAY * 4) {
@@ -220,7 +229,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
     function getBatchInfo(
         uint256 batchID
     ) public view returns (uint256[] memory tokenIds, uint256 creationTime, uint256 price) {
-        require(batchID < batches.length, "Batch ID is out of bounds");
+        require(batchID <= batches.length, "Batch ID is out of bounds");
         Batch memory batch = batches[batchID];
         return (batch.tokenIds, batch.creationTime, batch.price);
     }
