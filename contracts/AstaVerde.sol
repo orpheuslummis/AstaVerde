@@ -193,7 +193,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
     }
 
     function getCurrentPrice(uint256 batchID) public view returns (uint256) {
-        require(batchID < batches.length, "Batch not initialized");
+        require(batchID < batches.length, "Batch does not exist");
 
         Batch memory batch = batches[batchID];
         uint256 elapsedTime = block.timestamp - batch.creationTime;
@@ -291,9 +291,14 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         require(usdcToken.transferFrom(msg.sender, address(this), usdcAmount), "Transfer failed");
 
         for (uint256 i = 0; i < uniqueCount; i++) {
+            // TBD
+            console.log("uniquePayouts[i]: %s", uniquePayouts[i]);
+            console.log("uniqueProducers[i]: %s", uniqueProducers[i]);
+            console.log("usdcToken.balanceOf(address(this)): %s", usdcToken.balanceOf(address(this)));
             require(usdcToken.transfer(uniqueProducers[i], uniquePayouts[i]), "Producer transfer failed");
         }
 
+        // FIXME
         safeBatchTransferFrom(address(this), msg.sender, ids, amounts, "");
 
         if (batches[batchID].remainingTokens == 0) {

@@ -11,23 +11,23 @@ Overall flow: each 'test function' is used to group tests sharing the same fixtu
 
 describe("All tests", function () {
   before(async function () {
-    this.signers = {} as Signers;
     const signers = await ethers.getSigners();
-    this.signers.admin = signers[0];
-
-    // using last 2 signers as producers
-    this.signers.producers = signers.slice(-2);
+    this.signers = {
+      admin: signers[0],
+      // using last 2 signers as producers
+      producers: signers.slice(-2),
+    } as Signers;
 
     this.loadFixture = loadFixture;
   });
 
   describe("AstaVerde", function () {
     beforeEach(async function () {
-      const { astaVerde } = await this.loadFixture(deployAstaVerdeFixture);
+      const { astaVerde, mockUSDC } = await this.loadFixture(deployAstaVerdeFixture);
+      this.mockUSDC = mockUSDC;
       this.astaVerde = astaVerde;
     });
 
     shouldBehaveLikeAstaVerde();
   });
 });
-
