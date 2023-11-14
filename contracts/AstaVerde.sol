@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Pausable.sol";
 
-import "hardhat/console.sol";
+import "hardhat/console.sol"; // TBD
 
 contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, ReentrancyGuard {
     IERC20 public usdcToken;
@@ -103,7 +103,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         return this.onERC1155BatchReceived.selector;
     }
 
-    // The following is an override required by Solidity. TBD
     function _update(
         address from,
         address to,
@@ -148,16 +147,11 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         maxBatchSize = newSize;
     }
 
-    /*
-    The minter should ensure to provide valid producer addresses and cids.
-
-
-    */
     function mintBatch(address[] memory producers, string[] memory cids) public onlyOwner whenNotPaused {
+        // we assume that the producers and cids are valid, from a trusted source (i.e. the offchain minter)
         require(producers.length > 0, "No producers provided");
         require(cids.length <= maxBatchSize, "Batch size exceeds max batch size");
         require(producers.length == cids.length, "Mismatch between producers and cids lengths");
-        // we assume that the producers and cids are valid, from a trusted source (i.e. the offchain minter)
 
         uint256 batchSize = producers.length;
 
