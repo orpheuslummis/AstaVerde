@@ -1,15 +1,21 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { expect } from "chai";
 import { ethers } from "hardhat";
 
-import { shouldBehaveLikeAstaVerde } from "./AstaVerde.behavior";
 import { deployAstaVerdeFixture } from "./AstaVerde.fixture";
+import { mintMillionUSDC } from "./helpers";
 import type { Signers } from "./types";
 
-/*
-Overall flow: each 'test function' is used to group tests sharing the same fixture.
-*/
+function shouldHelpersBeGood() {
+  it.only("should mint a user one million USDC and assert its correctness", async function () {
+    const user = this.signers.others[0];
+    await mintMillionUSDC(user, this.mockUSDC);
+    const userBalance = await this.mockUSDC.balanceOf(user.address);
+    expect(userBalance).to.equal(1000000n);
+  });
+}
 
-describe("Asta Verde tests", function () {
+describe("Helper tests", function () {
   before(async function () {
     const signers = await ethers.getSigners();
     this.signers = {
@@ -21,13 +27,13 @@ describe("Asta Verde tests", function () {
     this.loadFixture = loadFixture;
   });
 
-  describe("AstaVerde", function () {
+  describe("Helper", function () {
     beforeEach(async function () {
       const { astaVerde, mockUSDC } = await this.loadFixture(deployAstaVerdeFixture);
       this.mockUSDC = mockUSDC;
       this.astaVerde = astaVerde;
     });
 
-    shouldBehaveLikeAstaVerde();
+    shouldHelpersBeGood();
   });
 });
