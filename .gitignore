@@ -17,5 +17,4 @@ deployments
 .DS_Store
 .pnp.*
 coverage.json
-package-lock.json
 yarn.lock
