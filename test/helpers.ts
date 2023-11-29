@@ -9,6 +9,6 @@ export function createNewAddresses(num: number) {
   return addresses;
 }
 
-export async function mintMillionUSDC(user: SignerWithAddress, mockUSDC: any) {
-  await mockUSDC.mint(user.address, 1000000n);
+export async function mintUSDC(user: SignerWithAddress, mockUSDC: any, amount: bigint) {
+  await mockUSDC.mint(user.address, amount);
 }

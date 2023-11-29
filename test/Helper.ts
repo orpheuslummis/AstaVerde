@@ -3,13 +3,13 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 
 import { deployAstaVerdeFixture } from "./AstaVerde.fixture";
-import { mintMillionUSDC } from "./helpers";
+import { mintUSDC } from "./helpers";
 import type { Signers } from "./types";
 
 function shouldHelpersBeGood() {
-  it.only("should mint a user one million USDC and assert its correctness", async function () {
+  it("should mint a user one million USDC and assert its correctness", async function () {
     const user = this.signers.others[0];
-    await mintMillionUSDC(user, this.mockUSDC);
+    await mintUSDC(user, this.mockUSDC, 1000000n);
     const userBalance = await this.mockUSDC.balanceOf(user.address);
     expect(userBalance).to.equal(1000000n);
   });
