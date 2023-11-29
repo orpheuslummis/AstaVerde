@@ -27,7 +27,7 @@ jobs:
         run: "npm install"
 
       - name: "Lint the code"
-        run: "npm lint"
+        run: "npm run lint"
 
       - name: "Add lint summary"
         run: |
@@ -35,10 +35,10 @@ jobs:
           echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
 
       - name: "Compile the contracts and generate the TypeChain bindings"
-        run: "npm typechain"
+        run: "npm run typechain"
 
       - name: "Test the contracts and generate the coverage report"
-        run: "npm coverage"
+        run: "npm run coverage"
 
       - name: "Add test summary"
         run: |
