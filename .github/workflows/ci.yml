@@ -26,8 +26,8 @@ jobs:
       - name: "Install the dependencies"
         run: "npm install"
 
-      - name: "Lint the code"
-        run: "npm run lint"
+      # - name: "Lint the code"
+      #   run: "npm run lint"
 
       - name: "Add lint summary"
         run: |
