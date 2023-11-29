@@ -58,7 +58,7 @@
     "lint": "npm run lint:sol && npm run lint:ts && npm run prettier:check",
     "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\"",
     "lint:ts": "eslint --ignore-path ./.eslintignore --ext .js,.ts .",
-    "postinstall": "DOTENV_CONFIG_PATH=./.env npm run typechain",
+    "postinstall": "DOTENV_CONFIG_PATH=./.env.example npm run typechain",
     "prettier:check": "prettier --check \"**/*.{js,json,md,sol,ts,yml}\"",
     "prettier:write": "prettier --write \"**/*.{js,json,md,sol,ts,yml}\"",
     "task:deployGreeter": "hardhat task:deployGreeter",
