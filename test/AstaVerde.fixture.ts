@@ -9,6 +9,15 @@ export async function deployAstaVerdeFixture() {
 
     return mockUSDC;
   }
+  // async function deployAnotherERC20Fixture(admin: HardhatEthersSigner) {
+  //   const anotherERC20Factory = await ethers.getContractFactory("AnotherERC20");
+  //   const anotherERC20 = await anotherERC20Factory.connect(admin).deploy(10000000);
+  //   await anotherERC20.waitForDeployment();
+
+  //   return anotherERC20;
+  // }
+
+  // const anotherERC20 = await deployAnotherERC20Fixture(admin);
   const signers = await ethers.getSigners();
   const admin = signers[0];
 

@@ -30,7 +30,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
 
     uint256 public platformShareAccumulated;
 
-    // unit is USDC
+    // unit is USDC 
     uint256 public basePrice;
     uint256 public priceFloor;
     uint256 public priceDecreaseRate;

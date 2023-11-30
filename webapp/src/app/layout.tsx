@@ -1,18 +1,10 @@
-import { OnboardingModal } from "../astaverde_components/OnboardingModal";
-import { Header } from "../astaverde_components/all";
-import { Connected } from "../components/Connected";
+import { navigationLinks } from "../app.config";
+// TBD metadata
+// import { Connected } from "../components/Connected";
+import { OnboardingModal } from "../components/OnboardingModal";
+import { Header } from "../components/all";
 import { Providers } from "./providers";
 import "./styles/globals.css";
-
-export const metadata = {
-  title: "wagmi",
-};
-
-const links = [
-  { name: "Market", url: "/" },
-  { name: "My Tokens", url: "/mytokens" },
-  { name: "About", url: "/about" },
-];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -20,10 +12,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="max-w-3xl mx-auto">
         <OnboardingModal />
         <Providers>
-          <Header title={"Asta Verde"} links={links} />
-          <Connected>
+          <Header title={"Asta Verde"} links={navigationLinks} />
+          {/* <Connected>
             <h2>Connected</h2>
-          </Connected>
+          </Connected> */}
           <main>{children}</main>
         </Providers>
       </body>

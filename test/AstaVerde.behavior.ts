@@ -708,3 +708,5 @@ export function shouldBehaveLikeAstaVerde(): void {
     expect(price).to.equal(PRICE_FLOOR);
   });
 }
+
+// test paying with a non-USDC token should fail. this requires minting AnotherERC20 and using it to pay

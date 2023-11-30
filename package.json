@@ -64,7 +64,8 @@
     "task:deployGreeter": "hardhat task:deployGreeter",
     "task:setGreeting": "hardhat task:setGreeting",
     "test": "hardhat test",
-    "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain"
+    "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
+    "webapp:dev": "cd webapp && npm run dev"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.0"
