@@ -1,7 +1,7 @@
 export default function Page() {
   return (
     <>
-      <h1>About</h1>
+      <h1>My Tokens</h1>
 
       <p>TBD</p>
     </>
