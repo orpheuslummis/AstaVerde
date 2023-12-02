@@ -17,9 +17,12 @@ const infuraApiKey = "eda31e892a144ca89dd77c572220258a";
 //   throw new Error("INFURA_API_KEY is not present in the environment variables.");
 // }
 
+const isDev = true;
+console.log("isDev", isDev);
+const chain = isDev ? sepolia : mainnet;
+
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [mainnet, sepolia],
-  // [publicProvider(), infuraProvider({ apiKey: infuraApiKey })],
+  [chain],
   [infuraProvider({ apiKey: infuraApiKey })],
 );
 

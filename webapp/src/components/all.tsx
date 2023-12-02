@@ -11,7 +11,7 @@ export function Header({ title, links }: HeaderProps) {
   return (
     <header className="flex items-center justify-between bg-green-500 p-4 shadow-md">
       <Link href={"/"}>
-        <h1 className="text-white text-xl italic">{title}</h1>
+        <h1 className="text-white font-bold text-2xl hover:text-blue-400 transition-colors duration-300">{title}</h1>
       </Link>
       <nav>
         <ul className="flex items-center">
