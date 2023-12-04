@@ -19,3 +19,6 @@ rules:
     - error
     - argsIgnorePattern: "_"
       varsIgnorePattern: "_"
+env:
+  browser: true
+  node: true
