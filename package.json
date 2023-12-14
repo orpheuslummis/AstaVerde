@@ -7,6 +7,7 @@
     "url": "https://github.com/orpheuslummis"
   },
   "devDependencies": {
+    "@helia/json": "^1.0.3",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.9",
@@ -35,6 +36,7 @@
     "hardhat": "^2.19.1",
     "hardhat-deploy": "^0.11.44",
     "hardhat-gas-reporter": "^1.0.9",
+    "helia": "^2.1.0",
     "lodash": "^4.17.21",
     "mocha": "^10.2.0",
     "prettier": "^3.1.0",
@@ -72,6 +74,5 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.0"
-  },
-  "type": "module"
+  }
 }
