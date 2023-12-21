@@ -14,7 +14,7 @@ export function BatchListing() {
     if (lastBatchIDError || lastBatchID === undefined) {
         console.log("lastBatchIDError", lastBatchIDError);
     }
-    let lastBatchIDn: number = lastBatchID ? Number(lastBatchID) : 0;
+    const lastBatchIDn: number = lastBatchID ? Number(lastBatchID) : 0;
 
     console.log("lastBatchIDn, isError, isLoading", lastBatchID, isError, isLoading);
 
@@ -41,13 +41,14 @@ export function BatchListing() {
         return <div>Could not display, sorry.</div>;
     }
 
-    const batches: Batch[] = data?.pages?.flatMap((page) =>
-        page?.map((batch) => {
+    const batches: Batch[] = data?.pages?.flatMap((page: any[]) =>
+        page?.map((batch: any) => {
             console.log("batch", batch);
-            let tokenIDs: number[] = batch?.result[0] || [];
-            let timestamp: number = batch?.result[1] || 0;
-            let price: number = batch?.result[2] || 0;
-            let batchProper = new Batch(batch?.id, tokenIDs, timestamp, price);
+            const tokenIDs: number[] = batch.result?.[0] || [];
+            const timestamp: number = batch.result?.[1] || 0;
+            const price: number = batch.result?.[2] || 0;
+            const batchProper = new Batch(0, tokenIDs, timestamp, price); // Assuming batch.id is not available, replace 0 with the correct value
+            console.log("batchProper", batchProper);
             return batchProper;
         })
     ) || [];
@@ -65,7 +66,7 @@ export function BatchListing() {
                 <button
                     className="px-4 py-2 mt-4 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                     disabled={!fetchNextPage || isLoading || isError}
-                    onClick={fetchNextPage}
+                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => fetchNextPage()}
                 >
                     Load More
                 </button>

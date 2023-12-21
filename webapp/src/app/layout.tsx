@@ -2,8 +2,7 @@ import { navigationLinks } from "../app.config";
 import { OnboardingModal } from "../components/OnboardingModal";
 import { Header } from "../components/all";
 import { Providers } from "./providers";
-import { Helia, createHelia } from "helia";
-import { cloneElement, useEffect, useState } from "react";
+import { cloneElement } from "react";
 import "./styles/globals.css";
 
 export default function RootLayout({ children }: { children: React.ReactElement }) {

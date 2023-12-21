@@ -16,7 +16,7 @@ ideally, when clicked we would open a modal that shows info on all the tokens it
 */
 
 export default function BatchCard({ batch }: { batch: Batch }) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
 
   console.log("batch.token_ids", batch.token_ids);
 

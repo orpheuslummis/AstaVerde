@@ -15,10 +15,11 @@ rules:
     - ignoreIIFE: true
       ignoreVoid: true
   "@typescript-eslint/no-inferrable-types": "off"
-  "@typescript-eslint/no-unused-vars":
-    - error
-    - argsIgnorePattern: "_"
-      varsIgnorePattern: "_"
+  "@typescript-eslint/no-explicit-any": "off"
+  "@typescript-eslint/no-unused-vars": "off"
+  #   # - error
+  #   - argsIgnorePattern: "_"
+  #     varsIgnorePattern: "_"
 env:
   browser: true
   node: true

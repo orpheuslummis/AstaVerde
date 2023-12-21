@@ -1,8 +1,7 @@
 import React from 'react';
-import BatchCard from '../components/BatchCard';
-import { useContractInfiniteReads, paginatedIndexesConfig, useContractRead } from 'wagmi'
-import { astaverdeContractConfig } from "../lib/contracts";
-import { lastBatchID, useLastBatchID } from '../components/all';
+// import BatchCard from '../components/BatchCard';
+// import { useContractInfiniteReads, paginatedIndexesConfig, useContractRead } from 'wagmi'
+// import { astaverdeContractConfig } from "../lib/contracts";
 import { BatchListing } from '../components/BatchListing';
 
 /*

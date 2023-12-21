@@ -1,7 +1,5 @@
 import React from "react";
 import BatchInfo from "../../../components/BatchInfo";
-import { useContractRead } from "wagmi";
-import { astaverdeContractConfig } from "../../../lib/contracts";
 
 enum Mode {
     Buy = "buy",

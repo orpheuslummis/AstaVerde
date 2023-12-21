@@ -1,3 +1,4 @@
+/*
 import { json } from "@helia/json";
 import { CID } from "multiformats/cid";
 import { Helia } from "helia";
@@ -11,3 +12,5 @@ export async function getJsonFromCids(helia: Helia, cids: string[]) {
   });
   await Promise.all(promises);
 }
+
+*/
