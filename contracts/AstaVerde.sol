@@ -30,7 +30,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
 
     uint256 public platformShareAccumulated;
 
-    // unit is USDC 
+    // unit is USDC
     uint256 public basePrice;
     uint256 public priceFloor;
     uint256 public priceDecreaseRate;
@@ -239,14 +239,10 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
 
     function getBatchInfo(
         uint256 batchID
-    ) public view returns (uint256[] memory tokenIds, uint256 creationTime, uint256 price) {
+    ) public view returns (uint256[] memory tokenIds, uint256 creationTime, uint256 price, uint256 remainingTokens) {
         require(batchID <= batches.length, "Batch ID is out of bounds");
         Batch memory batch = batches[batchID];
-        console.log("getBatchInfo", batchID, batch.creationTime, batch.price);
-        // for (uint256 i = 0; i < batch.tokenIds.length; i++) {
-        // console.log("tokenIds", batch.tokenIds[i]);
-        // }
-        return (batch.tokenIds, batch.creationTime, batch.price);
+        return (batch.tokenIds, batch.creationTime, batch.price, batch.remainingTokens);
     }
 
     function handleRefund(uint256 usdcAmount, uint256 totalCost) internal {
