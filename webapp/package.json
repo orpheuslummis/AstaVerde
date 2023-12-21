@@ -10,12 +10,12 @@
   },
   "dependencies": {
     "@typescript-eslint/parser": "^6.14.0",
-    "connectkit": "^1.5.3",
     "encoding": "^0.1.13",
     "next": "^14.0.3",
     "pino-pretty": "^10.2.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "connectkit": "^1.5.3",
     "viem": "~1.19.11",
     "wagmi": "^1.4.7"
   },

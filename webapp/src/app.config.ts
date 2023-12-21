@@ -4,6 +4,6 @@ export const metadata = {
 
 export const navigationLinks = [
   { name: "Market", url: "/" },
-  { name: "My Tokens", url: "/mytokens" },
+  { name: "My Carbon Credits", url: "/mytokens" },
   { name: "About", url: "/about" },
 ];

@@ -1,5 +1,5 @@
 import { infuraProvider } from "@wagmi/core/providers/infura";
-import { publicProvider } from "@wagmi/core/providers/public";
+// import { publicProvider } from "@wagmi/core/providers/public";
 import { getDefaultConfig } from "connectkit";
 // import { createPublicClient, http } from "viem";
 import { configureChains, createConfig, mainnet, sepolia } from "wagmi";
@@ -21,7 +21,7 @@ const isDev = true;
 console.log("isDev", isDev);
 const chain = isDev ? sepolia : mainnet;
 
-const { chains, publicClient, webSocketPublicClient } = configureChains(
+const { chains, publicClient } = configureChains(
   [chain],
   [infuraProvider({ apiKey: infuraApiKey })],
 );
@@ -32,7 +32,6 @@ export const config = createConfig(
     appName: "Asta Verde",
     walletConnectProjectId,
     publicClient,
-    webSocketPublicClient,
     chains,
   }),
 );

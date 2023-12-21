@@ -1,8 +1,8 @@
 "use client";
 
-import { astaverdeContractConfig } from "../components/contracts";
+import { astaverdeContractConfig } from "../lib/contracts";
 import { Connected } from "./Connected";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useContractWrite, usePrepareContractWrite, useContractRead, useAccount } from "wagmi";
 
 /*
@@ -11,17 +11,22 @@ TBD docs
 export function AdminControls() {
   return (
     <Connected>
+      <h2 className="text-2xl my-6 mx-6">Admin controls</h2>
       <div>
         {/*
         TODO
         <PlatformPercentageControl />
+          setPlatformSharePercentage
         <PriceFloorControl />
+          setPriceFloor
         <BasePriceControl />
+          setBasePrice
         <MaxBatchSizeControl />
-        <PriceFloorControl />
-      */}
+          setMaxBatchSize
+        */}
         <ClaimPlatformFunds />
         <PauseContractControl />
+        <SetURI />
       </div>
     </Connected>
   );
@@ -104,13 +109,13 @@ function PauseContractControl() {
   );
 }
 
-// TBD confirm correctnes once we have funds going on
+// TBD confirm correctness once we have funds going on
 function ClaimPlatformFunds() {
   const { address } = useAccount();
   const { config } = usePrepareContractWrite({
     ...astaverdeContractConfig,
     functionName: "claimPlatformFunds",
-    // enabled: false,
+    enabled: false,
     args: [address!],
   });
   const { write, data, isLoading, isSuccess, error } = useContractWrite(config);
@@ -121,8 +126,8 @@ function ClaimPlatformFunds() {
         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         disabled={!write}
         onClick={() => write?.()}
-        // disabled={isLoading}
-        // onClick={write({ args: [address] })}
+      // disabled={isLoading}
+      // onClick={write({ args: [address] })}
       >
         Claim
       </button>
@@ -132,3 +137,60 @@ function ClaimPlatformFunds() {
     </ControlContainer>
   );
 }
+
+
+function SetURI() {
+  const [uri, setURI] = useState("");
+  const { data: currentURI } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "uri",
+  });
+  console.log("currentURI", currentURI);
+  const { config } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "setURI",
+    args: [uri],
+  });
+  const { write, isLoading, isSuccess, error } = useContractWrite(config);
+  console.log("setURI", { config, write, isLoading, isSuccess, error });
+
+  const handleSetURI = () => {
+    if (uri) {
+      write?.();
+    }
+  };
+
+  return (
+    <ControlContainer title="Set URI">
+      <div className="flex items-center mb-4">
+        <input
+          type="text"
+          value={uri}
+          onChange={(e) => setURI(e.target.value)}
+          placeholder="Enter URI"
+          className="px-4 py-2 mr-2 border border-gray-300 rounded"
+        />
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          disabled={!write || isLoading}
+          onClick={handleSetURI}
+        >
+          Set URI
+        </button>
+      </div>
+      {currentURI && (
+        <div className="text-gray-500 mb-2">Current URI: {currentURI}</div>
+      )}
+      {isLoading && (
+        <div className="text-gray-500">Processing... Please check your wallet.</div>
+      )}
+      {isSuccess && (
+        <div className="text-green-500">Transaction successful</div>
+      )}
+      {error && (
+        <div className="text-red-500">Error: {error.message}</div>
+      )}
+    </ControlContainer>
+  );
+}
+

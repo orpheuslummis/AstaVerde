@@ -1,6 +1,10 @@
+"use client";
+
 import { ConnectKitButton } from "../components/ConnectKitButton";
 import Link from "next/link";
 import React from "react";
+import { useContractRead } from "wagmi";
+import { astaverdeContractConfig } from "../lib/contracts";
 
 interface HeaderProps {
   title: string;
@@ -33,16 +37,6 @@ export function Header({ title, links }: HeaderProps) {
 
 export function ExplanationSection() {
   // For providing a high-level explanation of the platform.
-}
-
-// Batch Cards Component
-export function BatchCards() {
-  // To display information about batches. Should support dynamic sorting, partial/quantity-based purchasing, and pagination.
-}
-
-// Batch Modal Component
-export function BatchModal() {
-  // A detailed view for each batch, triggered by clicking a Batch Card.
 }
 
 // Purchase Component
@@ -88,3 +82,11 @@ export function ContractInteraction() {
 export function FAQPage() {
   // A simple text-based component for frequently asked questions.
 }
+
+// export function useLastBatchID(): { lastBatchID: number; isError: boolean; isLoading: boolean } {
+//   const { data: lastBatchID, isError, isLoading } = useContractRead({
+//     abi: astaverdeContractConfig.abi,
+//     functionName: 'lastBatchID',
+//   });
+//   return { lastBatchID: Number(lastBatchID), isError, isLoading };
+// }
