@@ -1,19 +1,21 @@
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-// This is a script for local test deployment and Sepolia deployment.
-const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployFunc: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log("Starting deployment...");
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
 
-  let usdcTokenAddress = process.env.USDC_ADDRESS;
-  let usdcToken;
+  console.log("Network name: ", hre.network.name);
 
+  let usdcTokenAddress = process.env.USDC_ADDRESS;
+  if (hre.network.name === "mainnet" && !usdcTokenAddress) {
+    throw new Error("USDC_ADDRESS missing. USDC token address is required for Mainnet deployment.");
+  }
   if (!usdcTokenAddress) {
     console.log("USDC token address not found.");
     // For local test deployment, we deploy a mock USDC token
-    usdcToken = await deploy("MockUSDC", {
+    const usdcToken = await deploy("MockUSDC", {
       from: deployer,
       log: true,
       args: [1000000000],
@@ -30,6 +32,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   console.log(`AstaVerde contract deployed at: `, astaVerde.address);
 };
-export default func;
-func.id = "deploy_astaverde"; // id required to prevent reexecution
-func.tags = ["AstaVerde"];
+deployFunc.id = "deploy_astaverde"; // id required to prevent reexecution
+deployFunc.tags = ["AstaVerde"];
+export default deployFunc;

@@ -19,5 +19,3 @@ tmp
 .pnp.*
 coverage.json
 yarn.lock
-
-/example
