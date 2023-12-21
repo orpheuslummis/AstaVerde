@@ -59,7 +59,7 @@ const config = {
   chainSelection: process.env.CHAIN_SELECTION,
   privateKey: process.env.PRIVATE_KEY,
 };
-console.log("Config: ", config);
+// console.log("Config: ", config);
 
 function validateConfig(config) {
   Object.entries(config).forEach(([key, value]) => {
