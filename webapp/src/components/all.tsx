@@ -1,11 +1,10 @@
 "use client";
 
-import { ConnectKitButton } from "../components/ConnectKitButton";
 import Link from "next/link";
-import React from "react";
-import { useAccount, useContractRead } from "wagmi";
-import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
 import { formatUnits } from "viem";
+import { useAccount, useContractRead } from "wagmi";
+import { ConnectKitButton } from "../components/ConnectKitButton";
+import { usdcContractConfig } from "../lib/contracts";
 
 interface HeaderProps {
   title: string;
