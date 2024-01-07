@@ -1,8 +1,8 @@
 # AstaVerde
 
-AstaVerde is a platform built on the Ethereum blockchain that facilitates the trading of verified carbon offsets as
-non-fungible tokens (NFTs) using an ERC-1155 smart contract. The platform employs a Dutch Auction mechanism for selling
-these offsets.
+AstaVerde is a platform for the trading of verified carbon offsets as non-fungible tokens (NFTs).
+It is built on Ethereum as an ERC-1155 smart contract.
+Each carbon credit is part of a batch. The batch follows a Dutch Auction mechanism.
 
 ## Dutch Auction Mechanism
 
@@ -10,7 +10,7 @@ The auction starts at 230 USDC/unit and decays linearly over four days to a floo
 recalculated every 24 hours using a specific formula. Buyers can purchase at any time within the auction window, but
 they must buy the entire batch.
 
-## Roles
+## User personas
 
 - Credit Producers: Generate and verify carbon offsets, then list them as NFTs.
 - Platform Owner: Mints new batches of NFTs and manages the auction.
@@ -35,3 +35,31 @@ The contract AstaVerde.sol includes functions for setting the platform share per
 and maximum batch size. It also includes functions for minting batches, getting the current price, buying batches, and
 redeeming tokens. The contract uses OpenZeppelin's ERC1155, ERC1155Burnable, Ownable, Pausable, and ReentrancyGuard
 contracts
+
+
+## How to use as platform owner or developer
+
+Obtain and run tests locally:
+
+```shell
+git clone git@github.com:orpheuslummis/AstaVerde.git
+cd AstaVerde
+npm i
+npm run test
+```
+
+Deploy contract on testnet:
+
+```shell
+npm run test
+npm run compile && npm run postinstall
+npm run deploy:contracts -- --network sepolia
+```
+
+Configuring and minting:
+
+1. `cp .env.example .env`
+2. Fill out the parameters in ``.env`` (PRIVATE_KEY, INFURA_API_KEY, etc)
+3. Obtain CSV and image folder
+4. `npm run test:mint`
+
