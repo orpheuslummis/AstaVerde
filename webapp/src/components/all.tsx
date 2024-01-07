@@ -1,10 +1,10 @@
 "use client";
 
-import { ConnectKitButton } from "../components/ConnectKitButton";
 import Link from "next/link";
-import React from "react";
-import { useContractRead } from "wagmi";
-import { astaverdeContractConfig } from "../lib/contracts";
+import { formatUnits } from "viem";
+import { useAccount, useContractRead } from "wagmi";
+import { ConnectKitButton } from "../components/ConnectKitButton";
+import { usdcContractConfig } from "../lib/contracts";
 
 interface HeaderProps {
   title: string;
@@ -12,6 +12,13 @@ interface HeaderProps {
 }
 
 export function Header({ title, links }: HeaderProps) {
+  const { address } = useAccount();
+  const { data: balance} = useContractRead({
+    ...usdcContractConfig,
+    functionName: "balanceOf",
+    args: [address || "0x0000"]
+  });
+  
   return (
     <header className="flex items-center justify-between bg-green-500 p-4 shadow-md">
       <Link href={"/"}>
@@ -26,6 +33,10 @@ export function Header({ title, links }: HeaderProps) {
               </Link>
             </li>
           ))}
+
+          {/* Show USDC Balance */}
+          <span className="text-white hover:text-blue-900 transition-colors duration-300">{formatUnits(balance || BigInt(0), 6)?.toString() || 0} USDC</span>
+          
           <li className="ml-2 text-sm py-2 px-3 rounded-full text-blue-500 hover:bg-blue-100 transition-colors duration-300">
             <ConnectKitButton />
           </li>
