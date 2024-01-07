@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { formatUnits } from "viem";
 import { useAccount, useContractRead } from "wagmi";
 import { ConnectKitButton } from "../components/ConnectKitButton";
 import { usdcContractConfig } from "../lib/contracts";
