@@ -26,6 +26,9 @@ export function Header({ title, links }: HeaderProps) {
               </Link>
             </li>
           ))}
+
+          {/* Show USDC Balance */}
+          
           <li className="ml-2 text-sm py-2 px-3 rounded-full text-blue-500 hover:bg-blue-100 transition-colors duration-300">
             <ConnectKitButton />
           </li>

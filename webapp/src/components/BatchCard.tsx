@@ -3,8 +3,8 @@
 import React from "react";
 import { useState } from "react";
 import { Batch } from "../lib/batch";
-import { paginatedIndexesConfig, useContractInfiniteReads } from "wagmi";
-import { astaverdeContractConfig } from "../lib/contracts";
+import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead, useContractWrite, usePrepareContractWrite } from "wagmi";
+import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
 
 /*
 the image url is encoded in the metadata
@@ -17,8 +17,9 @@ ideally, when clicked we would open a modal that shows info on all the tokens it
 
 export default function BatchCard({ batch }: { batch: Batch }) {
   // const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tokenAmount, setTokenAmount] = useState(1);
 
-  console.log("batch.token_ids", batch.token_ids);
+  console.log("batch.token_ids", batch);
 
   const { data, fetchNextPage, error } = useContractInfiniteReads({
     cacheKey: 'tokenMetadata',
@@ -28,7 +29,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
         return [
           {
             ...astaverdeContractConfig,
-            functionName: 'tokens',
+            functionName: 'batches',
             args: [tokenID] as const,
           },
         ]
@@ -36,8 +37,20 @@ export default function BatchCard({ batch }: { batch: Batch }) {
       { start: batch.token_ids[batch.token_ids.length - 1], perPage: 10, direction: 'decrement' },
     ),
   });
+  const { data: batches, refetch: refetchBathes } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "batches",
+    args: [BigInt(batch.id)]
+  });
 
-  console.log("data", data);
+  const { data: currentPrice } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "getCurrentPrice",
+    args: [BigInt(batch.id)]
+  });
+
+  console.log("data", data, batches);
+  console.log("currentPrice", currentPrice);
 
   // we get metadata for each token,
 
@@ -48,26 +61,30 @@ export default function BatchCard({ batch }: { batch: Batch }) {
   // buyBatch
 
   return (
-    <>
-    <p>BatchCard {} </p>
-    </>
+    // <>
+    // <p>BatchCard</p>
+    // </>
     // <div className="bg-white shadow rounded-lg p-6">
-    //   <div className="flex justify-between items-center">
-    //     <div className="flex-1 pr-6">
-    //       <img className="h-48 w-full object-cover rounded-lg" src={batch.image_url([0].image} alt="batch item" />
-    //     </div>
-    //     <div className="flex-1 pl-6">
-    //       <p className="text-gray-900 font-bold text-2xl">{batch.name}</p>
-    //       <p className="text-gray-600">{batch.itemsLeft} items left</p>
-    //       <button
-    //         className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-    //         onClick={() => setIsModalOpen(true)}
-    //       >
-    //         More Info
-    //       </button>
-    //       <button className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Buy</button>
-    //     </div>
-    //   </div>
+      <div className="flex justify-between items-center">
+        <div className="flex-1 pr-6">
+          <img className="h-48 w-full object-cover rounded-lg" 
+          // src={batch.image_url([0].image} 
+            alt="batch item" />
+        </div>
+        <div className="flex-1 pl-6">
+          <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
+          <p className="text-gray-600">{batch.price} items left</p>
+          <p className="text-gray-600">{currentPrice ? currentPrice.toString() : 0} Unit Price</p>
+          <input type="number" value={tokenAmount} onChange={(e) => setTokenAmount(Number(e.target.value))} />
+          <button
+            className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            // onClick={() => setIsModalOpen(true)}
+          >
+            More Info
+          </button>
+          <BuyBatchButton tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
+        </div>
+      </div>
     //   {isModalOpen && (
     //     <div className="fixed z-10 inset-0 overflow-y-auto">
     //       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -89,5 +106,30 @@ export default function BatchCard({ batch }: { batch: Batch }) {
     //     </div>
     //   )}
     // </div>
+  );
+}
+
+function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice: string}) {
+  const { address } = useAccount();
+  const { config } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "buyBatch",
+    // enabled: false,
+    args: [BigInt(0), BigInt(198),BigInt(1)],
+  });
+  const { write, data, isLoading, isSuccess, error } = useContractWrite(config);
+  return (
+    <>
+      <button
+      className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+              // disabled={!write}
+
+      // disabled={isLoading}
+      onClick={() => write?.()}
+      >
+        Buy
+      </button>
+    </>
+
   );
 }
