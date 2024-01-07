@@ -11,30 +11,6 @@ import { useContractWrite, usePrepareContractWrite, useContractRead, useAccount 
 import { astaverdeContractConfig, usdcContractConfig } from "../../lib/contracts";
 
 export default function Page() {
-
-  const { config: pauseConfig } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
-    functionName: "redeemTokens",
-    args: [[BigInt(1)]]
-    // enabled: false,
-  });
-  const {
-    write: redeemTokens
-  } = useContractWrite(pauseConfig);
-
-  // const { data: lastTokenID} = useContractRead({
-  //   ...astaverdeContractConfig,
-  //   functionName: "lastTokenID",
-  // });
-
-   
-  const { data: lastBatchID} = useContractRead({
-    ...astaverdeContractConfig,
-    functionName: "lastBatchID",
-  });
-
-  console.log("lastBatchID: ", lastBatchID)
-
   return (
     <>
       <h1>My Tokens</h1>
