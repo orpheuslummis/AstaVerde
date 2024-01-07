@@ -117,7 +117,7 @@ function BatchRedeemCard({batch}:{batch: Batch}) {
       // disabled={isLoading}
       // onClick={() => buyBatch?.()}
       >
-        Buy
+        Redeem
       </button>
     </>
   );

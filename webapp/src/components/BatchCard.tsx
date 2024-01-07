@@ -37,6 +37,11 @@ export default function BatchCard({ batch }: { batch: Batch }) {
       { start: batch.token_ids[batch.token_ids.length - 1], perPage: 10, direction: 'decrement' },
     ),
   });
+  const { data: batches, refetch: refetchBathes } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "batches",
+    args: [BigInt(batch.id)]
+  });
 
   const { data: currentPrice } = useContractRead({
     ...astaverdeContractConfig,
@@ -44,7 +49,8 @@ export default function BatchCard({ batch }: { batch: Batch }) {
     args: [BigInt(batch.id)]
   });
 
-  console.log("data", data, batches);
+  console.log("batch", batch);
+  console.log("batches", batches);
   console.log("currentPrice", currentPrice);
 
   // we get metadata for each token,
@@ -69,7 +75,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
       />
 
       <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
-      <p className="text-gray-600">{batches ? `${batches[3]} items left` : "0 items left"}</p>
+      <p className="text-gray-600">{batches ? `${batches?.[3]} items left` : "0 items left"}</p>
       <p className="text-gray-600">{currentPrice ? `${currentPrice} Unit Price` : "0 Unit Price"}</p>
 
       <input 
@@ -117,12 +123,13 @@ export default function BatchCard({ batch }: { batch: Batch }) {
 }
 
 function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice: string}) {
+  const totalPrice = tokenAmount * Number(usdcPrice)
   const { address } = useAccount();
   const { config } = usePrepareContractWrite({
     ...astaverdeContractConfig,
     functionName: "buyBatch",
     // enabled: false,
-    args: [BigInt(0), BigInt(198),BigInt(1)],
+    args: [BigInt(0), BigInt(totalPrice),BigInt(tokenAmount)],
   });
   const { write, data, isLoading, isSuccess, error } = useContractWrite(config);
 
@@ -133,7 +140,7 @@ function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice
   });
 
   // If there is not enough allowance to withdraw usdc from user address.
-  if(Number(formatUnits(allowance || BigInt(0), 6)) < tokenAmount * Number(usdcPrice)) {
+  if(Number(formatUnits(allowance || BigInt(0), 6)) < totalPrice) {
     <>
     <button onClick={() => {
       console.log()
@@ -155,6 +162,5 @@ function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice
         Buy
       </button>
     </>
-
   );
 }
