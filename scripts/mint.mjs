@@ -1,7 +1,7 @@
 /*
-This script is designed to mint a batch of tokens for the Asta Verde project. It performs the following operations:
+Mint a batch of tokens for Asta Verde.
 
-1. Reads token data from a CSV file. Each row in the CSV file represents a token and should include the token's name, producer address, arbitrary text, and timestamp of production.
+1. Reads token data from a CSV file. Each row represents a token and should include the token's name, producer address, arbitrary text, and timestamp of production.
 2. Uploads an image for each token. The images should be located in a specified folder.
 3. Builds the metadata for each token using the data from the CSV file and the URI of the uploaded image.
 4. Calls the mintBatch function in the Asta Verde contract to mint the tokens.
@@ -71,10 +71,6 @@ function validateConfig(config) {
     if (key === "email" && !validateEmail(value)) {
       throw new Error(`Invalid email address. Please provide a valid email.`);
     }
-
-    if (key === "contractAddress" && !validateEthereumAddress(value)) {
-      throw new Error(`Invalid Ethereum address. Please provide a valid address.`);
-    }
   });
 }
 
@@ -82,10 +78,6 @@ function validateEmail(email) {
   const re =
     /^(([^<>()\\.,;:\s@"']+(\.[^<>()\\.,;:\s@"']+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return re.test(String(email).toLowerCase());
-}
-function validateEthereumAddress(address) {
-  const re = /^0x[a-fA-F0-9]{40}$/;
-  return re.test(address);
 }
 
 const explorerTxnURL =
