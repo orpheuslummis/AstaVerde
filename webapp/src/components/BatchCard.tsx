@@ -47,7 +47,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
 
   const { data: currentPrice } = useContractRead({
     ...astaverdeContractConfig,
-    functionName: "getCurrentPrice",
+    functionName: "getBatchPrice",
     args: [BigInt(batch.id)]
   });
 
