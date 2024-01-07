@@ -9,7 +9,7 @@ export const usdcContractConfig = {
 
 export const astaverdeContractConfig = {
   // on Sepolia
-  address: "0x55835ab00E9b7a0F1855b4b7a6a88016aEc99c54",
+  address: "0x1B2681b5b49514918976615e84694bBece8ed68B",
   abi: [
     {
       "inputs": [
@@ -602,6 +602,11 @@ export const astaverdeContractConfig = {
         },
         {
           "internalType": "uint256",
+          "name": "startingPrice",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
           "name": "price",
           "type": "uint256"
         },
@@ -651,6 +656,32 @@ export const astaverdeContractConfig = {
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "dayDecreaseThreshold",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "dayIncreaseThreshold",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "uint256",
@@ -692,7 +723,7 @@ export const astaverdeContractConfig = {
           "type": "uint256"
         }
       ],
-      "name": "getCurrentPrice",
+      "name": "getBatchPrice",
       "outputs": [
         {
           "internalType": "uint256",
@@ -1060,6 +1091,24 @@ export const astaverdeContractConfig = {
         }
       ],
       "name": "setApprovalForAll",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "increase",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "decrease",
+          "type": "uint256"
+        }
+      ],
+      "name": "setAuctionTimeThresholds",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
