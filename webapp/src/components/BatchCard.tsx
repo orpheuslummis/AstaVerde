@@ -113,13 +113,22 @@ export default function BatchCard({ batch }: { batch: Batch }) {
 
 function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice: string}) {
   const { address } = useAccount();
-  const { config } = usePrepareContractWrite({
+  const { config: buyBatchConfig } = usePrepareContractWrite({
     ...astaverdeContractConfig,
     functionName: "buyBatch",
     // enabled: false,
     args: [BigInt(0), BigInt(198),BigInt(1)],
   });
-  const { write, data, isLoading, isSuccess, error } = useContractWrite(config);
+  const { write: buyBatch} = useContractWrite(buyBatchConfig);
+
+  const { config: approveConfig } = usePrepareContractWrite({
+    ...usdcContractConfig,
+    functionName: "approve",
+    // enabled: false,
+    args: [astaverdeContractConfig.address, BigInt(tokenAmount * Number(usdcPrice))],
+  });
+  const { write } = useContractWrite(approveConfig);
+
 
   const { data: allowance} = useContractRead({
     ...usdcContractConfig,
@@ -127,13 +136,19 @@ function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice
     args: [address || "0x0000", astaverdeContractConfig.address]
   });
 
+  console.log("allowance enough??", Number(formatUnits(allowance || BigInt(0), 6)), ", cost: ", tokenAmount * Number(usdcPrice))
+
   // If there is not enough allowance to withdraw usdc from user address.
   if(Number(formatUnits(allowance || BigInt(0), 6)) < tokenAmount * Number(usdcPrice)) {
-    <>
-    <button onClick={() => {
-      console.log()
-      }}>
-      Approve USDC
+    return <>
+          <button
+      className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+              // disabled={!write}
+
+      // disabled={isLoading}
+      onClick={() => write?.()}
+      >
+        Approve USDC
       </button>
     </>
   }
@@ -145,7 +160,7 @@ function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice
               // disabled={!write}
 
       // disabled={isLoading}
-      onClick={() => write?.()}
+      onClick={() => buyBatch?.()}
       >
         Buy
       </button>
