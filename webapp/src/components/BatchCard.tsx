@@ -1,8 +1,10 @@
 "use client";
 
-import { paginatedIndexesConfig, useContractInfiniteReads } from "wagmi";
+import { useState } from "react";
+import { formatUnits } from "viem";
+import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead, useContractWrite, usePrepareContractWrite } from "wagmi";
 import { Batch } from "../lib/batch";
-import { astaverdeContractConfig } from "../lib/contracts";
+import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
 
 /*
 the image url is encoded in the metadata
@@ -15,6 +17,7 @@ ideally, when clicked we would open a modal that shows info on all the tokens it
 
 export default function BatchCard({ batch }: { batch: Batch }) {
   // const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tokenAmount, setTokenAmount] = useState(1);
 
   console.log("batch.token_ids", batch.token_ids);
 
@@ -35,8 +38,8 @@ export default function BatchCard({ batch }: { batch: Batch }) {
     ),
   });
 
-  console.log("data", data, batches);
-  console.log("currentPrice", currentPrice);
+  // console.log("data", data, batches);
+  // console.log("currentPrice", currentPrice);
 
   // we get metadata for each token,
 
@@ -88,5 +91,48 @@ export default function BatchCard({ batch }: { batch: Batch }) {
     //     </div>
     //   )}
     // </div>
+  );
+}
+
+function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice: string}) {
+  const { address } = useAccount();
+  const { config } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "buyBatch",
+    // enabled: false,
+    args: [BigInt(0), BigInt(198),BigInt(1)],
+  });
+  const { write, data, isLoading, isSuccess, error } = useContractWrite(config);
+
+  const { data: allowance} = useContractRead({
+    ...usdcContractConfig,
+    functionName: "allowance",
+    args: [address || "0x0000", astaverdeContractConfig.address]
+  });
+
+  // If there is not enough allowance to withdraw usdc from user address.
+  if(Number(formatUnits(allowance || BigInt(0), 6)) < tokenAmount * Number(usdcPrice)) {
+    <>
+    <button onClick={() => {
+      console.log()
+      }}>
+      Approve USDC
+      </button>
+    </>
+  }
+
+  return (
+    <>
+      <button
+      className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+              // disabled={!write}
+
+      // disabled={isLoading}
+      onClick={() => write?.()}
+      >
+        Buy
+      </button>
+    </>
+
   );
 }
