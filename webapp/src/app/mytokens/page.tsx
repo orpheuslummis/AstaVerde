@@ -21,12 +21,12 @@ export default function Page() {
       {/* loop through the batch ids */}
       {[...Array(lastBatchID).keys()].map(batchIndex => (
         <>
-      <BatchCard lastBatchID={batchIndex} />
+      <BatchCard lastBatchID={BigInt(batchIndex)} />
 
         </>
       ))}
 
-      <button
+      {/* <button
       className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
       // disabled={!write}
 
@@ -34,40 +34,41 @@ export default function Page() {
       onClick={() => redeemTokens?.()}
       >
         Redeem
-      </button>
+      </button> */}
     </>
   );
 }
 
-
-
-
-function BatchCard({lastBatchID}:{lastBatchID: number}) {
-
-
+function BatchCard({lastBatchID}:{lastBatchID: bigint}) {
+  const { address } = useAccount();
+  const [sameAddresses, setSameAddresses] = useState<`0x${string}`[]>();
   // get all tokens owned by user
-  const { data: balanceOfBatch} = useContractRead({
+  const { data: batch} = useContractRead({
     ...astaverdeContractConfig,
     functionName: "batches",
-    args: [lastTokenID]
+    args: [lastBatchID]
   });
 
+  console.log(batch)
+
   useEffect(() => {
-    if(lastTokenID) {
-      let sameAddresses = [];
+    if(lastBatchID && address && batch) {
+      let _sameAddresses: `0x${string}`[] = [];
       let tokenIDInArray = [];
       // Use a for loop to fill the array
-      for (let i = 0; i < Number(lastTokenID?.toString()); i++) {
-        sameAddresses.push(address);
+      for (let i = 0; i < Number(batch[0]); i++) {// should be Number(batch[0]).tokenIds
+        _sameAddresses.push(address);
         tokenIDInArray.push(i+1) // starting from 1
       }
+
+      setSameAddresses(_sameAddresses)
     }
-  }, [lastTokenID]);
+  }, [lastBatchID]);
 
   const { data: balanceOf} = useContractRead({
     ...astaverdeContractConfig,
-    functionName: "balanceOf",
-    args: []
+    functionName: "balanceOfBatch",
+    args: [sameAddresses ? sameAddresses : ["0x0000"], batch?.[0] as unknown as bigint[]]
   });
 
   return (
@@ -77,7 +78,7 @@ function BatchCard({lastBatchID}:{lastBatchID: number}) {
       // disabled={!write}
 
       // disabled={isLoading}
-      onClick={() => buyBatch?.()}
+      // onClick={() => buyBatch?.()}
       >
         Buy
       </button>

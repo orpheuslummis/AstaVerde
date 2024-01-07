@@ -38,8 +38,14 @@ export default function BatchCard({ batch }: { batch: Batch }) {
     ),
   });
 
-  // console.log("data", data, batches);
-  // console.log("currentPrice", currentPrice);
+  const { data: currentPrice } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "getBatchPrice",
+    args: [BigInt(batch.id)]
+  });
+
+  console.log("data", data, batches);
+  console.log("currentPrice", currentPrice);
 
   // we get metadata for each token,
 
