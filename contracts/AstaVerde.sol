@@ -35,6 +35,10 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
     uint256 public priceFloor;
     uint256 public priceDecreaseRate;
 
+    // Controlling the auction
+    uint256 public dayIncreaseThreshold;
+    uint256 public dayDecreaseThreshold;
+
     struct TokenInfo {
         uint256 tokenId;
         address producer;
@@ -69,6 +73,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         basePrice = 230;
         priceFloor = 40;
         priceDecreaseRate = 1;
+        dayIncreaseThreshold = 4;
+        dayDecreaseThreshold = 10;
     }
 
     function setURI(string memory newuri) public onlyOwner {
@@ -149,6 +155,14 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
     function setMaxBatchSize(uint256 newSize) external onlyOwner {
         require(newSize > 0, "Invalid batch size");
         maxBatchSize = newSize;
+    }
+
+    function setAuctionTimeThresholds(uint256 increase, uint256 decrease) external onlyOwner {
+        require(increase > 0, "Invalid increase threshold");
+        require(decrease > 0, "Invalid decrease threshold");
+        require(increase > decrease, "Increase threshold must be greater than decrease threshold");
+        dayIncreaseThreshold = increase;
+        dayDecreaseThreshold = decrease;
     }
 
     function mintBatch(address[] memory producers, string[] memory cids) public onlyOwner whenNotPaused {
