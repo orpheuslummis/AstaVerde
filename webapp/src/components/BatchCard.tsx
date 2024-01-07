@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Batch } from "../lib/batch";
 import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead, useContractWrite, usePrepareContractWrite } from "wagmi";
 import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
-import { formatUnits } from "viem";
+import { formatUnits, parseUnits } from "viem";
 
 /*
 the image url is encoded in the metadata
@@ -75,7 +75,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
         </div>
         <div className="flex-1 pl-6">
           <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
-          <p className="text-gray-600">{batch.price} items left</p>
+          <p className="text-gray-600">{batches ? batches?.[2].toString() : "0"} items left</p>
           <p className="text-gray-600">{currentPrice ? currentPrice.toString() : 0} Unit Price</p>
           <input type="number" value={tokenAmount} onChange={(e) => setTokenAmount(Number(e.target.value))} />
           <button
@@ -125,10 +125,9 @@ function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice
     ...usdcContractConfig,
     functionName: "approve",
     // enabled: false,
-    args: [astaverdeContractConfig.address, BigInt(tokenAmount * Number(usdcPrice))],
+    args: [astaverdeContractConfig.address, parseUnits(String(tokenAmount * Number(usdcPrice)), 6)],
   });
   const { write } = useContractWrite(approveConfig);
-
 
   const { data: allowance} = useContractRead({
     ...usdcContractConfig,
@@ -165,6 +164,5 @@ function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice
         Buy
       </button>
     </>
-
   );
 }
