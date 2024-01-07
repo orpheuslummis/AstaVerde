@@ -41,7 +41,12 @@ export default function Page() {
       <h1>My Tokens</h1>
 
       {/* loop through the batch ids */}
-      <BatchCard lastBatchID />
+      {[...Array(lastBatchID).keys()].map(batchIndex => (
+        <>
+      <BatchCard lastBatchID={batchIndex} />
+
+        </>
+      ))}
 
       <button
       className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
@@ -59,13 +64,13 @@ export default function Page() {
 
 
 
-function BatchCard({userAddress, usdcPrice}:{tokenAmount: number, usdcPrice: string}) {
+function BatchCard({lastBatchID}:{lastBatchID: number}) {
 
 
   // get all tokens owned by user
   const { data: balanceOfBatch} = useContractRead({
     ...astaverdeContractConfig,
-    functionName: "balanceOfBatch",
+    functionName: "batches",
     args: [lastTokenID]
   });
 
