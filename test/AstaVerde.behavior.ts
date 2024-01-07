@@ -60,7 +60,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     const producers = createNewAddresses(cids.length);
     await this.astaVerde.mintBatch(producers, cids);
     const batchID = await this.astaVerde.lastBatchID();
-    expect(await this.astaVerde.getCurrentPrice(batchID)).to.equal(BASE_PRICE);
+    expect(await this.astaVerde.getBatchPrice(batchID)).to.equal(BASE_PRICE);
   });
 
   it("should increment batchID after mintBatch", async function () {
@@ -75,7 +75,7 @@ export function shouldBehaveLikeAstaVerde(): void {
 
   it("should fail to get current price with invalid batchID", async function () {
     const batchID = 999; // this batchID does not exist
-    await expect(this.astaVerde.getCurrentPrice(batchID)).to.be.revertedWith("Batch does not exist");
+    await expect(this.astaVerde.getBatchPrice(batchID)).to.be.revertedWith("Batch does not exist");
   });
 
   it("should mint a small batch", async function () {
@@ -398,7 +398,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     await this.mockUSDC.approve(address, usdcAmount);
     await this.astaVerde.setApprovalForAll(address, true);
     await this.astaVerde.buyBatch(batchID, usdcAmount, tokenAmount);
-    expect(await this.astaVerde.getCurrentPrice(batchID)).to.equal(BASE_PRICE);
+    expect(await this.astaVerde.getBatchPrice(batchID)).to.equal(BASE_PRICE);
 
     await waitNSeconds(11 * SECONDS_IN_A_DAY);
 
@@ -431,7 +431,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     await this.mockUSDC.approve(address, usdcAmount);
     await this.astaVerde.setApprovalForAll(address, true);
     await this.astaVerde.buyBatch(batchID, usdcAmount, tokenAmount);
-    expect(await this.astaVerde.getCurrentPrice(batchID)).to.equal(BASE_PRICE);
+    expect(await this.astaVerde.getBatchPrice(batchID)).to.equal(BASE_PRICE);
 
     await network.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 3]);
     await network.provider.send("evm_mine");
@@ -464,7 +464,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     await this.mockUSDC.approve(address, usdcAmount);
     await this.astaVerde.setApprovalForAll(address, true);
     await this.astaVerde.buyBatch(batchID, usdcAmount, tokenAmount);
-    expect(await this.astaVerde.getCurrentPrice(batchID)).to.equal(BASE_PRICE);
+    expect(await this.astaVerde.getBatchPrice(batchID)).to.equal(BASE_PRICE);
 
     await network.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 6]);
     await network.provider.send("evm_mine");
@@ -676,14 +676,15 @@ export function shouldBehaveLikeAstaVerde(): void {
       tokenAmounts.push(tokenAmount);
       await mintUSDC(user, this.mockUSDC, usdcAmount);
       await this.mockUSDC.connect(user).approve(this.astaVerde, usdcAmount);
-      await this.astaVerde.connect(user).buyBatch(i, usdcAmount, tokenAmount);
+      await this.astaVerde.connect(user).buyBatch(i, usdcAmount, tokenAmount); // here we see the price decrease
       const expectedPrice = BASE_PRICE - i * PRICE_DECREASE_RATE;
-      batchInfo = await this.astaVerde.getBatchInfo(i);
+      batchInfo = await this.astaVerde.getBatchInfo(i); // here we see it decrease again
       price = batchInfo[2];
 
       console.log("expectedPrice", expectedPrice);
       console.log("price", price);
       expect(price).to.equal(expectedPrice);
+
       await waitNSeconds(SECONDS_IN_A_DAY);
     }
   });
@@ -699,12 +700,12 @@ export function shouldBehaveLikeAstaVerde(): void {
     }
 
     // Edge case 1: Buying immediately after minting
-    let price = await this.astaVerde.getCurrentPrice(0);
+    let price = await this.astaVerde.getBatchPrice(0);
     expect(price).to.equal(BASE_PRICE);
 
     // Edge case 2: Buying after maximum possible time
     await waitNSeconds(Number.MAX_SAFE_INTEGER);
-    price = await this.astaVerde.getCurrentPrice(0);
+    price = await this.astaVerde.getBatchPrice(0);
     expect(price).to.equal(PRICE_FLOOR);
   });
 }

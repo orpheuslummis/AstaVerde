@@ -45,6 +45,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
     struct Batch {
         uint256[] tokenIds;
         uint256 creationTime;
+        uint256 startingPrice;
         uint256 price;
         uint256 remainingTokens;
     }
@@ -169,6 +170,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         newBatch.tokenIds = new uint256[](batchSize);
         newBatch.creationTime = block.timestamp;
         newBatch.price = basePrice;
+        newBatch.startingPrice = basePrice;
         newBatch.remainingTokens = batchSize;
 
         uint256[] memory newTokenIds = new uint256[](batchSize);
@@ -195,25 +197,34 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
 
     // The price decreases daily based on the `priceDecreaseRate`.
     // If the calculated price is less than the `priceFloor`, the `priceFloor` is returned.
-    function getCurrentPrice(uint256 batchID) public view returns (uint256) {
-        console.log("getCurrentPrice for batchID", batchID);
+    function getBatchPrice(uint256 batchID) public view returns (uint256) {
+        console.log("getBatchPrice", batchID);
         require(batchID < batches.length, "Batch does not exist");
 
         Batch memory batch = batches[batchID];
+
         uint256 elapsedTime = block.timestamp - batch.creationTime;
-        // console.log("Elapsed time: ", elapsedTime);
+        console.log("Elapsed time: ", elapsedTime);
+
         uint256 priceDecrease = (elapsedTime * priceDecreaseRate) / SECONDS_IN_A_DAY;
-        // console.log("Price decrease: ", priceDecrease);
-        uint256 currentPrice = batch.price >= priceDecrease ? batch.price - priceDecrease : priceFloor;
-        // console.log("Current price: ", currentPrice);
+        console.log("Price decrease: ", priceDecrease);
+
+        uint256 currentPrice;
+        if (priceDecrease > batch.startingPrice) {
+            currentPrice = priceFloor;
+        } else {
+            currentPrice = batch.startingPrice - priceDecrease;
+        }
+        console.log("Current price: ", currentPrice);
 
         return currentPrice;
     }
 
     // Updates the starting price of the next batch of tokens based on the last sale duration.
-    // Increases by 10 if less than 4 days, decreases by 10 if more than 10 days, and sets to price floor if below it.
+    // Increases by 10 if less than X days, decreases by 10 if more than Y days, and sets to price floor if below it.
     function updateBasePrice() internal {
         // console.log("updateBasePrice id=", lastBatchID, ", timeSinceLastSale=", block.timestamp - lastBatchSoldTime);
+
         // Skip the price update for the zero-index batch
         if (lastBatchID == 0) {
             return;
@@ -224,9 +235,9 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         if (timeSinceLastSale == block.timestamp) {
             // first batch
             return;
-        } else if (timeSinceLastSale < SECONDS_IN_A_DAY * 4) {
+        } else if (timeSinceLastSale < SECONDS_IN_A_DAY * dayIncreaseThreshold) {
             basePrice += 10;
-        } else if (timeSinceLastSale > SECONDS_IN_A_DAY * 10) {
+        } else if (timeSinceLastSale > SECONDS_IN_A_DAY * dayDecreaseThreshold) {
             basePrice -= 10;
         }
 
@@ -242,7 +253,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
     ) public view returns (uint256[] memory tokenIds, uint256 creationTime, uint256 price, uint256 remainingTokens) {
         require(batchID <= batches.length, "Batch ID is out of bounds");
         Batch memory batch = batches[batchID];
-        return (batch.tokenIds, batch.creationTime, batch.price, batch.remainingTokens);
+        price = getBatchPrice(batchID);
+        return (batch.tokenIds, batch.creationTime, price, batch.remainingTokens);
     }
 
     function handleRefund(uint256 usdcAmount, uint256 totalCost) internal {
@@ -268,10 +280,9 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         require(tokenAmount > 0, "Number to buy must be greater than zero");
         console.log("buyBatch remainingTokens", batches[batchID].remainingTokens);
         require(tokenAmount <= batches[batchID].remainingTokens, "Not enough tokens in batch");
-
-        uint256 currentPrice = getCurrentPrice(batchID);
-        batches[batchID].price = currentPrice;
-        uint256 totalCost = currentPrice * tokenAmount;
+        uint256 price = getBatchPrice(batchID);
+        batches[batchID].price = price;
+        uint256 totalCost = price * tokenAmount;
         require(usdcAmount >= totalCost, "Insufficient funds sent");
 
         require(usdcToken.transferFrom(msg.sender, address(this), usdcAmount), "Transfer failed");
@@ -283,11 +294,11 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         // console.log("remainingTokens", remainingTokens);
 
         // operating at two decimal places of precision
-        uint256 producerSharePerToken = (currentPrice * (10000 - platformSharePercentage * 100)) / 10000;
-        uint256 platformSharePerToken = currentPrice - producerSharePerToken;
+        uint256 producerSharePerToken = (price * (10000 - platformSharePercentage * 100)) / 10000;
+        uint256 platformSharePerToken = price - producerSharePerToken;
         platformShareAccumulated += platformSharePerToken * tokenAmount;
-        assert(producerSharePerToken + platformSharePerToken == currentPrice);
-        console.log("price per token", currentPrice);
+        assert(producerSharePerToken + platformSharePerToken == price);
+        console.log("price per token", price);
         console.log("producerSharePerToken", producerSharePerToken);
         console.log("platformSharePerToken", platformSharePerToken);
         console.log("platformShareAccumulated", platformShareAccumulated);
