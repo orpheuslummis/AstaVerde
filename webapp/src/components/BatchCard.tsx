@@ -67,26 +67,38 @@ export default function BatchCard({ batch }: { batch: Batch }) {
     // <p>BatchCard</p>
     // </>
     // <div className="bg-white shadow rounded-lg p-6">
-      <div className="flex justify-between items-center">
-        <div className="flex-1 pr-6">
-          <img className="h-48 w-full object-cover rounded-lg" 
-          // src={batch.image_url([0].image} 
-            alt="batch item" />
-        </div>
-        <div className="flex-1 pl-6">
-          <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
-          <p className="text-gray-600">{batches ? batches?.[2].toString() : "0"} items left</p>
-          <p className="text-gray-600">{currentPrice ? currentPrice.toString() : 0} Unit Price</p>
-          <input type="number" value={tokenAmount} onChange={(e) => setTokenAmount(Number(e.target.value))} />
-          <button
-            className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            // onClick={() => setIsModalOpen(true)}
-          >
-            More Info
-          </button>
-          <BuyBatchButton tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
-        </div>
-      </div>
+    <div className="flex justify-between items-center">
+    <div className="flex-1">
+      <img 
+        className="h-48 w-full object-cover rounded-lg"
+        // src={batch.image_url} // Assuming batch has an image_url property
+        alt="batch item"
+      />
+
+      <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
+      <p className="text-gray-600">{batches ? `${batches[2]} items left` : "0 items left"}</p>
+      <p className="text-gray-600">{currentPrice ? `${currentPrice} Unit Price` : "0 Unit Price"}</p>
+
+      <input 
+        type="number" 
+        value={tokenAmount} 
+        onChange={(e) => setTokenAmount(Number(e.target.value))}
+      />
+
+      <button
+        className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        // Add onClick handler as needed
+      >
+        More Info
+      </button>
+
+      {/* Buy Batch Button */}
+      <BuyBatchButton 
+        tokenAmount={tokenAmount} 
+        usdcPrice={currentPrice?.toString() || "0"} 
+      />
+    </div>
+  </div>
     //   {isModalOpen && (
     //     <div className="fixed z-10 inset-0 overflow-y-auto">
     //       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
