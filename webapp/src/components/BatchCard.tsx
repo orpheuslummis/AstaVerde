@@ -69,7 +69,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
       />
 
       <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
-      <p className="text-gray-600">{batches ? `${batches[2]} items left` : "0 items left"}</p>
+      <p className="text-gray-600">{batches ? `${batches[3]} items left` : "0 items left"}</p>
       <p className="text-gray-600">{currentPrice ? `${currentPrice} Unit Price` : "0 Unit Price"}</p>
 
       <input 
@@ -78,12 +78,12 @@ export default function BatchCard({ batch }: { batch: Batch }) {
         onChange={(e) => setTokenAmount(Number(e.target.value))}
       />
 
-      <button
+      {/* <button
         className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         // Add onClick handler as needed
       >
         More Info
-      </button>
+      </button> */}
 
       {/* Buy Batch Button */}
       <BuyBatchButton 
