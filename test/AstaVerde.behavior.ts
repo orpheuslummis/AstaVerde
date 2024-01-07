@@ -417,7 +417,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     expect(newPrice).to.equal(price - 10n);
   });
 
-  it("base price should increase before 4 days", async function () {
+  it("base price should increase before 1 days", async function () {
     const cids = ["cid1", "cid2"];
     const producers = createNewAddresses(cids.length);
 
@@ -433,7 +433,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     await this.astaVerde.buyBatch(batchID, usdcAmount, tokenAmount);
     expect(await this.astaVerde.getBatchPrice(batchID)).to.equal(BASE_PRICE);
 
-    await network.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 3]);
+    await network.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY]);
     await network.provider.send("evm_mine");
 
     const tx = await this.astaVerde.mintBatch(producers, cids);
@@ -466,7 +466,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     await this.astaVerde.buyBatch(batchID, usdcAmount, tokenAmount);
     expect(await this.astaVerde.getBatchPrice(batchID)).to.equal(BASE_PRICE);
 
-    await network.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 6]);
+    await network.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 3]);
     await network.provider.send("evm_mine");
 
     const tx = await this.astaVerde.mintBatch(producers, cids);

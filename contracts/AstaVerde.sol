@@ -73,8 +73,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         basePrice = 230;
         priceFloor = 40;
         priceDecreaseRate = 1;
-        dayIncreaseThreshold = 4;
-        dayDecreaseThreshold = 10;
+        dayIncreaseThreshold = 2;
+        dayDecreaseThreshold = 4;
     }
 
     function setURI(string memory newuri) public onlyOwner {
