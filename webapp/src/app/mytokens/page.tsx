@@ -161,7 +161,13 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
           </>
         ))}
         redeemable amount: {redeemTokens && redeemTokens.length}
-        <input type="text" value={redeemAmount} onChange={(e) => setRedeemAmount(e.target.value)} />
+        <input
+          className="border rounded"
+          type="text"
+          defaultValue={1}
+          value={redeemAmount}
+          onChange={(e) => setRedeemAmount(e.target.value)}
+        />
         <button
           className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
           disabled={!redeemTokens}
