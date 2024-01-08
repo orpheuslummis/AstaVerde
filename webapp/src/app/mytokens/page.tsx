@@ -7,7 +7,7 @@ perPage: 10
 */
 import { Batch } from "../../lib/batch";
 import { astaverdeContractConfig } from "../../lib/contracts";
-import { Dispatch, SetStateAction, use, useCallback, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import {
   paginatedIndexesConfig,
   useAccount,
