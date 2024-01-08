@@ -106,7 +106,7 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
 
   useEffect(() => {
     if (address && batch) {
-      let _sameAddresses: `0x${string}`[] = [];
+      const _sameAddresses: `0x${string}`[] = [];
       // Use a for loop to fill the array
       for (let i = 0; i < batch.token_ids.length; i++) {
         _sameAddresses.push(address);
