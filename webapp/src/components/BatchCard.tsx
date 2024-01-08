@@ -85,7 +85,12 @@ export default function BatchCard({ batch }: { batch: Batch }) {
         <p className="text-gray-600">{batches ? `${batches?.[3]} items left` : "0 items left"}</p>
         <p className="text-gray-600">{currentPrice ? `${currentPrice} Unit Price` : "0 Unit Price"}</p>
 
-        <input type="number" value={tokenAmount} onChange={(e) => setTokenAmount(Number(e.target.value))} />
+        <input
+          className="border rounded"
+          type="number"
+          value={tokenAmount}
+          onChange={(e) => setTokenAmount(Number(e.target.value))}
+        />
 
         {/* <button
         className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
@@ -125,13 +130,22 @@ export default function BatchCard({ batch }: { batch: Batch }) {
 function BuyBatchButton({ tokenAmount, usdcPrice }: { tokenAmount: number; usdcPrice: string }) {
   const totalPrice = tokenAmount * Number(usdcPrice);
   const { address } = useAccount();
-  const { config } = usePrepareContractWrite({
+
+  const { config: configBuyBatch } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "buyBatch",
+    // enabled: false,
+    args: [BigInt(0), BigInt(totalPrice), BigInt(tokenAmount)],
+  });
+  const { write: buyBatch } = useContractWrite(configBuyBatch);
+
+  const { config: configApprove } = usePrepareContractWrite({
     ...usdcContractConfig,
     functionName: "approve",
     // enabled: false,
     args: [astaverdeContractConfig.address, BigInt(totalPrice)],
   });
-  const { write, data, isLoading, isSuccess, error } = useContractWrite(config);
+  const { write: approve } = useContractWrite(configApprove);
 
   const { data: allowance } = useContractRead({
     ...usdcContractConfig,
@@ -139,28 +153,32 @@ function BuyBatchButton({ tokenAmount, usdcPrice }: { tokenAmount: number; usdcP
     args: [address || "0x0000", astaverdeContractConfig.address],
   });
 
+  console.log("allowance", Number(formatUnits(allowance || BigInt(0), 6)), totalPrice);
+
   // If there is not enough allowance to withdraw usdc from user address.
   if (Number(formatUnits(allowance || BigInt(0), 6)) < totalPrice) {
-    <>
-      <button
-        disabled={!write}
-        onClick={() => {
-          write?.();
-        }}
-      >
-        Approve USDC
-      </button>
-    </>;
+    return (
+      <>
+        <button
+          className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          disabled={!approve}
+          onClick={() => {
+            approve?.();
+          }}
+        >
+          Approve USDC
+        </button>
+      </>
+    );
   }
 
   return (
     <>
       <button
         className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-        // disabled={!write}
-
+        disabled={!buyBatch}
         // disabled={isLoading}
-        onClick={() => write?.()}
+        onClick={() => buyBatch?.()}
       >
         Buy
       </button>
