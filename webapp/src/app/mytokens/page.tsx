@@ -5,10 +5,10 @@ perPage: 10
 */
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
-import { useContractWrite, usePrepareContractWrite, useContractRead, useAccount, useContractInfiniteReads, paginatedIndexesConfig } from "wagmi";
-import { astaverdeContractConfig, usdcContractConfig } from "../../lib/contracts";
+import { useCallback, useEffect, useState } from "react";
+import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead } from "wagmi";
 import { Batch } from "../../lib/batch";
+import { astaverdeContractConfig } from "../../lib/contracts";
 
 export default function Page() {
 

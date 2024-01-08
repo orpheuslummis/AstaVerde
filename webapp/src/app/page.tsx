@@ -1,12 +1,9 @@
 "use client";
 
-import React from 'react';
 // import BatchCard from '../components/BatchCard';
 // import { useContractInfiniteReads, paginatedIndexesConfig, useContractRead } from 'wagmi'
 // import { astaverdeContractConfig } from "../lib/contracts";
 import { BatchListing } from '../components/BatchListing';
-import { useContractRead, useContractWrite, usePrepareContractWrite } from 'wagmi';
-import { astaverdeContractConfig } from '../lib/contracts';
 
 /*
 mode: available , fullySold
