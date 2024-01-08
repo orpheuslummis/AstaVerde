@@ -122,7 +122,6 @@ function BatchRedeemCard({batch}:{batch: Batch}) {
   });
   const { write: redeemTokens } = useContractWrite(config);
 
-
   if(filteredArray() && filteredArray()!.length === 0) {
     return     <div className="bg-white rounded-lg shadow-md p-4">
     <p>Batch {batch.id}</p>
@@ -135,6 +134,9 @@ function BatchRedeemCard({batch}:{batch: Batch}) {
     <div className="bg-white rounded-lg shadow-md p-4">
       <h2 className="text-lg font-semibold">Batch: {batch.id}</h2>
       <p className="mt-2">Token IDs: {filteredArray()}</p>
+      {filteredArray()?.map(redeemableToken => (<>
+      <RedeemableTokens redeemableToken={redeemableToken}/>
+      </>))}
 
       <button
       className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
@@ -144,6 +146,27 @@ function BatchRedeemCard({batch}:{batch: Batch}) {
         Redeem
       </button>
         </div>
+    </>
+  );
+}
+
+function RedeemableTokens({redeemableToken}:{redeemableToken: number}) {
+
+  const { data: tokenInfo} = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "tokens",
+    args: [BigInt(redeemableToken)]
+  });
+  console.log("🚀 ~ file: page.tsx:160 ~ RedeemableTokens ~ tokenInfo:", tokenInfo)
+
+  // If token redeemed. Do not show
+  // if(tokenInfo.)
+
+  return (
+    <>
+      <div>
+        available tokens
+      </div>
     </>
   );
 }
