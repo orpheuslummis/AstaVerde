@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { formatUnits } from "viem";
-import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead, useContractWrite, usePrepareContractWrite } from "wagmi";
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
+import { useState } from "react";
+import { formatUnits, parseUnits } from "viem";
+import {
+  paginatedIndexesConfig,
+  useAccount,
+  useContractInfiniteReads,
+  useContractRead,
+  useContractWrite,
+  usePrepareContractWrite,
+} from "wagmi";
 
 /*
 the image url is encoded in the metadata
@@ -22,31 +29,31 @@ export default function BatchCard({ batch }: { batch: Batch }) {
   console.log("batch.token_ids", batch.token_ids);
 
   const { data, fetchNextPage, error } = useContractInfiniteReads({
-    cacheKey: 'tokenMetadata',
+    cacheKey: "tokenMetadata",
     ...paginatedIndexesConfig(
       (tokenID: bigint) => {
         console.log("fetching tokenCID", tokenID);
         return [
           {
             ...astaverdeContractConfig,
-            functionName: 'batches',
+            functionName: "batches",
             args: [tokenID] as const,
           },
-        ]
+        ];
       },
-      { start: batch.token_ids[batch.token_ids.length - 1], perPage: 10, direction: 'decrement' },
+      { start: batch.token_ids[batch.token_ids.length - 1], perPage: 10, direction: "decrement" },
     ),
   });
   const { data: batches, refetch: refetchBathes } = useContractRead({
     ...astaverdeContractConfig,
     functionName: "batches",
-    args: [BigInt(batch.id)]
+    args: [BigInt(batch.id)],
   });
 
   const { data: currentPrice } = useContractRead({
     ...astaverdeContractConfig,
     functionName: "getBatchPrice",
-    args: [BigInt(batch.id)]
+    args: [BigInt(batch.id)],
   });
 
   console.log("batch", batch);
@@ -67,37 +74,39 @@ export default function BatchCard({ batch }: { batch: Batch }) {
     // </>
     // <div className="bg-white shadow rounded-lg p-6">
     <div className="flex justify-between items-center">
-    <div className="flex-1">
-      <img 
-        className="h-48 w-full object-cover rounded-lg"
-        // src={batch.image_url} // Assuming batch has an image_url property
-        alt="batch item"
-      />
+      <div className="flex-1">
+        <img
+          className="h-48 w-full object-cover rounded-lg"
+          // src={batch.image_url} // Assuming batch has an image_url property
+          alt="batch item"
+        />
 
-      <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
-      <p className="text-gray-600">{batches ? `${batches?.[3]} items left` : "0 items left"}</p>
-      <p className="text-gray-600">{currentPrice ? `${currentPrice} Unit Price` : "0 Unit Price"}</p>
+        <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
+        <p className="text-gray-600">{batches ? `${batches?.[3]} items left` : "0 items left"}</p>
+        <p className="text-gray-600">{currentPrice ? `${currentPrice} Unit Price` : "0 Unit Price"}</p>
 
-      <input 
-        type="number" 
-        value={tokenAmount} 
-        onChange={(e) => setTokenAmount(Number(e.target.value))}
-      />
+        <input
+          className="border rounded"
+          type="number"
+          value={tokenAmount}
+          onChange={(e) => setTokenAmount(Number(e.target.value))}
+        />
 
-      {/* <button
+        <p className="text-gray-600">
+          {currentPrice ? `${+currentPrice.toString() * tokenAmount} Total Price` : "0 Total Price"}
+        </p>
+
+        {/* <button
         className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         // Add onClick handler as needed
       >
         More Info
       </button> */}
 
-      {/* Buy Batch Button */}
-      <BuyBatchButton 
-        tokenAmount={tokenAmount} 
-        usdcPrice={currentPrice?.toString() || "0"} 
-      />
+        {/* Buy Batch Button */}
+        <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
+      </div>
     </div>
-  </div>
     //   {isModalOpen && (
     //     <div className="fixed z-10 inset-0 overflow-y-auto">
     //       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -122,42 +131,68 @@ export default function BatchCard({ batch }: { batch: Batch }) {
   );
 }
 
-function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice: string}) {
-  const totalPrice = tokenAmount * Number(usdcPrice)
+function BuyBatchButton({
+  batchId,
+  tokenAmount,
+  usdcPrice,
+}: {
+  batchId: number;
+  tokenAmount: number;
+  usdcPrice: string;
+}) {
+  const totalPrice = tokenAmount * Number(usdcPrice);
   const { address } = useAccount();
-  const { config } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
-    functionName: "buyBatch",
-    // enabled: false,
-    args: [BigInt(0), BigInt(totalPrice),BigInt(tokenAmount)],
-  });
-  const { write, data, isLoading, isSuccess, error } = useContractWrite(config);
 
-  const { data: allowance} = useContractRead({
+  const { data: allowance } = useContractRead({
     ...usdcContractConfig,
     functionName: "allowance",
-    args: [address || "0x0000", astaverdeContractConfig.address]
+    enabled: address !== undefined,
+    args: [address!, astaverdeContractConfig.address],
   });
 
+  console.log("🚀 ~ file: BatchCard.tsx:152 ~ allowance:", Number(formatUnits(allowance || BigInt(0), 6)), totalPrice);
+  console.log("buyBatch enabled", Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice);
+
+  const { config: configApprove } = usePrepareContractWrite({
+    ...usdcContractConfig,
+    functionName: "approve",
+    // enabled: false,
+    args: [astaverdeContractConfig.address, parseUnits(totalPrice.toString(), 6)],
+  });
+  const { write: approve } = useContractWrite(configApprove);
+
+  const { config: configBuyBatch } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "buyBatch",
+    enabled: Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice, // allow buyBatch when there is enough allowance
+    args: [BigInt(batchId), BigInt(totalPrice), BigInt(tokenAmount)],
+  });
+  const { write: buyBatch } = useContractWrite(configBuyBatch);
+
   // If there is not enough allowance to withdraw usdc from user address.
-  if(Number(formatUnits(allowance || BigInt(0), 6)) < totalPrice) {
-    <>
-    <button onClick={() => {
-      console.log()
-      }}>
-      Approve USDC
-      </button>
-    </>
+  if (Number(formatUnits(allowance || BigInt(0), 6)) < totalPrice) {
+    return (
+      <>
+        <button
+          className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          disabled={!approve}
+          onClick={() => {
+            approve?.();
+          }}
+        >
+          Approve USDC
+        </button>
+      </>
+    );
   }
 
   return (
     <>
       <button
-      className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-              // disabled={!write}
-
-      // disabled={isLoading}
-      onClick={() => write?.()}
+        className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+        disabled={!buyBatch}
+        // disabled={isLoading}
+        onClick={() => buyBatch?.()}
       >
         Buy
       </button>
