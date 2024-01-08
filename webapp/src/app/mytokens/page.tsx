@@ -132,7 +132,7 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
   const { config } = usePrepareContractWrite({
     ...astaverdeContractConfig,
     functionName: "redeemTokens",
-    enabled: ownerTokens() !== undefined,
+    enabled: redeemableTokens.length > 0,
     args: [
       redeemableTokens
         .slice(0, redeemAmount ? +redeemAmount : redeemableTokens.length)
