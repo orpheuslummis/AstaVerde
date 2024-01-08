@@ -69,12 +69,8 @@ export default function BatchCard({ batch }: { batch: Batch }) {
   // buyBatch
 
   return (
-    // <>
-    // <p>BatchCard</p>
-    // </>
-    // <div className="bg-white shadow rounded-lg p-6">
     <div className="flex justify-between items-center">
-      <div className="flex-1">
+      <div className="flex-1 border p-2">
         <img
           className="h-48 w-full object-cover rounded-lg"
           // src={batch.image_url} // Assuming batch has an image_url property
@@ -174,7 +170,7 @@ function BuyBatchButton({
     return (
       <>
         <button
-          className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
           disabled={!approve}
           onClick={() => {
             approve?.();
