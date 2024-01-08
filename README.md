@@ -63,3 +63,4 @@ Configuring and minting:
 3. Obtain CSV and image folder
 4. `npm run test:mint`
 
+test
