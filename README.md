@@ -61,5 +61,5 @@ Configuring and minting:
 1. `cp .env.example .env`
 2. Fill out the parameters in ``.env`` (PRIVATE_KEY, INFURA_API_KEY, etc)
 3. Obtain CSV and image folder
-4. `npm run test:mint`
+4. `npm run task:mint`
 
