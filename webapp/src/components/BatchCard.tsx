@@ -1,11 +1,10 @@
 "use client";
 
-import React from "react";
 import { useState } from "react";
-import { Batch } from "../lib/batch";
+import { formatUnits } from "viem";
 import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead, useContractWrite, usePrepareContractWrite } from "wagmi";
+import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
-import { formatUnits, parseUnits } from "viem";
 
 /*
 the image url is encoded in the metadata
@@ -19,9 +18,8 @@ ideally, when clicked we would open a modal that shows info on all the tokens it
 export default function BatchCard({ batch }: { batch: Batch }) {
   // const [isModalOpen, setIsModalOpen] = useState(false);
   const [tokenAmount, setTokenAmount] = useState(1);
-  
 
-  console.log("batch.token_ids", batch);
+  console.log("batch.token_ids", batch.token_ids);
 
   const { data, fetchNextPage, error } = useContractInfiniteReads({
     cacheKey: 'tokenMetadata',
@@ -51,7 +49,8 @@ export default function BatchCard({ batch }: { batch: Batch }) {
     args: [BigInt(batch.id)]
   });
 
-  console.log("data", data, batches);
+  console.log("batch", batch);
+  console.log("batches", batches);
   console.log("currentPrice", currentPrice);
 
   // we get metadata for each token,
@@ -76,7 +75,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
       />
 
       <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
-      <p className="text-gray-600">{batches ? `${batches[2]} items left` : "0 items left"}</p>
+      <p className="text-gray-600">{batches ? `${batches?.[3]} items left` : "0 items left"}</p>
       <p className="text-gray-600">{currentPrice ? `${currentPrice} Unit Price` : "0 Unit Price"}</p>
 
       <input 
@@ -85,12 +84,12 @@ export default function BatchCard({ batch }: { batch: Batch }) {
         onChange={(e) => setTokenAmount(Number(e.target.value))}
       />
 
-      <button
+      {/* <button
         className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         // Add onClick handler as needed
       >
         More Info
-      </button>
+      </button> */}
 
       {/* Buy Batch Button */}
       <BuyBatchButton 
@@ -124,22 +123,15 @@ export default function BatchCard({ batch }: { batch: Batch }) {
 }
 
 function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice: string}) {
+  const totalPrice = tokenAmount * Number(usdcPrice)
   const { address } = useAccount();
-  const { config: buyBatchConfig } = usePrepareContractWrite({
+  const { config } = usePrepareContractWrite({
     ...astaverdeContractConfig,
     functionName: "buyBatch",
     // enabled: false,
-    args: [BigInt(0), BigInt(198),BigInt(1)],
+    args: [BigInt(0), BigInt(totalPrice),BigInt(tokenAmount)],
   });
-  const { write: buyBatch} = useContractWrite(buyBatchConfig);
-
-  const { config: approveConfig } = usePrepareContractWrite({
-    ...usdcContractConfig,
-    functionName: "approve",
-    // enabled: false,
-    args: [astaverdeContractConfig.address, parseUnits(String(tokenAmount * Number(usdcPrice)), 6)],
-  });
-  const { write } = useContractWrite(approveConfig);
+  const { write, data, isLoading, isSuccess, error } = useContractWrite(config);
 
   const { data: allowance} = useContractRead({
     ...usdcContractConfig,
@@ -147,19 +139,13 @@ function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice
     args: [address || "0x0000", astaverdeContractConfig.address]
   });
 
-  console.log("allowance enough??", Number(formatUnits(allowance || BigInt(0), 6)), ", cost: ", tokenAmount * Number(usdcPrice))
-
   // If there is not enough allowance to withdraw usdc from user address.
-  if(Number(formatUnits(allowance || BigInt(0), 6)) < tokenAmount * Number(usdcPrice)) {
-    return <>
-          <button
-      className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-              // disabled={!write}
-
-      // disabled={isLoading}
-      onClick={() => write?.()}
-      >
-        Approve USDC
+  if(Number(formatUnits(allowance || BigInt(0), 6)) < totalPrice) {
+    <>
+    <button onClick={() => {
+      console.log()
+      }}>
+      Approve USDC
       </button>
     </>
   }
@@ -171,7 +157,7 @@ function BuyBatchButton({tokenAmount, usdcPrice}:{tokenAmount: number, usdcPrice
               // disabled={!write}
 
       // disabled={isLoading}
-      onClick={() => buyBatch?.()}
+      onClick={() => write?.()}
       >
         Buy
       </button>

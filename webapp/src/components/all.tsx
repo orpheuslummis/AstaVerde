@@ -17,7 +17,7 @@ export function Header({ title, links }: HeaderProps) {
     ...usdcContractConfig,
     functionName: "balanceOf",
     args: [address || "0x0000"]
-  });
+  })
   
   return (
     <header className="flex items-center justify-between bg-green-500 p-4 shadow-md">
@@ -35,7 +35,7 @@ export function Header({ title, links }: HeaderProps) {
           ))}
 
           {/* Show USDC Balance */}
-          <span className="text-white hover:text-blue-900 transition-colors duration-300">{formatUnits(balance || BigInt(0), 6)?.toString() || 0} USDC</span>
+          <p>{formatUnits(balance || BigInt(0), 6)?.toString() || 0} USDC</p>
           
           <li className="ml-2 text-sm py-2 px-3 rounded-full text-blue-500 hover:bg-blue-100 transition-colors duration-300">
             <ConnectKitButton />

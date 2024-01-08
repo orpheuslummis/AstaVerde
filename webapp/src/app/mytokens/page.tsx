@@ -3,47 +3,70 @@ mode: all, redeemed, not-redeemed
 start: the latest batch
 perPage: 10
 */
-
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useContractWrite, usePrepareContractWrite, useContractRead, useAccount } from "wagmi";
+import { useContractWrite, usePrepareContractWrite, useContractRead, useAccount, useContractInfiniteReads, paginatedIndexesConfig } from "wagmi";
 import { astaverdeContractConfig, usdcContractConfig } from "../../lib/contracts";
+import { Batch } from "../../lib/batch";
 
 export default function Page() {
 
-  const { config: pauseConfig } = usePrepareContractWrite({
+  const { data: lastBatchID, isError, isLoading, error: lastBatchIDError } = useContractRead({
     ...astaverdeContractConfig,
-    functionName: "redeemTokens",
-    args: [[BigInt(1)]]
-    // enabled: false,
-  });
-  const {
-    write: redeemTokens
-  } = useContractWrite(pauseConfig);
+    functionName: 'lastBatchID',
+});
 
-  // const { data: lastTokenID} = useContractRead({
-  //   ...astaverdeContractConfig,
-  //   functionName: "lastTokenID",
-  // });
+if (lastBatchIDError || lastBatchID === undefined) {
+    console.log("lastBatchIDError", lastBatchIDError);
+}
+const lastBatchIDn: number = lastBatchID ? Number(lastBatchID) : 0;
 
-   
-  const { data: lastBatchID} = useContractRead({
-    ...astaverdeContractConfig,
-    functionName: "lastBatchID",
-  });
+console.log("lastBatchIDn, isError, isLoading", lastBatchID, isError, isLoading);
 
-  console.log("lastBatchID: ", lastBatchID)
+const { data, fetchNextPage, error } = useContractInfiniteReads({
+    cacheKey: 'batchMetadata',
+    ...paginatedIndexesConfig(
+        (batchID: bigint) => {
+            console.log("fetching batchID", batchID);
+            return [
+                {
+                    ...astaverdeContractConfig,
+                    functionName: 'getBatchInfo',
+                    args: [batchID] as const,
+                },
+            ]
+        },
+        { start: lastBatchIDn, perPage: 10, direction: 'decrement' },
+    ),
+});
+console.log("data", data);
+
+if (error) {
+    console.log("error", error);
+    return <div>Could not display, sorry.</div>;
+}
+
+const batches: Batch[] = data?.pages?.flatMap((page: any[]) =>
+    page?.map((batch: any) => {
+        console.log("batch", batch);
+        const tokenIDs: number[] = batch.result?.[0] || [];
+        const timestamp: number = batch.result?.[1] || 0;
+        const price: number = batch.result?.[2] || 0;
+        const batchProper = new Batch(0, tokenIDs, timestamp, price); // Assuming batch.id is not available, replace 0 with the correct value
+        console.log("batchProper", batchProper);
+        return batchProper;
+    })
+) || [];
 
   return (
     <>
       <h1>My Tokens</h1>
 
       {/* loop through the batch ids */}
-      {[...Array(lastBatchID).keys()].map(batchIndex => (
+      {batches.map(batch => (
         <>
-      <BatchCard lastBatchID={BigInt(batchIndex)} />
-
+          <BatchRedeemCard batch={batch} />
         </>
       ))}
 
@@ -60,37 +83,30 @@ export default function Page() {
   );
 }
 
-function BatchCard({lastBatchID}:{lastBatchID: bigint}) {
+function BatchRedeemCard({batch}:{batch: Batch}) {
   const { address } = useAccount();
   const [sameAddresses, setSameAddresses] = useState<`0x${string}`[]>();
-  // get all tokens owned by user
-  const { data: batch} = useContractRead({
-    ...astaverdeContractConfig,
-    functionName: "batches",
-    args: [lastBatchID]
-  });
 
-  console.log(batch)
+  console.log("batch in mytokens: ", batch.token_ids)
 
   useEffect(() => {
-    if(lastBatchID && address && batch) {
+    if(address && batch) {
       let _sameAddresses: `0x${string}`[] = [];
-      let tokenIDInArray = [];
       // Use a for loop to fill the array
-      for (let i = 0; i < Number(batch[0]); i++) {// should be Number(batch[0]).tokenIds
+      for (let i = 0; i < batch.token_ids.length; i++) {
         _sameAddresses.push(address);
-        tokenIDInArray.push(i+1) // starting from 1
       }
 
       setSameAddresses(_sameAddresses)
     }
-  }, [lastBatchID]);
+  }, [batch.token_ids.length]);
 
-  const { data: balanceOf} = useContractRead({
+  const { data: ownedIndex} = useContractRead({
     ...astaverdeContractConfig,
     functionName: "balanceOfBatch",
-    args: [sameAddresses ? sameAddresses : ["0x0000"], batch?.[0] as unknown as bigint[]]
+    args: [sameAddresses ? sameAddresses : ["0x0000"], batch.token_ids as unknown as bigint[]]
   });
+  console.log("🚀 ~ file: page.tsx:110 ~ BatchRedeemCard ~ ownedIndex:", ownedIndex)
 
   return (
     <>
@@ -101,7 +117,7 @@ function BatchCard({lastBatchID}:{lastBatchID: bigint}) {
       // disabled={isLoading}
       // onClick={() => buyBatch?.()}
       >
-        Buy
+        Redeem
       </button>
     </>
   );
