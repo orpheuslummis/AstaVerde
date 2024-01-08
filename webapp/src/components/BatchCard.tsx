@@ -150,7 +150,7 @@ function BuyBatchButton({
     args: [address!, astaverdeContractConfig.address],
   });
 
-  console.log("allowance", Number(formatUnits(allowance || BigInt(0), 6)), totalPrice);
+  console.log("🚀 ~ file: BatchCard.tsx:152 ~ allowance:", Number(formatUnits(allowance || BigInt(0), 6)), totalPrice);
   console.log("buyBatch enabled", Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice);
 
   const { config: configApprove } = usePrepareContractWrite({
