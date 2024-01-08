@@ -6,7 +6,7 @@ perPage: 10
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead } from "wagmi";
+import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead, useContractWrite, usePrepareContractWrite } from "wagmi";
 import { Batch } from "../../lib/batch";
 import { astaverdeContractConfig } from "../../lib/contracts";
 
@@ -107,14 +107,21 @@ function BatchRedeemCard({batch}:{batch: Batch}) {
     enabled: sameAddresses !== undefined,
     args: [sameAddresses!, batch.token_ids as unknown as bigint[]]
   });
-  console.log("🚀 ~ file: page.tsx:110 ~ BatchRedeemCard ~ ownedIndex:", ownedIndex)
 
   const filteredArray = useCallback(() => {
     if(ownedIndex) {
       return batch.token_ids.filter((_, index) => +ownedIndex[index].toString() === 1);
     }
   }, [batch.token_ids, ownedIndex]);
-  console.log("🚀 ~ file: page.tsx:117 ~ filteredArray ~ filteredArray:", filteredArray())
+
+  const { config } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "redeemTokens",
+    enabled: filteredArray() !== undefined,
+    args: [filteredArray()?.forEach(item => BigInt(item)) || []],
+  });
+  const { write: redeemTokens } = useContractWrite(config);
+
 
   if(filteredArray() && filteredArray()!.length === 0) {
     return     <div className="bg-white rounded-lg shadow-md p-4">
@@ -126,15 +133,13 @@ function BatchRedeemCard({batch}:{batch: Batch}) {
   return (
     <>
     <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-lg font-semibold">{"title"}</h2>
-      <p className="mt-2">{"content"}</p>
+      <h2 className="text-lg font-semibold">Batch: {batch.id}</h2>
+      <p className="mt-2">Token IDs: {filteredArray()}</p>
 
       <button
       className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-      // disabled={!write}
-      
-      // disabled={isLoading}
-      // onClick={() => buyBatch?.()}
+      disabled={!redeemTokens}
+      onClick={() => redeemTokens?.()}
       >
         Redeem
       </button>
