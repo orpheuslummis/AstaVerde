@@ -3,7 +3,7 @@
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
 import { useState } from "react";
-import { formatUnits } from "viem";
+import { formatUnits, parseUnits } from "viem";
 import {
   paginatedIndexesConfig,
   useAccount,
@@ -92,6 +92,10 @@ export default function BatchCard({ batch }: { batch: Batch }) {
           onChange={(e) => setTokenAmount(Number(e.target.value))}
         />
 
+        <p className="text-gray-600">
+          {currentPrice ? `${+currentPrice.toString() * tokenAmount} Total Price` : "0 Total Price"}
+        </p>
+
         {/* <button
         className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         // Add onClick handler as needed
@@ -100,7 +104,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
       </button> */}
 
         {/* Buy Batch Button */}
-        <BuyBatchButton tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
+        <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
       </div>
     </div>
     //   {isModalOpen && (
@@ -127,33 +131,43 @@ export default function BatchCard({ batch }: { batch: Batch }) {
   );
 }
 
-function BuyBatchButton({ tokenAmount, usdcPrice }: { tokenAmount: number; usdcPrice: string }) {
+function BuyBatchButton({
+  batchId,
+  tokenAmount,
+  usdcPrice,
+}: {
+  batchId: number;
+  tokenAmount: number;
+  usdcPrice: string;
+}) {
   const totalPrice = tokenAmount * Number(usdcPrice);
   const { address } = useAccount();
 
-  const { config: configBuyBatch } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
-    functionName: "buyBatch",
-    // enabled: false,
-    args: [BigInt(0), BigInt(totalPrice), BigInt(tokenAmount)],
+  const { data: allowance } = useContractRead({
+    ...usdcContractConfig,
+    functionName: "allowance",
+    enabled: address !== undefined,
+    args: [address!, astaverdeContractConfig.address],
   });
-  const { write: buyBatch } = useContractWrite(configBuyBatch);
+
+  console.log("allowance", Number(formatUnits(allowance || BigInt(0), 6)), totalPrice);
+  console.log("buyBatch enabled", Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice);
 
   const { config: configApprove } = usePrepareContractWrite({
     ...usdcContractConfig,
     functionName: "approve",
     // enabled: false,
-    args: [astaverdeContractConfig.address, BigInt(totalPrice)],
+    args: [astaverdeContractConfig.address, parseUnits(totalPrice.toString(), 6)],
   });
   const { write: approve } = useContractWrite(configApprove);
 
-  const { data: allowance } = useContractRead({
-    ...usdcContractConfig,
-    functionName: "allowance",
-    args: [address || "0x0000", astaverdeContractConfig.address],
+  const { config: configBuyBatch } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "buyBatch",
+    enabled: Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice, // allow buyBatch when there is enough allowance
+    args: [BigInt(batchId), BigInt(totalPrice), BigInt(tokenAmount)],
   });
-
-  console.log("allowance", Number(formatUnits(allowance || BigInt(0), 6)), totalPrice);
+  const { write: buyBatch } = useContractWrite(configBuyBatch);
 
   // If there is not enough allowance to withdraw usdc from user address.
   if (Number(formatUnits(allowance || BigInt(0), 6)) < totalPrice) {
