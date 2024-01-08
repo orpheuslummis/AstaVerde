@@ -78,7 +78,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
         />
 
         <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
-        <p className="text-gray-600">{batches ? `${batches?.[3]} items left` : "0 items left"}</p>
+        <p className="text-gray-600">{batch ? `${batch.itemsLeft} items left` : "0 items left"}</p>
         <p className="text-gray-600">{currentPrice ? `${currentPrice} Unit Price` : "0 Unit Price"}</p>
 
         <input
@@ -139,7 +139,7 @@ function BuyBatchButton({
   const totalPrice = tokenAmount * Number(usdcPrice);
   const { address } = useAccount();
 
-  const { data: allowance } = useContractRead({
+  const { data: allowance, refetch: refetchAllowance } = useContractRead({
     ...usdcContractConfig,
     functionName: "allowance",
     enabled: address !== undefined,
@@ -161,7 +161,7 @@ function BuyBatchButton({
     ...astaverdeContractConfig,
     functionName: "buyBatch",
     enabled: Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice, // allow buyBatch when there is enough allowance
-    args: [BigInt(batchId), BigInt(totalPrice), BigInt(tokenAmount)],
+    args: [BigInt(batchId), parseUnits(totalPrice.toString(), 6), BigInt(tokenAmount)],
   });
   const { write: buyBatch } = useContractWrite(configBuyBatch);
 
@@ -185,7 +185,7 @@ function BuyBatchButton({
   return (
     <>
       <button
-        className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+        className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
         disabled={!buyBatch}
         // disabled={isLoading}
         onClick={() => buyBatch?.()}

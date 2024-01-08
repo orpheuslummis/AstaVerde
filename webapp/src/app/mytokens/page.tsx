@@ -66,7 +66,8 @@ export default function Page() {
           const tokenIDs: number[] = batch.result?.[0] || [];
           const timestamp: number = batch.result?.[1] || 0;
           const price: number = batch.result?.[2] || 0;
-          const batchProper = new Batch(0, tokenIDs, timestamp, price); // Assuming batch.id is not available, replace 0 with the correct value
+          const itemsLeft: number = batch.result?.[3] || 0;
+          const batchProper = new Batch(0, tokenIDs, timestamp, price, itemsLeft); // Assuming batch.id is not available, replace 0 with the correct value
           console.log("batchProper", batchProper);
           return batchProper;
         }),
@@ -85,16 +86,6 @@ export default function Page() {
             </>
           ))}
         </div>
-
-        {/* <button
-      className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-      // disabled={!write}
-
-      // disabled={isLoading}
-      onClick={() => redeemTokens?.()}
-      >
-        Redeem
-      </button> */}
       </div>
     </>
   );
@@ -145,10 +136,11 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
 
   if (ownerTokens() && ownerTokens()!.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <p>Batch {batch.id}</p>
-        <p>No Tokens</p>
-      </div>
+      <></>
+      // <div className="bg-white rounded-lg shadow-md p-4">
+      //   <p>Batch {batch.id}</p>
+      //   <p>No Tokens</p>
+      // </div>
     );
   }
 

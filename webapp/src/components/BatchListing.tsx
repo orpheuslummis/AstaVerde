@@ -1,9 +1,9 @@
 "use client";
 
 import { Batch } from "../lib/batch";
-import { astaverdeContractConfig } from "../lib/contracts";
+import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
 import BatchCard from "./BatchCard";
-import { paginatedIndexesConfig, useContractInfiniteReads, useContractRead } from "wagmi";
+import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead } from "wagmi";
 
 export function BatchListing() {
   const {
@@ -41,6 +41,15 @@ export function BatchListing() {
   });
   console.log("data", data);
 
+  const { address } = useAccount();
+
+  const { data: allowance, refetch: refetchAllowance } = useContractRead({
+    ...usdcContractConfig,
+    functionName: "allowance",
+    enabled: address !== undefined,
+    args: [address!, astaverdeContractConfig.address],
+  });
+
   if (error) {
     console.log("error", error);
     return <div>Could not display, sorry.</div>;
@@ -54,14 +63,20 @@ export function BatchListing() {
           const tokenIDs: number[] = batch.result?.[0] || [];
           const timestamp: number = batch.result?.[1] || 0;
           const price: number = batch.result?.[2] || 0;
-          const batchProper = new Batch(0, tokenIDs, timestamp, price); // Assuming batch.id is not available, replace 0 with the correct value
+          const itemsLeft: number = batch.result?.[3] || 0;
+          const batchProper = new Batch(0, tokenIDs, timestamp, price, itemsLeft); // Assuming batch.id is not available, replace 0 with the correct value
           console.log("batchProper", batchProper);
           return batchProper;
         }),
     ) || [];
 
+  console.log("🚀 ~ file: BatchListing.tsx:59 ~ BatchListing ~ batches:", batches);
+
   return (
     <>
+      <div className="w-full flex justify-end p-2">
+        <button onClick={() => refetchAllowance()}>Refresh</button>
+      </div>
       <div className="flex flex-wrap mt-4 gap-2">
         {batches.map((batch) => (
           <div key={batch.id} className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 px-2 mb-4">
