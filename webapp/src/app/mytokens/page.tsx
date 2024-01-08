@@ -7,7 +7,7 @@ perPage: 10
 */
 import { Batch } from "../../lib/batch";
 import { astaverdeContractConfig } from "../../lib/contracts";
-import { Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
+import { ChangeEvent, Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import {
   paginatedIndexesConfig,
   useAccount,
@@ -74,16 +74,19 @@ export default function Page() {
 
   return (
     <>
-      <h1>My Tokens</h1>
+      <div>
+        <h1 className="font-bold ">My Tokens</h1>
 
-      {/* loop through the batch ids */}
-      {batches.map((batch) => (
-        <>
-          <BatchRedeemCard batch={batch} />
-        </>
-      ))}
+        {/* loop through the batch ids */}
+        <div className="flex flex-col gap-2">
+          {batches.map((batch) => (
+            <>
+              <BatchRedeemCard batch={batch} />
+            </>
+          ))}
+        </div>
 
-      {/* <button
+        {/* <button
       className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
       // disabled={!write}
 
@@ -92,6 +95,7 @@ export default function Page() {
       >
         Redeem
       </button> */}
+      </div>
     </>
   );
 }
@@ -99,7 +103,7 @@ export default function Page() {
 function BatchRedeemCard({ batch }: { batch: Batch }) {
   const { address } = useAccount();
   const [sameAddresses, setSameAddresses] = useState<`0x${string}`[]>();
-  const [redeemableTokens, setRedeemableTokens] = useState<number[]>([]);
+  const [redeemableTokens, setRedeemableTokens] = useState<bigint[]>([]);
   const [redeemAmount, setRedeemAmount] = useState<string>();
 
   console.log("batch in mytokens: ", batch.token_ids);
@@ -133,13 +137,11 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
     ...astaverdeContractConfig,
     functionName: "redeemTokens",
     enabled: redeemableTokens.length > 0,
-    args: [
-      redeemableTokens
-        .slice(0, redeemAmount ? +redeemAmount : redeemableTokens.length)
-        .map((tokenId) => BigInt(tokenId)),
-    ],
+    args: [redeemableTokens],
   });
   const { write: redeemTokens } = useContractWrite(config);
+
+  console.log("redeem", redeemableTokens);
 
   if (ownerTokens() && ownerTokens()!.length === 0) {
     return (
@@ -160,21 +162,28 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
             <RedeemableTokenNumber redeemableToken={redeemableToken} setRedeemableTokens={setRedeemableTokens} />
           </>
         ))}
-        redeemable amount: {redeemTokens && redeemTokens.length}
-        <input
-          className="border rounded"
-          type="text"
-          defaultValue={1}
-          value={redeemAmount}
-          onChange={(e) => setRedeemAmount(e.target.value)}
-        />
-        <button
-          className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          disabled={!redeemTokens}
-          onClick={() => redeemTokens?.()}
-        >
-          Redeem
-        </button>
+
+        {/* <div className="pt-2">Redeem amount: {redeemTokens && redeemTokens.length}</div> */}
+
+        <div className="w-full flex justify-between">
+          {/* <input
+            className="border rounded p-2"
+            type="text"
+            defaultValue={1}
+            value={redeemAmount}
+            onChange={(e) => setRedeemAmount(e.target.value)}
+          /> */}
+          <button
+            className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            disabled={!redeemTokens}
+            onClick={() => {
+              console.log(redeemableTokens);
+              redeemTokens?.();
+            }}
+          >
+            Redeem
+          </button>
+        </div>
       </div>
     </>
   );
@@ -185,7 +194,7 @@ function RedeemableTokenNumber({
   setRedeemableTokens,
 }: {
   redeemableToken: number;
-  setRedeemableTokens: Dispatch<SetStateAction<number[]>>;
+  setRedeemableTokens: Dispatch<SetStateAction<bigint[]>>;
 }) {
   const { data: tokenInfo } = useContractRead({
     ...astaverdeContractConfig,
@@ -194,18 +203,37 @@ function RedeemableTokenNumber({
   });
   console.log("🚀 ~ file: page.tsx:160 ~ RedeemableTokens ~ tokenInfo:", tokenInfo);
 
-  useEffect(() => {
-    if (tokenInfo && tokenInfo[3] === true) {
-      setRedeemableTokens((redeemableTokens) => [...redeemableTokens, +tokenInfo[0].toString()]);
-    }
-  }, [tokenInfo]);
+  // useEffect(() => {
+  //   if (tokenInfo && tokenInfo[3] === true) {
+  //     setRedeemableTokens((redeemableTokens) => [...redeemableTokens, BigInt(tokenInfo[0].toString())]);
+  //   }
+  // }, [tokenInfo]);
 
   // If token redeemed. Do not show
   // if(tokenInfo.)
 
+  const handleCheckboxChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const isChecked = event.target.checked;
+
+    if (isChecked) {
+      // If the checkbox is checked, add the number to the array
+      setRedeemableTokens((redeemableTokens) => [...redeemableTokens, BigInt(redeemableToken)]);
+    } else {
+      // If the checkbox is unchecked, remove the number from the array
+      setRedeemableTokens((redeemableTokens) => redeemableTokens.filter((n) => n !== BigInt(redeemableToken)));
+    }
+  };
+
   return (
     <>
-      <div>{tokenInfo && tokenInfo[0].toString()},</div>
+      <div>
+        Token {tokenInfo && tokenInfo[0].toString()}: {tokenInfo?.[3] === false ? "Not redeemed" : "Redeemed"}
+        {tokenInfo?.[3] === false ? (
+          <input className="ml-2" type="checkbox" value="1" onChange={(e) => handleCheckboxChange(e)} />
+        ) : (
+          <></>
+        )}
+      </div>
     </>
   );
 }
