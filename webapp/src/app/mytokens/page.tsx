@@ -5,7 +5,7 @@ perPage: 10
 */
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { useContractWrite, usePrepareContractWrite, useContractRead, useAccount, useContractInfiniteReads, paginatedIndexesConfig } from "wagmi";
 import { astaverdeContractConfig, usdcContractConfig } from "../../lib/contracts";
 import { Batch } from "../../lib/batch";
@@ -104,21 +104,41 @@ function BatchRedeemCard({batch}:{batch: Batch}) {
   const { data: ownedIndex} = useContractRead({
     ...astaverdeContractConfig,
     functionName: "balanceOfBatch",
-    args: [sameAddresses ? sameAddresses : ["0x0000"], batch.token_ids as unknown as bigint[]]
+    enabled: sameAddresses !== undefined,
+    args: [sameAddresses!, batch.token_ids as unknown as bigint[]]
   });
   console.log("🚀 ~ file: page.tsx:110 ~ BatchRedeemCard ~ ownedIndex:", ownedIndex)
 
+  const filteredArray = useCallback(() => {
+    if(ownedIndex) {
+      return batch.token_ids.filter((_, index) => +ownedIndex[index].toString() === 1);
+    }
+  }, [batch.token_ids, ownedIndex]);
+  console.log("🚀 ~ file: page.tsx:117 ~ filteredArray ~ filteredArray:", filteredArray())
+
+  if(filteredArray() && filteredArray()!.length === 0) {
+    return     <div className="bg-white rounded-lg shadow-md p-4">
+    <p>Batch {batch.id}</p>
+    <p>No Tokens</p>
+      </div>
+  }
+
   return (
     <>
+    <div className="bg-white rounded-lg shadow-md p-4">
+      <h2 className="text-lg font-semibold">{"title"}</h2>
+      <p className="mt-2">{"content"}</p>
+
       <button
       className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
       // disabled={!write}
-
+      
       // disabled={isLoading}
       // onClick={() => buyBatch?.()}
       >
         Redeem
       </button>
+        </div>
     </>
   );
 }
