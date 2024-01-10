@@ -85,20 +85,24 @@ export default function BatchCard({ batch }: { batch: Batch }) {
           </div>
 
           <div className="col-span-full mt-4">
+            <label htmlFor="quantity" className="block text-gray-600">
+              Select quantity
+            </label>
             <input
+              id="quantity"
               className="border rounded px-2 py-1 w-full"
               type="number"
               value={tokenAmount}
               onChange={(e) => setTokenAmount(Number(e.target.value))}
             />
-            <p className="text-gray-600 mt-1">
-              {currentPrice ? `${+currentPrice.toString() * tokenAmount} Total Price` : "0 Total Price"}
-            </p>
           </div>
         </div>
 
         {/* Buy Batch Button */}
         <div className="mt-4 p-4">
+          <p className="text-gray-600 mt-1">
+            {currentPrice ? `${+currentPrice.toString() * tokenAmount} Total Price` : "0 Total Price"}
+          </p>
           <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
         </div>
       </div>
