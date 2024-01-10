@@ -74,7 +74,7 @@ export function BatchListing() {
 
   return (
     <>
-      <div className="w-full flex justify-end p-2">
+      <div className="w-full flex justify-end p-2 pt-4">
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-700 disabled:opacity-50"
           disabled={!fetchNextPage || isLoading || isError}

@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactElement 
         <OnboardingModal />
         <Providers>
           <Header title={"Asta Verde"} links={navigationLinks} />
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <main>{cloneElement(children)}</main>
           </div>
           {/* <main>{cloneElement(children, { helia })}</main> */}
