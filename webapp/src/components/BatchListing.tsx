@@ -23,7 +23,7 @@ export function BatchListing() {
 
   console.log("lastBatchIDn, isError, isLoading", lastBatchID, isError, isLoading);
 
-  const { data, fetchNextPage, error } = useContractInfiniteReads({
+  const { data, fetchNextPage, error, hasNextPage } = useContractInfiniteReads({
     cacheKey: "batchMetadata",
     ...paginatedIndexesConfig(
       (batchID: bigint) => {
@@ -91,15 +91,17 @@ export function BatchListing() {
           </div>
         ))}
       </div>
-      <div className="flex justify-center">
-        <button
-          className="px-4 py-2 mt-4 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          disabled={!fetchNextPage || isLoading || isError}
-          onClick={(event) => fetchNextPage()}
-        >
-          Load More
-        </button>
-      </div>
+      {hasNextPage && (
+        <div className="flex justify-center">
+          <button
+            className="px-4 py-2 mt-4 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            disabled={!fetchNextPage || isLoading || isError}
+            onClick={(event) => fetchNextPage()}
+          >
+            Load More
+          </button>
+        </div>
+      )}
     </>
   );
 }
