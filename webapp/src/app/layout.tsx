@@ -2,8 +2,8 @@ import { navigationLinks } from "../app.config";
 import { OnboardingModal } from "../components/OnboardingModal";
 import { Header } from "../components/all";
 import { Providers } from "./providers";
-import { cloneElement } from "react";
 import "./styles/globals.css";
+import { cloneElement } from "react";
 
 export default function RootLayout({ children }: { children: React.ReactElement }) {
   // const [helia, setHelia] = useState<Helia | null>(null);
@@ -23,11 +23,13 @@ export default function RootLayout({ children }: { children: React.ReactElement 
 
   return (
     <html lang="en">
-      <body className="max-w-3xl mx-auto">
+      <body className="">
         <OnboardingModal />
         <Providers>
           <Header title={"Asta Verde"} links={navigationLinks} />
-          <main>{cloneElement(children)}</main>
+          <div className="max-w-3xl mx-auto">
+            <main>{cloneElement(children)}</main>
+          </div>
           {/* <main>{cloneElement(children, { helia })}</main> */}
         </Providers>
       </body>
