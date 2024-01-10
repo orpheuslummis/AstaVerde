@@ -75,11 +75,18 @@ export function BatchListing() {
   return (
     <>
       <div className="w-full flex justify-end p-2">
-        <button onClick={() => refetchAllowance()}>Refresh</button>
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-700 disabled:opacity-50"
+          disabled={!fetchNextPage || isLoading || isError}
+          onClick={() => refetchAllowance()}
+        >
+          Refresh
+        </button>
       </div>
-      <div className="flex flex-wrap mt-4 gap-2">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-4">
         {batches.map((batch) => (
-          <div key={batch.id} className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 px-2 mb-4">
+          <div key={batch.id} className="w-full px-2 mb-4">
             <BatchCard batch={batch} />
           </div>
         ))}
@@ -88,7 +95,7 @@ export function BatchListing() {
         <button
           className="px-4 py-2 mt-4 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
           disabled={!fetchNextPage || isLoading || isError}
-          onClick={(event: React.MouseEvent<HTMLButtonElement>) => fetchNextPage()}
+          onClick={(event) => fetchNextPage()}
         >
           Load More
         </button>

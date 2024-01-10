@@ -33,7 +33,7 @@ export function Header({ title, links }: HeaderProps) {
           ☰
         </button>
         <Link href="/">
-          <h1 className="text-white font-bold text-2xl hover:text-blue-900 transition-colors duration-300">{title}</h1>
+          <h1 className="text-white font-bold text-2xl">{title}</h1>
         </Link>
       </div>
 
@@ -43,15 +43,19 @@ export function Header({ title, links }: HeaderProps) {
           {links.map((link, index) => (
             <li key={index} className="lg:mr-4">
               <Link href={link.url}>
-                <span className="text-white hover:text-blue-900 transition-colors duration-300">{link.name}</span>
+                <div className="group hover:bg-white/20 rounded-lg px-4 py-2 transition duration-300 ease-in-out">
+                  <span className="text-white/90 hover:text-white transition-colors duration-300">{link.name}</span>
+                </div>
               </Link>
             </li>
           ))}
 
           {/* Show USDC Balance */}
-          <li className="hidden lg:block">{formatUnits(balance || BigInt(0), 6)?.toString() || 0} USDC</li>
+          <li className="hidden lg:block border border-gray-300 rounded-full bg-blue-100 p-2">
+            {formatUnits(balance || BigInt(0), 6)?.toString() || 0} USDC
+          </li>
 
-          <li className="ml-2 text-sm py-2 px-3 rounded-full text-blue-500 hover:bg-blue-100 transition-colors duration-300">
+          <li className="">
             <ConnectKitButton />
           </li>
         </ul>
