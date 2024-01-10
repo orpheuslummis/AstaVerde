@@ -101,7 +101,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
 
         {/* Buy Batch Button */}
         <div className="mt-4 p-4">
-          <p className="text-black mt-1">
+          <p className="text-black mt-1 font-bold">
             {currentPrice ? `Total: ${+currentPrice.toString() * tokenAmount} USDC` : "Total: 0 USDC"}
           </p>
           <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
