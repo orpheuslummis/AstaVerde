@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { formatUnits } from "viem";
-import { useAccount, useContractRead } from "wagmi";
 import { ConnectKitButton } from "../components/ConnectKitButton";
 import { usdcContractConfig } from "../lib/contracts";
+import Link from "next/link";
+import { useState } from "react";
+import { formatUnits } from "viem";
+import { useAccount, useContractRead } from "wagmi";
 
 interface HeaderProps {
   title: string;
@@ -13,31 +14,48 @@ interface HeaderProps {
 
 export function Header({ title, links }: HeaderProps) {
   const { address } = useAccount();
-  const { data: balance} = useContractRead({
+  const { data: balance } = useContractRead({
     ...usdcContractConfig,
     functionName: "balanceOf",
-    args: [address || "0x0000"]
-  })
-  
+    args: [address || "0x0000"],
+  });
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
-    <header className="flex items-center justify-between bg-green-500 p-4 shadow-md">
-      <Link href={"/"}>
-        <h1 className="text-white font-bold text-2xl hover:text-blue-400 transition-colors duration-300">{title}</h1>
-      </Link>
-      <nav>
-        <ul className="flex items-center">
+    <header className="w-full flex flex-wrap items-center justify-between bg-green-500 p-4 shadow-md">
+      <div className="flex items-center">
+        <button className="lg:hidden text-white" onClick={toggleMenu} aria-label="Toggle Menu">
+          ☰
+        </button>
+        <Link href="/">
+          <h1 className="text-white font-bold text-2xl">{title}</h1>
+        </Link>
+      </div>
+
+      {/* Responsive Navigation */}
+      <nav className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center`}>
+        <ul className="flex items-center lg:flex-row flex-col lg:space-x-4 lg:space-y-0 space-y-2">
           {links.map((link, index) => (
-            <li key={index} className="mr-4">
+            <li key={index} className="lg:mr-4">
               <Link href={link.url}>
-                <span className="text-white hover:text-blue-900 transition-colors duration-300">{link.name}</span>
+                <div className="group hover:bg-white/20 rounded-lg px-4 py-2 transition duration-300 ease-in-out">
+                  <span className="text-white/90 hover:text-white transition-colors duration-300">{link.name}</span>
+                </div>
               </Link>
             </li>
           ))}
 
           {/* Show USDC Balance */}
-          <p>{formatUnits(balance || BigInt(0), 6)?.toString() || 0} USDC</p>
-          
-          <li className="ml-2 text-sm py-2 px-3 rounded-full text-blue-500 hover:bg-blue-100 transition-colors duration-300">
+          <li className="hidden lg:block border border-gray-300 rounded-full bg-blue-100 p-2">
+            {formatUnits(balance || BigInt(0), 6)?.toString() || 0} USDC
+          </li>
+
+          <li className="">
             <ConnectKitButton />
           </li>
         </ul>

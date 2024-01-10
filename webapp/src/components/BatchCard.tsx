@@ -69,65 +69,44 @@ export default function BatchCard({ batch }: { batch: Batch }) {
   // buyBatch
 
   return (
-    // <>
-    // <p>BatchCard</p>
-    // </>
-    // <div className="bg-white shadow rounded-lg p-6">
     <div className="flex justify-between items-center">
-      <div className="flex-1">
-        <img
-          className="h-48 w-full object-cover rounded-lg"
-          // src={batch.image_url} // Assuming batch has an image_url property
-          alt="batch item"
-        />
+      <div className="flex-1 border rounded-lg overflow-hidden shadow-lg">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+          <img
+            className="h-48 w-full object-cover rounded-lg col-span-full"
+            // src={batch.image_url} // Assuming batch has an image_url property
+            alt="batch item"
+          />
 
-        <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
-        <p className="text-gray-600">{batches ? `${batches?.[3]} items left` : "0 items left"}</p>
-        <p className="text-gray-600">{currentPrice ? `${currentPrice} Unit Price` : "0 Unit Price"}</p>
+          <div className="col-span-full mt-4">
+            <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
+            <p className="text-gray-600">{batch ? `${batch.itemsLeft} items left` : "0 items left"}</p>
+            <p className="text-gray-600">{currentPrice ? `${currentPrice} Unit Price` : "0 Unit Price"}</p>
+          </div>
 
-        <input
-          className="border rounded"
-          type="number"
-          value={tokenAmount}
-          onChange={(e) => setTokenAmount(Number(e.target.value))}
-        />
-
-        <p className="text-gray-600">
-          {currentPrice ? `${+currentPrice.toString() * tokenAmount} Total Price` : "0 Total Price"}
-        </p>
-
-        {/* <button
-        className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        // Add onClick handler as needed
-      >
-        More Info
-      </button> */}
+          <div className="col-span-full mt-4">
+            <label htmlFor="quantity" className="block text-gray-600">
+              Select quantity
+            </label>
+            <input
+              id="quantity"
+              className="border rounded px-2 py-1 w-full"
+              type="number"
+              value={tokenAmount}
+              onChange={(e) => setTokenAmount(Number(e.target.value))}
+            />
+          </div>
+        </div>
 
         {/* Buy Batch Button */}
-        <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
+        <div className="mt-4 p-4">
+          <p className="text-gray-600 mt-1">
+            {currentPrice ? `${+currentPrice.toString() * tokenAmount} Total Price` : "0 Total Price"}
+          </p>
+          <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
+        </div>
       </div>
     </div>
-    //   {isModalOpen && (
-    //     <div className="fixed z-10 inset-0 overflow-y-auto">
-    //       <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-    //         <div className="fixed inset-0 transition-opacity">
-    //           <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-    //         </div>
-    //         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-    //           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-    //             <h2 className="text-lg leading-6 font-medium text-gray-900">{batch.name}</h2>
-    //             <button
-    //               className="mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-    //               onClick={() => setIsModalOpen(false)}
-    //             >
-    //               Close
-    //             </button>
-    //           </div>
-    //         </div>
-    //       </div>
-    //     </div>
-    //   )}
-    // </div>
   );
 }
 
@@ -143,7 +122,7 @@ function BuyBatchButton({
   const totalPrice = tokenAmount * Number(usdcPrice);
   const { address } = useAccount();
 
-  const { data: allowance } = useContractRead({
+  const { data: allowance, refetch: refetchAllowance } = useContractRead({
     ...usdcContractConfig,
     functionName: "allowance",
     enabled: address !== undefined,
@@ -165,7 +144,7 @@ function BuyBatchButton({
     ...astaverdeContractConfig,
     functionName: "buyBatch",
     enabled: Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice, // allow buyBatch when there is enough allowance
-    args: [BigInt(batchId), BigInt(totalPrice), BigInt(tokenAmount)],
+    args: [BigInt(batchId), parseUnits(totalPrice.toString(), 6), BigInt(tokenAmount)],
   });
   const { write: buyBatch } = useContractWrite(configBuyBatch);
 
@@ -174,7 +153,7 @@ function BuyBatchButton({
     return (
       <>
         <button
-          className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
           disabled={!approve}
           onClick={() => {
             approve?.();
@@ -189,7 +168,7 @@ function BuyBatchButton({
   return (
     <>
       <button
-        className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+        className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
         disabled={!buyBatch}
         // disabled={isLoading}
         onClick={() => buyBatch?.()}
