@@ -27,6 +27,7 @@ export default function Page() {
     ...astaverdeContractConfig,
     functionName: "lastBatchID",
   });
+  const { address } = useAccount();
 
   if (lastBatchIDError || lastBatchID === undefined) {
     console.log("lastBatchIDError", lastBatchIDError);
@@ -73,10 +74,20 @@ export default function Page() {
         }),
     ) || [];
 
+  if (!address) {
+    return (
+      <>
+        <div className="flex w-full min-h-[calc(100vh-64px)] justify-center items-center text-lg font-bold">
+          Please connect wallet first
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div>
-        <h1 className="font-bold ">My Tokens</h1>
+        <h1 className="font-bold text-xl py-4">My Tokens</h1>
 
         {/* loop through the batch ids */}
         <div className="flex flex-col gap-2">
@@ -95,7 +106,6 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
   const { address } = useAccount();
   const [sameAddresses, setSameAddresses] = useState<`0x${string}`[]>();
   const [redeemableTokens, setRedeemableTokens] = useState<bigint[]>([]);
-  const [redeemAmount, setRedeemAmount] = useState<string>();
 
   console.log("batch in mytokens: ", batch.token_ids);
 
@@ -134,14 +144,9 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
 
   console.log("redeem", redeemableTokens);
 
+  // Do not show if user does not have any token
   if (ownerTokens() && ownerTokens()!.length === 0) {
-    return (
-      <></>
-      // <div className="bg-white rounded-lg shadow-md p-4">
-      //   <p>Batch {batch.id}</p>
-      //   <p>No Tokens</p>
-      // </div>
-    );
+    return <></>;
   }
 
   return (
