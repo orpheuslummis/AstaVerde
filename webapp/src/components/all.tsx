@@ -29,7 +29,7 @@ export function Header({ title, links }: HeaderProps) {
   return (
     <header className="w-full flex flex-wrap items-center justify-between bg-green-500 p-4 shadow-md">
       <div className="flex items-center">
-        <button className="lg:hidden text-white" onClick={toggleMenu} aria-label="Toggle Menu">
+        <button className="lg:hidden text-white text-2xl px-4 py-2" onClick={toggleMenu} aria-label="Toggle Menu">
           ☰
         </button>
         <Link href="/">

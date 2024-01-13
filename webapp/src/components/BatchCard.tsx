@@ -2,7 +2,7 @@
 
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
 import {
   paginatedIndexesConfig,
@@ -11,6 +11,7 @@ import {
   useContractRead,
   useContractWrite,
   usePrepareContractWrite,
+  useWaitForTransaction,
 } from "wagmi";
 
 /*
@@ -81,7 +82,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
           <div className="col-span-full mt-4">
             <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
             <p className="text-gray-600">{batch ? `${batch.itemsLeft} items left` : "0 items left"}</p>
-            <p className="text-gray-600">{currentPrice ? `${currentPrice} Unit Price` : "0 Unit Price"}</p>
+            <p className="text-gray-600">{currentPrice ? `${currentPrice} USDC` : "0 USDC"}</p>
           </div>
 
           <div className="col-span-full mt-4">
@@ -100,8 +101,8 @@ export default function BatchCard({ batch }: { batch: Batch }) {
 
         {/* Buy Batch Button */}
         <div className="mt-4 p-4">
-          <p className="text-gray-600 mt-1">
-            {currentPrice ? `${+currentPrice.toString() * tokenAmount} Total Price` : "0 Total Price"}
+          <p className="text-black mt-1 font-bold">
+            {currentPrice ? `Total: ${+currentPrice.toString() * tokenAmount} USDC` : "Total: 0 USDC"}
           </p>
           <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
         </div>
@@ -121,6 +122,10 @@ function BuyBatchButton({
 }) {
   const totalPrice = tokenAmount * Number(usdcPrice);
   const { address } = useAccount();
+  const [awaitedHash, setAwaitedHash] = useState<`0x${string}` | undefined>(undefined);
+  const { data: txReceipt } = useWaitForTransaction({
+    hash: awaitedHash,
+  });
 
   const { data: allowance, refetch: refetchAllowance } = useContractRead({
     ...usdcContractConfig,
@@ -146,7 +151,16 @@ function BuyBatchButton({
     enabled: Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice, // allow buyBatch when there is enough allowance
     args: [BigInt(batchId), parseUnits(totalPrice.toString(), 6), BigInt(tokenAmount)],
   });
-  const { write: buyBatch } = useContractWrite(configBuyBatch);
+  const { writeAsync: buyBatchAsync } = useContractWrite(configBuyBatch);
+
+  const refreshAllowance = async () => {
+    await refetchAllowance();
+  };
+  useEffect(() => {
+    if (txReceipt) {
+      void refreshAllowance();
+    }
+  }, [txReceipt]);
 
   // If there is not enough allowance to withdraw usdc from user address.
   if (Number(formatUnits(allowance || BigInt(0), 6)) < totalPrice) {
@@ -169,9 +183,14 @@ function BuyBatchButton({
     <>
       <button
         className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
-        disabled={!buyBatch}
+        disabled={!buyBatchAsync}
         // disabled={isLoading}
-        onClick={() => buyBatch?.()}
+        onClick={async () => {
+          if (buyBatchAsync) {
+            const result = await buyBatchAsync();
+            setAwaitedHash(result.hash);
+          }
+        }}
       >
         Buy
       </button>
