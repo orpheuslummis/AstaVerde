@@ -2,15 +2,21 @@ import { astaverdeContractConfig, usdcContractConfig } from "./contracts.mjs";
 import dotenv from "dotenv";
 import { createPublicClient, http, erc20Abi } from "viem";
 import { decodeEventLog } from "viem";
-import { sepolia, mainnet } from "viem/chains";
+import { sepolia, mainnet, base } from "viem/chains";
 
 dotenv.config();
 
-if (!process.env.INFURA_API_KEY) throw new Error("INFURA_API_KEY not found");
-const INFURA_API_KEY = process.env.INFURA_API_KEY;
+/**
+ * INSTRUCTIONS:
+ * 1. Select chain
+ * 2. Set events range in block number
+ */
+const chain = sepolia; // base
+const fromBlock = BigInt("5046895"); // get from etherscan.io > events > Block
+const toBlock = BigInt("5047299");
 
 export const publicClient = createPublicClient({
-  chain: sepolia,
+  chain,
   transport: http(),
 });
 
@@ -18,19 +24,22 @@ export const publicClient = createPublicClient({
 const logs = await publicClient.getContractEvents({
   address: astaverdeContractConfig.address,
   abi: astaverdeContractConfig.abi,
-  fromBlock: BigInt("5046895"),
-  toBlock: BigInt("5047299"),
+  eventName: "TokenReedemed",
+  fromBlock,
+  toBlock,
 });
 
 if (logs.length > 0) {
-  const topics = decodeEventLog({
-    abi: astaverdeContractConfig.abi,
-    data: logs[0].data,
-    topics: logs[0].topics,
-  });
+  logs.forEach((log) => {
+    const topics = decodeEventLog({
+      abi: astaverdeContractConfig.abi,
+      data: log.data,
+      topics: log.topics,
+    });
 
-  console.log(topics);
-  // console.log(topics);
+    console.log(topics);
+    // Perform other operations with 'topics' as needed
+  });
 } else {
   console.log("No logs");
 }
