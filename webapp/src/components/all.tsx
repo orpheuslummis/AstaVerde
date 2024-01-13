@@ -33,7 +33,10 @@ export function Header({ title, links }: HeaderProps) {
           ☰
         </button>
         <Link href="/">
-          <h1 className="text-white font-bold text-2xl">{title}</h1>
+          <div className="flex flex-row gap-2">
+            <img src="/eco_tradezone.png" alt="Logo" className="w-10" />
+            <h1 className="text-white font-bold text-2xl">{title}</h1>
+          </div>
         </Link>
       </div>
 
