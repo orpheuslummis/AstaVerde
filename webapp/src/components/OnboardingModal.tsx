@@ -26,7 +26,7 @@ export function OnboardingModal() {
           <p>Welcome to our app! This is a paragraph of random text to guide you about the apps usage.</p>
           <button
             onClick={handleConfirmation}
-            className="confirm-button absolute bottom-5 right-5 bg-blue-500 text-white py-2 px-4 rounded"
+            className="confirm-button absolute bottom-5 right-5 bg-secondary text-white py-2 px-4 rounded"
           >
             Confirm
           </button>

@@ -85,25 +85,25 @@ function PauseContractControl() {
   return (
     <ControlContainer title="Pause / Unpause">
       <button
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
         disabled={isContractPaused || pauseLoading}
         onClick={pauseWrite}
       >
         Pause
       </button>
       {pauseLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {pauseSuccess && <div className="text-green-500">Transaction successful: {JSON.stringify(pauseData)}</div>}
+      {pauseSuccess && <div className="text-primary">Transaction successful: {JSON.stringify(pauseData)}</div>}
       {pauseError && <div className="text-red-500">Error: {pauseError.message}</div>}
 
       <button
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
         disabled={!isContractPaused || unpauseLoading}
         onClick={unpauseWrite}
       >
         Unpause
       </button>
       {unpauseLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {unpauseSuccess && <div className="text-green-500">Transaction successful: {JSON.stringify(unpauseData)}</div>}
+      {unpauseSuccess && <div className="text-primary">Transaction successful: {JSON.stringify(unpauseData)}</div>}
       {unpauseError && <div className="text-red-500">Error: {unpauseError.message}</div>}
     </ControlContainer>
   );
@@ -123,21 +123,20 @@ function ClaimPlatformFunds() {
   return (
     <ControlContainer title="Claim platform funds">
       <button
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
         disabled={!write}
         onClick={() => write?.()}
-      // disabled={isLoading}
-      // onClick={write({ args: [address] })}
+        // disabled={isLoading}
+        // onClick={write({ args: [address] })}
       >
         Claim
       </button>
       {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-green-500">Transaction successful: {JSON.stringify(data)}</div>}
+      {isSuccess && <div className="text-primary">Transaction successful: {JSON.stringify(data)}</div>}
       {error && <div className="text-red-500">Error: {error.message}</div>}
     </ControlContainer>
   );
 }
-
 
 function SetURI() {
   const [uri, setURI] = useState("");
@@ -171,26 +170,17 @@ function SetURI() {
           className="px-4 py-2 mr-2 border border-gray-300 rounded"
         />
         <button
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
           disabled={!write || isLoading}
           onClick={handleSetURI}
         >
           Set URI
         </button>
       </div>
-      {currentURI && (
-        <div className="text-gray-500 mb-2">Current URI: {currentURI}</div>
-      )}
-      {isLoading && (
-        <div className="text-gray-500">Processing... Please check your wallet.</div>
-      )}
-      {isSuccess && (
-        <div className="text-green-500">Transaction successful</div>
-      )}
-      {error && (
-        <div className="text-red-500">Error: {error.message}</div>
-      )}
+      {currentURI && <div className="text-gray-500 mb-2">Current URI: {currentURI}</div>}
+      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
+      {isSuccess && <div className="text-primary">Transaction successful</div>}
+      {error && <div className="text-red-500">Error: {error.message}</div>}
     </ControlContainer>
   );
 }
-
