@@ -16,15 +16,21 @@ export const publicClient = createPublicClient({
 
 // Fetch event logs for every event on every ERC-20 contract.
 const logs = await publicClient.getContractEvents({
-  // address: usdcContractConfig.address,
-  abi: erc20Abi,
+  address: astaverdeContractConfig.address,
+  abi: astaverdeContractConfig.abi,
+  fromBlock: BigInt("5046895"),
+  toBlock: BigInt("5047299"),
 });
 
-// const topics = decodeEventLog({
-//   abi: astaverdeContractConfig.abi,
-//   data: logs[0].data,
-//   topics: logs[0].topics,
-// });
+if (logs.length > 0) {
+  const topics = decodeEventLog({
+    abi: astaverdeContractConfig.abi,
+    data: logs[0].data,
+    topics: logs[0].topics,
+  });
 
-console.log(logs);
-// console.log(topics);
+  console.log(topics);
+  // console.log(topics);
+} else {
+  console.log("No logs");
+}
