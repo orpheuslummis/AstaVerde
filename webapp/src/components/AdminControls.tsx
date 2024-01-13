@@ -17,9 +17,10 @@ export function AdminControls() {
         TODO
         <PlatformPercentageControl />
           setPlatformSharePercentage
-        <MaxBatchSizeControl />
+        
           setMaxBatchSize
         */}
+        <MaxBatchSizeControl />
         <PriceFloorControl />
         <BasePriceControl />
         <ClaimPlatformFunds />
@@ -273,6 +274,55 @@ function BasePriceControl() {
       </div>
       {currentBasePrice !== undefined && (
         <div className="text-gray-500 mb-2">Current Base Price: {currentBasePrice.toString()}</div>
+      )}
+      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
+      {isSuccess && <div className="text-green-500">Transaction successful</div>}
+      {error && <div className="text-red-500">Error: {error.message}</div>}
+    </ControlContainer>
+  );
+}
+
+function MaxBatchSizeControl() {
+  const [maxMatchSize, setMaxMatchSize] = useState("");
+  const { data: currentMaxMatchSize } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "maxBatchSize",
+  });
+  console.log("currentBasePrice", currentMaxMatchSize);
+  const { config } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "setMaxBatchSize",
+    args: [BigInt(maxMatchSize)],
+  });
+  const { write, isLoading, isSuccess, error } = useContractWrite(config);
+  console.log("setMaxMatchSize", { config, write, isLoading, isSuccess, error });
+
+  const handleSetMaxMatchSize = () => {
+    if (maxMatchSize) {
+      write?.();
+    }
+  };
+
+  return (
+    <ControlContainer title="Set Max Match Size">
+      <div className="flex items-center mb-4">
+        <input
+          type="text"
+          value={maxMatchSize}
+          onChange={(e) => setMaxMatchSize(e.target.value)}
+          placeholder="Enter Max Match Size"
+          className="px-4 py-2 mr-2 border border-gray-300 rounded"
+        />
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          disabled={!write || isLoading}
+          onClick={handleSetMaxMatchSize}
+        >
+          Set Max Match Size
+        </button>
+      </div>
+      {currentMaxMatchSize !== undefined && (
+        <div className="text-gray-500 mb-2">Current Max Match Size: {currentMaxMatchSize.toString()}</div>
       )}
       {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
       {isSuccess && <div className="text-green-500">Transaction successful</div>}
