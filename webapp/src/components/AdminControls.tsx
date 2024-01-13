@@ -17,9 +17,8 @@ export function AdminControls() {
         TODO
         <PlatformPercentageControl />
           setPlatformSharePercentage
-        
-          setMaxBatchSize
         */}
+        <AuctionTimeThresholdsControl />
         <MaxBatchSizeControl />
         <PriceFloorControl />
         <BasePriceControl />
@@ -323,6 +322,77 @@ function MaxBatchSizeControl() {
       </div>
       {currentMaxMatchSize !== undefined && (
         <div className="text-gray-500 mb-2">Current Max Match Size: {currentMaxMatchSize.toString()}</div>
+      )}
+      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
+      {isSuccess && <div className="text-green-500">Transaction successful</div>}
+      {error && <div className="text-red-500">Error: {error.message}</div>}
+    </ControlContainer>
+  );
+}
+
+function AuctionTimeThresholdsControl() {
+  const [dayIncreaseThreshold, setDayIncreaseThreshold] = useState("");
+  const [dayDecreaseThreshold, setDayDecreaseThreshold] = useState("");
+  const { data: currentDayIncreaseThreshold } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "dayIncreaseThreshold",
+  });
+  const { data: currentDayDecreaseThreshold } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "dayDecreaseThreshold",
+  });
+  const { config } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "setAuctionTimeThresholds",
+    args: [BigInt(dayIncreaseThreshold), BigInt(dayDecreaseThreshold)],
+  });
+  const { write, isLoading, isSuccess, error } = useContractWrite(config);
+  console.log("setAuctionTimeThresholds", { config, write, isLoading, isSuccess, error });
+
+  const handleSetMaxMatchSize = () => {
+    if (dayIncreaseThreshold && dayDecreaseThreshold) {
+      write?.();
+    }
+  };
+
+  return (
+    <ControlContainer title="Set Auction Threshold">
+      <div className="flex items-center mb-4">
+        <div>
+          <input
+            type="text"
+            value={dayIncreaseThreshold}
+            onChange={(e) => setDayIncreaseThreshold(e.target.value)}
+            placeholder="Enter Day Threshold"
+            className="px-4 py-2 mr-2 border border-gray-300 rounded"
+          />
+          <input
+            type="text"
+            value={dayIncreaseThreshold}
+            onChange={(e) => setDayDecreaseThreshold(e.target.value)}
+            placeholder="Enter Day Threshold"
+            className="px-4 py-2 mr-2 border border-gray-300 rounded"
+          />
+        </div>
+
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          disabled={!write || isLoading}
+          onClick={handleSetMaxMatchSize}
+        >
+          Set Auction Threshold
+        </button>
+      </div>
+
+      {currentDayIncreaseThreshold !== undefined && (
+        <div className="text-gray-500 mb-2">
+          Current Day Increase Threshold: {currentDayIncreaseThreshold.toString()}
+        </div>
+      )}
+      {currentDayDecreaseThreshold !== undefined && (
+        <div className="text-gray-500 mb-2">
+          Current Day Decrease Threshold: {currentDayDecreaseThreshold.toString()}
+        </div>
       )}
       {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
       {isSuccess && <div className="text-green-500">Transaction successful</div>}
