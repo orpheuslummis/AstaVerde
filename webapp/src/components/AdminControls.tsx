@@ -17,12 +17,11 @@ export function AdminControls() {
         TODO
         <PlatformPercentageControl />
           setPlatformSharePercentage
-   
-          setBasePrice
         <MaxBatchSizeControl />
           setMaxBatchSize
         */}
         <PriceFloorControl />
+        <BasePriceControl />
         <ClaimPlatformFunds />
         <PauseContractControl />
         <SetURI />
@@ -190,7 +189,7 @@ function PriceFloorControl() {
     ...astaverdeContractConfig,
     functionName: "priceFloor",
   });
-  console.log("currentURI", currentPriceFloor);
+  console.log("currentPriceFloor", currentPriceFloor);
   const { config } = usePrepareContractWrite({
     ...astaverdeContractConfig,
     functionName: "setPriceFloor",
@@ -225,6 +224,55 @@ function PriceFloorControl() {
       </div>
       {currentPriceFloor !== undefined && (
         <div className="text-gray-500 mb-2">Current Price floor: {currentPriceFloor.toString()}</div>
+      )}
+      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
+      {isSuccess && <div className="text-green-500">Transaction successful</div>}
+      {error && <div className="text-red-500">Error: {error.message}</div>}
+    </ControlContainer>
+  );
+}
+
+function BasePriceControl() {
+  const [basePrice, setBasePrice] = useState("");
+  const { data: currentBasePrice } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "basePrice",
+  });
+  console.log("currentBasePrice", currentBasePrice);
+  const { config } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "setBasePrice",
+    args: [BigInt(basePrice)],
+  });
+  const { write, isLoading, isSuccess, error } = useContractWrite(config);
+  console.log("setBasePrice", { config, write, isLoading, isSuccess, error });
+
+  const handleSetBasePrice = () => {
+    if (basePrice) {
+      write?.();
+    }
+  };
+
+  return (
+    <ControlContainer title="Set Base Price">
+      <div className="flex items-center mb-4">
+        <input
+          type="text"
+          value={basePrice}
+          onChange={(e) => setBasePrice(e.target.value)}
+          placeholder="Enter Base Price"
+          className="px-4 py-2 mr-2 border border-gray-300 rounded"
+        />
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          disabled={!write || isLoading}
+          onClick={handleSetBasePrice}
+        >
+          Set Base Price
+        </button>
+      </div>
+      {currentBasePrice !== undefined && (
+        <div className="text-gray-500 mb-2">Current Base Price: {currentBasePrice.toString()}</div>
       )}
       {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
       {isSuccess && <div className="text-green-500">Transaction successful</div>}
