@@ -13,11 +13,7 @@ export function AdminControls() {
     <Connected>
       <h2 className="text-2xl my-6 mx-6">Admin controls</h2>
       <div>
-        {/*
-        TODO
         <PlatformPercentageControl />
-          setPlatformSharePercentage
-        */}
         <AuctionTimeThresholdsControl />
         <MaxBatchSizeControl />
         <PriceFloorControl />
@@ -392,6 +388,56 @@ function AuctionTimeThresholdsControl() {
       {currentDayDecreaseThreshold !== undefined && (
         <div className="text-gray-500 mb-2">
           Current Day Decrease Threshold: {currentDayDecreaseThreshold.toString()}
+        </div>
+      )}
+      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
+      {isSuccess && <div className="text-green-500">Transaction successful</div>}
+      {error && <div className="text-red-500">Error: {error.message}</div>}
+    </ControlContainer>
+  );
+}
+
+function PlatformPercentageControl() {
+  const [platformSharePercentage, setPlatformSharePercentage] = useState("");
+  const { data: currentPlatformSharePercentage } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "platformSharePercentage",
+  });
+  const { config } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "setPlatformSharePercentage",
+    args: [BigInt(platformSharePercentage)],
+  });
+  const { write, isLoading, isSuccess, error } = useContractWrite(config);
+  console.log("setPlatformSharePercentage", { config, write, isLoading, isSuccess, error });
+
+  const handleSetPlatformSharePercentage = () => {
+    if (platformSharePercentage) {
+      write?.();
+    }
+  };
+
+  return (
+    <ControlContainer title="Set Platform Share Percentage">
+      <div className="flex items-center mb-4">
+        <input
+          type="text"
+          value={platformSharePercentage}
+          onChange={(e) => setPlatformSharePercentage(e.target.value)}
+          placeholder="Enter Platform Share Percentage"
+          className="px-4 py-2 mr-2 border border-gray-300 rounded"
+        />
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          disabled={!write || isLoading}
+          onClick={handleSetPlatformSharePercentage}
+        >
+          Set Platform Share Percentage
+        </button>
+      </div>
+      {currentPlatformSharePercentage !== undefined && (
+        <div className="text-gray-500 mb-2">
+          Current Platform Share Percentage: {currentPlatformSharePercentage.toString()}
         </div>
       )}
       {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
