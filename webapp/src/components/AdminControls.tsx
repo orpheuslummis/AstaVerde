@@ -17,13 +17,12 @@ export function AdminControls() {
         TODO
         <PlatformPercentageControl />
           setPlatformSharePercentage
-        <PriceFloorControl />
-          setPriceFloor
-        <BasePriceControl />
+   
           setBasePrice
         <MaxBatchSizeControl />
           setMaxBatchSize
         */}
+        <PriceFloorControl />
         <ClaimPlatformFunds />
         <PauseContractControl />
         <SetURI />
@@ -126,8 +125,8 @@ function ClaimPlatformFunds() {
         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         disabled={!write}
         onClick={() => write?.()}
-      // disabled={isLoading}
-      // onClick={write({ args: [address] })}
+        // disabled={isLoading}
+        // onClick={write({ args: [address] })}
       >
         Claim
       </button>
@@ -137,7 +136,6 @@ function ClaimPlatformFunds() {
     </ControlContainer>
   );
 }
-
 
 function SetURI() {
   const [uri, setURI] = useState("");
@@ -178,19 +176,59 @@ function SetURI() {
           Set URI
         </button>
       </div>
-      {currentURI && (
-        <div className="text-gray-500 mb-2">Current URI: {currentURI}</div>
-      )}
-      {isLoading && (
-        <div className="text-gray-500">Processing... Please check your wallet.</div>
-      )}
-      {isSuccess && (
-        <div className="text-green-500">Transaction successful</div>
-      )}
-      {error && (
-        <div className="text-red-500">Error: {error.message}</div>
-      )}
+      {currentURI && <div className="text-gray-500 mb-2">Current URI: {currentURI}</div>}
+      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
+      {isSuccess && <div className="text-green-500">Transaction successful</div>}
+      {error && <div className="text-red-500">Error: {error.message}</div>}
     </ControlContainer>
   );
 }
 
+function PriceFloorControl() {
+  const [priceFloor, setPriceFloor] = useState("");
+  const { data: currentPriceFloor } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "priceFloor",
+  });
+  console.log("currentURI", currentPriceFloor);
+  const { config } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "setPriceFloor",
+    args: [BigInt(priceFloor)],
+  });
+  const { write, isLoading, isSuccess, error } = useContractWrite(config);
+  console.log("setPriceFloor", { config, write, isLoading, isSuccess, error });
+
+  const handleSetPriceFloor = () => {
+    if (priceFloor) {
+      write?.();
+    }
+  };
+
+  return (
+    <ControlContainer title="Set Price Floor">
+      <div className="flex items-center mb-4">
+        <input
+          type="text"
+          value={priceFloor}
+          onChange={(e) => setPriceFloor(e.target.value)}
+          placeholder="Enter Price Floor"
+          className="px-4 py-2 mr-2 border border-gray-300 rounded"
+        />
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          disabled={!write || isLoading}
+          onClick={handleSetPriceFloor}
+        >
+          Set Price Floor
+        </button>
+      </div>
+      {currentPriceFloor !== undefined && (
+        <div className="text-gray-500 mb-2">Current Price floor: {currentPriceFloor.toString()}</div>
+      )}
+      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
+      {isSuccess && <div className="text-green-500">Transaction successful</div>}
+      {error && <div className="text-red-500">Error: {error.message}</div>}
+    </ControlContainer>
+  );
+}
