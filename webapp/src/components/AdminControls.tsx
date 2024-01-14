@@ -354,19 +354,19 @@ function AuctionTimeThresholdsControl() {
   return (
     <ControlContainer title="Set Auction Threshold">
       <div className="flex items-center mb-4">
-        <div>
+        <div className="flex flex-col gap-2">
           <input
             type="text"
             value={dayIncreaseThreshold}
             onChange={(e) => setDayIncreaseThreshold(e.target.value)}
-            placeholder="Enter Day Threshold"
+            placeholder="Enter Increase Days"
             className="px-4 py-2 mr-2 border border-gray-300 rounded"
           />
           <input
             type="text"
-            value={dayIncreaseThreshold}
+            value={dayDecreaseThreshold}
             onChange={(e) => setDayDecreaseThreshold(e.target.value)}
-            placeholder="Enter Day Threshold"
+            placeholder="Enter Decrease Days"
             className="px-4 py-2 mr-2 border border-gray-300 rounded"
           />
         </div>
