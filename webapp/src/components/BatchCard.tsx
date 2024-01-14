@@ -27,13 +27,13 @@ export default function BatchCard({ batch }: { batch: Batch }) {
   // const [isModalOpen, setIsModalOpen] = useState(false);
   const [tokenAmount, setTokenAmount] = useState(1);
 
-  console.log("batch.token_ids", batch.token_ids);
+  console.log("BatchCard: batch.token_ids", batch.token_ids);
 
   const { data, fetchNextPage, error } = useContractInfiniteReads({
     cacheKey: "tokenMetadata",
     ...paginatedIndexesConfig(
       (tokenID: bigint) => {
-        console.log("fetching tokenCID", tokenID);
+        console.log("BatchCard: fetching tokenCID", tokenID);
         return [
           {
             ...astaverdeContractConfig,
@@ -57,9 +57,10 @@ export default function BatchCard({ batch }: { batch: Batch }) {
     args: [BigInt(batch.id)],
   });
 
-  console.log("batch", batch);
-  console.log("batches", batches);
-  console.log("currentPrice", currentPrice);
+  console.log("BatchCard: batch", batch);
+  console.log("BatchCard: batches", batches);
+  console.log("BatchCard: currentPrice", currentPrice);
+  console.log("BatchCard: batch.id", batch.id);
 
   // we get metadata for each token,
 
@@ -80,7 +81,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
           />
 
           <div className="col-span-full mt-4">
-            <p className="text-gray-900 font-bold text-2xl">Batch ID: {batch.id}</p>
+            <p className="text-gray-900 font-bold text-2xl">Batch {Number(batch.id)}</p>
             <p className="text-gray-600">{batch ? `${batch.itemsLeft} items left` : "0 items left"}</p>
             <p className="text-gray-600">{currentPrice ? `${currentPrice} USDC` : "0 USDC"}</p>
           </div>
@@ -134,8 +135,8 @@ function BuyBatchButton({
     args: [address!, astaverdeContractConfig.address],
   });
 
-  console.log("🚀 ~ file: BatchCard.tsx:152 ~ allowance:", Number(formatUnits(allowance || BigInt(0), 6)), totalPrice);
-  console.log("buyBatch enabled", Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice);
+  console.log("BatchCard: allowance:", Number(formatUnits(allowance || BigInt(0), 6)), totalPrice);
+  console.log("BatchCard: buyBatch enabled", Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice);
 
   const { config: configApprove } = usePrepareContractWrite({
     ...usdcContractConfig,
