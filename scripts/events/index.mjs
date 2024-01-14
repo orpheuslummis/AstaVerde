@@ -8,6 +8,7 @@ dotenv.config();
 
 /**
  * INSTRUCTIONS:
+ * 0. Update contracts.mjs with correct addresses and abi
  * 1. Select chain
  * 2. Set events range in block number
  */
