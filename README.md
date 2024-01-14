@@ -63,3 +63,8 @@ Configuring and minting:
 3. Obtain CSV and image folder
 4. `npm run task:mint`
 
+
+Reading events:
+
+1. Go to `/scripts/events/index.mjs` and follow the instructions to update the default values
+2. Run `npm run task:events`

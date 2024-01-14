@@ -2,29 +2,58 @@ import { astaverdeContractConfig, usdcContractConfig } from "./contracts.mjs";
 import dotenv from "dotenv";
 import { createPublicClient, http, erc20Abi } from "viem";
 import { decodeEventLog } from "viem";
-import { sepolia, mainnet } from "viem/chains";
+import { sepolia, mainnet, base } from "viem/chains";
 
 dotenv.config();
 
-if (!process.env.INFURA_API_KEY) throw new Error("INFURA_API_KEY not found");
-const INFURA_API_KEY = process.env.INFURA_API_KEY;
+/**
+ * INSTRUCTIONS:
+ * 0. Update contracts.mjs with correct addresses and abi
+ * 1. Select chain
+ * 2. Set events range in block number
+ */
+const chain = sepolia; // base
+const fromBlock = BigInt("5046895"); // get from etherscan.io > events > Block
+const toBlock = BigInt("5047299");
 
 export const publicClient = createPublicClient({
-  chain: sepolia,
+  chain,
   transport: http(),
 });
 
-// Fetch event logs for every event on every ERC-20 contract.
 const logs = await publicClient.getContractEvents({
-  // address: usdcContractConfig.address,
-  abi: erc20Abi,
+  address: astaverdeContractConfig.address,
+  abi: astaverdeContractConfig.abi,
+  eventName: "TokenReedemed",
+  fromBlock,
+  toBlock,
 });
 
-// const topics = decodeEventLog({
-//   abi: astaverdeContractConfig.abi,
-//   data: logs[0].data,
-//   topics: logs[0].topics,
-// });
+if (logs.length > 0) {
+  for (const log of logs) {
+    const topics = decodeEventLog({
+      abi: astaverdeContractConfig.abi,
+      data: log.data,
+      topics: log.topics,
+    });
 
-console.log(logs);
-// console.log(topics);
+    // Extract values from topics
+    const { eventName, args } = topics;
+    const { tokenId, redeemer, timestamp } = args;
+
+    // Format tokenId as a regular number
+    const formattedTokenId = Number(tokenId);
+
+    // Convert timestamp to a human-readable date
+    const formattedTimestamp = new Date(Number(timestamp) * 1000);
+
+    // Log human-friendly output
+    console.log(`Event: ${eventName}`);
+    console.log(`tokenId: ${formattedTokenId}`);
+    console.log(`redeemer: ${redeemer}`);
+    console.log(`timestamp: ${formattedTimestamp}`);
+    console.log("-------------------------");
+  }
+} else {
+  console.log("No logs");
+}
