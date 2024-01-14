@@ -14,9 +14,9 @@ if (!mnemonic) {
   throw new Error("Please set your MNEMONIC in a .env file");
 }
 
-const infuraApiKey: string | undefined = process.env.INFURA_API_KEY;
-if (!infuraApiKey) {
-  throw new Error("Please set your INFURA_API_KEY in a .env file");
+const alchemyAPIKey: string | undefined = process.env.ALCHEMY_APIKEY;
+if (!alchemyAPIKey) {
+  throw new Error("Please set your ALCHEMY_APIKEY in a .env file");
 }
 
 const chainIds = {
@@ -30,6 +30,8 @@ const chainIds = {
   "polygon-mainnet": 137,
   "polygon-mumbai": 80001,
   sepolia: 11155111,
+  "base-mainnet": 8453,
+  "base-sepolia": 84532,
 };
 
 function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
@@ -41,8 +43,17 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
     case "bsc":
       jsonRpcUrl = "https://bsc-dataseed1.binance.org";
       break;
+    case "base-mainnet":
+      jsonRpcUrl = "https://mainnet.base.org";
+      break;
+    case "base-sepolia":
+      jsonRpcUrl = "https://sepolia.base.org";
+      break;
+    // case "base-local":
+    //   jsonRpcUrl = "http://localhost:8545";
+    //   break;
     default:
-      jsonRpcUrl = "https://" + chain + ".infura.io/v3/" + infuraApiKey;
+      jsonRpcUrl = "https://" + chain + ".g.alchemy.com/v2/" + alchemyAPIKey;
   }
   return {
     accounts: {
@@ -100,6 +111,10 @@ const config: HardhatUserConfig = {
     "polygon-mainnet": getChainConfig("polygon-mainnet"),
     "polygon-mumbai": getChainConfig("polygon-mumbai"),
     sepolia: getChainConfig("sepolia"),
+    // base
+    "base-mainnet": getChainConfig("base-mainnet"),
+    "base-sepolia": getChainConfig("base-sepolia"),
+    // "base-local": getChainConfig("base-local"),
   },
   paths: {
     artifacts: "./artifacts",

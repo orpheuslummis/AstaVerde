@@ -30,7 +30,7 @@
     "esbuild": "^0.19.9",
     "eslint": "^8.54.0",
     "eslint-config-prettier": "^9.0.0",
-    "ethers": "^6.9.0",
+    "ethers": "^6.9.2",
     "files-from-path": "^1.0.4",
     "fs-extra": "^11.2.0",
     "hardhat": "^2.19.1",
