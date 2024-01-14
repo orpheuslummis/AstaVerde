@@ -1,8 +1,8 @@
 import { erc20ABI } from "wagmi";
 
 export const usdcContractConfig = {
-  // MockUSDC on Sepolia
-  address: "0x512d03081984F1c436B76ab2C1578fA004ce2971",
+  // MockUSDC on Base Sepolia
+  address: "0x437Cc6866208895611e3DE80a7Aa26aC6C9Db52D",
   abi: erc20ABI,
 } as const;
 
