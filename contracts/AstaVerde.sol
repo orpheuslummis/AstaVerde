@@ -47,6 +47,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
     }
 
     struct Batch {
+        uint256 batchId;
         uint256[] tokenIds;
         uint256 creationTime;
         uint256 startingPrice;
@@ -181,6 +182,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         updateBasePrice();
 
         Batch memory newBatch;
+        newBatch.batchId = lastBatchID;
         newBatch.tokenIds = new uint256[](batchSize);
         newBatch.creationTime = block.timestamp;
         newBatch.price = basePrice;
@@ -205,7 +207,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         }
 
         batches.push(newBatch);
-        emit BatchMinted(lastBatchID, block.timestamp);
+        emit BatchMinted(newBatch.batchId, block.timestamp);
         _mintBatch(address(this), newTokenIds, amounts, "");
     }
 
@@ -264,11 +266,21 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
 
     function getBatchInfo(
         uint256 batchID
-    ) public view returns (uint256[] memory tokenIds, uint256 creationTime, uint256 price, uint256 remainingTokens) {
+    )
+        public
+        view
+        returns (
+            uint256 batchId,
+            uint256[] memory tokenIds,
+            uint256 creationTime,
+            uint256 price,
+            uint256 remainingTokens
+        )
+    {
         require(batchID <= batches.length, "Batch ID is out of bounds");
         Batch memory batch = batches[batchID];
         price = getBatchPrice(batchID);
-        return (batch.tokenIds, batch.creationTime, price, batch.remainingTokens);
+        return (batch.batchId, batch.tokenIds, batch.creationTime, price, batch.remainingTokens);
     }
 
     function handleRefund(uint256 usdcAmount, uint256 totalCost) internal {

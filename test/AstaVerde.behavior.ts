@@ -180,9 +180,9 @@ export function shouldBehaveLikeAstaVerde(): void {
     await this.astaVerde.mintBatch(producers, cids);
     const batchID = await this.astaVerde.lastBatchID();
     const batchInfo = await this.astaVerde.getBatchInfo(batchID);
-    expect(batchInfo[0]).to.deep.equal([1n, 2n]); // tokenIds
-    expect(batchInfo[1]).to.be.a("bigint"); // creationTime
-    expect(batchInfo[2]).to.equal(BASE_PRICE); // price
+    expect(batchInfo[1]).to.deep.equal([1n, 2n]); // tokenIds
+    expect(batchInfo[2]).to.be.a("bigint"); // creationTime
+    expect(batchInfo[3]).to.equal(BASE_PRICE); // price
   });
 
   it("should pause and unpause the contract by the owner", async function () {
@@ -518,7 +518,7 @@ export function shouldBehaveLikeAstaVerde(): void {
 
     // Buy the batch of tokens
     const batchInfo = await this.astaVerde.getBatchInfo(batchID);
-    const price = batchInfo[2];
+    const price = batchInfo[3];
     const tokenAmount = BigInt(cids.length);
     const usdcAmount = price * tokenAmount;
     const user = this.signers.others[0];
@@ -528,7 +528,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     await this.astaVerde.connect(user).buyBatch(batchID, usdcAmount, tokenAmount);
 
     // Redeem the tokens
-    const tokenIds = batchInfo[0];
+    const tokenIds = batchInfo[1];
     await this.astaVerde.connect(user).redeemTokens([...tokenIds]); // a copy of tokenIDs is needed
 
     // Check that the tokens are marked as redeemed
@@ -549,7 +549,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     // User 1 buys the batch of tokens
     const user1 = this.signers.others[0];
     const batchInfo = await this.astaVerde.getBatchInfo(batchID);
-    const price = batchInfo[2];
+    const price = batchInfo[3];
     const tokenAmount = BigInt(cids.length);
     const usdcAmount = price * tokenAmount;
     await mintUSDC(user1, this.mockUSDC, 1000000n);
@@ -559,7 +559,7 @@ export function shouldBehaveLikeAstaVerde(): void {
 
     // User 2 attempts to redeem the tokens
     const user2 = this.signers.others[1];
-    const tokenIds = batchInfo[0];
+    const tokenIds = batchInfo[1];
     await expect(this.astaVerde.connect(user2).redeemTokens([...tokenIds])).to.be.revertedWith(
       "Only the owner can redeem",
     );
@@ -574,7 +574,7 @@ export function shouldBehaveLikeAstaVerde(): void {
 
     // Buy the batch of tokens
     const batchInfo = await this.astaVerde.getBatchInfo(batchID);
-    const price = batchInfo[2];
+    const price = batchInfo[3];
     const tokenAmount = BigInt(cids.length);
     const usdcAmount = price * tokenAmount;
     const user = this.signers.others[0];
@@ -587,7 +587,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     await this.astaVerde.pause();
 
     // Redeem the tokens
-    const tokenIds = batchInfo[0];
+    const tokenIds = batchInfo[1];
     try {
       await this.astaVerde.connect(user).redeemTokens([...tokenIds]);
     } catch (error) {
@@ -613,8 +613,8 @@ export function shouldBehaveLikeAstaVerde(): void {
     const user2 = this.signers.others[1];
     const batchInfo1 = await this.astaVerde.getBatchInfo(batchID1);
     const batchInfo2 = await this.astaVerde.getBatchInfo(batchID2);
-    const price1 = batchInfo1[2];
-    const price2 = batchInfo2[2];
+    const price1 = batchInfo1[3];
+    const price2 = batchInfo2[3];
     const tokenAmount1 = BigInt(cids1.length);
     const tokenAmount2 = BigInt(cids2.length);
     const usdcAmount1 = price1 * tokenAmount1;
@@ -669,7 +669,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     for (let i = 0; i < numBatches; i++) {
       console.log("buy batch", i);
       let batchInfo = await this.astaVerde.getBatchInfo(i);
-      let price = batchInfo[2];
+      let price = batchInfo[3];
       const tokenAmount = BigInt(cids.length);
       const usdcAmount = price * tokenAmount;
       usdcAmounts.push(usdcAmount);
@@ -679,7 +679,7 @@ export function shouldBehaveLikeAstaVerde(): void {
       await this.astaVerde.connect(user).buyBatch(i, usdcAmount, tokenAmount); // here we see the price decrease
       const expectedPrice = BASE_PRICE - i * PRICE_DECREASE_RATE;
       batchInfo = await this.astaVerde.getBatchInfo(i); // here we see it decrease again
-      price = batchInfo[2];
+      price = batchInfo[3];
 
       console.log("expectedPrice", expectedPrice);
       console.log("price", price);

@@ -17,17 +17,17 @@ export function BatchListing() {
   });
 
   if (lastBatchIDError || lastBatchID === undefined) {
-    console.log("lastBatchIDError", lastBatchIDError);
+    console.log("BatchListing: lastBatchIDError", lastBatchIDError);
   }
   const lastBatchIDn: number = lastBatchID ? Number(lastBatchID) : 0;
 
-  console.log("lastBatchIDn, isError, isLoading", lastBatchID, isError, isLoading);
+  console.log("BatchListing: lastBatchIDn, isError, isLoading", lastBatchID, isError, isLoading);
 
   const { data, fetchNextPage, error, hasNextPage } = useContractInfiniteReads({
     cacheKey: "batchMetadata",
     ...paginatedIndexesConfig(
       (batchID: bigint) => {
-        console.log("fetching batchID", batchID);
+        console.log("BatchListing: fetching batchID", batchID);
         return [
           {
             ...astaverdeContractConfig,
@@ -39,7 +39,20 @@ export function BatchListing() {
       { start: lastBatchIDn, perPage: 10, direction: "decrement" },
     ),
   });
-  console.log("data", data);
+  console.log("BatchListing: data", data);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (isError) {
+    console.log("BatchListing: error", error);
+    return <div>Could not display, sorry.</div>;
+  }
+
+  if (!data) {
+    return <div>Could not display, sorry.</div>;
+  }
 
   const { address } = useAccount();
 
@@ -51,21 +64,27 @@ export function BatchListing() {
   });
 
   if (error) {
-    console.log("error", error);
+    console.log("BatchListing: error", error);
     return <div>Could not display, sorry.</div>;
   }
+
+  if (data?.pages?.[0]?.[0]?.error) {
+    return <div>Error occurred: No batch has been minted yet.</div>;
+  }
+
 
   const batches: Batch[] =
     data?.pages?.flatMap(
       (page: any[]) =>
         page?.map((batch: any) => {
-          console.log("batch", batch);
-          const tokenIDs: number[] = batch.result?.[0] || [];
-          const timestamp: number = batch.result?.[1] || 0;
-          const price: number = batch.result?.[2] || 0;
-          const itemsLeft: number = batch.result?.[3] || 0;
-          const batchProper = new Batch(0, tokenIDs, timestamp, price, itemsLeft); // Assuming batch.id is not available, replace 0 with the correct value
-          console.log("batchProper", batchProper);
+          console.log("BatchListing: batch", batch);
+          const batchID = batch.result?.[0] || 0;
+          const tokenIDs: number[] = batch.result?.[1] || [];
+          const timestamp: number = batch.result?.[2] || 0;
+          const price: number = batch.result?.[3] || 0;
+          const itemsLeft: number = batch.result?.[4] || 0;
+          const batchProper = new Batch(batchID, tokenIDs, timestamp, price, itemsLeft);
+          console.log("BatchListing: batchProper", batchProper);
           return batchProper;
         }),
     ) || [];
@@ -74,16 +93,6 @@ export function BatchListing() {
 
   return (
     <>
-      {/* <div className="w-full flex justify-end p-2 pt-4">
-        <button
-          className="px-4 py-2 bg-secondary text-white rounded-full hover:bg-blue-700 disabled:opacity-50"
-          disabled={!fetchNextPage || isLoading || isError}
-          onClick={() => refetchAllowance()}
-        >
-          Refresh
-        </button>
-      </div> */}
-
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-4">
         {batches.map((batch) => (
           <div key={batch.id} className="w-full px-2 mb-4">
