@@ -167,7 +167,7 @@ function BuyBatchButton({
     return (
       <>
         <button
-          className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
+          className="mt-4 bg-primary hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
           disabled={!approve}
           onClick={() => {
             approve?.();
@@ -182,7 +182,7 @@ function BuyBatchButton({
   return (
     <>
       <button
-        className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
+        className="mt-4 bg-primary hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
         disabled={!buyBatchAsync}
         // disabled={isLoading}
         onClick={async () => {
