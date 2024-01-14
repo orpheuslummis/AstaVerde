@@ -27,13 +27,16 @@ export function Header({ title, links }: HeaderProps) {
   };
 
   return (
-    <header className="w-full flex flex-wrap items-center justify-between bg-green-500 p-4 shadow-md">
+    <header className="w-full flex flex-wrap items-center justify-between bg-primary p-4 shadow-md">
       <div className="flex items-center">
         <button className="lg:hidden text-white text-2xl px-4 py-2" onClick={toggleMenu} aria-label="Toggle Menu">
           ☰
         </button>
         <Link href="/">
-          <h1 className="text-white font-bold text-2xl">{title}</h1>
+          <div className="flex flex-row gap-2 items-center">
+            <img src="/eco_tradezone.png" alt="Logo" className="w-10" />
+            <h1 className="text-white font-bold text-2xl">{title}</h1>
+          </div>
         </Link>
       </div>
 
@@ -51,7 +54,7 @@ export function Header({ title, links }: HeaderProps) {
           ))}
 
           {/* Show USDC Balance */}
-          <li className="hidden lg:block border border-gray-300 rounded-full bg-blue-100 p-2">
+          <li className="hidden lg:block border border-gray-300 rounded-md bg-blue-100 p-2">
             {formatUnits(balance || BigInt(0), 6)?.toString() || 0} USDC
           </li>
 
