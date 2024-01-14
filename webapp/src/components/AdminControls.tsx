@@ -13,7 +13,7 @@ export function AdminControls() {
     <Connected>
       <h2 className="text-2xl my-6 mx-6">Admin controls</h2>
       <div>
-        {/* <PlatformPercentageControl /> */}
+        <PlatformPercentageControl />
         <AuctionTimeThresholdsControl />
         <MaxBatchSizeControl />
         <PriceFloorControl />
@@ -173,7 +173,7 @@ function SetURI() {
       </div>
       {currentURI && <div className="text-gray-500 mb-2">Current URI: {currentURI}</div>}
       {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-green-500">Transaction successful</div>}
+      {isSuccess && <div className="text-primary">Transaction successful</div>}
       {error && <div className="text-red-500">Error: {error.message}</div>}
     </ControlContainer>
   );
@@ -204,14 +204,14 @@ function PriceFloorControl() {
     <ControlContainer title="Set Price Floor">
       <div className="flex items-center mb-4">
         <input
-          type="text"
+          type="number"
           value={priceFloor}
           onChange={(e) => setPriceFloor(e.target.value)}
           placeholder="Enter Price Floor"
           className="px-4 py-2 mr-2 border border-gray-300 rounded"
         />
         <button
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
           disabled={!write || isLoading}
           onClick={handleSetPriceFloor}
         >
@@ -222,7 +222,7 @@ function PriceFloorControl() {
         <div className="text-gray-500 mb-2">Current Price floor: {currentPriceFloor.toString()}</div>
       )}
       {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-green-500">Transaction successful</div>}
+      {isSuccess && <div className="text-primary">Transaction successful</div>}
       {error && <div className="text-red-500">Error: {error.message}</div>}
     </ControlContainer>
   );
@@ -253,14 +253,14 @@ function BasePriceControl() {
     <ControlContainer title="Set Base Price">
       <div className="flex items-center mb-4">
         <input
-          type="text"
+          type="number"
           value={basePrice}
           onChange={(e) => setBasePrice(e.target.value)}
           placeholder="Enter Base Price"
           className="px-4 py-2 mr-2 border border-gray-300 rounded"
         />
         <button
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
           disabled={!write || isLoading}
           onClick={handleSetBasePrice}
         >
@@ -271,7 +271,7 @@ function BasePriceControl() {
         <div className="text-gray-500 mb-2">Current Base Price: {currentBasePrice.toString()}</div>
       )}
       {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-green-500">Transaction successful</div>}
+      {isSuccess && <div className="text-primary">Transaction successful</div>}
       {error && <div className="text-red-500">Error: {error.message}</div>}
     </ControlContainer>
   );
@@ -302,14 +302,14 @@ function MaxBatchSizeControl() {
     <ControlContainer title="Set Max Match Size">
       <div className="flex items-center mb-4">
         <input
-          type="text"
+          type="number"
           value={maxMatchSize}
           onChange={(e) => setMaxMatchSize(e.target.value)}
           placeholder="Enter Max Match Size"
           className="px-4 py-2 mr-2 border border-gray-300 rounded"
         />
         <button
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
           disabled={!write || isLoading}
           onClick={handleSetMaxMatchSize}
         >
@@ -320,7 +320,7 @@ function MaxBatchSizeControl() {
         <div className="text-gray-500 mb-2">Current Max Match Size: {currentMaxMatchSize.toString()}</div>
       )}
       {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-green-500">Transaction successful</div>}
+      {isSuccess && <div className="text-primary">Transaction successful</div>}
       {error && <div className="text-red-500">Error: {error.message}</div>}
     </ControlContainer>
   );
@@ -356,14 +356,14 @@ function AuctionTimeThresholdsControl() {
       <div className="flex items-center mb-4">
         <div className="flex flex-col gap-2">
           <input
-            type="text"
+            type="number"
             value={dayIncreaseThreshold}
             onChange={(e) => setDayIncreaseThreshold(e.target.value)}
             placeholder="Enter Increase Days"
             className="px-4 py-2 mr-2 border border-gray-300 rounded"
           />
           <input
-            type="text"
+            type="number"
             value={dayDecreaseThreshold}
             onChange={(e) => setDayDecreaseThreshold(e.target.value)}
             placeholder="Enter Decrease Days"
@@ -372,7 +372,7 @@ function AuctionTimeThresholdsControl() {
         </div>
 
         <button
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
           disabled={!write || isLoading}
           onClick={handleSetMaxMatchSize}
         >
@@ -391,7 +391,57 @@ function AuctionTimeThresholdsControl() {
         </div>
       )}
       {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-green-500">Transaction successful</div>}
+      {isSuccess && <div className="text-primary">Transaction successful</div>}
+      {error && <div className="text-red-500">Error: {error.message}</div>}
+    </ControlContainer>
+  );
+}
+
+function PlatformPercentageControl() {
+  const [platformSharePercentage, setPlatformSharePercentage] = useState("");
+  const { data: currentPlatformSharePercentage } = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "platformSharePercentage",
+  });
+  const { config } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName: "setPlatformSharePercentage",
+    args: [BigInt(platformSharePercentage)],
+  });
+  const { write, isLoading, isSuccess, error } = useContractWrite(config);
+  console.log("setPlatformSharePercentage", { config, write, isLoading, isSuccess, error });
+
+  const handleSetPlatformSharePercentage = () => {
+    if (platformSharePercentage) {
+      write?.();
+    }
+  };
+
+  return (
+    <ControlContainer title="Set Platform Share Percentage">
+      <div className="flex items-center mb-4">
+        <input
+          type="number"
+          value={platformSharePercentage}
+          onChange={(e) => setPlatformSharePercentage(e.target.value)}
+          placeholder="Enter Platform Share Percentage"
+          className="px-4 py-2 mr-2 border border-gray-300 rounded"
+        />
+        <button
+          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          disabled={!write || isLoading}
+          onClick={handleSetPlatformSharePercentage}
+        >
+          Set Platform Share Percentage
+        </button>
+      </div>
+      {currentPlatformSharePercentage !== undefined && (
+        <div className="text-gray-500 mb-2">
+          Current Platform Share Percentage: {currentPlatformSharePercentage.toString()}
+        </div>
+      )}
+      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
+      {isSuccess && <div className="text-primary">Transaction successful</div>}
       {error && <div className="text-red-500">Error: {error.message}</div>}
     </ControlContainer>
   );
