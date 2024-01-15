@@ -16,6 +16,8 @@ export function BatchListing() {
     functionName: "lastBatchID",
   });
 
+  const { address } = useAccount();
+
   if (lastBatchIDError || lastBatchID === undefined) {
     console.log("BatchListing: lastBatchIDError", lastBatchIDError);
   }
@@ -53,8 +55,6 @@ export function BatchListing() {
   if (!data) {
     return <div>Could not display, sorry.</div>;
   }
-
-  const { address } = useAccount();
 
   const { data: allowance, refetch: refetchAllowance } = useContractRead({
     ...usdcContractConfig,

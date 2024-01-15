@@ -1,4 +1,4 @@
-"use client";
+"use client;"
 
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
@@ -14,18 +14,10 @@ import {
   useWaitForTransaction,
 } from "wagmi";
 
-/*
-the image url is encoded in the metadata
-therefore, each Batch will load its metadata then download the image
-
-we assume that batches have a linear progression of tokenIDs
-
-ideally, when clicked we would open a modal that shows info on all the tokens it contains 
-*/
-
 export default function BatchCard({ batch }: { batch: Batch }) {
-  // const [isModalOpen, setIsModalOpen] = useState(false);
   const [tokenAmount, setTokenAmount] = useState(1);
+  const [firstTokenCID, setFirstTokenCID] = useState<string | null>(null);
+  const [image_url, setImageUrl] = useState<string | null>(null);
 
   console.log("BatchCard: batch.token_ids", batch.token_ids);
 
@@ -45,6 +37,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
       { start: batch.token_ids[batch.token_ids.length - 1], perPage: 10, direction: "decrement" },
     ),
   });
+
   const { data: batches, refetch: refetchBathes } = useContractRead({
     ...astaverdeContractConfig,
     functionName: "batches",
@@ -62,13 +55,66 @@ export default function BatchCard({ batch }: { batch: Batch }) {
   console.log("BatchCard: currentPrice", currentPrice);
   console.log("BatchCard: batch.id", batch.id);
 
-  // we get metadata for each token,
+  const fetchTokenImageUrl = async (tokenCID: string) => {
+    try {
+      const response = await fetch(`https://ipfs.io/ipfs/${tokenCID}`);
+      const metadata = await response.json();
+      console.log("BatchCard: fetched token metadata", metadata);
+      const imageUrl = metadata.image_url;
+      console.log("BatchCard: fetched image URL", imageUrl);
+      return imageUrl;
+    } catch (error) {
+      console.error("BatchCard: error fetching token metadata", error);
+      return null;
+    }
+  };
 
-  // for each batch, we already have its ID, timestamp, price, and tokenIDs
-  // get metadata from ipfs (via http)
-  // the cid is obtained from the contract
+  const getTokenInfo = async (tokenID: bigint) => {
+    const { data: token } = await useContractRead({
+      ...astaverdeContractConfig,
+      functionName: "tokens",
+      args: [tokenID],
+    });
 
-  // buyBatch
+    return token;
+  };
+
+  const getFirstTokenCID = async () => {
+    if (data?.pages?.[0]?.[0]) {
+      const tokenID = data.pages[0][0];
+      if (tokenID === undefined) {
+        return null;
+      }
+      const tokenInfo = await useContractRead({
+        ...astaverdeContractConfig,
+        functionName: "tokens",
+        args: [tokenID],
+      });
+      console.log("BatchCard: tokenInfo", tokenInfo);
+      if (tokenInfo) {
+        const tokenCID = tokenInfo[2];
+        console.log("BatchCard: tokenCID", tokenCID);
+        return tokenCID;
+      }
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const firstTokenCID = await getFirstTokenCID();
+      console.log("BatchCard: firstTokenCID", firstTokenCID);
+      if (firstTokenCID) {
+        setFirstTokenCID(firstTokenCID);
+        const imageUrl = await fetchTokenImageUrl(firstTokenCID);
+        console.log("BatchCard: fetched image URL", imageUrl);
+        setImageUrl(imageUrl);
+      }
+    };
+
+    fetchData();
+  }, [data]);
+
 
   return (
     <div className="flex justify-between items-center">
