@@ -20,6 +20,9 @@ These parameters can be provided as environment variables or as command line arg
 Before running this script, ensure the following:
 - The ABI for the Asta Verde contract is built and up-to-date locally. The script imports the ABI from "./artifacts/contracts/AstaVerde.sol/AstaVerde.json".
 - You have created a space for the project. The script requires the DID of the space as an input.
+
+The script checks for token ID alignment, i.e. if the first token ID of the batch is the `lastTokenID + 1` of the contract.
+The script checks if all necessary images are present in the folder.
 */
 import { create } from "@web3-storage/w3up-client";
 import csv from "csv-parser";
@@ -66,6 +69,34 @@ function validateEmail(email) {
   const re =
     /^(([^<>()\\.,;:\s@"']+(\.[^<>()\\.,;:\s@"']+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return re.test(String(email).toLowerCase());
+}
+
+function validateTokenIDAlignment(csvPath, contract) {
+  const tokenData = [];
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(csvPath)
+      .pipe(csv())
+      .on("data", (row) => {
+        tokenData.push(row);
+      })
+      .on("end", () => {
+        if (tokenData.length === 0) {
+          reject(new Error("CSV file is empty."));
+        }
+
+        const firstTokenIDFromCSV = parseInt(tokenData[0].id);
+        contract.lastTokenID().then((lastTokenIDFromContract) => {
+          if (firstTokenIDFromCSV !== Number(lastTokenIDFromContract) + 1) {
+            reject(new Error(`Token ID ${firstTokenIDFromCSV} does not align with lastTokenID ${lastTokenIDFromContract}.`));
+          }
+        }).catch((error) => {
+          reject(error);
+        });
+      })
+      .on("error", (error) => {
+        reject(error);
+      });
+  });
 }
 
 const explorerTxnURL =
@@ -123,17 +154,46 @@ function validateCSVShape(csvpath) {
     });
 }
 
+// The script checks if all necessary images are present in the folder.
+function validateImages(csvpath, imageFolder) {
+  const tokenData = [];
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(csvpath)
+      .pipe(csv())
+      .on("data", (row) => {
+        tokenData.push(row);
+      })
+      .on("end", () => {
+        if (tokenData.length === 0) {
+          reject(new Error("CSV file is empty."));
+        }
+
+        for (const row of tokenData) {
+          const imagepath = `${imageFolder}/${row.id}.jpg`;
+          if (!fs.existsSync(imagepath)) {
+            reject(new Error(`Image ${imagepath} does not exist.`));
+          }
+        }
+      })
+      .on("error", (error) => {
+        reject(error);
+      });
+  });
+}
+
 async function mint() {
-  // let progress = loadProgress();
   validateConfig(config);
   validateCSVShape(config.csvPath);
+  validateImages(config.csvPath, config.imageFolder);
 
   const provider = new ethers.JsonRpcProvider(rpcURL);
   const wallet = new ethers.Wallet(config.privateKey);
   const signer = wallet.connect(provider);
   const contract = new ethers.Contract(config.contractAddress, abi, signer);
-
+  9
   const client = await connectToSpace(config, "astaverde-dev");
+
+  validateTokenIDAlignment(config.csvPath, contract);
 
   // Upload to IPFS
   // Call the mintBatch contract function with the resulting metadata
