@@ -13,51 +13,51 @@ import {
   usePrepareContractWrite,
   useWaitForTransaction,
 } from "wagmi";
+import { IPFS_GATEWAY_URL } from "../app.config";
+
+// const { data: , fetchNextPage, error } = useContractInfiniteReads({
+//   cacheKey: "tokenMetadata",
+//   ...paginatedIndexesConfig(
+//     (tokenID: bigint) => {
+//       console.log("BatchCard: fetching tokenID", tokenID);
+//       return [
+//         {
+//           ...astaverdeContractConfig,
+//           functionName: "tokens",
+//           args: [tokenID] as const,
+//         },
+//       ];
+//     },
+//     { start: batch.token_ids[batch.token_ids.length - 1], perPage: 10, direction: "decrement" },
+//   ),
+// });
+
+/*
+obtain the first token of the batch
+fetch the metadata of the token from IPFS using its CID
+obtain the image CID from that metadata
+build a URL to the image using the image CID
+*/
 
 export default function BatchCard({ batch }: { batch: Batch }) {
+  const [data] = useState(null);
   const [tokenAmount, setTokenAmount] = useState(1);
-  const [firstTokenCID, setFirstTokenCID] = useState<string | null>(null);
-  const [image_url, setImageUrl] = useState<string | null>(null);
 
-  console.log("BatchCard: batch.token_ids", batch.token_ids);
-
-  const { data, fetchNextPage, error } = useContractInfiniteReads({
-    cacheKey: "tokenMetadata",
-    ...paginatedIndexesConfig(
-      (tokenID: bigint) => {
-        console.log("BatchCard: fetching tokenCID", tokenID);
-        return [
-          {
-            ...astaverdeContractConfig,
-            functionName: "batches",
-            args: [tokenID] as const,
-          },
-        ];
-      },
-      { start: batch.token_ids[batch.token_ids.length - 1], perPage: 10, direction: "decrement" },
-    ),
-  });
-
-  const { data: batches, refetch: refetchBathes } = useContractRead({
+  const { data: batchInfo } = useContractRead({
     ...astaverdeContractConfig,
     functionName: "batches",
     args: [BigInt(batch.id)],
   });
 
-  const { data: currentPrice } = useContractRead({
+  const { data: priceOfBatch } = useContractRead({
     ...astaverdeContractConfig,
     functionName: "getBatchPrice",
     args: [BigInt(batch.id)],
   });
 
-  console.log("BatchCard: batch", batch);
-  console.log("BatchCard: batches", batches);
-  console.log("BatchCard: currentPrice", currentPrice);
-  console.log("BatchCard: batch.id", batch.id);
-
   const fetchTokenImageUrl = async (tokenCID: string) => {
     try {
-      const response = await fetch(`https://ipfs.io/ipfs/${tokenCID}`);
+      const response = await fetch(`${IPFS_GATEWAY_URL}${tokenCID}`);
       const metadata = await response.json();
       console.log("BatchCard: fetched token metadata", metadata);
       const imageUrl = metadata.image_url;
@@ -69,19 +69,11 @@ export default function BatchCard({ batch }: { batch: Batch }) {
     }
   };
 
-  const getTokenInfo = async (tokenID: bigint) => {
-    const { data: token } = await useContractRead({
-      ...astaverdeContractConfig,
-      functionName: "tokens",
-      args: [tokenID],
-    });
-
-    return token;
-  };
-
-  const getFirstTokenCID = async () => {
+  const getFirstBatchTokenCID = async () => {
+    console.log("BatchCard: getFirstBatchTokenCID data", data);
     if (data?.pages?.[0]?.[0]) {
       const tokenID = data.pages[0][0];
+      console.log("BatchCard: tokenID", tokenID);
       if (tokenID === undefined) {
         return null;
       }
@@ -92,7 +84,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
       });
       console.log("BatchCard: tokenInfo", tokenInfo);
       if (tokenInfo) {
-        const tokenCID = tokenInfo[2];
+        const tokenCID = tokenInfo.data[2];
         console.log("BatchCard: tokenCID", tokenCID);
         return tokenCID;
       }
@@ -102,34 +94,36 @@ export default function BatchCard({ batch }: { batch: Batch }) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const firstTokenCID = await getFirstTokenCID();
-      console.log("BatchCard: firstTokenCID", firstTokenCID);
-      if (firstTokenCID) {
-        setFirstTokenCID(firstTokenCID);
-        const imageUrl = await fetchTokenImageUrl(firstTokenCID);
-        console.log("BatchCard: fetched image URL", imageUrl);
-        setImageUrl(imageUrl);
+      console.log("BatchCard: fetchData");
+      console.log("BatchCard: batch.token_ids", batch.token_ids);
+      console.log("BatchCard: batch", batch);
+      console.log("BatchCard: batch.id", batch.id);
+      console.log("BatchCard: batchInfo", batchInfo);
+      console.log("BatchCard: priceOfBatch", priceOfBatch);
+      console.log("BatchCard: fetchData data", data);
+      const firstBatchTokenCID = await getFirstBatchTokenCID();
+      console.log("BatchCard: firstBatchTokenCID", firstBatchTokenCID);
+      if (firstBatchTokenCID) {
+        const batchImageCID = await fetchTokenImageUrl(firstBatchTokenCID);
+        console.log("BatchCard: fetched image URL", batchImageCID);
+        batch.setBatchImageCID(batchImageCID);
       }
     };
-
     fetchData();
   }, [data]);
-
 
   return (
     <div className="flex justify-between items-center">
       <div className="flex-1 border rounded-lg overflow-hidden shadow-lg">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
           <img
-            className="h-48 w-full object-cover rounded-lg col-span-full"
-            // src={batch.image_url} // Assuming batch has an image_url property
-            alt="batch item"
+            src="{batch.getBatchImageURL()}"
+            alt="Batch Image"
           />
-
           <div className="col-span-full mt-4">
             <p className="text-gray-900 font-bold text-2xl">Batch {Number(batch.id)}</p>
             <p className="text-gray-600">{batch ? `${batch.itemsLeft} items left` : "0 items left"}</p>
-            <p className="text-gray-600">{currentPrice ? `${currentPrice} USDC` : "0 USDC"}</p>
+            <p className="text-gray-600">{priceOfBatch ? `${priceOfBatch} USDC` : "0 USDC"}</p>
           </div>
 
           <div className="col-span-full mt-4">
@@ -146,12 +140,11 @@ export default function BatchCard({ batch }: { batch: Batch }) {
           </div>
         </div>
 
-        {/* Buy Batch Button */}
         <div className="mt-4 p-4">
           <p className="text-black mt-1 font-bold">
-            {currentPrice ? `Total: ${+currentPrice.toString() * tokenAmount} USDC` : "Total: 0 USDC"}
+            {priceOfBatch ? `Total: ${+ priceOfBatch.toString() * tokenAmount} USDC` : "Total: 0 USDC"}
           </p>
-          <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
+          <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={priceOfBatch?.toString() || "0"} />
         </div>
       </div>
     </div>
@@ -169,7 +162,7 @@ function BuyBatchButton({
 }) {
   const totalPrice = tokenAmount * Number(usdcPrice);
   const { address } = useAccount();
-  const [awaitedHash, setAwaitedHash] = useState<`0x${string}` | undefined>(undefined);
+  const [awaitedHash, setAwaitedHash] = useState<`0x${string} ` | undefined>(undefined);
   const { data: txReceipt } = useWaitForTransaction({
     hash: awaitedHash,
   });

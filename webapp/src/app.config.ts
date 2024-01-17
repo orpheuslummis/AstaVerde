@@ -7,3 +7,5 @@ export const navigationLinks = [
   { name: "Redeem", url: "/mytokens" },
   { name: "About", url: "/about" },
 ];
+
+export const IPFS_GATEWAY_URL = "https://ipfs.io/ipfs/";

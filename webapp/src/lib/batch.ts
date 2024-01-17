@@ -1,4 +1,4 @@
-const IPFS_GATEWAY = "https://ipfs.io/ipfs/";
+import { IPFS_GATEWAY_URL } from "../app.config";
 
 export class Batch {
   id: number;
@@ -6,6 +6,7 @@ export class Batch {
   timestamp: number;
   price: number;
   itemsLeft: number;
+  cid: string;
 
   constructor(id: number, token_ids: number[], timestamp: number, price: number, itemsLeft: number) {
     this.id = id;
@@ -13,9 +14,14 @@ export class Batch {
     this.timestamp = timestamp;
     this.price = price;
     this.itemsLeft = itemsLeft;
+    this.cid = "";
   }
 
-  image_url(): string {
-    return IPFS_GATEWAY + this.id.toString() + ".png";
+  setBatchImageCID(cid: string) {
+    this.cid = cid;
+  }
+
+  getBatchImageURL() {
+    return IPFS_GATEWAY_URL + this.cid;
   }
 }
