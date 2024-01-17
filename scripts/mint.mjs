@@ -30,36 +30,24 @@ import fs from "fs";
 import { readFileSync } from "fs";
 
 const astaverdejson = JSON.parse(readFileSync("./artifacts/contracts/AstaVerde.sol/AstaVerde.json"));
-
 const abi = astaverdejson.abi;
 
 dotenv.config();
 
-// todo : do some validation about the ids ...
+const rpcURL = "https://base-sepolia.g.alchemy.com/v2/" + process.env.ALCHEMY_APIKEY;
 
-// interface Config {
-//   contractAddress: string;
-//   imageFolder: string;
-//   csvPath: string;
-//   infuraApiKey: string;
-//   email: string;
-//   chainSelection: string;
-//   privateKey: string;
-// }
-
-const EXTERNAL_URL = "https://astaverde.xyz/token/";
+const EXTERNAL_URL = "https://marketplace.ecotradezone.com/token/";
 const IPFS_PREFIX = "ipfs://";
 
 const config = {
   contractAddress: process.env.CONTRACT_ADDRESS,
   imageFolder: process.env.IMAGE_FOLDER,
   csvPath: process.env.CSV_PATH,
-  infuraApiKey: process.env.INFURA_API_KEY,
+  alchemyAPIKey: process.env.ALCHEMY_APIKEY,
   email: process.env.EMAIL,
   chainSelection: process.env.CHAIN_SELECTION,
   privateKey: process.env.PRIVATE_KEY,
 };
-// console.log("Config: ", config);
 
 function validateConfig(config) {
   Object.entries(config).forEach(([key, value]) => {
@@ -81,7 +69,7 @@ function validateEmail(email) {
 }
 
 const explorerTxnURL =
-  config.chainSelection === "mainnet" ? "https://etherscan.io/tx/" : "https://sepolia.etherscan.io/tx/";
+  config.chainSelection === "mainnet" ? "https://basescan.org/tx/" : "https://sepolia.basescan.org/tx/";
 
 async function connectToSpace(config, spaceName) {
   const client = await create();
@@ -112,13 +100,9 @@ async function connectToSpace(config, spaceName) {
 
   try {
     const provisioning_result = await userAccount.provision(space.did());
-    // console.log("Provisioning result: ", provisioning_result);
     const recovery_result = await space.createRecovery(userAccount.did());
-    // console.log("Recovery result: ", recovery_result);
     await space.save();
     await client.setCurrentSpace(space.did());
-    // console.log("Agent: ", client.agent);
-    // console.log("Capability: ", client.capability);
     return client;
   } catch (error) {
     console.error("Error while connecting to space: ", error);
@@ -144,7 +128,7 @@ async function mint() {
   validateConfig(config);
   validateCSVShape(config.csvPath);
 
-  const provider = new ethers.InfuraProvider(config.chainSelection, config.infuraApiKey);
+  const provider = new ethers.JsonRpcProvider(rpcURL);
   const wallet = new ethers.Wallet(config.privateKey);
   const signer = wallet.connect(provider);
   const contract = new ethers.Contract(config.contractAddress, abi, signer);
@@ -198,7 +182,7 @@ async function mint() {
       }
 
       try {
-        console.log("Sending transaction...");
+        console.log("Sending transaction... mintBatch", producers, cids);
         const tx = await contract.mintBatch(producers, cids);
         console.log(`Transaction URL: ${explorerTxnURL}${tx.hash}`);
       } catch (error) {

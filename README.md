@@ -53,13 +53,13 @@ Deploy contract on testnet:
 ```shell
 npm run test
 npm run compile && npm run postinstall
-npm run deploy:contracts -- --network sepolia
+npm run deploy:contracts -- --network base-sepolia
 ```
 
 Configuring and minting:
 
 1. `cp .env.example .env`
-2. Fill out the parameters in ``.env`` (PRIVATE_KEY, INFURA_API_KEY, etc)
+2. Fill out the parameters in ``.env`` (PRIVATE_KEY, ALCHEMY_APIKEY, etc)
 3. Obtain CSV and image folder
 4. `npm run task:mint`
 
