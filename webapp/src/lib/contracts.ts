@@ -7,8 +7,8 @@ export const usdcContractConfig = {
 } as const;
 
 export const astaverdeContractConfig = {
-  // on Sepolia
-  address: "0x753B3B362b7950B643Fe4BD60d602eA0a2aC98c9",
+  // on Base Sepolia
+  address: "0x6a877a13BA618eD8AaF36fcc879A6cf225e010D4",
   abi: [
     {
       "inputs": [
