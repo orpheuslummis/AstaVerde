@@ -161,7 +161,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
     function setAuctionTimeThresholds(uint256 increase, uint256 decrease) external onlyOwner {
         require(increase > 0, "Invalid increase threshold");
         require(decrease > 0, "Invalid decrease threshold");
-        require(increase > decrease, "Increase threshold must be greater than decrease threshold");
+        require(increase < decrease, "Increase threshold must be lower than decrease threshold");
         dayIncreaseThreshold = increase;
         dayDecreaseThreshold = decrease;
     }
