@@ -347,7 +347,11 @@ function AuctionTimeThresholdsControl() {
 
   const handleSetMaxMatchSize = () => {
     if (dayIncreaseThreshold && dayDecreaseThreshold) {
-      write?.();
+      if (dayIncreaseThreshold < dayDecreaseThreshold) {
+        write?.();
+      } else {
+        alert("Increase threshold must be lower than decrease threshold");
+      }
     }
   };
 
