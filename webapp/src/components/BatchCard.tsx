@@ -144,7 +144,7 @@ function BuyBatchButton({
     // enabled: false,
     args: [astaverdeContractConfig.address, parseUnits(totalPrice.toString(), 6)],
   });
-  const { write: approve } = useContractWrite(configApprove);
+  const { writeAsync: approve } = useContractWrite(configApprove);
 
   const { config: configBuyBatch } = usePrepareContractWrite({
     ...astaverdeContractConfig,
@@ -170,8 +170,11 @@ function BuyBatchButton({
         <button
           className="mt-4 bg-primary hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
           disabled={!approve}
-          onClick={() => {
-            approve?.();
+          onClick={async () => {
+            if (approve) {
+              const result = await approve();
+              setAwaitedHash(result.hash);
+            }
           }}
         >
           Approve USDC
