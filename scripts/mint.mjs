@@ -24,6 +24,7 @@ Before running this script, ensure the following:
 The script checks for token ID alignment, i.e. if the first token ID of the batch is the `lastTokenID + 1` of the contract.
 The script checks if all necessary images are present in the folder.
 */
+
 import { create } from "@web3-storage/w3up-client";
 import csv from "csv-parser";
 import dotenv from "dotenv";
@@ -190,7 +191,7 @@ async function mint() {
   const wallet = new ethers.Wallet(config.privateKey);
   const signer = wallet.connect(provider);
   const contract = new ethers.Contract(config.contractAddress, abi, signer);
-  9
+
   const client = await connectToSpace(config, "astaverde-dev");
 
   validateTokenIDAlignment(config.csvPath, contract);
@@ -236,9 +237,6 @@ async function mint() {
 
         producers.push(row.producer_address);
         cids.push(metadataCid);
-
-        // progress = row.id;
-        // saveProgress(progress);
       }
 
       try {
