@@ -135,6 +135,13 @@ function BuyBatchButton({
     args: [address!, astaverdeContractConfig.address],
   });
 
+  const { data: balance } = useContractRead({
+    ...usdcContractConfig,
+    functionName: "balanceOf",
+    enabled: address !== undefined,
+    args: [address!],
+  });
+
   console.log("BatchCard: allowance:", Number(formatUnits(allowance || BigInt(0), 6)), totalPrice);
   console.log("BatchCard: buyBatch enabled", Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice);
 
@@ -162,6 +169,25 @@ function BuyBatchButton({
       void refreshAllowance();
     }
   }, [txReceipt]);
+
+  if (Number(formatUnits(balance || BigInt(0), 6)) < totalPrice) {
+    return (
+      <>
+        <button
+          className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full"
+          disabled
+          onClick={async () => {
+            if (approve) {
+              const result = await approve();
+              setAwaitedHash(result.hash);
+            }
+          }}
+        >
+          Not Enough Balance
+        </button>
+      </>
+    );
+  }
 
   // If there is not enough allowance to withdraw usdc from user address.
   if (Number(formatUnits(allowance || BigInt(0), 6)) < totalPrice) {
