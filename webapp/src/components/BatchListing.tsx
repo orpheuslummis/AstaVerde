@@ -41,19 +41,6 @@ export function BatchListing() {
   });
   console.log("BatchListing: data", data);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (isError) {
-    console.log("BatchListing: error", error);
-    return <div>Could not display, sorry.</div>;
-  }
-
-  if (!data) {
-    return <div>Could not display, sorry.</div>;
-  }
-
   const { address } = useAccount();
 
   const { data: allowance, refetch: refetchAllowance } = useContractRead({
@@ -62,16 +49,6 @@ export function BatchListing() {
     enabled: address !== undefined,
     args: [address!, astaverdeContractConfig.address],
   });
-
-  if (error) {
-    console.log("BatchListing: error", error);
-    return <div>Could not display, sorry.</div>;
-  }
-
-  if (data?.pages?.[0]?.[0]?.error) {
-    return <div>Error occurred: No batch has been minted yet.</div>;
-  }
-
 
   const batches: Batch[] =
     data?.pages?.flatMap(
@@ -90,6 +67,38 @@ export function BatchListing() {
     ) || [];
 
   console.log("🚀 ~ file: BatchListing.tsx:59 ~ BatchListing ~ batches:", batches);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (isError) {
+    console.log("BatchListing: error", error);
+    return <div>Could not display, sorry.</div>;
+  }
+
+  if (!data) {
+    return <div>Could not display, sorry.</div>;
+  }
+
+  if (error) {
+    console.log("BatchListing: error", error);
+    return <div>Could not display, sorry.</div>;
+  }
+
+  if (data?.pages?.[0]?.[0]?.error) {
+    return <div>Error occurred: No batch has been minted yet.</div>;
+  }
+
+  if (!address) {
+    return (
+      <>
+        <div className="flex w-full min-h-[calc(100vh-64px)] justify-center items-center text-lg font-bold">
+          Please connect wallet first
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
