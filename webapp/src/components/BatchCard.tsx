@@ -1,5 +1,6 @@
-"use client;"
+"use client;";
 
+import { IPFS_GATEWAY_URL } from "../app.config";
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
 import { useEffect, useState } from "react";
@@ -13,7 +14,6 @@ import {
   usePrepareContractWrite,
   useWaitForTransaction,
 } from "wagmi";
-import { IPFS_GATEWAY_URL } from "../app.config";
 
 // const { data: , fetchNextPage, error } = useContractInfiniteReads({
 //   cacheKey: "tokenMetadata",
@@ -116,10 +116,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
     <div className="flex justify-between items-center">
       <div className="flex-1 border rounded-lg overflow-hidden shadow-lg">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-          <img
-            src="{batch.getBatchImageURL()}"
-            alt="Batch Image"
-          />
+          <img src="{batch.getBatchImageURL()}" alt="Batch Image" />
           <div className="col-span-full mt-4">
             <p className="text-gray-900 font-bold text-2xl">Batch {Number(batch.id)}</p>
             <p className="text-gray-600">{batch ? `${batch.itemsLeft} items left` : "0 items left"}</p>
@@ -142,7 +139,7 @@ export default function BatchCard({ batch }: { batch: Batch }) {
 
         <div className="mt-4 p-4">
           <p className="text-black mt-1 font-bold">
-            {priceOfBatch ? `Total: ${+ priceOfBatch.toString() * tokenAmount} USDC` : "Total: 0 USDC"}
+            {priceOfBatch ? `Total: ${+priceOfBatch.toString() * tokenAmount} USDC` : "Total: 0 USDC"}
           </p>
           <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={priceOfBatch?.toString() || "0"} />
         </div>
@@ -174,6 +171,13 @@ function BuyBatchButton({
     args: [address!, astaverdeContractConfig.address],
   });
 
+  const { data: balance } = useContractRead({
+    ...usdcContractConfig,
+    functionName: "balanceOf",
+    enabled: address !== undefined,
+    args: [address!],
+  });
+
   console.log("BatchCard: allowance:", Number(formatUnits(allowance || BigInt(0), 6)), totalPrice);
   console.log("BatchCard: buyBatch enabled", Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice);
 
@@ -201,6 +205,25 @@ function BuyBatchButton({
       void refreshAllowance();
     }
   }, [txReceipt]);
+
+  if (Number(formatUnits(balance || BigInt(0), 6)) < totalPrice) {
+    return (
+      <>
+        <button
+          className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full"
+          disabled
+          onClick={async () => {
+            if (approve) {
+              const result = await approve();
+              setAwaitedHash(result.hash);
+            }
+          }}
+        >
+          Not Enough Balance
+        </button>
+      </>
+    );
+  }
 
   // If there is not enough allowance to withdraw usdc from user address.
   if (Number(formatUnits(allowance || BigInt(0), 6)) < totalPrice) {

@@ -16,6 +16,12 @@ they must buy the entire batch.
 - Platform Owner: Mints new batches of NFTs and manages the auction.
 - Buyers: Bid on and purchase batches of NFTs.
 
+## Requirements
+
+Wallet. We recommend Metamask to interact with the webapp
+ETH for transaction fee
+USDC for buying batches
+
 ## Usage
 
 Interact with the platform via EcoTradeZone. As a Credit Producer, generate and verify carbon offsets, then list them.
