@@ -3,7 +3,7 @@
 import React from "react";
 import { useState } from "react";
 import { paginatedIndexesConfig, useContractInfiniteReads, useContractRead } from "wagmi";
-import { astaverdeContractConfig } from "../lib/contracts";
+import { astaverdeContractConfig } from "../../../lib/contracts";
 import { Batch } from "../lib/batch";
 
 export default function BatchInfo({ batchID }: { batchID: bigint }) {

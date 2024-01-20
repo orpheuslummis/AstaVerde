@@ -1,20 +1,32 @@
-import { astaverdeContractConfig, usdcContractConfig } from "./contracts.mjs";
-import dotenv from "dotenv";
-import { createPublicClient, http, erc20Abi } from "viem";
-import { decodeEventLog } from "viem";
-import { sepolia, mainnet, base } from "viem/chains";
-
-dotenv.config();
-
 /**
  * INSTRUCTIONS:
  * 0. Update contracts.mjs with correct addresses and abi
  * 1. Select chain
  * 2. Set events range in block number
  */
-const chain = sepolia; // base
-const fromBlock = BigInt("5046895"); // get from etherscan.io > events > Block
-const toBlock = BigInt("5047299");
+
+import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
+import { createPublicClient, http, erc20Abi } from "viem";
+import { decodeEventLog } from "viem";
+import commander from "commander";
+
+const program = new commander.Command();
+
+program
+  .option("--from <blockNumber>", "Specify the starting block number")
+  .option("--to <blockNumber>", "Specify the ending block number")
+  .option("--chain <chainName>", "Specify the chain name")
+  .parse(process.argv);
+
+const { from, to, chain } = program.opts();
+
+if (!from || !to || !chain) {
+  console.error("Please provide --from, --to, and --chain arguments.");
+  process.exit(1);
+}
+
+const fromBlock = BigInt(from);
+const toBlock = BigInt(to);
 
 export const publicClient = createPublicClient({
   chain,
@@ -36,6 +48,8 @@ if (logs.length > 0) {
       data: log.data,
       topics: log.topics,
     });
+
+    // TBD
 
     // Extract values from topics
     const { eventName, args } = topics;

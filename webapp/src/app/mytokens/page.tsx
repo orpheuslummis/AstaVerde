@@ -6,7 +6,7 @@ start: the latest batch
 perPage: 10
 */
 import { Batch } from "../../lib/batch";
-import { astaverdeContractConfig } from "../../lib/contracts";
+import { astaverdeContractConfig } from "../../../../lib/contracts";
 import { ChangeEvent, Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import {
   paginatedIndexesConfig,

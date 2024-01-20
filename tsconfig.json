@@ -30,7 +30,8 @@
     "test/**/*",
     "deploy/**/*",
     "types/",
-    "webapp/src/**/*"
+    "webapp/src/**/*",
+    "lib/**/*"
   ],
   // "ts-node": {
   //   "files": true,

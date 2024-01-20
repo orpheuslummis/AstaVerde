@@ -1,6 +1,6 @@
 "use client";
 
-import { astaverdeContractConfig } from "../lib/contracts";
+import { astaverdeContractConfig } from "../../../lib/contracts";
 import { Connected } from "./Connected";
 import { useEffect, useState } from "react";
 import { useContractWrite, usePrepareContractWrite, useContractRead, useAccount } from "wagmi";
@@ -126,8 +126,8 @@ function ClaimPlatformFunds() {
         className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
         disabled={!write}
         onClick={() => write?.()}
-        // disabled={isLoading}
-        // onClick={write({ args: [address] })}
+      // disabled={isLoading}
+      // onClick={write({ args: [address] })}
       >
         Claim
       </button>

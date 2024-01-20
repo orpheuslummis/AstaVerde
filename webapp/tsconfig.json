@@ -29,7 +29,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/lib/ipfs.js"
+    "src/lib/ipfs.js",
+    "../lib/contracts.ts"
   ],
   "exclude": [
     "node_modules"

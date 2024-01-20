@@ -1,7 +1,7 @@
 "use client";
 
 import { Batch } from "../lib/batch";
-import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
+import { astaverdeContractConfig, usdcContractConfig } from "../../../lib/contracts";
 import { useEffect, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
 import {

@@ -1,7 +1,7 @@
 "use client";
 
 import { Batch } from "../lib/batch";
-import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
+import { astaverdeContractConfig, usdcContractConfig } from "../../../lib/contracts";
 import BatchCard from "./BatchCard";
 import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead } from "wagmi";
 

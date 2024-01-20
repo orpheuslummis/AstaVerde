@@ -1,7 +1,7 @@
 "use client";
 
 import { ConnectKitButton } from "../components/ConnectKitButton";
-import { usdcContractConfig } from "../lib/contracts";
+import { usdcContractConfig } from "../../../lib/contracts";
 import Link from "next/link";
 import { useState } from "react";
 import { formatUnits } from "viem";
