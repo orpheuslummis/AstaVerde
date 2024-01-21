@@ -63,6 +63,15 @@ export function BatchListing() {
     return <div>Could not display, sorry.</div>;
   }
 
+  if (isError) {
+    console.log("BatchListing: error", error);
+    return <div>Could not display, sorry.</div>;
+  }
+
+  if (!data) {
+    return <div>Could not display, sorry.</div>;
+  }
+
   if (data?.pages?.[0]?.[0]?.error) {
     return <div>Error occurred: No batch has been minted yet.</div>;
   }
