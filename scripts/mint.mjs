@@ -208,8 +208,6 @@ async function mint() {
       const producers = [];
       const cids = [];
       for (const row of data) {
-        // if (progress >= row.id) continue;
-
         console.log("Processing row", row);
 
         const imagefile = await filesFromPaths([`${config.imageFolder}/${row.id}.jpg`]);
@@ -236,7 +234,8 @@ async function mint() {
         console.log(`Metadata URL: ${IPFS_PREFIX}${metadataCid}`);
 
         producers.push(row.producer_address);
-        cids.push(metadataCid);
+
+        cids.push(metadataCid.toString());
       }
 
       try {
