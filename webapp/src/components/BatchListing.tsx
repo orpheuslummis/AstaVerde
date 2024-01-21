@@ -6,6 +6,8 @@ import BatchCard from "./BatchCard";
 import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead } from "wagmi";
 
 export function BatchListing() {
+  const { address } = useAccount();
+
   const {
     data: lastBatchID,
     isError,
@@ -41,7 +43,18 @@ export function BatchListing() {
   });
   console.log("BatchListing: data", data);
 
-  const { address } = useAccount();
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (isError) {
+    console.log("BatchListing: error", error);
+    return <div>Could not display, sorry.</div>;
+  }
+
+  if (!data) {
+    return <div>Could not display, sorry.</div>;
+  }
 
   const { data: allowance, refetch: refetchAllowance } = useContractRead({
     ...usdcContractConfig,
