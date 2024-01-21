@@ -708,6 +708,23 @@ export function shouldBehaveLikeAstaVerde(): void {
     price = await this.astaVerde.getBatchPrice(0);
     expect(price).to.equal(PRICE_FLOOR);
   });
+
+  it("tokens should have correct metadata after minting", async function () {
+    const cids = ["cid1", "cid2"];
+    const producers = createNewAddresses(cids.length);
+    await this.astaVerde.mintBatch(producers, cids);
+    const batchID = await this.astaVerde.lastBatchID();
+    const { tokenIds } = await this.astaVerde.getBatchInfo(batchID);
+    for (let i = 0; i < tokenIds.length; i++) {
+      const tokenInfo = await this.astaVerde.tokens(tokenIds[i]);
+      expect(tokenInfo[0]).to.equal(i + 1); // token index
+      expect(tokenInfo[2]).to.equal(cids[i]); // cid
+      expect(tokenInfo[3]).to.be.false; // is redeemed
+    }
+  });
+
+  // test paying with a non-USDC token should fail. this requires minting AnotherERC20 and using it to pay
 }
 
-// test paying with a non-USDC token should fail. this requires minting AnotherERC20 and using it to pay
+
+
