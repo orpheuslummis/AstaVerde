@@ -23,7 +23,7 @@ we assume that batches have a linear progression of tokenIDs
 ideally, when clicked we would open a modal that shows info on all the tokens it contains 
 */
 
-export default function BatchCard({ batch }: { batch: Batch }) {
+export default function BatchCard({ batch, updateCard }: { batch: Batch; updateCard: () => void }) {
   // const [isModalOpen, setIsModalOpen] = useState(false);
   const [tokenAmount, setTokenAmount] = useState(1);
 
@@ -105,7 +105,12 @@ export default function BatchCard({ batch }: { batch: Batch }) {
           <p className="text-black mt-1 font-bold">
             {currentPrice ? `Total: ${+currentPrice.toString() * tokenAmount} USDC` : "Total: 0 USDC"}
           </p>
-          <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={currentPrice?.toString() || "0"} />
+          <BuyBatchButton
+            batchId={batch.id}
+            tokenAmount={tokenAmount}
+            usdcPrice={currentPrice?.toString() || "0"}
+            updateCard={updateCard}
+          />
         </div>
       </div>
     </div>
@@ -116,10 +121,12 @@ function BuyBatchButton({
   batchId,
   tokenAmount,
   usdcPrice,
+  updateCard,
 }: {
   batchId: number;
   tokenAmount: number;
   usdcPrice: string;
+  updateCard: () => void;
 }) {
   const totalPrice = tokenAmount * Number(usdcPrice);
   const { address } = useAccount();
@@ -167,6 +174,8 @@ function BuyBatchButton({
   useEffect(() => {
     if (txReceipt) {
       void refreshAllowance();
+
+      void updateCard();
     }
   }, [txReceipt]);
 
