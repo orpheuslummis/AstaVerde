@@ -25,7 +25,13 @@ export function BatchListing() {
 
   console.log("BatchListing: lastBatchIDn, isError, isLoading", lastBatchID, isError, isLoading);
 
-  const { data, fetchNextPage, error, hasNextPage } = useContractInfiniteReads({
+  const {
+    data,
+    fetchNextPage,
+    error,
+    hasNextPage,
+    refetch: updateCard,
+  } = useContractInfiniteReads({
     cacheKey: "batchMetadata",
     ...paginatedIndexesConfig(
       (batchID: bigint) => {
@@ -98,7 +104,7 @@ export function BatchListing() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-4">
         {batches.map((batch) => (
           <div key={batch.id} className="w-full px-2 mb-4">
-            <BatchCard batch={batch} />
+            <BatchCard batch={batch} updateCard={updateCard} />
           </div>
         ))}
       </div>
