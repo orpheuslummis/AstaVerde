@@ -1,7 +1,7 @@
 "use client";
 
-import { ConnectKitButton } from "./ConnectKitButton";
 import { usdcContractConfig } from "../lib/contracts";
+import { ConnectKitButton } from "./ConnectKitButton";
 import Link from "next/link";
 import { useState } from "react";
 import { formatUnits } from "viem";
@@ -16,7 +16,8 @@ export function Header({ links }: HeaderProps) {
   const { data: balance } = useContractRead({
     ...usdcContractConfig,
     functionName: "balanceOf",
-    args: [address || "0x0000"],
+    enabled: address !== undefined,
+    args: [address!],
   });
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
