@@ -111,7 +111,7 @@ export default function BatchCard({ batch, updateCard }: { batch: Batch; updateC
           <BuyBatchButton
             batchId={batch.id}
             tokenAmount={tokenAmount}
-            usdcPrice={currentPrice?.toString() || "0"}
+            usdcPrice={priceOfBatch?.toString() || "0"}
             updateCard={updateCard}
           />
         </div>
@@ -133,7 +133,7 @@ function BuyBatchButton({
 }) {
   const totalPrice = tokenAmount * Number(usdcPrice);
   const { address } = useAccount();
-  const [awaitedHash, setAwaitedHash] = useState<`0x${string} ` | undefined>(undefined);
+  const [awaitedHash, setAwaitedHash] = useState<`0x${string}`>();
   const { data: txReceipt } = useWaitForTransaction({
     hash: awaitedHash,
   });
@@ -185,16 +185,7 @@ function BuyBatchButton({
   if (Number(formatUnits(balance || BigInt(0), 6)) < totalPrice) {
     return (
       <>
-        <button
-          className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full"
-          disabled
-          onClick={async () => {
-            if (approve) {
-              const result = await approve();
-              setAwaitedHash(result.hash);
-            }
-          }}
-        >
+        <button className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full" disabled>
           Not Enough Balance
         </button>
       </>
