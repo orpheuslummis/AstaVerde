@@ -18,13 +18,6 @@ export function BatchListing() {
     functionName: "lastBatchID",
   });
 
-  const { data: allowance, refetch: refetchAllowance } = useContractRead({
-    ...usdcContractConfig,
-    functionName: "allowance",
-    enabled: address !== undefined,
-    args: [address!, astaverdeContractConfig.address],
-  });
-
   if (lastBatchIDError || lastBatchID === undefined) {
     console.log("BatchListing: lastBatchIDError", lastBatchIDError);
   }
@@ -55,32 +48,6 @@ export function BatchListing() {
     ),
   });
   console.log("BatchListing: data", data);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (isError) {
-    console.log("BatchListing: error", error);
-    return <div>Could not display, sorry.</div>;
-  }
-
-  if (!data) {
-    return <div>Could not display, sorry.</div>;
-  }
-
-  if (isError) {
-    console.log("BatchListing: error", error);
-    return <div>Could not display, sorry.</div>;
-  }
-
-  if (!data) {
-    return <div>Could not display, sorry.</div>;
-  }
-
-  if (data?.pages?.[0]?.[0]?.error) {
-    return <div>Error occurred: No batch has been minted yet.</div>;
-  }
 
   const batches: Batch[] =
     data?.pages?.flatMap(
