@@ -5,32 +5,7 @@ import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
 import { useEffect, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
-import {
-  paginatedIndexesConfig,
-  useAccount,
-  useContractInfiniteReads,
-  useContractRead,
-  useContractWrite,
-  usePrepareContractWrite,
-  useWaitForTransaction,
-} from "wagmi";
-
-// const { data: , fetchNextPage, error } = useContractInfiniteReads({
-//   cacheKey: "tokenMetadata",
-//   ...paginatedIndexesConfig(
-//     (tokenID: bigint) => {
-//       console.log("BatchCard: fetching tokenID", tokenID);
-//       return [
-//         {
-//           ...astaverdeContractConfig,
-//           functionName: "tokens",
-//           args: [tokenID] as const,
-//         },
-//       ];
-//     },
-//     { start: batch.token_ids[batch.token_ids.length - 1], perPage: 10, direction: "decrement" },
-//   ),
-// });
+import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite, useWaitForTransaction } from "wagmi";
 
 /*
 obtain the first token of the batch
@@ -55,12 +30,19 @@ export default function BatchCard({ batch, updateCard }: { batch: Batch; updateC
     args: [BigInt(batch.id)],
   });
 
+  const tokenInfo = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "tokens",
+    enabled: batch.token_ids.length > 0,
+    args: [BigInt(batch.token_ids[0])],
+  });
+
   const fetchTokenImageUrl = async (tokenCID: string) => {
     try {
       const response = await fetch(`${IPFS_GATEWAY_URL}${tokenCID}`);
       const metadata = await response.json();
       console.log("BatchCard: fetched token metadata", metadata);
-      const imageUrl = metadata.image_url;
+      const imageUrl = metadata.image;
       console.log("BatchCard: fetched image URL", imageUrl);
       return imageUrl;
     } catch (error) {
@@ -70,53 +52,36 @@ export default function BatchCard({ batch, updateCard }: { batch: Batch; updateC
   };
 
   const getFirstBatchTokenCID = async () => {
-    console.log("BatchCard: getFirstBatchTokenCID data", data);
-    if (data?.pages?.[0]?.[0]) {
-      const tokenID = data.pages[0][0];
-      console.log("BatchCard: tokenID", tokenID);
-      if (tokenID === undefined) {
-        return null;
-      }
-      const tokenInfo = await useContractRead({
-        ...astaverdeContractConfig,
-        functionName: "tokens",
-        args: [tokenID],
-      });
+    if (tokenInfo.data) {
       console.log("BatchCard: tokenInfo", tokenInfo);
-      if (tokenInfo) {
-        const tokenCID = tokenInfo.data[2];
-        console.log("BatchCard: tokenCID", tokenCID);
-        return tokenCID;
-      }
+      const tokenCID = tokenInfo.data[2];
+      console.log("BatchCard: tokenCID", tokenCID);
+      return tokenCID;
     }
     return null;
   };
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log("BatchCard: fetchData");
-      console.log("BatchCard: batch.token_ids", batch.token_ids);
-      console.log("BatchCard: batch", batch);
-      console.log("BatchCard: batch.id", batch.id);
-      console.log("BatchCard: batchInfo", batchInfo);
-      console.log("BatchCard: priceOfBatch", priceOfBatch);
-      console.log("BatchCard: fetchData data", data);
-      const firstBatchTokenCID = await getFirstBatchTokenCID();
-      console.log("BatchCard: firstBatchTokenCID", firstBatchTokenCID);
-      if (firstBatchTokenCID) {
-        const batchImageCID = await fetchTokenImageUrl(firstBatchTokenCID);
-        console.log("BatchCard: fetched image URL", batchImageCID);
-        batch.setBatchImageCID(batchImageCID);
+      if (tokenInfo.data) {
+        const firstBatchTokenCID = await getFirstBatchTokenCID();
+        if (firstBatchTokenCID) {
+          const batchImageCID = await fetchTokenImageUrl(firstBatchTokenCID);
+          const parts = batchImageCID.split("ipfs://");
+          const CID = parts[1];
+          setBatchImageUrl(IPFS_GATEWAY_URL + CID);
+          // batch.setBatchImageCID(batchImageCID);
+        }
       }
     };
-    fetchData();
-  }, [data]);
+    void fetchData();
+  }, [tokenInfo]);
 
   return (
     <div className="flex justify-between items-center">
       <div className="flex-1 border rounded-lg overflow-hidden shadow-lg">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-          <img src="{batch.getBatchImageURL()}" alt="Batch Image" />
+          <img src={batchImageUrl} alt={"Batch Image"} />
           <div className="col-span-full mt-4">
             <p className="text-gray-900 font-bold text-2xl">Batch {Number(batch.id)}</p>
             <p className="text-gray-600">{batch ? `${batch.itemsLeft} items left` : "0 items left"}</p>
