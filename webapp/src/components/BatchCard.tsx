@@ -15,8 +15,7 @@ build a URL to the image using the image CID
 */
 
 export default function BatchCard({ batch, updateCard }: { batch: Batch; updateCard: () => void }) {
-  const [batchImageUrl, setBatchImageUrl] = useState<string>();
-
+const [batchImageUrl, setBatchImageUrl] = useState<string>();
   const [tokenAmount, setTokenAmount] = useState(1);
 
   const { data: batchInfo } = useContractRead({
@@ -111,7 +110,7 @@ export default function BatchCard({ batch, updateCard }: { batch: Batch; updateC
           <BuyBatchButton
             batchId={batch.id}
             tokenAmount={tokenAmount}
-            usdcPrice={priceOfBatch?.toString() || "0"}
+usdcPrice={priceOfBatch?.toString() || "0"}
             updateCard={updateCard}
           />
         </div>
@@ -185,7 +184,7 @@ function BuyBatchButton({
   if (Number(formatUnits(balance || BigInt(0), 6)) < totalPrice) {
     return (
       <>
-        <button className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full" disabled>
+<button className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full" disabled>
           Not Enough Balance
         </button>
       </>
