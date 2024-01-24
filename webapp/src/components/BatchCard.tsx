@@ -39,8 +39,8 @@ obtain the image CID from that metadata
 build a URL to the image using the image CID
 */
 
-export default function BatchCard({ batch }: { batch: Batch }) {
-  const [data] = useState(null);
+export default function BatchCard({ batch, updateCard }: { batch: Batch; updateCard: () => void }) {
+  // const [isModalOpen, setIsModalOpen] = useState(false);
   const [tokenAmount, setTokenAmount] = useState(1);
 
   const { data: batchInfo } = useContractRead({
@@ -141,7 +141,12 @@ export default function BatchCard({ batch }: { batch: Batch }) {
           <p className="text-black mt-1 font-bold">
             {priceOfBatch ? `Total: ${+priceOfBatch.toString() * tokenAmount} USDC` : "Total: 0 USDC"}
           </p>
-          <BuyBatchButton batchId={batch.id} tokenAmount={tokenAmount} usdcPrice={priceOfBatch?.toString() || "0"} />
+          <BuyBatchButton
+            batchId={batch.id}
+            tokenAmount={tokenAmount}
+            usdcPrice={currentPrice?.toString() || "0"}
+            updateCard={updateCard}
+          />
         </div>
       </div>
     </div>
@@ -152,10 +157,12 @@ function BuyBatchButton({
   batchId,
   tokenAmount,
   usdcPrice,
+  updateCard,
 }: {
   batchId: number;
   tokenAmount: number;
   usdcPrice: string;
+  updateCard: () => void;
 }) {
   const totalPrice = tokenAmount * Number(usdcPrice);
   const { address } = useAccount();
@@ -203,6 +210,8 @@ function BuyBatchButton({
   useEffect(() => {
     if (txReceipt) {
       void refreshAllowance();
+
+      void updateCard();
     }
   }, [txReceipt]);
 
