@@ -15,7 +15,8 @@ build a URL to the image using the image CID
 */
 
 export default function BatchCard({ batch, updateCard }: { batch: Batch; updateCard: () => void }) {
-  // const [isModalOpen, setIsModalOpen] = useState(false);
+  const [batchImageUrl, setBatchImageUrl] = useState<string>();
+
   const [tokenAmount, setTokenAmount] = useState(1);
 
   const { data: batchInfo } = useContractRead({
@@ -70,7 +71,6 @@ export default function BatchCard({ batch, updateCard }: { batch: Batch; updateC
           const parts = batchImageCID.split("ipfs://");
           const CID = parts[1];
           setBatchImageUrl(IPFS_GATEWAY_URL + CID);
-          // batch.setBatchImageCID(batchImageCID);
         }
       }
     };
