@@ -1,8 +1,9 @@
 "use client";
 
-import { ConnectKitButton } from "./ConnectKitButton";
 import { usdcContractConfig } from "../lib/contracts";
+import { ConnectKitButton } from "./ConnectKitButton";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useContractRead } from "wagmi";
@@ -20,6 +21,7 @@ export function Header({ links }: HeaderProps) {
   });
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -42,8 +44,18 @@ export function Header({ links }: HeaderProps) {
           {links.map((link, index) => (
             <li key={index} className="lg:mr-4">
               <Link href={link.url}>
-                <div className="group hover:bg-white/20 rounded-lg px-4 py-2 transition duration-300 ease-in-out">
-                  <span className="text-white/90 hover:text-white transition-colors duration-300">{link.name}</span>
+                <div
+                  className={`group hover:bg-white/20 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
+                    pathname === link.url ? "bg-white/20" : ""
+                  }`}
+                >
+                  <span
+                    className={`text-white/90 hover:text-white transition-colors duration-300 ${
+                      pathname === link.url ? "text-white" : ""
+                    }`}
+                  >
+                    {link.name}
+                  </span>
                 </div>
               </Link>
             </li>
