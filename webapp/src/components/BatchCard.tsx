@@ -80,15 +80,17 @@ export default function BatchCard({ batch, updateCard }: { batch: Batch; updateC
   return (
     <div className="flex justify-between items-center">
       <div className="flex-1 border rounded-lg overflow-hidden shadow-lg">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-          <img src={batchImageUrl} alt={"Batch Image"} />
-          <div className="col-span-full mt-4">
+        <div className="flex flex-col items-center w-full p-4">
+          <div className="w-full h-64 overflow-hidden rounded shadow-lg">
+            <img className="w-full h-full object-cover" src={batchImageUrl} alt="Batch Image" />
+          </div>
+          <div className="w-full mt-4">
             <p className="text-gray-900 font-bold text-2xl">Batch {Number(batch.id)}</p>
             <p className="text-gray-600">{batch ? `${batch.itemsLeft} items left` : "0 items left"}</p>
             <p className="text-gray-600">{priceOfBatch ? `${priceOfBatch} USDC` : "0 USDC"}</p>
           </div>
 
-          <div className="col-span-full mt-4">
+          <div className="w-full mt-4">
             <label htmlFor="quantity" className="block text-gray-600">
               Select quantity
             </label>
