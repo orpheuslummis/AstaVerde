@@ -1,92 +1,95 @@
-"use client";
+"use client;";
 
+import { IPFS_GATEWAY_URL } from "../app.config";
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
 import { useEffect, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
-import {
-  paginatedIndexesConfig,
-  useAccount,
-  useContractInfiniteReads,
-  useContractRead,
-  useContractWrite,
-  usePrepareContractWrite,
-  useWaitForTransaction,
-} from "wagmi";
+import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite, useWaitForTransaction } from "wagmi";
 
 /*
-the image url is encoded in the metadata
-therefore, each Batch will load its metadata then download the image
-
-we assume that batches have a linear progression of tokenIDs
-
-ideally, when clicked we would open a modal that shows info on all the tokens it contains 
+obtain the first token of the batch
+fetch the metadata of the token from IPFS using its CID
+obtain the image CID from that metadata
+build a URL to the image using the image CID
 */
 
 export default function BatchCard({ batch, updateCard }: { batch: Batch; updateCard: () => void }) {
-  // const [isModalOpen, setIsModalOpen] = useState(false);
+const [batchImageUrl, setBatchImageUrl] = useState<string>();
   const [tokenAmount, setTokenAmount] = useState(1);
 
-  console.log("BatchCard: batch.token_ids", batch.token_ids);
-
-  const { data, fetchNextPage, error } = useContractInfiniteReads({
-    cacheKey: "tokenMetadata",
-    ...paginatedIndexesConfig(
-      (tokenID: bigint) => {
-        console.log("BatchCard: fetching tokenCID", tokenID);
-        return [
-          {
-            ...astaverdeContractConfig,
-            functionName: "batches",
-            args: [tokenID] as const,
-          },
-        ];
-      },
-      { start: batch.token_ids[batch.token_ids.length - 1], perPage: 10, direction: "decrement" },
-    ),
-  });
-  const { data: batches, refetch: refetchBathes } = useContractRead({
+  const { data: batchInfo } = useContractRead({
     ...astaverdeContractConfig,
     functionName: "batches",
     args: [BigInt(batch.id)],
   });
 
-  const { data: currentPrice } = useContractRead({
+  const { data: priceOfBatch } = useContractRead({
     ...astaverdeContractConfig,
     functionName: "getBatchPrice",
     args: [BigInt(batch.id)],
   });
 
-  console.log("BatchCard: batch", batch);
-  console.log("BatchCard: batches", batches);
-  console.log("BatchCard: currentPrice", currentPrice);
-  console.log("BatchCard: batch.id", batch.id);
+  const tokenInfo = useContractRead({
+    ...astaverdeContractConfig,
+    functionName: "tokens",
+    enabled: batch.token_ids.length > 0,
+    args: [BigInt(batch.token_ids[0])],
+  });
 
-  // we get metadata for each token,
+  const fetchTokenImageUrl = async (tokenCID: string) => {
+    try {
+      const response = await fetch(`${IPFS_GATEWAY_URL}${tokenCID}`);
+      const metadata = await response.json();
+      console.log("BatchCard: fetched token metadata", metadata);
+      const imageUrl = metadata.image;
+      console.log("BatchCard: fetched image URL", imageUrl);
+      return imageUrl;
+    } catch (error) {
+      console.error("BatchCard: error fetching token metadata", error);
+      return null;
+    }
+  };
 
-  // for each batch, we already have its ID, timestamp, price, and tokenIDs
-  // get metadata from ipfs (via http)
-  // the cid is obtained from the contract
+  const getFirstBatchTokenCID = async () => {
+    if (tokenInfo.data) {
+      console.log("BatchCard: tokenInfo", tokenInfo);
+      const tokenCID = tokenInfo.data[2];
+      console.log("BatchCard: tokenCID", tokenCID);
+      return tokenCID;
+    }
+    return null;
+  };
 
-  // buyBatch
+  useEffect(() => {
+    const fetchData = async () => {
+      if (tokenInfo.data) {
+        const firstBatchTokenCID = await getFirstBatchTokenCID();
+        if (firstBatchTokenCID) {
+          const batchImageCID = await fetchTokenImageUrl(firstBatchTokenCID);
+          const parts = batchImageCID.split("ipfs://");
+          const CID = parts[1];
+          setBatchImageUrl(IPFS_GATEWAY_URL + CID);
+        }
+      }
+    };
+    void fetchData();
+  }, [tokenInfo]);
 
   return (
     <div className="flex justify-between items-center">
       <div className="flex-1 border rounded-lg overflow-hidden shadow-lg">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-          <img
-            className="h-48 w-full object-cover rounded-lg col-span-full"
-            // src={batch.image_url} // Assuming batch has an image_url property
-            alt="batch item"
-          />
-
-          <div className="col-span-full mt-4">
+        <div className="flex flex-col items-center w-full p-4">
+          <div className="w-full h-64 overflow-hidden rounded shadow-lg">
+            <img className="w-full h-full object-cover" src={batchImageUrl} alt="Batch Image" />
+          </div>
+          <div className="w-full mt-4">
             <p className="text-gray-900 font-bold text-2xl">Batch {Number(batch.id)}</p>
             <p className="text-gray-600">{batch ? `${batch.itemsLeft} items left` : "0 items left"}</p>
-            <p className="text-gray-600">{currentPrice ? `${currentPrice} USDC` : "0 USDC"}</p>
+            <p className="text-gray-600">{priceOfBatch ? `${priceOfBatch} USDC` : "0 USDC"}</p>
           </div>
 
-          <div className="col-span-full mt-4">
+          <div className="w-full mt-4">
             <label htmlFor="quantity" className="block text-gray-600">
               Select quantity
             </label>
@@ -100,15 +103,14 @@ export default function BatchCard({ batch, updateCard }: { batch: Batch; updateC
           </div>
         </div>
 
-        {/* Buy Batch Button */}
         <div className="mt-4 p-4">
           <p className="text-black mt-1 font-bold">
-            {currentPrice ? `Total: ${+currentPrice.toString() * tokenAmount} USDC` : "Total: 0 USDC"}
+            {priceOfBatch ? `Total: ${+priceOfBatch.toString() * tokenAmount} USDC` : "Total: 0 USDC"}
           </p>
           <BuyBatchButton
             batchId={batch.id}
             tokenAmount={tokenAmount}
-            usdcPrice={currentPrice?.toString() || "0"}
+usdcPrice={priceOfBatch?.toString() || "0"}
             updateCard={updateCard}
           />
         </div>
@@ -130,7 +132,7 @@ function BuyBatchButton({
 }) {
   const totalPrice = tokenAmount * Number(usdcPrice);
   const { address } = useAccount();
-  const [awaitedHash, setAwaitedHash] = useState<`0x${string}` | undefined>(undefined);
+  const [awaitedHash, setAwaitedHash] = useState<`0x${string}`>();
   const { data: txReceipt } = useWaitForTransaction({
     hash: awaitedHash,
   });
@@ -182,16 +184,7 @@ function BuyBatchButton({
   if (Number(formatUnits(balance || BigInt(0), 6)) < totalPrice) {
     return (
       <>
-        <button
-          className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full"
-          disabled
-          onClick={async () => {
-            if (approve) {
-              const result = await approve();
-              setAwaitedHash(result.hash);
-            }
-          }}
-        >
+<button className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full" disabled>
           Not Enough Balance
         </button>
       </>
