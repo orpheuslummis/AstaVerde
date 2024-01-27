@@ -1,8 +1,9 @@
 "use client";
 
 import { Batch } from "../lib/batch";
-import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
+import { astaverdeContractConfig } from "../lib/contracts";
 import BatchCard from "./BatchCard";
+import { useEffect } from "react";
 import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead } from "wagmi";
 
 export function BatchListing() {
@@ -48,6 +49,10 @@ export function BatchListing() {
     ),
   });
   console.log("BatchListing: data", data);
+
+  useEffect(() => {
+    void updateCard();
+  }, [lastBatchIDn]);
 
   const batches: Batch[] =
     data?.pages?.flatMap(
