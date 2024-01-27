@@ -94,15 +94,15 @@ export function BatchListing() {
     return <div>Error occurred: No batch has been minted yet.</div>;
   }
 
-  if (!address) {
-    return (
-      <>
-        <div className="flex w-full min-h-[calc(100vh-64px)] justify-center items-center text-lg font-bold">
-          Please connect wallet first
-        </div>
-      </>
-    );
-  }
+  // if (!address) {
+  //   return (
+  //     <>
+  //       <div className="flex w-full min-h-[calc(100vh-64px)] justify-center items-center text-lg font-bold">
+  //         Please connect wallet first
+  //       </div>
+  //     </>
+  //   );
+  // }
 
   return (
     <>

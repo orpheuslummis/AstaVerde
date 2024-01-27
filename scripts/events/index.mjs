@@ -2,7 +2,7 @@ import { astaverdeContractConfig, usdcContractConfig } from "./contracts.mjs";
 import dotenv from "dotenv";
 import { createPublicClient, http, erc20Abi } from "viem";
 import { decodeEventLog } from "viem";
-import { sepolia, mainnet, base } from "viem/chains";
+import { sepolia, mainnet, base, baseSepolia } from "viem/chains";
 
 dotenv.config();
 
@@ -12,9 +12,9 @@ dotenv.config();
  * 1. Select chain
  * 2. Set events range in block number
  */
-const chain = sepolia; // base
-const fromBlock = BigInt("5046895"); // get from etherscan.io > events > Block
-const toBlock = BigInt("5047299");
+const chain = baseSepolia; // base
+const fromBlock = BigInt("5282940"); // get from etherscan.io > events > Block
+const toBlock = BigInt("5282950");
 
 export const publicClient = createPublicClient({
   chain,
