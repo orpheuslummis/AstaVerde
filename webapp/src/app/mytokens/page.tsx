@@ -8,6 +8,7 @@ perPage: 10
 import { Batch } from "../../lib/batch";
 import { astaverdeContractConfig } from "../../lib/contracts";
 import { ChangeEvent, Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
+import { TransactionReceipt } from "viem";
 import {
   paginatedIndexesConfig,
   useAccount,
@@ -15,6 +16,7 @@ import {
   useContractRead,
   useContractWrite,
   usePrepareContractWrite,
+  useWaitForTransaction,
 } from "wagmi";
 
 export default function Page() {
@@ -105,6 +107,10 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
   const { address } = useAccount();
   const [sameAddresses, setSameAddresses] = useState<`0x${string}`[]>();
   const [redeemableTokens, setRedeemableTokens] = useState<bigint[]>([]);
+  const [awaitedHash, setAwaitedHash] = useState<`0x${string}`>();
+  const { data: txReceipt } = useWaitForTransaction({
+    hash: awaitedHash,
+  });
 
   console.log("batch in mytokens: ", batch);
 
@@ -139,7 +145,7 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
     enabled: redeemableTokens.length > 0,
     args: [redeemableTokens],
   });
-  const { write: redeemTokens } = useContractWrite(config);
+  const { writeAsync: redeemTokens } = useContractWrite(config);
 
   console.log("redeem", redeemableTokens);
 
@@ -155,7 +161,11 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
         {/* <p className="mt-2">Token IDs</p> */}
         {ownerTokens()?.map((redeemableToken) => (
           <>
-            <RedeemableTokenNumber redeemableToken={redeemableToken} setRedeemableTokens={setRedeemableTokens} />
+            <RedeemableTokenNumber
+              txReceipt={txReceipt}
+              redeemableToken={redeemableToken}
+              setRedeemableTokens={setRedeemableTokens}
+            />
           </>
         ))}
 
@@ -174,9 +184,12 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
               redeemTokens ? "bg-primary hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
             }`}
             disabled={!redeemTokens}
-            onClick={() => {
+            onClick={async () => {
               console.log(redeemableTokens);
-              redeemTokens?.();
+              if (redeemTokens) {
+                const result = await redeemTokens();
+                setAwaitedHash(result.hash);
+              }
             }}
           >
             Redeem
@@ -188,13 +201,15 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
 }
 
 function RedeemableTokenNumber({
+  txReceipt,
   redeemableToken,
   setRedeemableTokens,
 }: {
+  txReceipt: TransactionReceipt | undefined;
   redeemableToken: number;
   setRedeemableTokens: Dispatch<SetStateAction<bigint[]>>;
 }) {
-  const { data: tokenInfo } = useContractRead({
+  const { data: tokenInfo, refetch: refreshTokenInfo } = useContractRead({
     ...astaverdeContractConfig,
     functionName: "tokens",
     args: [BigInt(redeemableToken)],
@@ -212,6 +227,12 @@ function RedeemableTokenNumber({
       setRedeemableTokens((redeemableTokens) => redeemableTokens.filter((n) => n !== BigInt(redeemableToken)));
     }
   };
+
+  useEffect(() => {
+    if (txReceipt) {
+      void refreshTokenInfo();
+    }
+  }, [txReceipt]);
 
   return (
     <>
