@@ -63,13 +63,12 @@ export default function Page() {
     data?.pages?.flatMap(
       (page: any[]) =>
         page?.map((batch: any) => {
-          console.log("batch", batch);
-          const tokenIDs: number[] = batch.result?.[0] || [];
-          const timestamp: number = batch.result?.[1] || 0;
-          const price: number = batch.result?.[2] || 0;
-          const itemsLeft: number = batch.result?.[3] || 0;
-          const batchProper = new Batch(0, tokenIDs, timestamp, price, itemsLeft); // Assuming batch.id is not available, replace 0 with the correct value
-          console.log("batchProper", batchProper);
+          const batchID = batch.result?.[0] || 0;
+          const tokenIDs: number[] = batch.result?.[1] || [];
+          const timestamp: number = batch.result?.[2] || 0;
+          const price: number = batch.result?.[3] || 0;
+          const itemsLeft: number = batch.result?.[4] || 0;
+          const batchProper = new Batch(batchID, tokenIDs, timestamp, price, itemsLeft);
           return batchProper;
         }),
     ) || [];
@@ -107,7 +106,7 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
   const [sameAddresses, setSameAddresses] = useState<`0x${string}`[]>();
   const [redeemableTokens, setRedeemableTokens] = useState<bigint[]>([]);
 
-  console.log("batch in mytokens: ", batch.token_ids);
+  console.log("batch in mytokens: ", batch);
 
   useEffect(() => {
     if (address && batch) {
@@ -152,8 +151,8 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
   return (
     <>
       <div className="bg-white rounded-lg shadow-md p-4">
-        <h2 className="text-lg font-semibold">Batch: {batch.id}</h2>
-        <p className="mt-2">Token IDs: {ownerTokens()}</p>
+        <h2 className="text-lg font-semibold">Batch {Number(batch.id)}</h2>
+        {/* <p className="mt-2">Token IDs</p> */}
         {ownerTokens()?.map((redeemableToken) => (
           <>
             <RedeemableTokenNumber redeemableToken={redeemableToken} setRedeemableTokens={setRedeemableTokens} />
@@ -171,7 +170,9 @@ function BatchRedeemCard({ batch }: { batch: Batch }) {
             onChange={(e) => setRedeemAmount(e.target.value)}
           /> */}
           <button
-            className="mt-4 bg-primary hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            className={`mt-4 font-bold py-2 px-4 rounded text-white ${
+              redeemTokens ? "bg-primary hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
+            }`}
             disabled={!redeemTokens}
             onClick={() => {
               console.log(redeemableTokens);
@@ -199,15 +200,6 @@ function RedeemableTokenNumber({
     args: [BigInt(redeemableToken)],
   });
   console.log("🚀 ~ file: page.tsx:160 ~ RedeemableTokens ~ tokenInfo:", tokenInfo);
-
-  // useEffect(() => {
-  //   if (tokenInfo && tokenInfo[3] === true) {
-  //     setRedeemableTokens((redeemableTokens) => [...redeemableTokens, BigInt(tokenInfo[0].toString())]);
-  //   }
-  // }, [tokenInfo]);
-
-  // If token redeemed. Do not show
-  // if(tokenInfo.)
 
   const handleCheckboxChange = (event: ChangeEvent<HTMLInputElement>) => {
     const isChecked = event.target.checked;
