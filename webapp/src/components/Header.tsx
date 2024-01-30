@@ -35,7 +35,9 @@ export function Header({ links }: HeaderProps) {
           ☰
         </button>
         <div className="flex flex-row gap-2 items-center">
-          <img src="/eco_tradezone.png" alt="Logo" className="w-10" />
+          <a href="/">
+            <img src="/eco_tradezone.png" alt="Logo" className="w-10" />
+          </a>
         </div>
       </div>
 
