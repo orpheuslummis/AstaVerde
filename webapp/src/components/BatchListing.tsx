@@ -102,11 +102,15 @@ export function BatchListing() {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-4">
-        {batches.map((batch) => (
-          <div key={batch.id} className="w-full px-2 mb-4">
-            <BatchCard batch={batch} updateCard={updateCard} />
-          </div>
-        ))}
+        {batches.map((batch) => {
+          if (batch.itemsLeft !== 0) {
+            return (
+              <div key={batch.id} className="w-full px-2 mb-4">
+                <BatchCard batch={batch} updateCard={updateCard} />
+              </div>
+            );
+          }
+        })}
       </div>
       {hasNextPage && (
         <div className="flex justify-center">
