@@ -1,6 +1,7 @@
 import { navigationLinks } from "../app.config";
-import { OnboardingModal } from "../components/OnboardingModal";
+import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
+import { OnboardingModal } from "../components/OnboardingModal";
 import { Providers } from "./providers";
 import "./styles/globals.css";
 import { cloneElement } from "react";
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactElement 
           <div className="max-w-6xl mx-auto">
             <main>{cloneElement(children)}</main>
           </div>
+          <Footer />
         </Providers>
       </body>
     </html>
