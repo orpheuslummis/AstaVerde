@@ -237,7 +237,12 @@ function RedeemableTokenNumber({
   return (
     <>
       <div>
-        Token {tokenInfo && tokenInfo[0].toString()}: {tokenInfo?.[3] === false ? "Not redeemed" : "Redeemed"}
+        {tokenInfo && (
+          <>
+            <a href={`/token/${tokenInfo[0].toString()}`}>Token {tokenInfo[0].toString()}</a>
+          </>
+        )}
+        : {tokenInfo?.[3] === false ? "Not redeemed" : "Redeemed"}
         {tokenInfo?.[3] === false ? (
           <input className="ml-2" type="checkbox" value="1" onChange={(e) => handleCheckboxChange(e)} />
         ) : (
