@@ -16,7 +16,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
     functionName: "tokens",
     args: [params.id],
   });
-  const [batchImageUrl, setBatchImageUrl] = useState<string>();
+  const [tokenImageUrl, setTokenImageUrl] = useState<string>();
 
   const fetchTokenImageUrl = async (tokenCID: string) => {
     try {
@@ -34,7 +34,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
         const batchImageCID = await fetchTokenImageUrl(data[2]);
         const parts = batchImageCID.split("ipfs://");
         const CID = parts[1];
-        setBatchImageUrl(IPFS_GATEWAY_URL + CID);
+        setTokenImageUrl(IPFS_GATEWAY_URL + CID);
       }
     };
     void fetchData();
@@ -50,7 +50,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
       <div style={{ backgroundColor: "#f0f0f0", padding: "20px", borderRadius: "5px" }}>
         <div className="w-full h-64 overflow-hidden rounded shadow-lg">
-          <img className="w-full h-full object-cover" src={batchImageUrl} alt="Batch Image" />
+          <img className="w-full h-full object-cover" src={tokenImageUrl} alt="Batch Image" />
         </div>
         <h1>Token: {params.id.toString()}</h1>
         <p>Token ID: {data && data[0].toString()}</p>
