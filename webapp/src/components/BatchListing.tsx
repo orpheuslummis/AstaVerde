@@ -1,8 +1,9 @@
 "use client";
 
 import { Batch } from "../lib/batch";
-import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
+import { astaverdeContractConfig } from "../lib/contracts";
 import BatchCard from "./BatchCard";
+import { useEffect } from "react";
 import { paginatedIndexesConfig, useAccount, useContractInfiniteReads, useContractRead } from "wagmi";
 
 export function BatchListing() {
@@ -48,6 +49,10 @@ export function BatchListing() {
     ),
   });
   console.log("BatchListing: data", data);
+
+  useEffect(() => {
+    void updateCard();
+  }, [lastBatchIDn]);
 
   const batches: Batch[] =
     data?.pages?.flatMap(
@@ -102,11 +107,15 @@ export function BatchListing() {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-4">
-        {batches.map((batch) => (
-          <div key={batch.id} className="w-full px-2 mb-4">
-            <BatchCard batch={batch} updateCard={updateCard} />
-          </div>
-        ))}
+        {batches.map((batch) => {
+          if (batch.itemsLeft !== 0) {
+            return (
+              <div key={batch.id} className="w-full px-2 mb-4">
+                <BatchCard batch={batch} updateCard={updateCard} />
+              </div>
+            );
+          }
+        })}
       </div>
       {hasNextPage && (
         <div className="flex justify-center">
