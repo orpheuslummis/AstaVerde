@@ -31,8 +31,8 @@ export default function Page({ params }: { params: { id: bigint } }) {
   useEffect(() => {
     const fetchData = async () => {
       if (data && data[2]) {
-        const batchImageCID = await fetchTokenImageUrl(data[2]);
-        const parts = batchImageCID.split("ipfs://");
+        const tokenImageCID = await fetchTokenImageUrl(data[2]);
+        const parts = tokenImageCID.split("ipfs://");
         const CID = parts[1];
         setTokenImageUrl(IPFS_GATEWAY_URL + CID);
       }
