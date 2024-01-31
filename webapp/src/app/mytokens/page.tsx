@@ -7,6 +7,7 @@ perPage: 10
 */
 import { Batch } from "../../lib/batch";
 import { astaverdeContractConfig } from "../../lib/contracts";
+import Link from "next/link";
 import { ChangeEvent, Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import { TransactionReceipt } from "viem";
 import {
@@ -237,7 +238,12 @@ function RedeemableTokenNumber({
   return (
     <>
       <div>
-        Token {tokenInfo && tokenInfo[0].toString()}: {tokenInfo?.[3] === false ? "Not redeemed" : "Redeemed"}
+        {tokenInfo && (
+          <>
+            <Link href={`/token/${tokenInfo[0].toString()}`}>Token {tokenInfo[0].toString()}</Link>
+          </>
+        )}
+        : {tokenInfo?.[3] === false ? "Not redeemed" : "Redeemed"}
         {tokenInfo?.[3] === false ? (
           <input className="ml-2" type="checkbox" value="1" onChange={(e) => handleCheckboxChange(e)} />
         ) : (
