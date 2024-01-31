@@ -13,7 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactElement 
         <OnboardingModal />
         <Providers>
           <Header links={navigationLinks} />
-          <div className="max-w-6xl mx-auto">
+          <div className="min-h-[calc(100vh-124px)] max-w-6xl mx-auto">
             <main>{cloneElement(children)}</main>
           </div>
           <Footer />
