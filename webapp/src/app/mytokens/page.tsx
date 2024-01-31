@@ -7,6 +7,7 @@ perPage: 10
 */
 import { Batch } from "../../lib/batch";
 import { astaverdeContractConfig } from "../../lib/contracts";
+import Link from "next/link";
 import { ChangeEvent, Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import { TransactionReceipt } from "viem";
 import {
@@ -239,7 +240,7 @@ function RedeemableTokenNumber({
       <div>
         {tokenInfo && (
           <>
-            <a href={`/token/${tokenInfo[0].toString()}`}>Token {tokenInfo[0].toString()}</a>
+            <Link href={`/token/${tokenInfo[0].toString()}`}>Token {tokenInfo[0].toString()}</Link>
           </>
         )}
         : {tokenInfo?.[3] === false ? "Not redeemed" : "Redeemed"}
