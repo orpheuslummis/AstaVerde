@@ -6,6 +6,12 @@ import { Providers } from "./providers";
 import "./styles/globals.css";
 import { cloneElement } from "react";
 
+export const metadata = {
+  icons: {
+    icon: "/eco_tradezone.png",
+  },
+};
+
 export default function RootLayout({ children }: { children: React.ReactElement }) {
   return (
     <html lang="en">
