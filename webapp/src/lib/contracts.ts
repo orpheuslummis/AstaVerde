@@ -2,13 +2,15 @@ import { erc20ABI } from "wagmi";
 
 export const usdcContractConfig = {
   // MockUSDC on Base Sepolia
-  address: "0x437Cc6866208895611e3DE80a7Aa26aC6C9Db52D",
+  // address: "0x437Cc6866208895611e3DE80a7Aa26aC6C9Db52D",
+  // Base Sepolia official USDC
+  address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
   abi: erc20ABI,
 } as const;
 
 export const astaverdeContractConfig = {
   // on Base Sepolia
-  address: "0x6a877a13BA618eD8AaF36fcc879A6cf225e010D4",
+  address: "0x376Db4d7B798FC75603D06525089c03AfE2fAfb3",
   abi: [
     {
       "inputs": [
