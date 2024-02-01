@@ -1,8 +1,9 @@
 import "@nomicfoundation/hardhat-toolbox";
+import { ChainConfig } from "@nomicfoundation/hardhat-verify/types";
 import { config as dotenvConfig } from "dotenv";
 import "hardhat-deploy";
 import type { HardhatUserConfig } from "hardhat/config";
-import type { NetworkUserConfig } from "hardhat/types";
+import type { HardhatNetworkUserConfig, NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
@@ -18,6 +19,18 @@ const alchemyAPIKey: string | undefined = process.env.ALCHEMY_APIKEY;
 if (!alchemyAPIKey) {
   throw new Error("Please set your ALCHEMY_APIKEY in a .env file");
 }
+
+// TBD
+// function convertToChainConfig(networkConfig: NetworkUserConfig): ChainConfig {
+//   return {
+//     network: networkConfig.chainId.toString(),
+//     chainId: networkConfig.chainId,
+//     urls: {
+//       apiURL: networkConfig.url,
+//       browserURL: networkConfig.url,
+//     },
+//   };
+// }
 
 const chainIds = {
   "arbitrum-mainnet": 42161,
@@ -49,9 +62,6 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
     case "base-sepolia":
       jsonRpcUrl = "https://sepolia.base.org";
       break;
-    // case "base-local":
-    //   jsonRpcUrl = "http://localhost:8545";
-    //   break;
     default:
       jsonRpcUrl = "https://" + chain + ".g.alchemy.com/v2/" + alchemyAPIKey;
   }
@@ -73,15 +83,24 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      arbitrumOne: process.env.ARBISCAN_API_KEY || "",
-      avalanche: process.env.SNOWTRACE_API_KEY || "",
-      bsc: process.env.BSCSCAN_API_KEY || "",
       mainnet: process.env.ETHERSCAN_API_KEY || "",
       optimisticEthereum: process.env.OPTIMISM_API_KEY || "",
-      polygon: process.env.POLYGONSCAN_API_KEY || "",
-      polygonMumbai: process.env.POLYGONSCAN_API_KEY || "",
       sepolia: process.env.ETHERSCAN_API_KEY || "",
+      "base-sepolia": process.env.ETHERSCAN_BASE_SEPOLIA_API_KEY || "",
+      "base-mainnet": process.env.ETHERSCAN_BASE_API_KEY || "",
     },
+    customChains: [
+      // convertToChainConfig(getChainConfig("base-sepolia")),
+      {
+        network: "base-sepolia",
+        chainId: 84532,
+        urls: {
+          apiURL: "https://sepolia.base.org",
+          browserURL: "https://sepolia.base.org",
+        },
+      },
+    ]
+
   },
   gasReporter: {
     currency: "USD",
@@ -103,18 +122,12 @@ const config: HardhatUserConfig = {
       chainId: chainIds.ganache,
       url: "http://localhost:8545",
     },
-    arbitrum: getChainConfig("arbitrum-mainnet"),
-    avalanche: getChainConfig("avalanche"),
-    bsc: getChainConfig("bsc"),
     mainnet: getChainConfig("mainnet"),
     optimism: getChainConfig("optimism-mainnet"),
-    "polygon-mainnet": getChainConfig("polygon-mainnet"),
-    "polygon-mumbai": getChainConfig("polygon-mumbai"),
     sepolia: getChainConfig("sepolia"),
     // base
     "base-mainnet": getChainConfig("base-mainnet"),
     "base-sepolia": getChainConfig("base-sepolia"),
-    // "base-local": getChainConfig("base-local"),
   },
   paths: {
     artifacts: "./artifacts",
@@ -142,6 +155,9 @@ const config: HardhatUserConfig = {
     outDir: "types",
     target: "ethers-v6",
   },
+  sourcify: {
+    enabled: false,
+  }
 };
 
 export default config;

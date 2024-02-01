@@ -62,6 +62,11 @@ npm run compile && npm run postinstall
 npm run deploy:contracts -- --network base-sepolia
 ```
 
+Verify contract on explorer
+```shell
+npx hardhat verify --network base-sepolia <address>
+```
+
 Configuring and minting:
 
 1. `cp .env.example .env`
