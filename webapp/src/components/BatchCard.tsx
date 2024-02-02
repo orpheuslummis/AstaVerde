@@ -181,6 +181,16 @@ function BuyBatchButton({
     }
   }, [txReceipt]);
 
+  if (tokenAmount < 1) {
+    return (
+      <>
+        <button className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full" disabled>
+          Set quantity
+        </button>
+      </>
+    );
+  }
+
   if (Number(formatUnits(balance || BigInt(0), 6)) < totalPrice) {
     return (
       <>
