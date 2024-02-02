@@ -4,7 +4,7 @@ export function Footer() {
   return (
     <footer className="w-full flex justify-center items-center p-4 shadow-md">
       <div className="text-center">
-        <Link href="/terms" className="hover:underline">
+        <Link href="/termsofservice" className="hover:underline">
           Terms of service
         </Link>
       </div>
