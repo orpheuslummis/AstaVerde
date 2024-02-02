@@ -46,6 +46,18 @@ export default function Page({ params }: { params: { id: bigint } }) {
     return <p>Error: {lastBatchIDError && lastBatchIDError.message}</p>;
   }
 
+  if (data && data[1].toString() === "0x0000000000000000000000000000000000000000") {
+    return (
+      <>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+          <div style={{ backgroundColor: "#f0f0f0", padding: "20px", borderRadius: "5px" }}>
+            Token doesn&apos;t exist
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
       <div style={{ backgroundColor: "#f0f0f0", padding: "20px", borderRadius: "5px" }}>
