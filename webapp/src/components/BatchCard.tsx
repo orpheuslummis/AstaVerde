@@ -66,10 +66,19 @@ export default function BatchCard({ batch, updateCard }: { batch: Batch; updateC
       if (tokenInfo.data) {
         const firstBatchTokenCID = await getFirstBatchTokenCID();
         if (firstBatchTokenCID) {
-          const batchImageCID = await fetchTokenImageUrl(firstBatchTokenCID);
-          const parts = batchImageCID.split("ipfs://");
-          const CID = parts[1];
-          setBatchImageUrl(IPFS_GATEWAY_URL + CID);
+          const batchImageCID: string | undefined = await fetchTokenImageUrl(firstBatchTokenCID);
+
+          if (batchImageCID) {
+            const parts = batchImageCID.split("ipfs://");
+            if (parts.length > 1) {
+              const CID = parts[1];
+              setBatchImageUrl(IPFS_GATEWAY_URL + CID);
+            } else {
+              setBatchImageUrl(IPFS_GATEWAY_URL + "undefined");
+            }
+          } else {
+            setBatchImageUrl(IPFS_GATEWAY_URL + "undefined");
+          }
         }
       }
     };
