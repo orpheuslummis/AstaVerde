@@ -1,6 +1,6 @@
 export default function Page() {
   return (
-    <div className="pt-4 flex flex-col gap-4">
+    <div className="pt-4 flex flex-col gap-4 m-4">
       <h1 className="text-xl font-bold">EcoTradeZone of Bionerg Ltd. Privacy Policy</h1>
       <p className="text-sm">Date: 31 Jan 2024</p>
       <section className="space-y-2">
