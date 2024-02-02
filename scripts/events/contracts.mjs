@@ -2,13 +2,15 @@ import { erc20Abi } from "viem";
 
 export const usdcContractConfig = {
   // MockUSDC on Sepolia
-  address: "0x512d03081984F1c436B76ab2C1578fA004ce2971",
+  // address: "0x512d03081984F1c436B76ab2C1578fA004ce2971",
+  // Base Sepolia official USDC
+  address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
   abi: erc20Abi,
 };
 
 export const astaverdeContractConfig = {
   // on Sepolia
-  address: "0x6a877a13BA618eD8AaF36fcc879A6cf225e010D4",
+  address: "0x376Db4d7B798FC75603D06525089c03AfE2fAfb3",
   abi: [
     {
       inputs: [
