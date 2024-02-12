@@ -19,7 +19,7 @@ export function OnboardingModal() {
   };
 
   return (
-    true && (
+    showModal && (
       <div className="modal fixed inset-0 flex items-center justify-center z-50">
         <div className="flex flex-col modal-content border p-5 bg-white rounded shadow-lg relative max-w-xl gap-2">
           <h2 className="text-2xl mb-4">Welcome to the EcoTradeZone: Important Information Before You Enter</h2>
