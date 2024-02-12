@@ -115,7 +115,9 @@ export default function BatchCard({
 						</p>
 						<p className="text-gray-600">
 							{priceOfBatch
-								? `${Number(formatUnits(priceOfBatch || BigInt(0), 6))} USDC`
+								? `${Number(
+										formatUnits(priceOfBatch || BigInt(0), USDC_DECIMALS),
+								  )} USDC`
 								: "0 USDC"}
 						</p>
 					</div>
@@ -139,7 +141,7 @@ export default function BatchCard({
 						{priceOfBatch
 							? `Total: ${
 									+Number(
-										formatUnits(priceOfBatch || BigInt(0), 6),
+										formatUnits(priceOfBatch || BigInt(0), USDC_DECIMALS),
 									).toString() * tokenAmount
 							  } USDC`
 							: "Total: 0 USDC"}
@@ -148,8 +150,9 @@ export default function BatchCard({
 						batchId={batch.id}
 						tokenAmount={tokenAmount}
 						usdcPrice={
-							Number(formatUnits(priceOfBatch || BigInt(0), 6))?.toString() ||
-							"0"
+							Number(
+								formatUnits(priceOfBatch || BigInt(0), USDC_DECIMALS),
+							)?.toString() || "0"
 						}
 						updateCard={updateCard}
 					/>
@@ -193,12 +196,12 @@ function BuyBatchButton({
 
 	console.log(
 		"BatchCard: allowance:",
-		Number(formatUnits(allowance || BigInt(0), 6)),
+		Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)),
 		totalPrice,
 	);
 	console.log(
 		"BatchCard: buyBatch enabled",
-		Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice,
+		Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)) >= totalPrice,
 	);
 
 	const { config: configApprove } = usePrepareContractWrite({
@@ -207,7 +210,7 @@ function BuyBatchButton({
 		// enabled: false,
 		args: [
 			astaverdeContractConfig.address,
-			parseUnits(totalPrice.toString(), 6),
+			parseUnits(totalPrice.toString(), USDC_DECIMALS),
 		],
 	});
 	const { writeAsync: approve } = useContractWrite(configApprove);
@@ -215,10 +218,11 @@ function BuyBatchButton({
 	const { config: configBuyBatch } = usePrepareContractWrite({
 		...astaverdeContractConfig,
 		functionName: "buyBatch",
-		enabled: Number(formatUnits(allowance || BigInt(0), 6)) >= totalPrice, // allow buyBatch when there is enough allowance
+		enabled:
+			Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)) >= totalPrice, // allow buyBatch when there is enough allowance
 		args: [
 			BigInt(batchId),
-			parseUnits(totalPrice.toString(), 6),
+			parseUnits(totalPrice.toString(), USDC_DECIMALS),
 			BigInt(tokenAmount),
 		],
 	});
@@ -248,7 +252,7 @@ function BuyBatchButton({
 		);
 	}
 
-	if (Number(formatUnits(balance || BigInt(0), 6)) < totalPrice) {
+	if (Number(formatUnits(balance || BigInt(0), USDC_DECIMALS)) < totalPrice) {
 		return (
 			<>
 				<button
@@ -262,7 +266,7 @@ function BuyBatchButton({
 	}
 
 	// If there is not enough allowance to withdraw usdc from user address.
-	if (Number(formatUnits(allowance || BigInt(0), 6)) < totalPrice) {
+	if (Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)) < totalPrice) {
 		return (
 			<>
 				<button
