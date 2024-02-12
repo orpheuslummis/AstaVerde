@@ -11,30 +11,27 @@ import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Pausable.sol";
 import "hardhat/console.sol"; // TBD remove logging before production
 
 /*
-TBD high level description of this contract
+AstaVerde is a carbon credits marketplace, selling batches through Dutch auction, where each credit is a token and ‘redeemable’.
+The batch is a unit of pricing: all tokens of a batch share the same price, which follows its own Dutch auction dynamics.
 */
 contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, ReentrancyGuard {
     IERC20 public usdcToken;
+    uint256 constant USDC_PRECISION = 10 ** 6;
 
     uint256 public constant SECONDS_IN_A_DAY = 86400;
 
     uint256 public platformSharePercentage;
     uint256 public maxBatchSize;
-
     // batches are zero-indexed, so both the no batch and the first batch have ID 0
     uint256 public lastBatchID;
-
     uint256 public lastTokenID;
-
     uint256 public lastBatchSoldTime;
-
     uint256 public platformShareAccumulated;
-
     // unit is USDC
     uint256 public basePrice;
     uint256 public priceFloor;
+    uint256 public priceDelta;
     uint256 public priceDecreaseRate;
-
     // Controlling the auction
     uint256 public dayIncreaseThreshold;
     uint256 public dayDecreaseThreshold;
@@ -71,9 +68,10 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         usdcToken = _usdcToken;
         platformSharePercentage = 30;
         maxBatchSize = 50;
-        basePrice = 230;
-        priceFloor = 40;
-        priceDecreaseRate = 1;
+        basePrice = 230 * USDC_PRECISION;
+        priceFloor = 40 * USDC_PRECISION;
+        priceDelta = 10 * USDC_PRECISION;
+        priceDecreaseRate = 1 * USDC_PRECISION;
         dayIncreaseThreshold = 2;
         dayDecreaseThreshold = 4;
     }
@@ -191,6 +189,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
 
         uint256[] memory newTokenIds = new uint256[](batchSize);
         uint256[] memory amounts = new uint256[](batchSize);
+
         for (uint256 i = 0; i < batchSize; i++) {
             uint256 newTokenID = ++lastTokenID;
             newTokenIds[i] = newTokenID;
@@ -211,36 +210,27 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         _mintBatch(address(this), newTokenIds, amounts, "");
     }
 
-    // The price decreases daily based on the `priceDecreaseRate`.
-    // If the calculated price is less than the `priceFloor`, the `priceFloor` is returned.
+    // The price decreases daily based on the `priceDecreaseRate`, but not below priceFloor.
     function getBatchPrice(uint256 batchID) public view returns (uint256) {
-        console.log("getBatchPrice", batchID);
         require(batchID < batches.length, "Batch does not exist");
-
         Batch memory batch = batches[batchID];
-
         uint256 elapsedTime = block.timestamp - batch.creationTime;
-        console.log("Elapsed time: ", elapsedTime);
-
-        uint256 priceDecrease = (elapsedTime * priceDecreaseRate) / SECONDS_IN_A_DAY;
-        console.log("Price decrease: ", priceDecrease);
-
+        uint256 priceDecrease = (elapsedTime / SECONDS_IN_A_DAY) * priceDecreaseRate;
         uint256 currentPrice;
-        if (priceDecrease > batch.startingPrice) {
-            currentPrice = priceFloor;
-        } else {
-            currentPrice = batch.startingPrice - priceDecrease;
+        // we want to avoid the underfow
+        if (priceDecrease >= batch.startingPrice) {
+            return priceFloor;
         }
-        console.log("Current price: ", currentPrice);
-
+        currentPrice = batch.startingPrice - priceDecrease;
+        if (currentPrice < priceFloor) {
+            return priceFloor;
+        }
         return currentPrice;
     }
 
-    // Updates the starting price of the next batch of tokens based on the last sale duration.
+    // Updates the starting price of the next batch based on the last sale duration.
     // Increases by 10 if less than X days, decreases by 10 if more than Y days, and sets to price floor if below it.
     function updateBasePrice() internal {
-        // console.log("updateBasePrice id=", lastBatchID, ", timeSinceLastSale=", block.timestamp - lastBatchSoldTime);
-
         // Skip the price update for the zero-index batch
         if (lastBatchID == 0) {
             return;
@@ -252,15 +242,14 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
             // first batch
             return;
         } else if (timeSinceLastSale < SECONDS_IN_A_DAY * dayIncreaseThreshold) {
-            basePrice += 10;
+            basePrice += priceDelta;
         } else if (timeSinceLastSale > SECONDS_IN_A_DAY * dayDecreaseThreshold) {
-            basePrice -= 10;
+            basePrice -= priceDelta;
         }
 
         if (basePrice < priceFloor) {
             basePrice = priceFloor;
         }
-        console.log("startingPrice updated: %s", basePrice);
         emit PlatformBasePriceAdjusted(basePrice, block.timestamp);
     }
 
@@ -283,14 +272,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         return (batch.batchId, batch.tokenIds, batch.creationTime, price, batch.remainingTokens);
     }
 
-    function handleRefund(uint256 usdcAmount, uint256 totalCost) internal {
-        if (usdcAmount <= totalCost) return;
-        // console.log("handleRefund", usdcAmount, totalCost, usdcAmount - totalCost);
-        uint256 refundAmount = usdcAmount - totalCost;
-        require(usdcToken.balanceOf(address(this)) >= refundAmount, "Insufficient contract balance for refund");
-        require(usdcToken.transfer(msg.sender, refundAmount), "Refund failed");
-    }
-
     /**
      * This function enables token batch purchase. It performs the following:
      * - Validates the batch and the purchase amount.
@@ -301,7 +282,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
      */
     function buyBatch(uint256 batchID, uint256 usdcAmount, uint256 tokenAmount) external whenNotPaused nonReentrant {
         console.log("buyBatch", batchID, usdcAmount, tokenAmount);
-        // console.log("contract balance", usdcToken.balanceOf(address(this)));
+        console.log("contract balance", usdcToken.balanceOf(address(this)));
         require(batches[batchID].creationTime > 0, "Batch not initialized");
         require(tokenAmount > 0, "Number to buy must be greater than zero");
         console.log("buyBatch remainingTokens", batches[batchID].remainingTokens);
@@ -310,16 +291,17 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
         batches[batchID].price = price;
         uint256 totalCost = price * tokenAmount;
         require(usdcAmount >= totalCost, "Insufficient funds sent");
-
-        require(usdcToken.transferFrom(msg.sender, address(this), usdcAmount), "Transfer failed");
+        require(usdcToken.transferFrom(msg.sender, address(this), usdcAmount), "Transfer from user failed");
         console.log("balance, contract balance:", usdcAmount, usdcToken.balanceOf(address(this)));
 
-        handleRefund(usdcAmount, totalCost);
+        if (usdcAmount > totalCost) {
+            require(usdcToken.transfer(msg.sender, usdcAmount - totalCost), "Refund failed");
+        }
 
         batches[batchID].remainingTokens -= tokenAmount;
-        // console.log("remainingTokens", remainingTokens);
 
-        // operating at two decimal places of precision
+        // Split the amount paid into platform and producer shares
+        // Using two decimal places of precision
         uint256 producerSharePerToken = (price * (10000 - platformSharePercentage * 100)) / 10000;
         uint256 platformSharePerToken = price - producerSharePerToken;
         platformShareAccumulated += platformSharePerToken * tokenAmount;
@@ -412,7 +394,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, Ownable, IERC1155Receiver, Reent
     // Token owner marks the credit(s) as redeemed/used.
     // An offchain system keeps track of the redeemed tokens.
     function redeemTokens(uint256[] memory tokenIds) public onlyTokenOwner(tokenIds) nonReentrant whenNotPaused {
-        // console.log("redeemTokens");
         require(tokenIds.length > 0, "No tokens provided for redemption");
         for (uint256 i = 0; i < tokenIds.length; i++) {
             uint256 tokenId = tokenIds[i];
