@@ -19,9 +19,9 @@ export function OnboardingModal() {
   };
 
   return (
-    showModal && (
+    true && (
       <div className="modal fixed inset-0 flex items-center justify-center z-50">
-        <div className="modal-content border p-5 bg-white rounded shadow-lg relative">
+        <div className="flex flex-col modal-content border p-5 bg-white rounded shadow-lg relative max-w-xl gap-2">
           <h2 className="text-2xl mb-4">Welcome to the EcoTradeZone: Important Information Before You Enter</h2>
           <p>
             <strong>Web3 Zone Access:</strong> You're about to enter a web3 zone. This requires connecting your crypto
@@ -82,12 +82,11 @@ export function OnboardingModal() {
             dioxide equivalent value. This redemption will be recorded in your wallet.
           </p>
           <p>By clicking to enter the EcoTradeZone, you acknowledge that you have read and understood these terms.</p>
-          <button
-            onClick={handleConfirmation}
-            className="confirm-button absolute bottom-4 right-4 bg-secondary text-white py-2 px-4 rounded"
-          >
-            Confirm
-          </button>
+          <div className="flex w-full justify-end pt-4">
+            <button onClick={handleConfirmation} className="bg-secondary text-white py-2 px-4 rounded">
+              Confirm
+            </button>
+          </div>
         </div>
       </div>
     )
