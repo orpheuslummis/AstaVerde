@@ -3,7 +3,7 @@ export default function Page() {
     <>
       <div className="p-4">
         <p className="mb-4">
-          I would like to introduce you to the EcoAsset
+          I would like to introduce you to the EcoAsset .{"\n"}
           {/* Uncomment the following line and replace `ImageOfEcoAsset` with the actual image path */}
           {/* <img src={ImageOfEcoAsset} alt="EcoAsset" className="my-4" /> */}
           There's as much below the hood as on the front of one of these beauties. On the front, you will see the time,
@@ -42,6 +42,10 @@ export default function Page() {
           Then the EcoAssets creation is completed as a result of the transactional purchase, and the asset is in the
           buyer's wallet!
         </p>
+
+        <a href="/What.is.an.EcoAsset.pdf" download>
+          What is an EcoAsset (PDF)
+        </a>
       </div>
     </>
   );
