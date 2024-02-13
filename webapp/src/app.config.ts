@@ -11,4 +11,4 @@ export const navigationLinks = [
 	{ name: "About", url: "/about" },
 ];
 
-export const IPFS_GATEWAY_URL = "https://ipfs.io/ipfs/";
+export const IPFS_GATEWAY_URL = "https://gateway.pinata.cloud/ipfs/";
