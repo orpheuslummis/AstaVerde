@@ -20,8 +20,8 @@ export function OnboardingModal() {
 
   return (
     showModal && (
-      <div className="modal fixed inset-0 flex items-center justify-center z-50 overflow-scroll">
-        <div className="flex flex-col modal-content border p-5 bg-white rounded shadow-lg relative max-w-xl gap-2">
+      <div className="modal fixed inset-0 flex items-center justify-center z-50">
+        <div className="flex flex-col modal-content border m-2 h-[calc(100vh-64px)] p-5 bg-white rounded shadow-lg relative max-w-xl gap-2  overflow-scroll">
           <h2 className="text-2xl mb-4 mt-8">Welcome to the EcoTradeZone: Important Information Before You Enter</h2>
           <p>
             <strong>Web3 Zone Access:</strong> You're about to enter a web3 zone. This requires connecting your crypto
