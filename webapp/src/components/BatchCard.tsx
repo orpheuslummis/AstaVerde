@@ -1,6 +1,10 @@
 "use client;";
 
-import { IPFS_GATEWAY_URL, USDC_DECIMALS } from "../app.config";
+import {
+	DEFAULT_IMAGE_URL,
+	IPFS_GATEWAY_URL,
+	USDC_DECIMALS,
+} from "../app.config";
 import { Batch } from "../lib/batch";
 import {
 	astaverdeContractConfig,
@@ -27,7 +31,7 @@ export default function BatchCard({
 	batch,
 	updateCard,
 }: { batch: Batch; updateCard: () => void }) {
-	const [batchImageUrl, setBatchImageUrl] = useState<string>();
+	const [batchImageUrl, setBatchImageUrl] = useState<string>(DEFAULT_IMAGE_URL);
 	const [tokenAmount, setTokenAmount] = useState(1);
 
 	const { data: batchInfo } = useContractRead({
