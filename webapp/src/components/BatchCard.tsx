@@ -84,10 +84,10 @@ export default function BatchCard({
 							const CID = parts[1];
 							setBatchImageUrl(IPFS_GATEWAY_URL + CID);
 						} else {
-							setBatchImageUrl(IPFS_GATEWAY_URL + "undefined");
+							setBatchImageUrl(`${IPFS_GATEWAY_URL}undefined`);
 						}
 					} else {
-						setBatchImageUrl(IPFS_GATEWAY_URL + "undefined");
+						setBatchImageUrl(`${IPFS_GATEWAY_URL}undefined`);
 					}
 				}
 			}
@@ -103,7 +103,7 @@ export default function BatchCard({
 						<img
 							className="w-full h-full object-cover"
 							src={batchImageUrl}
-							alt="Batch Image"
+							alt="Batch"
 						/>
 					</div>
 					<div className="w-full mt-4">
@@ -231,13 +231,14 @@ function BuyBatchButton({
 	const refreshAllowance = async () => {
 		await refetchAllowance();
 	};
+
 	useEffect(() => {
 		if (txReceipt) {
 			void refreshAllowance();
 
 			void updateCard();
 		}
-	}, [txReceipt]);
+	}, [txReceipt, refreshAllowance, updateCard]);
 
 	if (tokenAmount < 1) {
 		return (
@@ -245,6 +246,7 @@ function BuyBatchButton({
 				<button
 					className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full"
 					disabled
+					type="button"
 				>
 					Set quantity
 				</button>
@@ -258,6 +260,7 @@ function BuyBatchButton({
 				<button
 					className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full"
 					disabled
+					type="button"
 				>
 					Not Enough Balance
 				</button>
@@ -272,6 +275,7 @@ function BuyBatchButton({
 				<button
 					className="mt-4 bg-primary hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
 					disabled={!approve}
+					type="button"
 					onClick={async () => {
 						if (approve) {
 							const result = await approve();
@@ -290,6 +294,7 @@ function BuyBatchButton({
 			<button
 				className="mt-4 bg-primary hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
 				disabled={!buyBatchAsync}
+				type="button"
 				// disabled={isLoading}
 				onClick={async () => {
 					if (buyBatchAsync) {

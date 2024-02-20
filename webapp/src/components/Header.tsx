@@ -73,7 +73,10 @@ export function Header({ links }: HeaderProps) {
 
 					{/* Show USDC Balance */}
 					<li className="hidden lg:block border border-gray-300 rounded-md bg-blue-100 p-2">
-						{formatUnits(balance || BigInt(0), USDC_DECIMALS)?.toString() || 0}{" "}
+						{formatUnits(
+							(balance as bigint) || BigInt(0),
+							USDC_DECIMALS,
+						)?.toString() || 0}{" "}
 						USDC
 					</li>
 

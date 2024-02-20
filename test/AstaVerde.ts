@@ -9,7 +9,7 @@ import type { Signers } from "./types";
 Overall flow: each 'test function' is used to group tests sharing the same fixture.
 */
 
-describe("Asta Verde tests", function () {
+describe("Asta Verde tests", () => {
   before(async function () {
     const signers = await ethers.getSigners();
     this.signers = {
@@ -21,7 +21,7 @@ describe("Asta Verde tests", function () {
     this.loadFixture = loadFixture;
   });
 
-  describe("AstaVerde", function () {
+  describe("AstaVerde", () => {
     beforeEach(async function () {
       const { astaVerde, mockUSDC } = await this.loadFixture(deployAstaVerdeFixture);
       this.mockUSDC = mockUSDC;
