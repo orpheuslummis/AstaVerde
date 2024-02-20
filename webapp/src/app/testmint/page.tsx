@@ -17,13 +17,13 @@ export default function Page() {
 		...usdcContractConfig,
 		functionName: "approve",
 		args: [astaverdeContractConfig.address, tenthousand],
-	});
+	} as any);
 	const { writeAsync: approve } = useContractWrite(configApprove);
 	const { config: configMint } = usePrepareContractWrite({
 		...usdcContractConfig,
 		functionName: "mint",
 		args: [address, tenthousand],
-	});
+	} as any);
 	const { writeAsync: mint } = useContractWrite(configMint);
 
 	return (

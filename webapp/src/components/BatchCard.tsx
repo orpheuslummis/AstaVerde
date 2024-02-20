@@ -183,19 +183,23 @@ function BuyBatchButton({
 		hash: awaitedHash,
 	});
 
-	const { data: allowance, refetch: refetchAllowance } = useContractRead({
+	const usdcContractConfig = getUsdcContractConfig();
+	const { data: allowanceData, refetch: refetchAllowance } = useContractRead({
 		...usdcContractConfig,
 		functionName: "allowance",
 		enabled: address !== undefined,
 		args: [address!, astaverdeContractConfig.address],
-	});
+	} as any);
 
-	const { data: balance } = useContractRead({
+	const allowance = BigInt(allowanceData as string);
+
+	const { data: balanceData } = useContractRead({
 		...usdcContractConfig,
 		functionName: "balanceOf",
 		enabled: address !== undefined,
 		args: [address!],
-	});
+	} as any);
+	const balance = BigInt(balanceData as string);
 
 	console.log(
 		"BatchCard: allowance:",
@@ -215,7 +219,7 @@ function BuyBatchButton({
 			astaverdeContractConfig.address,
 			parseUnits(totalPrice.toString(), USDC_DECIMALS),
 		],
-	});
+	} as any);
 	const { writeAsync: approve } = useContractWrite(configApprove);
 
 	const { config: configBuyBatch } = usePrepareContractWrite({

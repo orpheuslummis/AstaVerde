@@ -32,19 +32,20 @@ const extendedERC20Abi = [
 
 // Base Sepolia official USDC
 export const mainUSDCContractConfig = {
-	address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+	address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as `0x${string}`,
+
 	abi: erc20Abi,
 };
 
 // MockUSDC on Base Sepolia
 export const mockUSDCContractConfig = {
-	address: "0xF7ceEFAB9F2Cae0E1F0cB24510Bb5e4139De7C95",
+	address: "0xF7ceEFAB9F2Cae0E1F0cB24510Bb5e4139De7C95" as `0x${string}`,
 	abi: extendedERC20Abi,
 } as const;
 
 export const astaverdeContractConfig = {
 	// on Base Sepolia
-	address: "0xc7cDb7A2E5dDa1B7A0E792Fe1ef08ED20A6F56D4",
+	address: "0xc7cDb7A2E5dDa1B7A0E792Fe1ef08ED20A6F56D4" as `0x${string}`,
 	abi: [
 		{
 			inputs: [

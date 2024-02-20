@@ -20,7 +20,7 @@ export function Header({ links }: HeaderProps) {
 		functionName: "balanceOf",
 		enabled: address !== undefined,
 		args: [address || "0x"],
-	});
+	} as any);
 
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const pathname = usePathname();
