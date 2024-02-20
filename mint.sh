@@ -27,7 +27,7 @@ fi
 IMAGE_NAME="astaverde"
 IMAGE_EXISTS=$(docker images -q $IMAGE_NAME)
 if [ -z "$IMAGE_EXISTS" ]; then
-    docker build -t $IMAGE_NAME .G
+    docker build -t $IMAGE_NAME .
 else
     echo "Image $IMAGE_NAME already exists."
 fi
