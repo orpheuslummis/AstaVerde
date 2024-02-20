@@ -69,7 +69,8 @@
     "task:events": "node ./scripts/events/index.mjs",
     "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
     "webapp:dev": "cd webapp && npm run dev",
-    "webapp:build": "cd webapp && npm run build"
+    "webapp:build": "cd webapp && npm run build",
+    "webapp:install": "cd webapp && npm install"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.0"

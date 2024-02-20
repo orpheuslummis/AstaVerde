@@ -1,7 +1,7 @@
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-const deployFunc: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   console.log("Starting deployment...");
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;

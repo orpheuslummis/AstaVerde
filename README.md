@@ -42,6 +42,13 @@ and maximum batch size. It also includes functions for minting batches, getting 
 redeeming tokens. The contract uses OpenZeppelin's ERC1155, ERC1155Burnable, Ownable, Pausable, and ReentrancyGuard
 contracts
 
+## How to use via Docker
+
+1. First, install Docker Desktop https://docs.docker.com/desktop/install/mac-install/.
+2. Obtain the repository: git clone git@github.com:orpheuslummis/
+3. `git clone git@github.com:orpheuslummis/AstaVerde.git && cd AstaVerde`
+4. To deploy: Configure and run `./deploy.sh`
+5. To mint: Configure and run `./mint.sh`
 
 ## How to use as platform owner or developer
 
