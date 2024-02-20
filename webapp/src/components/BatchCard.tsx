@@ -2,7 +2,10 @@
 
 import { IPFS_GATEWAY_URL, USDC_DECIMALS } from "../app.config";
 import { Batch } from "../lib/batch";
-import { astaverdeContractConfig, usdcContractConfig } from "../lib/contracts";
+import {
+	astaverdeContractConfig,
+	getUsdcContractConfig,
+} from "../lib/contracts";
 import { useEffect, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
 import {
