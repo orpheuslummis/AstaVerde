@@ -36,7 +36,7 @@ echo "Minting NFTs on the $NETWORK network, with contract $CONTRACT_ADDRESS..."
 echo "Using the metadata from $CSV_PATH and images from $IMAGE_FOLDER/..."
 
 docker run --rm \
-    -e NETWORK=$NETWORK \
+    -e CHAIN_SELECTION=$NETWORK \
     -e CONTRACT_ADDRESS=$CONTRACT_ADDRESS \
     -e IMAGE_FOLDER=$IMAGE_FOLDER \
     -e CSV_PATH=$CSV_PATH \
