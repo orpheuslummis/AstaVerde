@@ -1,16 +1,51 @@
-import { erc20ABI } from "wagmi";
+import { erc20Abi } from "abitype/abis";
+import { CHAIN_SELECTION } from "../app.config";
 
-export const usdcContractConfig = {
-	// MockUSDC on Base Sepolia
-	address: "0xF7ceEFAB9F2Cae0E1F0cB24510Bb5e4139De7C95",
-	// Base Sepolia official USDC
-	// address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-	abi: erc20ABI,
+export function getUsdcContractConfig() {
+	if (CHAIN_SELECTION === "main") {
+		return mainUSDCContractConfig;
+	}
+	return mockUSDCContractConfig;
+}
+
+const extendedERC20Abi = [
+	...erc20Abi,
+	{
+		constant: false,
+		inputs: [
+			{
+				name: "_to",
+				type: "address",
+			},
+			{
+				name: "_amount",
+				type: "uint256",
+			},
+		],
+		name: "mint",
+		outputs: [],
+		payable: false,
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+];
+
+// Base Sepolia official USDC
+export const mainUSDCContractConfig = {
+	address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as `0x${string}`,
+
+	abi: erc20Abi,
+};
+
+// MockUSDC on Base Sepolia
+export const mockUSDCContractConfig = {
+	address: "0xF7ceEFAB9F2Cae0E1F0cB24510Bb5e4139De7C95" as `0x${string}`,
+	abi: extendedERC20Abi,
 } as const;
 
 export const astaverdeContractConfig = {
 	// on Base Sepolia
-	address: "0xc7cDb7A2E5dDa1B7A0E792Fe1ef08ED20A6F56D4",
+	address: "0xc7cDb7A2E5dDa1B7A0E792Fe1ef08ED20A6F56D4" as `0x${string}`,
 	abi: [
 		{
 			inputs: [

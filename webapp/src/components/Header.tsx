@@ -1,6 +1,6 @@
 "use client";
 
-import { usdcContractConfig } from "../lib/contracts";
+import { getUsdcContractConfig } from "../lib/contracts";
 import { ConnectKitButton } from "./ConnectKitButton";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,11 +16,11 @@ interface HeaderProps {
 export function Header({ links }: HeaderProps) {
 	const { address } = useAccount();
 	const { data: balance } = useContractRead({
-		...usdcContractConfig,
+		...getUsdcContractConfig(),
 		functionName: "balanceOf",
 		enabled: address !== undefined,
-		args: [address!],
-	});
+		args: [address || "0x"],
+	} as any);
 
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const pathname = usePathname();
@@ -36,6 +36,7 @@ export function Header({ links }: HeaderProps) {
 					className="lg:hidden text-white text-2xl px-4 py-2"
 					onClick={toggleMenu}
 					aria-label="Toggle Menu"
+					type="button"
 				>
 					☰
 				</button>

@@ -12,3 +12,7 @@ export const navigationLinks = [
 ];
 
 export const IPFS_GATEWAY_URL = "https://gateway.pinata.cloud/ipfs/";
+
+export const CHAIN_SELECTION =
+	process.env.NEXT_PUBLIC_CHAIN_SELECTION || process.env.CHAIN_SELECTION;
+console.log("config: CHAIN_SELECTION", CHAIN_SELECTION);
