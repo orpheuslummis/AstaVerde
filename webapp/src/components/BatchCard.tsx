@@ -190,8 +190,19 @@ function BuyBatchButton({
 		enabled: address !== undefined,
 		args: [address!, astaverdeContractConfig.address],
 	} as any);
-
-	const allowance = BigInt(allowanceData as string);
+	let allowance = BigInt(0);
+	if (allowanceData) {
+		allowance = BigInt(allowanceData as string);
+		console.log(
+			"BatchCard: allowance:",
+			Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)),
+			totalPrice,
+		);
+		console.log(
+			"BatchCard: buyBatch enabled",
+			Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)) >= totalPrice,
+		);
+	}
 
 	const { data: balanceData } = useContractRead({
 		...usdcContractConfig,
@@ -199,17 +210,10 @@ function BuyBatchButton({
 		enabled: address !== undefined,
 		args: [address!],
 	} as any);
-	const balance = BigInt(balanceData as string);
-
-	console.log(
-		"BatchCard: allowance:",
-		Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)),
-		totalPrice,
-	);
-	console.log(
-		"BatchCard: buyBatch enabled",
-		Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)) >= totalPrice,
-	);
+	let balance = BigInt(0);
+	if (balanceData) {
+		balance = BigInt(balanceData as string);
+	}
 
 	const { config: configApprove } = usePrepareContractWrite({
 		...usdcContractConfig,
