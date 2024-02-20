@@ -74,3 +74,12 @@ Reading events:
 
 1. Go to `/scripts/events/index.mjs` and follow the instructions to update the default values
 2. Run `npm run task:events`
+
+## Development notes
+
+When updating the contract
+
+The address string and hardcoded ABI needs to be updated in
+- `webapp/src/lib/contracts.ts` for the web app
+- `scripts/events/contracts.mjs` for the events script
+- also the address in your `.env` for minting

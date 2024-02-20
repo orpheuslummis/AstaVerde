@@ -123,6 +123,7 @@ export function BatchListing() {
             className="px-4 py-2 mt-4 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
             disabled={!fetchNextPage || isLoading || isError}
             onClick={(event) => fetchNextPage()}
+            type="button"
           >
             Load More
           </button>

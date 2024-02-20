@@ -9,9 +9,9 @@ perPage: 10
 */
 
 export default function Page() {
-  return (
-    <>
-      <BatchListing />
-    </>
-  );
+	return (
+		<>
+			<BatchListing />
+		</>
+	);
 }

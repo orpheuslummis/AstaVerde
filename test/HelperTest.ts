@@ -16,7 +16,7 @@ function shouldHelpersBeGood() {
 	});
 }
 
-describe("Helper tests", function () {
+describe("Helper tests", () => {
 	before(async function () {
 		const signers = await ethers.getSigners();
 		this.signers = {
@@ -28,7 +28,7 @@ describe("Helper tests", function () {
 		this.loadFixture = loadFixture;
 	});
 
-	describe("Helper", function () {
+	describe("Helper", () => {
 		beforeEach(async function () {
 			const { astaVerde, mockUSDC } = await this.loadFixture(
 				deployAstaVerdeFixture,
