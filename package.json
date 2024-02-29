@@ -73,6 +73,6 @@
     "webapp:install": "cd webapp && npm install"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.0.0"
+    "@openzeppelin/contracts": "^5.0.2"
   }
 }
