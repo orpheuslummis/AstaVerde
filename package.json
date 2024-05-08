@@ -35,6 +35,7 @@
     "helia": "^2.1.0",
     "lodash": "^4.17.21",
     "mocha": "^10.2.0",
+    "nodemon": "^3.1.0",
     "prettier": "^3.1.0",
     "prettier-plugin-solidity": "^1.2.0",
     "rimraf": "^5.0.5",
@@ -58,6 +59,7 @@
     "compile": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat compile",
     "coverage": "hardhat coverage --solcoverjs ./.solcover.js --temp artifacts --testfiles \"test/**/*.ts\" && npm run typechain",
     "deploy:contracts": "hardhat deploy",
+    "deploy:local": "hardhat deploy --network hardhat",
     "lint": "npm run lint:sol && npm run lint:ts && npm run prettier:check",
     "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\"",
     "lint:ts": "eslint --ignore-path ./.eslintignore --ext .js,.ts .",
@@ -70,7 +72,10 @@
     "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
     "webapp:dev": "cd webapp && npm run dev",
     "webapp:build": "cd webapp && npm run build",
-    "webapp:install": "cd webapp && npm install"
+    "webapp:install": "cd webapp && npm install",
+    "watch": "nodemon --watch ./contracts --exec 'npm run compile && npm run test'",
+    "watch:dev": "nodemon --watch ./contracts --ext sol --exec 'npm run compile && npm run deploy:local'",
+    "node": "hardhat node"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.0",
