@@ -1,5 +1,5 @@
 import { erc20Abi } from "abitype/abis";
-import ASTAVERDE_ABI from "../../../artifacts/contracts/AstaVerde.sol/AstaVerde.json";
+import ASTAVERDE_ABI from "../../../config/AstaVerde.json";
 
 const CHAIN_SELECTION = process.env.NEXT_PUBLIC_CHAIN_SELECTION ||
   process.env.CHAIN_SELECTION || "local";
