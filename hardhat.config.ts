@@ -1,9 +1,9 @@
 import "@nomicfoundation/hardhat-toolbox";
-import { config as dotenvConfig } from "dotenv";
 import "hardhat-deploy";
 import type { HardhatUserConfig } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
+import { config as dotenvConfig } from "dotenv";
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
 dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
@@ -20,16 +20,10 @@ if (!alchemyAPIKey) {
 }
 
 const chainIds = {
-  "arbitrum-mainnet": 42161,
-  avalanche: 43114,
-  bsc: 56,
-  ganache: 1337,
   hardhat: 31337,
   mainnet: 1,
-  "optimism-mainnet": 10,
-  "polygon-mainnet": 137,
-  "polygon-mumbai": 80001,
   sepolia: 11155111,
+  "optimism-mainnet": 10,
   "base-mainnet": 8453,
   "base-sepolia": 84532,
 };
@@ -37,21 +31,12 @@ const chainIds = {
 function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
   let jsonRpcUrl: string;
   switch (chain) {
-    case "avalanche":
-      jsonRpcUrl = "https://api.avax.network/ext/bc/C/rpc";
-      break;
-    case "bsc":
-      jsonRpcUrl = "https://bsc-dataseed1.binance.org";
-      break;
     case "base-mainnet":
       jsonRpcUrl = "https://mainnet.base.org";
       break;
     case "base-sepolia":
       jsonRpcUrl = "https://sepolia.base.org";
       break;
-    // case "base-local":
-    //   jsonRpcUrl = "http://localhost:8545";
-    //   break;
     default:
       jsonRpcUrl = "https://" + chain + ".g.alchemy.com/v2/" + alchemyAPIKey;
   }
@@ -96,25 +81,10 @@ const config: HardhatUserConfig = {
       },
       chainId: chainIds.hardhat,
     },
-    ganache: {
-      accounts: {
-        mnemonic,
-      },
-      chainId: chainIds.ganache,
-      url: "http://localhost:8545",
-    },
-    arbitrum: getChainConfig("arbitrum-mainnet"),
-    avalanche: getChainConfig("avalanche"),
-    bsc: getChainConfig("bsc"),
     mainnet: getChainConfig("mainnet"),
-    optimism: getChainConfig("optimism-mainnet"),
-    "polygon-mainnet": getChainConfig("polygon-mainnet"),
-    "polygon-mumbai": getChainConfig("polygon-mumbai"),
     sepolia: getChainConfig("sepolia"),
-    // base
     "base-mainnet": getChainConfig("base-mainnet"),
     "base-sepolia": getChainConfig("base-sepolia"),
-    // "base-local": getChainConfig("base-local"),
   },
   paths: {
     artifacts: "./artifacts",
