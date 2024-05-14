@@ -5,8 +5,8 @@ import type { NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
 import { config as dotenvConfig } from "dotenv";
 
-const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || "./.env";
-dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
+const dotenvConfigPath: string = resolve(__dirname, "./webapp/.env");
+dotenvConfig({ path: dotenvConfigPath });
 
 // Ensure that we have all the environment variables we need.
 const mnemonic: string | undefined = process.env.MNEMONIC;
@@ -14,9 +14,9 @@ if (!mnemonic) {
   throw new Error("Please set your MNEMONIC in a .env file");
 }
 
-const alchemyAPIKey: string | undefined = process.env.ALCHEMY_APIKEY;
+const alchemyAPIKey: string | undefined = process.env.ALCHEMY_API_KEY;
 if (!alchemyAPIKey) {
-  throw new Error("Please set your ALCHEMY_APIKEY in a .env file");
+  throw new Error("Please set your ALCHEMY_API_KEY in a .env file");
 }
 
 const chainIds = {

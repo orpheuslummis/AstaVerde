@@ -1,20 +1,17 @@
+// src/lib/contracts.ts
 import { erc20Abi } from "abitype/abis";
-import ASTAVERDE_ABI from "../../../config/AstaVerde.json";
+import astaverdeAbi from "../config/AstaVerde.json";
 
-const CHAIN_SELECTION = process.env.NEXT_PUBLIC_CHAIN_SELECTION ||
-  process.env.CHAIN_SELECTION || "local";
-
-const USDC_ADDRESS =
-  process.env[`USDC_ADDRESS_${CHAIN_SELECTION.toUpperCase()}`];
-
-const ASTAVERDE_ADDRESS =
-  process.env[`ASTAVERDE_ADDRESS_${CHAIN_SELECTION.toUpperCase()}`];
+import {
+  ASTAVERDE_ADDRESS,
+  CHAIN_SELECTION,
+  USDC_ADDRESS,
+} from "../app.config";
 
 export function getUsdcContractConfig() {
-  if (CHAIN_SELECTION === "main") {
-    return mainUSDCContractConfig;
-  }
-  return mockUSDCContractConfig;
+  return CHAIN_SELECTION === "main"
+    ? mainUSDCContractConfig
+    : mockUSDCContractConfig;
 }
 
 const extendedERC20Abi = [
@@ -43,7 +40,7 @@ const extendedERC20Abi = [
 export const mainUSDCContractConfig = {
   address: USDC_ADDRESS as `0x${string}`,
   abi: erc20Abi,
-};
+} as const;
 
 // MockUSDC on Base Sepolia
 export const mockUSDCContractConfig = {
@@ -53,5 +50,7 @@ export const mockUSDCContractConfig = {
 
 export const astaverdeContractConfig = {
   address: ASTAVERDE_ADDRESS as `0x${string}`,
-  abi: ASTAVERDE_ABI.abi,
+  abi: astaverdeAbi.abi, // Access the `abi` from the default import
 } as const;
+
+export default astaverdeContractConfig;
