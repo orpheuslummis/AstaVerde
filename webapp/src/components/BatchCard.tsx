@@ -1,13 +1,4 @@
-"use client;";
-
-import { IPFS_GATEWAY_URL, USDC_DECIMALS } from "../app.config";
-import { Batch } from "../lib/batch";
-import {
-	astaverdeContractConfig,
-	getUsdcContractConfig,
-} from "../lib/contracts";
-import { useEffect, useState } from "react";
-import { formatUnits, parseUnits } from "viem";
+import { useState, useEffect } from "react";
 import {
 	useAccount,
 	useContractRead,
@@ -15,88 +6,81 @@ import {
 	usePrepareContractWrite,
 	useWaitForTransaction,
 } from "wagmi";
+import { IPFS_GATEWAY_URL, USDC_DECIMALS } from "../app.config";
+import { Batch } from "../lib/batch";
+import {
+	astaverdeContractConfig,
+	getUsdcContractConfig,
+} from "../lib/contracts";
+import { Abi, formatUnits, parseUnits } from "viem";
 
-/*
-obtain the first token of the batch
-fetch the metadata of the token from IPFS using its CID
-obtain the image CID from that metadata
-build a URL to the image using the image CID
-*/
+interface TokenInfoData {
+	tokenId: string;
+	producer: string;
+	cid: string;
+	isRedeemed: boolean;
+}
 
 export default function BatchCard({
 	batch,
 	updateCard,
-}: { batch: Batch; updateCard: () => void }) {
-	const [batchImageUrl, setBatchImageUrl] = useState<string>();
+}: {
+	batch: Batch;
+	updateCard: () => void;
+}) {
+	const [batchImageUrl, setBatchImageUrl] = useState<string | null>(null);
 	const [tokenAmount, setTokenAmount] = useState(1);
 
 	const { data: batchInfo } = useContractRead({
-		...astaverdeContractConfig,
+		address: astaverdeContractConfig.address,
+		abi: astaverdeContractConfig.abi,
 		functionName: "batches",
 		args: [BigInt(batch.id)],
 	});
 
 	const { data: priceOfBatch } = useContractRead({
-		...astaverdeContractConfig,
+		address: astaverdeContractConfig.address,
+		abi: astaverdeContractConfig.abi,
 		functionName: "getBatchPrice",
 		args: [BigInt(batch.id)],
 	});
 
-	const tokenInfo = useContractRead({
-		...astaverdeContractConfig,
+	const { data: tokenInfo } = useContractRead({
+		address: astaverdeContractConfig.address,
+		abi: astaverdeContractConfig.abi,
 		functionName: "tokens",
 		enabled: batch.token_ids.length > 0,
 		args: [BigInt(batch.token_ids[0])],
-	});
+	}) as { data?: TokenInfoData };
 
-	const fetchTokenImageUrl = async (tokenCID: string) => {
+	const fetchTokenImageUrl = async (tokenCID: string): Promise<string | null> => {
 		try {
 			const response = await fetch(`${IPFS_GATEWAY_URL}${tokenCID}`);
 			const metadata = await response.json();
-			console.log("BatchCard: fetched token metadata", metadata);
-			const imageUrl = metadata.image;
-			console.log("BatchCard: fetched image URL", imageUrl);
-			return imageUrl;
+			return metadata.image || null;
 		} catch (error) {
-			console.error("BatchCard: error fetching token metadata", error);
+			console.error("Error fetching token metadata:", error);
 			return null;
 		}
 	};
 
-	const getFirstBatchTokenCID = async () => {
-		if (tokenInfo.data) {
-			console.log("BatchCard: tokenInfo", tokenInfo);
-			const tokenCID = tokenInfo.data[2];
-			console.log("BatchCard: tokenCID", tokenCID);
-			return tokenCID;
-		}
-		return null;
-	};
-
 	useEffect(() => {
-		const fetchData = async () => {
-			if (tokenInfo.data) {
-				const firstBatchTokenCID = await getFirstBatchTokenCID();
-				if (firstBatchTokenCID) {
-					const batchImageCID: string | undefined =
-						await fetchTokenImageUrl(firstBatchTokenCID);
-
-					if (batchImageCID) {
-						const parts = batchImageCID.split("ipfs://");
-						if (parts.length > 1) {
-							const CID = parts[1];
-							setBatchImageUrl(IPFS_GATEWAY_URL + CID);
-						} else {
-							setBatchImageUrl(`${IPFS_GATEWAY_URL}undefined`);
-						}
-					} else {
-						setBatchImageUrl(`${IPFS_GATEWAY_URL}undefined`);
+		if (tokenInfo) {
+			const fetchImage = async () => {
+				const tokenCID = tokenInfo.cid;
+				if (tokenCID) {
+					const imageUrl = await fetchTokenImageUrl(tokenCID);
+					if (imageUrl) {
+						const parts = imageUrl.split("ipfs://");
+						setBatchImageUrl(parts.length > 1 ? `${IPFS_GATEWAY_URL}${parts[1]}` : null);
 					}
 				}
-			}
-		};
-		void fetchData();
+			};
+			fetchImage();
+		}
 	}, [tokenInfo]);
+
+	const priceInUSDC = priceOfBatch ? Number(formatUnits(priceOfBatch as bigint, USDC_DECIMALS)) : 0;
 
 	return (
 		<div className="flex justify-between items-center">
@@ -105,7 +89,7 @@ export default function BatchCard({
 					<div className="w-full h-64 overflow-hidden rounded shadow-lg">
 						<img
 							className="w-full h-full object-cover"
-							src={batchImageUrl}
+							src={batchImageUrl || "/placeholder.png"}
 							alt="Batch"
 						/>
 					</div>
@@ -113,16 +97,8 @@ export default function BatchCard({
 						<p className="text-gray-900 font-bold text-2xl">
 							Batch {Number(batch.id)}
 						</p>
-						<p className="text-gray-600">
-							{batch ? `${batch.itemsLeft} items left` : "0 items left"}
-						</p>
-						<p className="text-gray-600">
-							{priceOfBatch
-								? `${Number(
-										formatUnits(priceOfBatch || BigInt(0), USDC_DECIMALS),
-								  )} USDC`
-								: "0 USDC"}
-						</p>
+						<p className="text-gray-600">{batch.itemsLeft} items left</p>
+						<p className="text-gray-600">{priceInUSDC} USDC</p>
 					</div>
 
 					<div className="w-full mt-4">
@@ -135,28 +111,19 @@ export default function BatchCard({
 							type="number"
 							value={tokenAmount}
 							onChange={(e) => setTokenAmount(Number(e.target.value))}
+							min={1}
 						/>
 					</div>
 				</div>
 
 				<div className="mt-4 p-4">
 					<p className="text-black mt-1 font-bold">
-						{priceOfBatch
-							? `Total: ${
-									+Number(
-										formatUnits(priceOfBatch || BigInt(0), USDC_DECIMALS),
-									).toString() * tokenAmount
-							  } USDC`
-							: "Total: 0 USDC"}
+						Total: {priceInUSDC * tokenAmount} USDC
 					</p>
 					<BuyBatchButton
 						batchId={batch.id}
 						tokenAmount={tokenAmount}
-						usdcPrice={
-							Number(
-								formatUnits(priceOfBatch || BigInt(0), USDC_DECIMALS),
-							)?.toString() || "0"
-						}
+						usdcPrice={priceInUSDC}
 						updateCard={updateCard}
 					/>
 				</div>
@@ -173,149 +140,118 @@ function BuyBatchButton({
 }: {
 	batchId: number;
 	tokenAmount: number;
-	usdcPrice: string;
+	usdcPrice: number;
 	updateCard: () => void;
 }) {
-	const totalPrice = tokenAmount * Number(usdcPrice);
+	const totalPrice = tokenAmount * usdcPrice;
 	const { address } = useAccount();
 	const [awaitedHash, setAwaitedHash] = useState<`0x${string}`>();
-	const { data: txReceipt } = useWaitForTransaction({
-		hash: awaitedHash,
-	});
+	const [isApproving, setIsApproving] = useState(false);
+	const [isBuying, setIsBuying] = useState(false);
+
+	const { data: txReceipt } = useWaitForTransaction({ hash: awaitedHash });
 
 	const usdcContractConfig = getUsdcContractConfig();
 	const { data: allowanceData, refetch: refetchAllowance } = useContractRead({
-		...usdcContractConfig,
+		address: usdcContractConfig.address,
+		abi: usdcContractConfig.abi as Abi,
 		functionName: "allowance",
-		enabled: address !== undefined,
+		enabled: !!address,
 		args: [address!, astaverdeContractConfig.address],
-	} as any);
-	let allowance = BigInt(0);
-	if (allowanceData) {
-		allowance = BigInt(allowanceData as string);
-		console.log(
-			"BatchCard: allowance:",
-			Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)),
-			totalPrice,
-		);
-		console.log(
-			"BatchCard: buyBatch enabled",
-			Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)) >= totalPrice,
-		);
-	}
-
+	});
+	const allowance = BigInt(allowanceData?.toString() ?? "0");
 	const { data: balanceData } = useContractRead({
-		...usdcContractConfig,
+		address: usdcContractConfig.address,
+		abi: usdcContractConfig.abi as Abi,
 		functionName: "balanceOf",
-		enabled: address !== undefined,
+		enabled: !!address,
 		args: [address!],
-	} as any);
-	let balance = BigInt(0);
-	if (balanceData) {
-		balance = BigInt(balanceData as string);
-	}
-
+	});
+	const balance = BigInt(balanceData?.toString() ?? "0");
 	const { config: configApprove } = usePrepareContractWrite({
-		...usdcContractConfig,
+		address: usdcContractConfig.address,
+		abi: usdcContractConfig.abi as Abi,
 		functionName: "approve",
-		// enabled: false,
-		args: [
-			astaverdeContractConfig.address,
-			parseUnits(totalPrice.toString(), USDC_DECIMALS),
-		],
-	} as any);
+		args: [astaverdeContractConfig.address, parseUnits(totalPrice.toString(), USDC_DECIMALS)],
+	});
 	const { writeAsync: approve } = useContractWrite(configApprove);
 
 	const { config: configBuyBatch } = usePrepareContractWrite({
-		...astaverdeContractConfig,
+		address: astaverdeContractConfig.address,
+		abi: astaverdeContractConfig.abi,
 		functionName: "buyBatch",
-		enabled:
-			Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)) >= totalPrice, // allow buyBatch when there is enough allowance
-		args: [
-			BigInt(batchId),
-			parseUnits(totalPrice.toString(), USDC_DECIMALS),
-			BigInt(tokenAmount),
-		],
+		enabled: Number(formatUnits(allowance, USDC_DECIMALS)) >= totalPrice,
+		args: [BigInt(batchId), parseUnits(totalPrice.toString(), USDC_DECIMALS), BigInt(tokenAmount)],
 	});
 	const { writeAsync: buyBatchAsync } = useContractWrite(configBuyBatch);
 
-	const refreshAllowance = async () => {
-		await refetchAllowance();
-	};
-
 	useEffect(() => {
 		if (txReceipt) {
-			void refreshAllowance();
-
-			void updateCard();
+			refetchAllowance();
+			updateCard();
 		}
-	}, [txReceipt, refreshAllowance, updateCard]);
+	}, [txReceipt, refetchAllowance, updateCard]);
 
 	if (tokenAmount < 1) {
-		return (
-			<>
-				<button
-					className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full"
-					disabled
-					type="button"
-				>
-					Set quantity
-				</button>
-			</>
-		);
+		return <Button disabled>Set quantity</Button>;
 	}
 
-	if (Number(formatUnits(balance || BigInt(0), USDC_DECIMALS)) < totalPrice) {
-		return (
-			<>
-				<button
-					className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full"
-					disabled
-					type="button"
-				>
-					Not Enough Balance
-				</button>
-			</>
-		);
+	if (Number(formatUnits(balance, USDC_DECIMALS)) < totalPrice) {
+		return <Button disabled>Not Enough Balance</Button>;
 	}
 
-	// If there is not enough allowance to withdraw usdc from user address.
-	if (Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)) < totalPrice) {
+	if (Number(formatUnits(allowance, USDC_DECIMALS)) < totalPrice) {
 		return (
-			<>
-				<button
-					className="mt-4 bg-primary hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
-					disabled={!approve}
-					type="button"
-					onClick={async () => {
-						if (approve) {
-							const result = await approve();
-							setAwaitedHash(result.hash);
-						}
-					}}
-				>
-					Approve USDC
-				</button>
-			</>
+			<Button
+				disabled={isApproving}
+				onClick={async () => {
+					if (approve) {
+						setIsApproving(true);
+						const result = await approve();
+						setAwaitedHash(result.hash);
+						setIsApproving(false);
+					}
+				}}
+			>
+				Approve USDC
+			</Button>
 		);
 	}
 
 	return (
-		<>
-			<button
-				className="mt-4 bg-primary hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
-				disabled={!buyBatchAsync}
-				type="button"
-				// disabled={isLoading}
-				onClick={async () => {
-					if (buyBatchAsync) {
-						const result = await buyBatchAsync();
-						setAwaitedHash(result.hash);
-					}
-				}}
-			>
-				Buy
-			</button>
-		</>
+		<Button
+			disabled={isBuying}
+			onClick={async () => {
+				if (buyBatchAsync) {
+					setIsBuying(true);
+					const result = await buyBatchAsync();
+					setAwaitedHash(result.hash);
+					setIsBuying(false);
+				}
+			}}
+		>
+			Buy
+		</Button>
+	);
+}
+
+function Button({
+	disabled,
+	onClick,
+	children,
+}: {
+	disabled: boolean;
+	onClick?: () => void;
+	children: React.ReactNode;
+}) {
+	return (
+		<button
+			className={`mt-4 py-2 px-4 rounded w-full ${disabled ? "bg-red-500" : "bg-primary hover:bg-green-700"} text-white font-bold`}
+			disabled={disabled}
+			type="button"
+			onClick={onClick}
+		>
+			{children}
+		</button>
 	);
 }

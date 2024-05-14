@@ -1,39 +1,66 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from "wagmi";
 import { astaverdeContractConfig } from "../lib/contracts";
 import { Connected } from "./Connected";
-import { useEffect, useState } from "react";
-import { useContractWrite, usePrepareContractWrite, useContractRead, useAccount } from "wagmi";
 
-/*
-TBD docs
-*/
 export function AdminControls() {
   return (
     <Connected>
-      <h2 className="text-2xl my-6 mx-6">Admin controls</h2>
+      <h2 className="text-2xl my-6 mx-6">Admin Controls</h2>
       <div>
-        <PlatformPercentageControl />
-        <AuctionTimeThresholdsControl />
-        <MaxBatchSizeControl />
-        <PriceFloorControl />
-        <BasePriceControl />
-        <ClaimPlatformFunds />
-        <PauseContractControl />
-        <SetURI />
+        {controls.map((Control, index) => (
+          <Control key={index} />
+        ))}
       </div>
     </Connected>
   );
 }
 
+const controls = [
+  PlatformPercentageControl,
+  AuctionTimeThresholdsControl,
+  MaxBatchSizeControl,
+  PriceFloorControl,
+  BasePriceControl,
+  ClaimPlatformFunds,
+  PauseContractControl,
+  SetURI,
+];
+
 function ControlContainer({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    // {/* <div className="flex flex-col items-center justify-center space-y-4 bg-light-blue-200 p-4 rounded-lg"> */}
-    <div className="mx-auto max-w-sm my-6 bg-cyan-100 flex flex-col items-center justify-center space-y-4 bg-light-blue-200 p-4 rounded-lg">
+    <div className="mx-auto max-w-sm my-6 bg-cyan-100 p-4 rounded-lg shadow-md">
       <h2 className="text-xl mb-2">{title}</h2>
       {children}
     </div>
   );
+}
+
+function useContractInteraction({
+  functionName,
+  args = [],
+  onSuccessCallback,
+}: {
+  functionName: string;
+  args?: any[];
+  onSuccessCallback?: () => void;
+}) {
+  const { config } = usePrepareContractWrite({
+    ...astaverdeContractConfig,
+    functionName,
+    args,
+  });
+  const { write, isLoading, isSuccess, error } = useContractWrite(config);
+
+  useEffect(() => {
+    if (isSuccess && onSuccessCallback) {
+      onSuccessCallback();
+    }
+  }, [isSuccess, onSuccessCallback]);
+
+  return { write, isLoading, isSuccess, error };
 }
 
 function PauseContractControl() {
@@ -42,92 +69,42 @@ function PauseContractControl() {
     functionName: "paused",
   });
 
-  const { config: pauseConfig } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
+  const pauseInteraction = useContractInteraction({
     functionName: "pause",
-    enabled: false,
+    onSuccessCallback: refetchIsContractPaused,
   });
-  const {
-    write: pauseWrite,
-    data: pauseData,
-    isLoading: pauseLoading,
-    isSuccess: pauseSuccess,
-    error: pauseError,
-  } = useContractWrite(pauseConfig);
 
-  const { config: unpauseConfig } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
+  const unpauseInteraction = useContractInteraction({
     functionName: "unpause",
-    enabled: false,
+    onSuccessCallback: refetchIsContractPaused,
   });
-  const {
-    write: unpauseWrite,
-    data: unpauseData,
-    isLoading: unpauseLoading,
-    isSuccess: unpauseSuccess,
-    error: unpauseError,
-  } = useContractWrite(unpauseConfig);
-
-  useEffect(() => {
-    if (pauseSuccess || unpauseSuccess) {
-      setTimeout(() => {
-        void refetchIsContractPaused();
-      }, 5000);
-    }
-  }, [pauseSuccess, unpauseSuccess, refetchIsContractPaused]);
 
   return (
     <ControlContainer title="Pause / Unpause">
-      <button
-        className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        disabled={isContractPaused || pauseLoading}
-        onClick={pauseWrite}
-      >
-        Pause
-      </button>
-      {pauseLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {pauseSuccess && <div className="text-primary">Transaction successful: {JSON.stringify(pauseData)}</div>}
-      {pauseError && <div className="text-red-500">Error: {pauseError.message}</div>}
-
-      <button
-        className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        disabled={!isContractPaused || unpauseLoading}
-        onClick={unpauseWrite}
-      >
-        Unpause
-      </button>
-      {unpauseLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {unpauseSuccess && <div className="text-primary">Transaction successful: {JSON.stringify(unpauseData)}</div>}
-      {unpauseError && <div className="text-red-500">Error: {unpauseError.message}</div>}
+      <InteractionButton
+        title="Pause"
+        interaction={pauseInteraction}
+        disabled={isContractPaused as boolean}
+      />
+      <InteractionButton
+        title="Unpause"
+        interaction={unpauseInteraction}
+        disabled={!isContractPaused}
+      />
     </ControlContainer>
   );
 }
 
-// TBD confirm correctness once we have funds going on
 function ClaimPlatformFunds() {
   const { address } = useAccount();
-  const { config } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
+  const interaction = useContractInteraction({
     functionName: "claimPlatformFunds",
-    enabled: false,
-    args: [address!],
+    args: [address],
   });
-  const { write, data, isLoading, isSuccess, error } = useContractWrite(config);
-  console.log("claimPlatformFunds", { config, write, data, isLoading, isSuccess, error });
+
   return (
-    <ControlContainer title="Claim platform funds">
-      <button
-        className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        disabled={!write}
-        onClick={() => write?.()}
-        // disabled={isLoading}
-        // onClick={write({ args: [address] })}
-      >
-        Claim
-      </button>
-      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-primary">Transaction successful: {JSON.stringify(data)}</div>}
-      {error && <div className="text-red-500">Error: {error.message}</div>}
+    <ControlContainer title="Claim Platform Funds">
+      <InteractionButton title="Claim" interaction={interaction} />
     </ControlContainer>
   );
 }
@@ -138,20 +115,11 @@ function SetURI() {
     ...astaverdeContractConfig,
     functionName: "uri",
   });
-  console.log("currentURI", currentURI);
-  const { config } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
+
+  const interaction = useContractInteraction({
     functionName: "setURI",
     args: [uri],
   });
-  const { write, isLoading, isSuccess, error } = useContractWrite(config);
-  console.log("setURI", { config, write, isLoading, isSuccess, error });
-
-  const handleSetURI = () => {
-    if (uri) {
-      write?.();
-    }
-  };
 
   return (
     <ControlContainer title="Set URI">
@@ -163,18 +131,9 @@ function SetURI() {
           placeholder="Enter URI"
           className="px-4 py-2 mr-2 border border-gray-300 rounded"
         />
-        <button
-          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          disabled={!write || isLoading}
-          onClick={handleSetURI}
-        >
-          Set URI
-        </button>
+        <InteractionButton title="Set URI" interaction={interaction} disabled={!uri} />
       </div>
-      {currentURI && <div className="text-gray-500 mb-2">Current URI: {currentURI}</div>}
-      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-primary">Transaction successful</div>}
-      {error && <div className="text-red-500">Error: {error.message}</div>}
+      {typeof currentURI === 'string' && <div className="text-gray-500 mb-2">Current URI: {currentURI}</div>}
     </ControlContainer>
   );
 }
@@ -185,45 +144,21 @@ function PriceFloorControl() {
     ...astaverdeContractConfig,
     functionName: "priceFloor",
   });
-  console.log("currentPriceFloor", currentPriceFloor);
-  const { config } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
+
+  const interaction = useContractInteraction({
     functionName: "setPriceFloor",
     args: [BigInt(priceFloor)],
   });
-  const { write, isLoading, isSuccess, error } = useContractWrite(config);
-  console.log("setPriceFloor", { config, write, isLoading, isSuccess, error });
-
-  const handleSetPriceFloor = () => {
-    if (priceFloor) {
-      write?.();
-    }
-  };
 
   return (
     <ControlContainer title="Set Price Floor">
-      <div className="flex items-center mb-4">
-        <input
-          type="number"
-          value={priceFloor}
-          onChange={(e) => setPriceFloor(e.target.value)}
-          placeholder="Enter Price Floor"
-          className="px-4 py-2 mr-2 border border-gray-300 rounded"
-        />
-        <button
-          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          disabled={!write || isLoading}
-          onClick={handleSetPriceFloor}
-        >
-          Set Price Floor
-        </button>
-      </div>
-      {currentPriceFloor !== undefined && (
-        <div className="text-gray-500 mb-2">Current Price floor: {currentPriceFloor.toString()}</div>
-      )}
-      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-primary">Transaction successful</div>}
-      {error && <div className="text-red-500">Error: {error.message}</div>}
+      <NumberInput
+        value={priceFloor}
+        setValue={setPriceFloor}
+        placeholder="Enter Price Floor"
+        interaction={interaction}
+        current={currentPriceFloor}
+      />
     </ControlContainer>
   );
 }
@@ -234,94 +169,46 @@ function BasePriceControl() {
     ...astaverdeContractConfig,
     functionName: "basePrice",
   });
-  console.log("currentBasePrice", currentBasePrice);
-  const { config } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
+
+  const interaction = useContractInteraction({
     functionName: "setBasePrice",
     args: [BigInt(basePrice)],
   });
-  const { write, isLoading, isSuccess, error } = useContractWrite(config);
-  console.log("setBasePrice", { config, write, isLoading, isSuccess, error });
-
-  const handleSetBasePrice = () => {
-    if (basePrice) {
-      write?.();
-    }
-  };
 
   return (
     <ControlContainer title="Set Base Price">
-      <div className="flex items-center mb-4">
-        <input
-          type="number"
-          value={basePrice}
-          onChange={(e) => setBasePrice(e.target.value)}
-          placeholder="Enter Base Price"
-          className="px-4 py-2 mr-2 border border-gray-300 rounded"
-        />
-        <button
-          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          disabled={!write || isLoading}
-          onClick={handleSetBasePrice}
-        >
-          Set Base Price
-        </button>
-      </div>
-      {currentBasePrice !== undefined && (
-        <div className="text-gray-500 mb-2">Current Base Price: {currentBasePrice.toString()}</div>
-      )}
-      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-primary">Transaction successful</div>}
-      {error && <div className="text-red-500">Error: {error.message}</div>}
+      <NumberInput
+        value={basePrice}
+        setValue={setBasePrice}
+        placeholder="Enter Base Price"
+        interaction={interaction}
+        current={currentBasePrice}
+      />
     </ControlContainer>
   );
 }
 
 function MaxBatchSizeControl() {
-  const [maxMatchSize, setMaxMatchSize] = useState("");
-  const { data: currentMaxMatchSize } = useContractRead({
+  const [maxBatchSize, setMaxBatchSize] = useState("");
+  const { data: currentMaxBatchSize } = useContractRead({
     ...astaverdeContractConfig,
     functionName: "maxBatchSize",
   });
-  console.log("currentBasePrice", currentMaxMatchSize);
-  const { config } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
-    functionName: "setMaxBatchSize",
-    args: [BigInt(maxMatchSize)],
-  });
-  const { write, isLoading, isSuccess, error } = useContractWrite(config);
-  console.log("setMaxMatchSize", { config, write, isLoading, isSuccess, error });
 
-  const handleSetMaxMatchSize = () => {
-    if (maxMatchSize) {
-      write?.();
-    }
-  };
+  const interaction = useContractInteraction({
+    functionName: "setMaxBatchSize",
+    args: [BigInt(maxBatchSize)],
+  });
 
   return (
-    <ControlContainer title="Set Max Match Size">
-      <div className="flex items-center mb-4">
-        <input
-          type="number"
-          value={maxMatchSize}
-          onChange={(e) => setMaxMatchSize(e.target.value)}
-          placeholder="Enter Max Match Size"
-          className="px-4 py-2 mr-2 border border-gray-300 rounded"
-        />
-        <button
-          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          disabled={!write || isLoading}
-          onClick={handleSetMaxMatchSize}
-        >
-          Set Max Match Size
-        </button>
-      </div>
-      {currentMaxMatchSize !== undefined && (
-        <div className="text-gray-500 mb-2">Current Max Match Size: {currentMaxMatchSize.toString()}</div>
-      )}
-      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-primary">Transaction successful</div>}
-      {error && <div className="text-red-500">Error: {error.message}</div>}
+    <ControlContainer title="Set Max Batch Size">
+      <NumberInput
+        value={maxBatchSize}
+        setValue={setMaxBatchSize}
+        placeholder="Enter Max Batch Size"
+        interaction={interaction}
+        current={currentMaxBatchSize}
+      />
     </ControlContainer>
   );
 }
@@ -337,66 +224,58 @@ function AuctionTimeThresholdsControl() {
     ...astaverdeContractConfig,
     functionName: "dayDecreaseThreshold",
   });
-  const { config } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
+
+  const interaction = useContractInteraction({
     functionName: "setAuctionTimeThresholds",
     args: [BigInt(dayIncreaseThreshold), BigInt(dayDecreaseThreshold)],
   });
-  const { write, isLoading, isSuccess, error } = useContractWrite(config);
-  console.log("setAuctionTimeThresholds", { config, write, isLoading, isSuccess, error });
 
-  const handleSetMaxMatchSize = () => {
-    if (dayIncreaseThreshold && dayDecreaseThreshold) {
-      if (dayIncreaseThreshold < dayDecreaseThreshold) {
-        write?.();
-      } else {
-        alert("Increase threshold must be lower than decrease threshold");
-      }
+  const handleSetAuctionTimeThresholds = () => {
+    if (
+      dayIncreaseThreshold &&
+      dayDecreaseThreshold &&
+      BigInt(dayIncreaseThreshold) < BigInt(dayDecreaseThreshold)
+    ) {
+      interaction.write?.();
+    } else {
+      alert("Increase threshold must be lower than decrease threshold");
     }
   };
 
   return (
-    <ControlContainer title="Set Auction Threshold">
-      <div className="flex items-center mb-4">
-        <div className="flex flex-col gap-2">
-          <input
-            type="number"
-            value={dayIncreaseThreshold}
-            onChange={(e) => setDayIncreaseThreshold(e.target.value)}
-            placeholder="Enter Increase Days"
-            className="px-4 py-2 mr-2 border border-gray-300 rounded"
-          />
-          <input
-            type="number"
-            value={dayDecreaseThreshold}
-            onChange={(e) => setDayDecreaseThreshold(e.target.value)}
-            placeholder="Enter Decrease Days"
-            className="px-4 py-2 mr-2 border border-gray-300 rounded"
-          />
-        </div>
-
+    <ControlContainer title="Set Auction Time Thresholds">
+      <div className="flex flex-col gap-2 mb-4">
+        <input
+          type="number"
+          value={dayIncreaseThreshold}
+          onChange={(e) => setDayIncreaseThreshold(e.target.value)}
+          placeholder="Enter Increase Days"
+          className="px-4 py-2 border border-gray-300 rounded"
+        />
+        <input
+          type="number"
+          value={dayDecreaseThreshold}
+          onChange={(e) => setDayDecreaseThreshold(e.target.value)}
+          placeholder="Enter Decrease Days"
+          className="px-4 py-2 border border-gray-300 rounded"
+        />
         <button
           className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          disabled={!write || isLoading}
-          onClick={handleSetMaxMatchSize}
+          disabled={!interaction.write || interaction.isLoading}
+          onClick={handleSetAuctionTimeThresholds}
         >
-          Set Auction Threshold
+          Set Auction Time Thresholds
         </button>
       </div>
-
-      {currentDayIncreaseThreshold !== undefined && (
-        <div className="text-gray-500 mb-2">
-          Current Day Increase Threshold: {currentDayIncreaseThreshold.toString()}
-        </div>
+      {typeof currentDayIncreaseThreshold === 'bigint' && (
+        <div className="text-gray-500 mb-2">Current Day Increase Threshold: {currentDayIncreaseThreshold.toString()}</div>
       )}
-      {currentDayDecreaseThreshold !== undefined && (
-        <div className="text-gray-500 mb-2">
-          Current Day Decrease Threshold: {currentDayDecreaseThreshold.toString()}
-        </div>
+      {typeof currentDayDecreaseThreshold === 'bigint' && (
+        <div className="text-gray-500 mb-2">Current Day Decrease Threshold: {currentDayDecreaseThreshold.toString()}</div>
       )}
-      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-primary">Transaction successful</div>}
-      {error && <div className="text-red-500">Error: {error.message}</div>}
+      {interaction.isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
+      {interaction.isSuccess && <div className="text-primary">Transaction successful</div>}
+      {interaction.error && <div className="text-red-500">Error: {interaction.error.message}</div>}
     </ControlContainer>
   );
 }
@@ -407,46 +286,76 @@ function PlatformPercentageControl() {
     ...astaverdeContractConfig,
     functionName: "platformSharePercentage",
   });
-  const { config } = usePrepareContractWrite({
-    ...astaverdeContractConfig,
+
+  const interaction = useContractInteraction({
     functionName: "setPlatformSharePercentage",
     args: [BigInt(platformSharePercentage)],
   });
-  const { write, isLoading, isSuccess, error } = useContractWrite(config);
-  console.log("setPlatformSharePercentage", { config, write, isLoading, isSuccess, error });
-
-  const handleSetPlatformSharePercentage = () => {
-    if (platformSharePercentage) {
-      write?.();
-    }
-  };
 
   return (
     <ControlContainer title="Set Platform Share Percentage">
+      <NumberInput
+        value={platformSharePercentage}
+        setValue={setPlatformSharePercentage}
+        placeholder="Enter Platform Share Percentage"
+        interaction={interaction}
+        current={currentPlatformSharePercentage}
+      />
+    </ControlContainer>
+  );
+}
+
+function NumberInput({
+  value,
+  setValue,
+  placeholder,
+  interaction,
+  current,
+}: {
+  value: string;
+  setValue: (value: string) => void;
+  placeholder: string;
+  interaction: ReturnType<typeof useContractInteraction>;
+  current: any;
+}) {
+  return (
+    <>
       <div className="flex items-center mb-4">
         <input
           type="number"
-          value={platformSharePercentage}
-          onChange={(e) => setPlatformSharePercentage(e.target.value)}
-          placeholder="Enter Platform Share Percentage"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
           className="px-4 py-2 mr-2 border border-gray-300 rounded"
         />
-        <button
-          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          disabled={!write || isLoading}
-          onClick={handleSetPlatformSharePercentage}
-        >
-          Set Platform Share Percentage
-        </button>
+        <InteractionButton title={placeholder} interaction={interaction} disabled={!value} />
       </div>
-      {currentPlatformSharePercentage !== undefined && (
-        <div className="text-gray-500 mb-2">
-          Current Platform Share Percentage: {currentPlatformSharePercentage.toString()}
-        </div>
+      {current !== undefined && current !== null && (
+        <div className="text-gray-500 mb-2">Current: {current.toString()}</div>
       )}
-      {isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
-      {isSuccess && <div className="text-primary">Transaction successful</div>}
-      {error && <div className="text-red-500">Error: {error.message}</div>}
-    </ControlContainer>
+      {interaction.isLoading && <div className="text-gray-500">Processing... Please check your wallet.</div>}
+      {interaction.isSuccess && <div className="text-primary">Transaction successful</div>}
+      {interaction.error && <div className="text-red-500">Error: {interaction.error.message}</div>}
+    </>
+  );
+}
+
+function InteractionButton({
+  title,
+  interaction,
+  disabled,
+}: {
+  title: string;
+  interaction: ReturnType<typeof useContractInteraction>;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
+      disabled={disabled || !interaction.write || interaction.isLoading}
+      onClick={interaction.write}
+    >
+      {title}
+    </button>
   );
 }
