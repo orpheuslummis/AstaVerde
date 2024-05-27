@@ -36,7 +36,7 @@ import { readFileSync } from "fs";
 const astaverdejson = JSON.parse(readFileSync("./artifacts/contracts/AstaVerde.sol/AstaVerde.json"));
 const abi = astaverdejson.abi;
 
-dotenv.config();
+dotenv.config({ path: "./webapp/.env" });
 
 const rpcURL = "https://base-sepolia.g.alchemy.com/v2/" + process.env.ALCHEMY_APIKEY;
 
