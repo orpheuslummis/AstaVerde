@@ -68,6 +68,7 @@
     "prettier:write": "prettier --write \"**/*.{js,json,md,sol,ts,yml}\"",
     "test": "hardhat test",
     "task:mint": "node ./scripts/mint.mjs",
+    "task:mintlocal": "node ./scripts/mint_local.mjs",
     "task:events": "node ./scripts/events/index.mjs",
     "webapp:dev": "cd webapp && npm run dev",
     "webapp:build": "cd webapp && npm run build",

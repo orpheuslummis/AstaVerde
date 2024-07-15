@@ -24,19 +24,20 @@ export function BatchListing() {
     isFetchingNextPage,
   } = useContractInfiniteReads({
     cacheKey: "batchMetadata",
-    contracts: (pageParam: number) => [
+    contracts: (pageParam: number | undefined) => [
       {
         address: astaverdeContractConfig.address as `0x${string}`,
         abi: astaverdeContractConfig.abi as readonly any[],
         functionName: "getBatchInfo",
-        args: [BigInt(pageParam)] as const,
+        args: [BigInt(pageParam ?? 0)] as const,  // Provide a default value if pageParam is undefined
       },
     ],
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage || !Array.isArray(lastPage[0]?.result) || lastPage[0].result.length === 0) {
         return undefined;
       }
-      return lastBatchIDn - allPages.length;
+      const nextPageParam = lastBatchIDn - allPages.length;
+      return Number.isInteger(nextPageParam) ? nextPageParam : undefined;
     },
   });
 

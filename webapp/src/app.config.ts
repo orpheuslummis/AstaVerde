@@ -36,13 +36,25 @@ export function validateChainSelection(
 
 validateChainSelection(CHAIN_SELECTION);
 
-export const USDC_ADDRESS =
-  process.env[`USDC_ADDRESS_${CHAIN_SELECTION.toUpperCase()}`];
-export const ASTAVERDE_ADDRESS =
-  process.env[`ASTAVERDE_ADDRESS_${CHAIN_SELECTION.toUpperCase()}`];
+export const USDC_ADDRESS: string | undefined = CHAIN_SELECTION === "local"
+  ? process.env.NEXT_PUBLIC_USDC_ADDRESS_LOCAL
+  : CHAIN_SELECTION === "base_sepolia"
+  ? process.env.NEXT_PUBLIC_USDC_ADDRESS_BASE_SEPOLIA
+  : CHAIN_SELECTION === "base_mainnet"
+  ? process.env.NEXT_PUBLIC_USDC_ADDRESS_BASE_MAINNET
+  : undefined;
+
+export const ASTAVERDE_ADDRESS: string | undefined = CHAIN_SELECTION === "local"
+  ? process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS_LOCAL
+  : CHAIN_SELECTION === "base_sepolia"
+  ? process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS_BASE_SEPOLIA
+  : CHAIN_SELECTION === "base_mainnet"
+  ? process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS_BASE_MAINNET
+  : undefined;
+
 if (!USDC_ADDRESS || !ASTAVERDE_ADDRESS) {
   throw new Error(
-    `USDC_ADDRESS and ASTAVERDE_ADDRESS must be set for CHAIN_SELECTION: ${CHAIN_SELECTION}`,
+    `NEXT_PUBLIC_USDC_ADDRESS and NEXT_PUBLIC_ASTAVERDE_ADDRESS must be set for CHAIN_SELECTION: ${CHAIN_SELECTION}`,
   );
 }
 
