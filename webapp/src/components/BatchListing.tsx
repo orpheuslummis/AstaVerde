@@ -23,6 +23,7 @@ export function BatchListing() {
     isLoading: isLoadingBatches,
     isFetchingNextPage,
   } = useContractInfiniteReads({
+    enabled: lastBatchIDn > 0,
     cacheKey: "batchMetadata",
     contracts: (pageParam: number | undefined) => [
       {
@@ -36,8 +37,8 @@ export function BatchListing() {
       if (!lastPage || !Array.isArray(lastPage[0]?.result) || lastPage[0].result.length === 0) {
         return undefined;
       }
-      const nextPageParam = lastBatchIDn - allPages.length;
-      return Number.isInteger(nextPageParam) ? nextPageParam : undefined;
+      const nextPageParam = allPages.length + 1;
+      return nextPageParam <= lastBatchIDn ? nextPageParam : undefined;
     },
   });
 
@@ -48,16 +49,35 @@ export function BatchListing() {
   const batches: Batch[] =
     data?.pages?.flatMap((page: any[]) =>
       page?.map((batch: any) => {
-        const [batchID, tokenIDs, timestamp, price, itemsLeft] = batch.result || [];
-        return new Batch(batchID, tokenIDs, timestamp, price, itemsLeft);
-      }),
+        try {
+          const [batchID, tokenIDs, timestamp, price, itemsLeft] = batch.result || [];
+          return new Batch(batchID, tokenIDs, timestamp, price, itemsLeft);
+        } catch (error) {
+          console.error("Error parsing batch data:", error);
+          return null;
+        }
+      }).filter(Boolean)
     ) || [];
 
-  if (isLoadingLastBatchID || isLoadingBatches) return <div>Loading...</div>;
-
-  if (lastBatchIDError || !data || error || data.pages[0][0]?.error) {
+  if (lastBatchIDError || error) {
     console.error("BatchListing: Error", lastBatchIDError || error);
-    return <div>Could not display, sorry.</div>;
+    return <div>Error loading batches. Please try again later.</div>;
+  }
+
+  if (isLoadingLastBatchID || isLoadingBatches) {
+    return <div>Loading batches...</div>;
+  }
+
+  if (lastBatchIDn === 0) {
+    return (
+      <div className="flex justify-center items-center h-[calc(100vh-124px)]">
+        <p className="text-xl font-semibold">No batches available yet.</p>
+      </div>
+    );
+  }
+
+  if (!data || data.pages.length === 0 || data.pages[0].length === 0) {
+    return <div>No batch data available.</div>;
   }
 
   return (
