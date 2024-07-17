@@ -14,9 +14,9 @@ they must buy the entire batch.
 
 ## User personas
 
-- Credit Producers: Generate and verify carbon offsets, then list them as NFTs.
-- Platform Owner: Mints new batches of NFTs and manages the auction.
-- Buyers: Bid on and purchase batches of NFTs.
+-   Credit Producers: Generate and verify carbon offsets, then list them as NFTs.
+-   Platform Owner: Mints new batches of NFTs and manages the auction.
+-   Buyers: Bid on and purchase batches of NFTs.
 
 ## Requirements
 
@@ -91,22 +91,27 @@ Reading events:
 
 Env. vars to set on Vercel
 
-- CHAIN_SELECTION
-- ALCHEMY_API_KEY
-- WALLET_CONNECT_PROJECT_ID
-- TBD
+-   CHAIN_SELECTION
+-   ALCHEMY_API_KEY
+-   WALLET_CONNECT_PROJECT_ID
+-   TBD
 
-## Development notes
+## Local development notes
 
 When updating the contract
 
 The address string and hardcoded ABI needs to be updated in
 
-- `webapp/src/lib/contracts.ts` for the web app
-- `scripts/events/contracts.mjs` for the events script
-- also the address in your `.env` for minting
+-   `webapp/src/lib/contracts.ts` for the web app
+-   `scripts/events/contracts.mjs` for the events script
+-   also the address in your `.env` for minting
 
 ```
+npm run node
 npm run watch:dev
 npm run webapp:dev
+```
+
+```
+cp ./webapp/.env.example ./webapp/.env.local
 ```

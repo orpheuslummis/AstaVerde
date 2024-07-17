@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "abitype": "^1.0.0",
     "connectkit": "^1.5.3",
     "encoding": "^0.1.13",
     "next": "^14.0.3",
@@ -16,12 +17,11 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "viem": "~1.19.11",
-    "wagmi": "^1.4.7",
-    "abitype": "^1.0.0"
+    "wagmi": "^1.4.7"
   },
   "devDependencies": {
     "@types/node": "^20.10.1",
-    "@types/react": "^18.2.39",
+    "@types/react": "18.3.3",
     "@types/react-dom": "^18.2.17",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",

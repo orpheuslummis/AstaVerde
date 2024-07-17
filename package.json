@@ -61,6 +61,7 @@
     "coverage": "hardhat coverage --solcoverjs ./.solcover.js --temp artifacts --testfiles \"test/**/*.ts\" && npm run typechain",
     "deploy:contracts": "hardhat deploy",
     "deploy:local": "hardhat deploy --network hardhat",
+    "deploy:testnet": "hardhat deploy --network base-sepolia",
     "lint": "npm run lint:sol && npm run lint:ts && npm run prettier:check",
     "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\"",
     "postinstall": "DOTENV_CONFIG_PATH=./.env.example npm run typechain",
@@ -81,6 +82,7 @@
     "@openzeppelin/contracts": "^5.0.0",
     "caniuse-lite": "^1.0.30001617",
     "ethereum-cryptography": "^2.1.3",
-    "multiformats": "^13.1.0"
+    "multiformats": "^13.1.0",
+    "next": "^14.2.5"
   }
 }
