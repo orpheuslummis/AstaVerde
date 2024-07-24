@@ -1,8 +1,8 @@
-import { useContractRead } from "wagmi";
-import { useEffect, ChangeEvent, Dispatch, SetStateAction } from "react";
-import { TransactionReceipt } from "viem";
-import { astaverdeContractConfig } from "../../lib/contracts";
 import Link from "next/link";
+import { ChangeEvent, Dispatch, SetStateAction, useEffect } from "react";
+import { TransactionReceipt } from "viem";
+import { useReadContract } from "wagmi";
+import { astaverdeContractConfig } from "../../lib/contracts";
 
 interface RedeemableTokenNumberProps {
     txReceipt: TransactionReceipt | undefined;
@@ -15,11 +15,16 @@ export default function RedeemableTokenNumber({
     redeemableToken,
     setRedeemableTokens,
 }: RedeemableTokenNumberProps) {
-    const { data: tokenInfo, refetch: refreshTokenInfo } = useContractRead({
+    const { data: tokenInfo, refetch: refreshTokenInfo, error } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "tokens",
         args: [BigInt(redeemableToken)],
     });
+
+    if (error) {
+        console.error('Error fetching token info:', error);
+        return null;
+    }
 
     useEffect(() => {
         if (txReceipt) {

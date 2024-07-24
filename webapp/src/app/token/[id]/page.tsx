@@ -1,11 +1,11 @@
 // src/app/token/[id]/page.tsx
 "use client";
 
+import { BigNumberish } from "ethers";
+import { useEffect, useState } from "react";
+import { useReadContract } from "wagmi";
 import { IPFS_GATEWAY_URL } from "../../../app.config";
 import { astaverdeContractConfig } from "../../../lib/contracts";
-import React, { useEffect, useState } from "react";
-import { useContractRead } from "wagmi";
-import { BigNumberish } from "ethers";
 
 interface TokenData {
 	0: BigNumberish; // Token ID
@@ -19,11 +19,14 @@ export default function Page({ params }: { params: { id: bigint } }) {
 		isError,
 		isLoading,
 		error: lastBatchIDError,
-	} = useContractRead({
+	} = useReadContract({
 		...astaverdeContractConfig,
 		functionName: "tokens",
 		args: [params.id],
 		select: (data) => data as unknown as TokenData,
+		query: {
+			enabled: true,
+		},
 	});
 
 	const [tokenImageUrl, setTokenImageUrl] = useState<string>();

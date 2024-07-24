@@ -1,5 +1,5 @@
-import { useAccount, useContractRead, usePrepareContractWrite, useContractWrite, useWaitForTransaction } from "wagmi";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useAccount, useReadContract, useSimulateContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { astaverdeContractConfig } from "../../lib/contracts";
 import RedeemableTokenNumber from "./RedeemableTokenNumber";
 
@@ -18,7 +18,7 @@ export default function BatchRedeemCard({ batch }: BatchProps) {
     const [sameAddresses, setSameAddresses] = useState<`0x${string}`[]>();
     const [redeemableTokens, setRedeemableTokens] = useState<bigint[]>([]);
     const [awaitedHash, setAwaitedHash] = useState<`0x${string}`>();
-    const { data: txReceipt } = useWaitForTransaction({ hash: awaitedHash });
+    const { data: txReceipt } = useWaitForTransactionReceipt({ hash: awaitedHash });
 
     useEffect(() => {
         if (address && batch) {
@@ -30,11 +30,13 @@ export default function BatchRedeemCard({ batch }: BatchProps) {
         }
     }, [batch, address]);
 
-    const { data: ownedIndex } = useContractRead({
+    const { data: ownedIndex } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "balanceOfBatch",
-        enabled: sameAddresses !== undefined,
         args: [sameAddresses || [], batch.token_ids as unknown as bigint[]],
+        query: {
+            enabled: sameAddresses !== undefined,
+        },
     });
 
     const ownerTokens = useCallback(() => {
@@ -44,13 +46,19 @@ export default function BatchRedeemCard({ batch }: BatchProps) {
         return [];
     }, [batch.token_ids, ownedIndex]);
 
-    const { config } = usePrepareContractWrite({
+    const { data: simulateResult } = useSimulateContract({
         ...astaverdeContractConfig,
         functionName: "redeemTokens",
-        enabled: redeemableTokens.length > 0,
         args: [redeemableTokens],
+        query: {
+            enabled: redeemableTokens.length > 0,
+        },
     });
-    const { writeAsync: redeemTokens } = useContractWrite(config);
+    const { writeContract: redeemTokens } = useWriteContract();
+
+    const { isLoading: isRedeeming, isSuccess: isRedeemed } = useWaitForTransactionReceipt({
+        hash: awaitedHash,
+    });
 
     if (ownerTokens().length === 0) {
         return null;
@@ -69,14 +77,12 @@ export default function BatchRedeemCard({ batch }: BatchProps) {
             ))}
             <div className="w-full flex justify-between">
                 <button
-                    className={`mt-4 font-bold py-2 px-4 rounded text-white ${redeemTokens ? "bg-primary hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
-                        }`}
+                    className={`mt-4 font-bold py-2 px-4 rounded text-white ${typeof redeemTokens === 'function' ? "bg-primary hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"}`}
                     type="button"
-                    disabled={!redeemTokens}
-                    onClick={async () => {
-                        if (redeemTokens) {
-                            const result = await redeemTokens();
-                            setAwaitedHash(result.hash);
+                    disabled={typeof redeemTokens !== 'function'}
+                    onClick={() => {
+                        if (typeof redeemTokens === 'function' && simulateResult?.request) {
+                            redeemTokens(simulateResult.request);
                         }
                     }}
                 >

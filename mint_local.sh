@@ -4,13 +4,21 @@
 # Do not commit this file to your repository, as it contains sensitive information.
 # We use Docker because it's a convenient way to run the process in a controlled environment.
 
-# Client parameters (EDIT THIS HERE! 🌸)
-NETWORK="local"
-CONTRACT_ADDRESS="0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
-NFTDATA_PATH="example_nftdata"
-IMAGE_FOLDER="example_nftdata/images"
-CSV_PATH="example_nftdata/nft_metadata.csv"
-PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+# Load environment variables from .env.local
+if [ -f .env.local ]; then
+    export $(grep -v '^#' .env.local | xargs)
+else
+    echo "Error: .env.local file not found."
+    exit 1
+fi
+
+# Client parameters (Use values from .env.local or set defaults)
+NETWORK="${NETWORK:-local}"
+CONTRACT_ADDRESS="${CONTRACT_ADDRESS:-0x0000000000000000000000000000000000000000}"
+NFTDATA_PATH="${NFTDATA_PATH:-example_nftdata}"
+IMAGE_FOLDER="${IMAGE_FOLDER:-./example_nftdata/images/}"
+CSV_PATH="${CSV_PATH:-./example_nftdata/nft_metadata.csv}"
+PRIVATE_KEY="${PRIVATE_KEY:-your_private_key_here}"
 
 if [ ! -d "$NFTDATA_PATH" ]; then
     echo "Error: Directory $NFTDATA_PATH not found."

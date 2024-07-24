@@ -1,26 +1,36 @@
 "use client";
 
-import { getUsdcContractConfig } from "../lib/contracts";
-import { ConnectKitButton } from "./ConnectKitButton";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { formatUnits } from "viem";
-import { useAccount, useContractRead } from "wagmi";
-import { USDC_DECIMALS } from "../app.config";
+import { useEffect, useState } from "react";
+import { useAccount, useBalance } from "wagmi";
+import { getUsdcContractConfig } from "../lib/contracts";
+import { ConnectKitButton } from "./ConnectKitButton";
 
 interface HeaderProps {
 	links: { name: string; url: string }[];
 }
 
 export function Header({ links }: HeaderProps) {
-	const { address } = useAccount();
-	const { data: balance } = useContractRead({
-		...getUsdcContractConfig(),
-		functionName: "balanceOf",
-		enabled: !!address,
-		args: [address || "0x"],
-	} as any);
+	const { address, isConnected } = useAccount();
+	const usdcConfig = getUsdcContractConfig();
+	const [showBalance, setShowBalance] = useState(false);
+
+	console.log("USDC Config:", usdcConfig);
+	console.log("Connected Address:", address);
+
+	const { data: usdcBalance, isLoading: isBalanceLoading } = useBalance({
+		address,
+		token: usdcConfig.address,
+		watch: true,
+		enabled: isConnected && !!address,
+	});
+
+	useEffect(() => {
+		if (usdcBalance) {
+			console.log("USDC Balance:", usdcBalance);
+		}
+	}, [usdcBalance]);
 
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const pathname = usePathname();
@@ -28,6 +38,8 @@ export function Header({ links }: HeaderProps) {
 	const toggleMenu = () => {
 		setIsMenuOpen((prev) => !prev);
 	};
+
+	const balanceClassName = "hidden lg:block border border-gray-300 rounded-md bg-blue-100 p-2";
 
 	return (
 		<header className="w-full flex flex-wrap items-center justify-between bg-primary p-4 shadow-md">
@@ -50,27 +62,31 @@ export function Header({ links }: HeaderProps) {
 					{links.map((link, index) => (
 						<li key={index} className="lg:mr-4">
 							<Link href={link.url}>
-								<div
-									className={`group hover:bg-white/20 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${pathname === link.url ? "bg-white/20" : ""
-										}`}
-								>
-									<span
-										className={`text-white/90 hover:text-white transition-colors duration-300 ${pathname === link.url ? "text-white" : ""
-											}`}
-									>
+								<div className={`group hover:bg-white/20 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${pathname === link.url ? "bg-white/20" : ""}`}>
+									<span className={`text-white/90 hover:text-white transition-colors duration-300 ${pathname === link.url ? "text-white" : ""}`}>
 										{link.name}
 									</span>
 								</div>
 							</Link>
 						</li>
 					))}
-					{address && (
-						<li className="hidden lg:block border border-gray-300 rounded-md bg-blue-100 p-2">
-							{formatUnits((balance as bigint) || BigInt(0), USDC_DECIMALS)?.toString() || 0} USDC
+					{showBalance && (
+						<li className={balanceClassName}>
+							{isBalanceLoading ? (
+								"Loading..."
+							) : usdcBalance ? (
+								`${parseFloat(usdcBalance.formatted).toFixed(2)} ${usdcBalance.symbol}`
+							) : (
+								"N/A"
+							)}
 						</li>
 					)}
 					<li>
-						<ConnectKitButton />
+						{isConnected ? (
+							<span className="text-white">Connected: {address?.slice(0, 6)}...{address?.slice(-4)}</span>
+						) : (
+							<ConnectKitButton />
+						)}
 					</li>
 				</ul>
 			</nav>

@@ -1,11 +1,13 @@
 import "@nomicfoundation/hardhat-toolbox";
+import { config as dotenvConfig } from "dotenv";
 import "hardhat-deploy";
 import type { HardhatUserConfig } from "hardhat/config";
+import { task } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
-import { config as dotenvConfig } from "dotenv";
+import "./tasks/fund-account";
 
-const dotenvConfigPath: string = resolve(__dirname, "./webapp/.env");
+const dotenvConfigPath: string = resolve(__dirname, ".env.local");
 dotenvConfig({ path: dotenvConfigPath });
 
 // Ensure that we have all the environment variables we need.
@@ -29,16 +31,9 @@ const chainIds = {
 };
 
 function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
-  let jsonRpcUrl: string;
-  switch (chain) {
-    case "base-mainnet":
-      jsonRpcUrl = "https://mainnet.base.org";
-      break;
-    case "base-sepolia":
-      jsonRpcUrl = "https://sepolia.base.org";
-      break;
-    default:
-      jsonRpcUrl = "https://" + chain + ".g.alchemy.com/v2/" + alchemyAPIKey;
+  let jsonRpcUrl: string = process.env.RPC_URL || "";
+  if (!jsonRpcUrl) {
+    throw new Error(`No RPC URL specified for chain ${chain}`);
   }
   return {
     accounts: {
@@ -52,7 +47,7 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
 }
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "hardhat",
+  defaultNetwork: process.env.CHAIN_SELECTION || "hardhat",
   namedAccounts: {
     deployer: 0,
   },
@@ -73,6 +68,28 @@ const config: HardhatUserConfig = {
         mnemonic,
       },
       chainId: chainIds.hardhat,
+      mining: {
+        auto: true,
+        interval: 0,
+      },
+      accounts: [
+        {
+          privateKey: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
+          balance: "1000000000000000000000"
+        },
+        {
+          privateKey: "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
+          balance: "1000000000000000000000"
+        },
+        {
+          privateKey: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
+          balance: "1000000000000000000000"
+        },
+        {
+          privateKey: "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a",
+          balance: "1000000000000000000000"
+        }
+      ]
     },
     mainnet: getChainConfig("mainnet"),
     sepolia: getChainConfig("sepolia"),
@@ -89,12 +106,8 @@ const config: HardhatUserConfig = {
     version: "0.8.20",
     settings: {
       metadata: {
-        // Not including the metadata hash
-        // https://github.com/paulrberg/hardhat-template/issues/31
         bytecodeHash: "none",
       },
-      // Disable the optimizer when debugging
-      // https://hardhat.org/hardhat-network/#solidity-optimizer-support
       optimizer: {
         enabled: true,
         runs: 800,
@@ -108,3 +121,72 @@ const config: HardhatUserConfig = {
 };
 
 export default config;
+
+task("query-contract", "Queries the AstaVerde contract")
+  .setAction(async (taskArgs, hre) => {
+    const contractAddress = process.env.CONTRACT_ADDRESS;
+    if (!contractAddress) {
+      throw new Error("CONTRACT_ADDRESS is not set in .env.local");
+    }
+
+    console.log("Contract Address:", contractAddress);
+
+    try {
+      const AstaVerde = await hre.ethers.getContractFactory("AstaVerde");
+      const contract = AstaVerde.attach(contractAddress);
+
+      // Check contract state
+      console.log("\nContract State:");
+      try {
+        const lastBatchID = await contract.lastBatchID();
+        console.log("- Last Batch ID:", lastBatchID.toString());
+      } catch (error) {
+        console.log("- Error getting lastBatchID:", error.message);
+      }
+
+      try {
+        const lastTokenID = await contract.lastTokenID();
+        console.log("- Last Token ID:", lastTokenID.toString());
+      } catch (error) {
+        console.log("- Error getting lastTokenID:", error.message);
+      }
+
+      // Try to get info for the first batch (if it exists)
+      try {
+        const batchInfo = await contract.getBatchInfo(1);
+        console.log("\nBatch 1 Info:");
+        console.log("- Token IDs:", batchInfo.tokenIds.map(id => id.toString()).join(", "));
+        console.log("- Creation Time:", new Date(Number(batchInfo.creationTime) * 1000).toLocaleString());
+        console.log("- Price:", hre.ethers.formatUnits(batchInfo.price, 6), "USDC");
+        console.log("- Remaining Tokens:", batchInfo.remainingTokens.toString());
+      } catch (error) {
+        console.log("\nError getting batch info:", error.message);
+      }
+
+      // Check token balance of the contract for the first token (if it exists)
+      try {
+        const balance = await contract.balanceOf(contractAddress, 1);
+        console.log("\nContract Token Balance (ID 1):", balance.toString());
+      } catch (error) {
+        console.log("\nError getting token balance:", error.message);
+      }
+
+      // Check some constant values
+      try {
+        const basePrice = await contract.basePrice();
+        console.log("\nBase Price:", hre.ethers.formatUnits(basePrice, 6), "USDC");
+      } catch (error) {
+        console.log("\nError getting base price:", error.message);
+      }
+
+      try {
+        const priceFloor = await contract.priceFloor();
+        console.log("Price Floor:", hre.ethers.formatUnits(priceFloor, 6), "USDC");
+      } catch (error) {
+        console.log("Error getting price floor:", error.message);
+      }
+
+    } catch (error) {
+      console.error("Error querying contract:", error);
+    }
+  });

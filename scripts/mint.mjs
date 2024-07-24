@@ -30,15 +30,23 @@ import csv from "csv-parser";
 import dotenv from "dotenv";
 import { ethers } from "ethers";
 import { filesFromPaths } from "files-from-path";
-import fs from "fs";
-import { readFileSync } from "fs";
+import fs, { readFileSync } from "fs";
+import { resolve } from "path";
 
 const astaverdejson = JSON.parse(readFileSync("./artifacts/contracts/AstaVerde.sol/AstaVerde.json"));
 const abi = astaverdejson.abi;
 
-dotenv.config({ path: "./webapp/.env" });
+dotenv.config({ path: resolve(process.cwd(), '.env.local') });
 
-const rpcURL = "https://base-sepolia.g.alchemy.com/v2/" + process.env.ALCHEMY_APIKEY;
+const rpcURL = process.env.RPC_URL;
+if (!rpcURL) {
+  throw new Error("RPC_URL is not set in the environment");
+}
+
+const contractAddress = process.env.ASTAVERDE_CONTRACT_ADDRESS;
+if (!contractAddress) {
+  throw new Error("ASTAVERDE_CONTRACT_ADDRESS is not set in the environment");
+}
 
 const EXTERNAL_URL = "https://marketplace.ecotradezone.com/token/";
 const IPFS_PREFIX = "ipfs://";

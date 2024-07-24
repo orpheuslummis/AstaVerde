@@ -1,108 +1,103 @@
-import { useEffect } from "react";
-import { useAccount, useContractInfiniteReads, useContractRead } from "wagmi";
-import BatchCard from "./BatchCard";
+import { useEffect, useState } from "react";
+import { useReadContract, useReadContracts } from "wagmi";
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig } from "../lib/contracts";
+import { BatchCard } from "./BatchCard";
 
-export function BatchListing() {
-  const { address } = useAccount();
+const BatchListing = () => {
+  const [batches, setBatches] = useState<Batch[]>([]);
 
-  const { data: lastBatchID, isError: lastBatchIDError, isLoading: isLoadingLastBatchID } = useContractRead({
+  const { data: lastBatchID, isLoading: isLastBatchIDLoading, isError: isLastBatchIDError, error: lastBatchIDError } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "lastBatchID",
   });
 
-  const lastBatchIDn = lastBatchID ? Number(lastBatchID) : 0;
+  useEffect(() => {
+    if (lastBatchIDError) {
+      console.error("Error fetching lastBatchID:", lastBatchIDError);
+    }
+  }, [lastBatchIDError]);
 
-  const {
-    data,
-    fetchNextPage,
-    error,
-    hasNextPage,
-    refetch: updateCard,
-    isLoading: isLoadingBatches,
-    isFetchingNextPage,
-  } = useContractInfiniteReads({
-    enabled: lastBatchIDn > 0,
-    cacheKey: "batchMetadata",
-    contracts: (pageParam: number | undefined) => [
-      {
-        address: astaverdeContractConfig.address as `0x${string}`,
-        abi: astaverdeContractConfig.abi as readonly any[],
-        functionName: "getBatchInfo",
-        args: [BigInt(pageParam ?? 0)] as const,  // Provide a default value if pageParam is undefined
-      },
-    ],
-    getNextPageParam: (lastPage, allPages) => {
-      if (!lastPage || !Array.isArray(lastPage[0]?.result) || lastPage[0].result.length === 0) {
-        return undefined;
-      }
-      const nextPageParam = allPages.length + 1;
-      return nextPageParam <= lastBatchIDn ? nextPageParam : undefined;
-    },
+  const { data: batchesData, isLoading: isBatchesLoading, isError: isBatchesError, error: batchesError } = useReadContracts({
+    contracts: lastBatchID && lastBatchID > 0n ? Array.from({ length: Number(lastBatchID) }, (_, i) => ({
+      ...astaverdeContractConfig,
+      functionName: "getBatchInfo",
+      args: [BigInt(i + 1)],
+    })) : [],
+    allowFailure: false,
   });
 
   useEffect(() => {
-    if (lastBatchID !== undefined) updateCard();
-  }, [lastBatchID, updateCard]);
+    console.log("Last Batch ID:", lastBatchID);
+    console.log("Last Batch ID Error:", isLastBatchIDError);
+    console.log("Last Batch ID Loading:", isLastBatchIDLoading);
+    console.log("AstaVerde Contract Config:", astaverdeContractConfig);
+    console.log("AstaVerde Contract Address:", astaverdeContractConfig.address);
+    console.log("Current Chain ID:", chain?.id);
+  }, [lastBatchID, isLastBatchIDError, isLastBatchIDLoading]);
 
-  const batches: Batch[] =
-    data?.pages?.flatMap((page: any[]) =>
-      page?.map((batch: any) => {
-        try {
-          const [batchID, tokenIDs, timestamp, price, itemsLeft] = batch.result || [];
-          return new Batch(batchID, tokenIDs, timestamp, price, itemsLeft);
-        } catch (error) {
-          console.error("Error parsing batch data:", error);
-          return null;
-        }
-      }).filter(Boolean)
-    ) || [];
+  useEffect(() => {
+    console.log("Batches Data:", batchesData);
+    console.log("Batches Error:", isBatchesError);
+    console.log("Batches Loading:", isBatchesLoading);
+    console.log("Last Batch ID (in batches effect):", lastBatchID);
 
-  if (lastBatchIDError || error) {
-    console.error("BatchListing: Error", lastBatchIDError || error);
-    return <div>Error loading batches. Please try again later.</div>;
+    if (batchesData && Array.isArray(batchesData)) {
+      try {
+        const newBatches = batchesData
+          .map((result, index) => {
+            console.log(`Processing batch ${index + 1}:`, result);
+            if (!result || !Array.isArray(result) || result.length < 5) {
+              console.error(`Invalid batch data for index ${index}:`, result);
+              return null;
+            }
+            const [batchId, tokenIds, creationTime, price, remainingTokens] = result;
+            return new Batch(batchId, tokenIds, creationTime, price, remainingTokens);
+          })
+          .filter((batch): batch is Batch => batch !== null);
+        console.log("New Batches:", newBatches);
+        setBatches(newBatches);
+      } catch (error) {
+        console.error("Error processing batch data:", error);
+      }
+    }
+  }, [batchesData, isBatchesError, batchesError, isBatchesLoading, lastBatchID]);
+
+  if (isLastBatchIDLoading || isBatchesLoading) {
+    return <div>Loading batch data...</div>;
   }
 
-  if (isLoadingLastBatchID || isLoadingBatches) {
-    return <div>Loading batches...</div>;
+  if (isLastBatchIDError || isBatchesError) {
+    return <div className="text-red-500">Failed to fetch batch information. Please try again later.</div>;
   }
 
-  if (lastBatchIDn === 0) {
+  if (lastBatchID === undefined) {
+    return <div>Waiting for contract data...</div>;
+  }
+
+  if (lastBatchID === 0n || lastBatchID === undefined) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-124px)]">
-        <p className="text-xl font-semibold">No batches available yet.</p>
+        <p className="text-xl font-semibold">No batches available yet. Please mint some batches first.</p>
       </div>
     );
   }
 
-  if (!data || data.pages.length === 0 || data.pages[0].length === 0) {
-    return <div>No batch data available.</div>;
+  if (batches.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-[calc(100vh-124px)]">
+        <p className="text-xl font-semibold">No batches found. There might be an issue with fetching batch data.</p>
+      </div>
+    );
   }
 
   return (
-    <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-4">
-        {batches.map(
-          (batch) =>
-            batch.itemsLeft > 0 && (
-              <div key={batch.id} className="w-full px-2 mb-4">
-                <BatchCard batch={batch} updateCard={updateCard} />
-              </div>
-            ),
-        )}
-      </div>
-      {hasNextPage && (
-        <div className="flex justify-center">
-          <button
-            className="px-4 py-2 mt-4 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
-            disabled={!fetchNextPage || isFetchingNextPage}
-            onClick={() => fetchNextPage()}
-          >
-            Load More
-          </button>
-        </div>
-      )}
-    </>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+      {batches.map((batch) => (
+        <BatchCard key={batch.id} batch={batch} />
+      ))}
+    </div>
   );
-}
+};
+
+export default BatchListing;

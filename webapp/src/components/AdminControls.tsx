@@ -1,18 +1,40 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAccount, useContractRead, useContractWrite, usePrepareContractWrite } from "wagmi";
+import { useState } from "react";
+import { useAccount, useReadContract, useSimulateContract } from "wagmi";
+import { useAppContext } from '../contexts/AppContext';
 import { astaverdeContractConfig } from "../lib/contracts";
 import { Connected } from "./Connected";
 
 export function AdminControls() {
+  const { adminControls } = useAppContext();
+
   return (
     <Connected>
       <h2 className="text-2xl my-6 mx-6">Admin Controls</h2>
       <div>
-        {controls.map((Control, index) => (
-          <Control key={index} />
-        ))}
+        <ControlContainer title="Pause / Unpause">
+          <InteractionButton title="Pause" onClick={adminControls.pauseContract} />
+          <InteractionButton title="Unpause" onClick={adminControls.unpauseContract} />
+        </ControlContainer>
+        <ControlContainer title="Set URI">
+          <URIInput onSubmit={adminControls.setURI} />
+        </ControlContainer>
+        <ControlContainer title="Set Price Floor">
+          <NumberInput onSubmit={adminControls.setPriceFloor} placeholder="Enter Price Floor" />
+        </ControlContainer>
+        <ControlContainer title="Set Base Price">
+          <NumberInput onSubmit={adminControls.setBasePrice} placeholder="Enter Base Price" />
+        </ControlContainer>
+        <ControlContainer title="Set Max Batch Size">
+          <NumberInput onSubmit={adminControls.setMaxBatchSize} placeholder="Enter Max Batch Size" />
+        </ControlContainer>
+        <ControlContainer title="Set Auction Time Thresholds">
+          <AuctionTimeThresholdsInput onSubmit={adminControls.setAuctionTimeThresholds} />
+        </ControlContainer>
+        <ControlContainer title="Set Platform Share Percentage">
+          <NumberInput onSubmit={adminControls.setPlatformSharePercentage} placeholder="Enter Platform Share Percentage" />
+        </ControlContainer>
       </div>
     </Connected>
   );
@@ -31,8 +53,8 @@ const controls = [
 
 function ControlContainer({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    <div className="mx-auto max-w-sm my-6 bg-cyan-100 p-4 rounded-lg shadow-md">
-      <h2 className="text-xl mb-2">{title}</h2>
+    <div className="card mx-auto max-w-sm my-6 bg-primary-light">
+      <h2 className="text-xl font-bold mb-4">{title}</h2>
       {children}
     </div>
   );
@@ -47,14 +69,21 @@ function useContractInteraction({
   args?: any[];
   onSuccessCallback?: () => void;
 }) {
-  const { config } = usePrepareContractWrite({
+  const { data: simulateResult } = useSimulateContract({
     ...astaverdeContractConfig,
     functionName,
     args,
   });
-  const { write, isLoading, isSuccess, error } = useContractWrite(config);
 
-  useEffect(() => {
+  const { writeContract, isLoading, isSuccess, error } = useWriteContract();
+
+  const write = React.useCallback(() => {
+    if (simulateResult?.request) {
+      writeContract(simulateResult.request)
+    }
+  }, [simulateResult, writeContract]);
+
+  React.useEffect(() => {
     if (isSuccess && onSuccessCallback) {
       onSuccessCallback();
     }
@@ -64,7 +93,7 @@ function useContractInteraction({
 }
 
 function PauseContractControl() {
-  const { data: isContractPaused, refetch: refetchIsContractPaused } = useContractRead({
+  const { data: isContractPaused, refetch: refetchIsContractPaused } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "paused",
   });
@@ -111,7 +140,7 @@ function ClaimPlatformFunds() {
 
 function SetURI() {
   const [uri, setURI] = useState("");
-  const { data: currentURI } = useContractRead({
+  const { data: currentURI } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "uri",
   });
@@ -140,7 +169,7 @@ function SetURI() {
 
 function PriceFloorControl() {
   const [priceFloor, setPriceFloor] = useState("");
-  const { data: currentPriceFloor } = useContractRead({
+  const { data: currentPriceFloor } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "priceFloor",
   });
@@ -165,7 +194,7 @@ function PriceFloorControl() {
 
 function BasePriceControl() {
   const [basePrice, setBasePrice] = useState("");
-  const { data: currentBasePrice } = useContractRead({
+  const { data: currentBasePrice } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "basePrice",
   });
@@ -190,7 +219,7 @@ function BasePriceControl() {
 
 function MaxBatchSizeControl() {
   const [maxBatchSize, setMaxBatchSize] = useState("");
-  const { data: currentMaxBatchSize } = useContractRead({
+  const { data: currentMaxBatchSize } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "maxBatchSize",
   });
@@ -216,11 +245,11 @@ function MaxBatchSizeControl() {
 function AuctionTimeThresholdsControl() {
   const [dayIncreaseThreshold, setDayIncreaseThreshold] = useState("");
   const [dayDecreaseThreshold, setDayDecreaseThreshold] = useState("");
-  const { data: currentDayIncreaseThreshold } = useContractRead({
+  const { data: currentDayIncreaseThreshold } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "dayIncreaseThreshold",
   });
-  const { data: currentDayDecreaseThreshold } = useContractRead({
+  const { data: currentDayDecreaseThreshold } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "dayDecreaseThreshold",
   });
@@ -260,7 +289,7 @@ function AuctionTimeThresholdsControl() {
           className="px-4 py-2 border border-gray-300 rounded"
         />
         <button
-          className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="btn btn-secondary hover-lift disabled:opacity-50"
           disabled={!interaction.write || interaction.isLoading}
           onClick={handleSetAuctionTimeThresholds}
         >
@@ -282,7 +311,7 @@ function AuctionTimeThresholdsControl() {
 
 function PlatformPercentageControl() {
   const [platformSharePercentage, setPlatformSharePercentage] = useState("");
-  const { data: currentPlatformSharePercentage } = useContractRead({
+  const { data: currentPlatformSharePercentage } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "platformSharePercentage",
   });
@@ -351,7 +380,7 @@ function InteractionButton({
 }) {
   return (
     <button
-      className="px-4 py-2 bg-secondary text-white rounded hover:bg-blue-700 disabled:opacity-50"
+      className="btn btn-secondary hover-lift disabled:opacity-50 disabled:cursor-not-allowed"
       disabled={disabled || !interaction.write || interaction.isLoading}
       onClick={interaction.write}
     >
@@ -359,3 +388,19 @@ function InteractionButton({
     </button>
   );
 }
+
+import React from 'react';
+
+interface ControlProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+export const Control: React.FC<ControlProps> = ({ title, children }) => {
+  return (
+    <div className="card mx-auto max-w-sm my-6 bg-primary-light">
+      <h2 className="text-xl font-bold mb-4">{title}</h2>
+      {children}
+    </div>
+  );
+};
