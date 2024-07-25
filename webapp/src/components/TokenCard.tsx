@@ -13,7 +13,7 @@ interface TokenMetadata {
 }
 
 interface TokenCardProps {
-    tokenId: number;
+    tokenId: bigint;
 }
 
 export default function TokenCard({ tokenId }: TokenCardProps) {
@@ -28,7 +28,7 @@ export default function TokenCard({ tokenId }: TokenCardProps) {
 
     const fetchTokenData = useCallback(async () => {
         try {
-            const tokenURI = await execute([BigInt(tokenId)]);
+            const tokenURI = await execute(tokenId);
             if (typeof tokenURI !== 'string') {
                 throw new Error('Invalid token URI returned');
             }

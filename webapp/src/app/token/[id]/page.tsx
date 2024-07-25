@@ -108,9 +108,6 @@ export default function Page({ params }: { params: { id: bigint } }) {
 			<div className="w-full max-w-2xl">
 				<TokenCard
 					tokenId={params.id}
-					tokenData={tokenData}
-					tokenImageUrl={tokenImageUrl}
-					showLink={false}
 				/>
 			</div>
 		</div>

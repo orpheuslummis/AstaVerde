@@ -40,22 +40,29 @@ function Page() {
 		...usdcContractConfig,
 		functionName: "mint",
 		args: address ? [address, tenthousand] : undefined,
-		enabled: !!address,
+		query: {
+			enabled: !!address
+		}
 	});
 
 	const { data: simulateAstaVerdeMintResult, error: astaVerdeMintSimulateError } = useSimulateContract({
 		...astaverdeContractConfig,
 		functionName: "mint",
 		args: address ? [address, tenthousand] : undefined,
-		enabled: !!address,
+		query: {
+			enabled: !!address
+		}
 	});
 
-	const { writeContract, isLoading: isWriteLoading } = useWriteContract();
+	const {
+		writeContractAsync,
+		isPending: isWriteLoading,
+	} = useWriteContract();
 
 	const mintUSDC = async () => {
 		if (!address || !simulateMintResult?.request) return;
 		try {
-			const { hash } = await writeContract(simulateMintResult.request);
+			const hash = await writeContractAsync(simulateMintResult.request);
 			setAwaitedHash(hash);
 		} catch (error) {
 			console.error("Error minting USDC:", error);
@@ -65,7 +72,7 @@ function Page() {
 	const handleApprove = async () => {
 		if (!simulateApproveResult?.request) return;
 		try {
-			const { hash } = await writeContract(simulateApproveResult.request);
+			const hash = await writeContractAsync(simulateApproveResult.request);
 			console.log("USDC approved, transaction hash:", hash);
 		} catch (err) {
 			console.error("Failed to approve USDC:", err);
@@ -75,7 +82,7 @@ function Page() {
 	const handleMint = async () => {
 		if (!address || !simulateAstaVerdeMintResult?.request) return;
 		try {
-			const { hash } = await writeContract(simulateAstaVerdeMintResult.request);
+			const hash = await writeContractAsync(simulateAstaVerdeMintResult.request);
 			setAwaitedHash(hash);
 		} catch (error) {
 			console.error("Error minting AstaVerde Token:", error);
@@ -88,7 +95,9 @@ function Page() {
 		...astaverdeContractConfig,
 		functionName: "mintBatch",
 		args: [tokenData.map(t => t.producerAddress), tokenData.map(t => JSON.stringify(t))],
-		enabled: false, // We'll manually trigger the simulation
+		query: {
+			enabled: false
+		}
 	});
 
 	const { data: usdcBalance } = useBalance({
@@ -109,9 +118,13 @@ function Page() {
 	const handleMintBatch = async () => {
 		setIsSimulating(true);
 		try {
-			const { request } = await refetchSimulation();
-			if (request) {
-				await writeContract(request);
+			const result = await refetchSimulation();
+			console.log("Simulation result:", result);  // Add this line for debugging
+			if (result.data && result.data.request) {
+				const hash = await writeContractAsync(result.data.request);
+				setAwaitedHash(hash);
+			} else {
+				console.error("Simulation failed or returned no data", result);
 			}
 		} catch (error) {
 			console.error("Error minting batch:", error);

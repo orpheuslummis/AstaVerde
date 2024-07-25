@@ -10,10 +10,16 @@ import { config } from '../wagmi'; // Import the config
 // List of known read-only functions
 const READ_ONLY_FUNCTIONS = ['uri', 'balanceOf', 'lastTokenID', 'tokens'];
 
+// Define a type for the execute function
+type ExecuteFunction = (...args: any[]) => Promise<any>;
+
+// Define a type for the error
+type ContractError = Error | null;
+
 export function useContractInteraction(contractConfig: any, functionName: string) {
     const [isSimulating, setIsSimulating] = useState(false);
     const [isPending, setIsPending] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<ContractError>(null);
     const publicClient = usePublicClient();
     const { data: walletClient } = useWalletClient();
     const { writeContractAsync } = useWriteContract();
@@ -30,12 +36,16 @@ export function useContractInteraction(contractConfig: any, functionName: string
 
     const isReadOnlyFunction = READ_ONLY_FUNCTIONS.includes(functionName) || contractConfig.readOnly;
 
-    const execute = useCallback(async (executionArgs = []) => {
+    const execute: ExecuteFunction = useCallback(async (...executionArgs) => {
         setIsSimulating(true);
         setError(null);
         try {
             console.log(`Executing ${functionName} with args:`, executionArgs);
             console.log('Contract config:', contractConfig);
+
+            if (!publicClient) {
+                throw new Error('Public client not available');
+            }
 
             if (isReadOnlyFunction) {
                 const result = await publicClient.readContract({
@@ -65,7 +75,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
             return hash;
         } catch (error) {
             console.error(`Error in ${functionName} interaction:`, error);
-            setError(error);
+            setError(error instanceof Error ? error : new Error('An unknown error occurred'));
             throw error;
         } finally {
             setIsSimulating(false);
@@ -75,6 +85,10 @@ export function useContractInteraction(contractConfig: any, functionName: string
 
     const getTokensOfOwner = useCallback(async (ownerAddress: string) => {
         try {
+            if (!publicClient) {
+                throw new Error('Public client not available');
+            }
+
             const lastTokenID = await publicClient.readContract({
                 ...contractConfig,
                 functionName: 'lastTokenID',
@@ -102,7 +116,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
                 });
 
                 results.forEach((result, index) => {
-                    if (result.status === 'success' && result.result > 0n) {
+                    if (result.status === 'success' && typeof result.result === 'bigint' && result.result > 0n) {
                         ownedTokens.push(start + index);
                     }
                 });
@@ -143,10 +157,12 @@ export function useBatchOperations(batchId: number, totalPrice: number) {
 
     const handleApproveAndBuy = useCallback(async (tokenAmount: number, price: number) => {
         if (!walletClient) throw new Error('Wallet not connected');
+        if (!publicClient) throw new Error('Public client not available');
         setIsLoading(true);
         try {
             const approveAmount = parseUnits(totalPrice.toString(), USDC_DECIMALS);
-            const needsApproval = !allowance || allowance < approveAmount;
+            const currentAllowance = allowance ? BigInt(allowance.toString()) : 0n;
+            const needsApproval = currentAllowance < approveAmount;
 
             if (needsApproval) {
                 const approveTx = await walletClient.writeContract({

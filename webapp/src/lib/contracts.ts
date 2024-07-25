@@ -1,8 +1,8 @@
 // src/lib/contracts.ts
-import { getPublicClient } from '@wagmi/core';
 import { Abi } from 'abitype';
 import { erc20Abi } from "abitype/abis";
 import { getContract } from 'viem';
+import { usePublicClient } from 'wagmi';
 import astaverdeAbi from "../config/AstaVerde.json";
 
 import {
@@ -56,27 +56,37 @@ export const astaverdeContractConfig = {
   abi: astaverdeAbi.abi as Abi,
 } as const;
 
-export function getAstaVerdeContract() {
-  try {
-    const publicClient = getPublicClient()
-    return getContract({
-      ...astaverdeContractConfig,
-      publicClient,
-    });
-  } catch (error) {
-    console.error('Failed to get AstaVerde contract:', error);
-    throw new Error('AstaVerde contract initialization failed');
+export function useAstaVerdeContract() {
+  const publicClient = usePublicClient();
+
+  if (!publicClient) {
+    throw new Error('Public client not available');
   }
+
+  return getContract({
+    address: astaverdeContractConfig.address,
+    abi: astaverdeContractConfig.abi,
+    client: publicClient,
+  });
 }
 
-export async function isContractDeployed() {
-  try {
-    const code = await publicClient.getCode({ address: astaverdeContractConfig.address });
-    return code !== '0x';
-  } catch (error) {
-    console.error('Error checking contract deployment:', error);
-    return false;
-  }
+export function useIsContractDeployed() {
+  const publicClient = usePublicClient();
+
+  const checkDeployment = async () => {
+    if (!publicClient) {
+      throw new Error('Public client not available');
+    }
+    try {
+      const code = await publicClient.getCode({ address: astaverdeContractConfig.address });
+      return code !== '0x';
+    } catch (error) {
+      console.error('Error checking contract deployment:', error);
+      return false;
+    }
+  };
+
+  return checkDeployment;
 }
 
 console.log("AstaVerde Contract Config:", astaverdeContractConfig);

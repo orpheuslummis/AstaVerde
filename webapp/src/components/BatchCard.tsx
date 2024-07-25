@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount } from 'wagmi';
@@ -42,51 +43,56 @@ export const BatchCard = ({ batch, updateCard }: BatchCardProps) => {
 	};
 
 	return (
-		<div className="bg-white shadow-lg rounded-xl overflow-hidden w-full flex flex-col">
-			<div className="relative h-48">
-				<Image
-					src={batch.imageUrl || placeholderImage}
-					alt={`Batch ${batch.id}`}
-					fill
-					style={{ objectFit: 'cover' }}
-				/>
-			</div>
-			<div className="p-6 flex-grow flex flex-col">
-				<h2 className="text-2xl font-semibold mb-4">{`Batch ${batch.id}`}</h2>
-				<div className="flex justify-between mb-4">
-					<p className="text-gray-600">{batch.itemsLeft} items left</p>
-					<p className="font-semibold">{priceInUSDC} USDC</p>
+		<Link href={`/batch/${batch.id}`} className="block">
+			<div className="bg-white shadow-lg rounded-xl overflow-hidden w-full flex flex-col transition-transform duration-300 hover:scale-105">
+				<div className="relative h-48">
+					<Image
+						src={batch.imageUrl || placeholderImage}
+						alt={`Batch ${batch.id}`}
+						fill
+						style={{ objectFit: 'cover' }}
+					/>
 				</div>
-				<div className="mt-auto">
-					{batch.itemsLeft > 0 ? (
-						<>
-							<p className="mb-2">Select quantity</p>
-							<Slider
-								min={1}
-								max={Math.min(batch.itemsLeft, 10)}
-								step={1}
-								value={[tokenAmount]}
-								onValueChange={(value) => setTokenAmount(value[0])}
-								className="mb-4"
-							/>
-							<p className="text-sm text-gray-600 mb-2">Selected: {tokenAmount}</p>
-							<p className="font-bold mb-4">Total: {totalPrice.toFixed(2)} USDC</p>
-							<button
-								onClick={handleBuyClick}
-								disabled={!isConnected || isLoading}
-								className={`w-full p-3 rounded transition-colors duration-300 ${isConnected && !isLoading
-									? "bg-green-500 text-white hover:bg-green-600"
-									: "bg-gray-400 text-gray-200 cursor-not-allowed"
-									}`}
-							>
-								{isLoading ? "Processing..." : "Buy"}
-							</button>
-						</>
-					) : (
-						<p className="text-red-500 font-bold mb-4">This batch is sold out</p>
-					)}
+				<div className="p-6 flex-grow flex flex-col">
+					<h2 className="text-2xl font-semibold mb-4">{`Batch ${batch.id}`}</h2>
+					<div className="flex justify-between mb-4">
+						<p className="text-gray-600">{batch.itemsLeft} items left</p>
+						<p className="font-semibold">{priceInUSDC} USDC</p>
+					</div>
+					<div className="mt-auto">
+						{batch.itemsLeft > 0 ? (
+							<>
+								<p className="mb-2">Select quantity</p>
+								<Slider
+									min={1}
+									max={Math.min(batch.itemsLeft, 10)}
+									step={1}
+									value={[tokenAmount]}
+									onValueChange={(value) => setTokenAmount(value[0])}
+									className="mb-4"
+								/>
+								<p className="text-sm text-gray-600 mb-2">Selected: {tokenAmount}</p>
+								<p className="font-bold mb-4">Total: {totalPrice.toFixed(2)} USDC</p>
+								<button
+									onClick={(e) => {
+										e.preventDefault();
+										handleBuyClick();
+									}}
+									disabled={!isConnected || isLoading}
+									className={`w-full p-3 rounded transition-colors duration-300 ${isConnected && !isLoading
+											? "bg-green-500 text-white hover:bg-green-600"
+											: "bg-gray-400 text-gray-200 cursor-not-allowed"
+										}`}
+								>
+									{isLoading ? "Processing..." : "Buy"}
+								</button>
+							</>
+						) : (
+							<p className="text-red-500 font-bold mb-4">This batch is sold out</p>
+						)}
+					</div>
 				</div>
 			</div>
-		</div>
+		</Link>
 	);
 };

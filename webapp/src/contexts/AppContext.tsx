@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useReadContract, useReadContracts } from 'wagmi';
+import { useContractInteraction } from '../hooks/useContractInteraction';
 import { Batch } from '../lib/batch';
 import { astaverdeContractConfig, getUsdcContractConfig } from '../lib/contracts';
 import { customToast } from '../utils/customToast';
@@ -12,6 +13,17 @@ interface AppContextType {
     refetchBatches: () => void;
     updateBatch: (updatedBatch: Batch) => void;
     updateBatchItemsLeft: (batchId: number, newItemsLeft: number) => void;
+    adminControls: {
+        pauseContract: () => void;
+        unpauseContract: () => void;
+        setURI: (uri: string) => void;
+        setPriceFloor: (priceFloor: string) => void;
+        setBasePrice: (basePrice: string) => void;
+        setMaxBatchSize: (maxBatchSize: string) => void;
+        setAuctionTimeThresholds: (increaseThreshold: string, decreaseThreshold: string) => void;
+        setPlatformSharePercentage: (percentage: string) => void;
+        claimPlatformFunds: (address: string) => void;
+    };
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -57,7 +69,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const updateBatchItemsLeft = useCallback((batchId: number, newItemsLeft: number) => {
         setBatches(prevBatches =>
             prevBatches.map(batch =>
-                batch.id === batchId ? { ...batch, itemsLeft: newItemsLeft } : batch
+                batch.id === batchId ? new Batch(
+                    batch.id,
+                    batch.token_ids,
+                    batch.timestamp,
+                    batch.price,
+                    newItemsLeft
+                ) : batch
             )
         );
     }, []);
@@ -77,6 +95,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
     }, [batchesData]);
 
+    const pauseContract = useContractInteraction(astaverdeContractConfig, 'pause').execute;
+    const unpauseContract = useContractInteraction(astaverdeContractConfig, 'unpause').execute;
+    const setURI = useContractInteraction(astaverdeContractConfig, 'setURI').execute;
+    const setPriceFloor = useContractInteraction(astaverdeContractConfig, 'setPriceFloor').execute;
+    const setBasePrice = useContractInteraction(astaverdeContractConfig, 'setBasePrice').execute;
+    const setMaxBatchSize = useContractInteraction(astaverdeContractConfig, 'setMaxBatchSize').execute;
+    const setAuctionTimeThresholds = useContractInteraction(astaverdeContractConfig, 'setAuctionTimeThresholds').execute;
+    const setPlatformSharePercentage = useContractInteraction(astaverdeContractConfig, 'setPlatformSharePercentage').execute;
+    const claimPlatformFunds = useContractInteraction(astaverdeContractConfig, 'claimPlatformFunds').execute;
+
     const contextValue = useMemo(() => ({
         batches,
         astaverdeContractConfig,
@@ -85,7 +113,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         refetchBatches,
         updateBatch,
         updateBatchItemsLeft,
-    }), [batches, refetchBatches, updateBatch, updateBatchItemsLeft]);
+        adminControls: {
+            pauseContract,
+            unpauseContract,
+            setURI,
+            setPriceFloor,
+            setBasePrice,
+            setMaxBatchSize,
+            setAuctionTimeThresholds,
+            setPlatformSharePercentage,
+            claimPlatformFunds,
+        },
+    }), [
+        batches,
+        refetchBatches,
+        updateBatch,
+        updateBatchItemsLeft,
+        pauseContract,
+        unpauseContract,
+        setURI,
+        setPriceFloor,
+        setBasePrice,
+        setMaxBatchSize,
+        setAuctionTimeThresholds,
+        setPlatformSharePercentage,
+        claimPlatformFunds,
+    ]);
 
     return (
         <AppContext.Provider value={contextValue}>

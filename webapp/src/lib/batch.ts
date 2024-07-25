@@ -7,6 +7,7 @@ export class Batch {
   price: bigint;
   itemsLeft: number;
   cid: string;
+  imageUrl?: string;
 
   constructor(id: number | bigint, token_ids: (number | bigint)[], timestamp: number | bigint, price: number | bigint, itemsLeft: number | bigint) {
     this.id = Number(id);
@@ -23,5 +24,15 @@ export class Batch {
 
   getBatchImageURL() {
     return IPFS_GATEWAY_URL + this.cid;
+  }
+
+  updateItemsLeft(newItemsLeft: number): Batch {
+    return new Batch(
+      this.id,
+      this.token_ids,
+      this.timestamp,
+      this.price,
+      newItemsLeft
+    );
   }
 }

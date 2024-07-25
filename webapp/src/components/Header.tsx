@@ -19,8 +19,9 @@ export function Header({ links }: HeaderProps) {
 	const { data: usdcBalance, isLoading: isBalanceDataLoading } = useBalance({
 		address,
 		token: usdcConfig.address,
-		watch: true,
-		enabled: isConnected && !!address,
+		query: {
+			enabled: isConnected && !!address,
+		},
 	});
 
 	useEffect(() => {

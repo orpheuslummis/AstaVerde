@@ -45,12 +45,15 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         for (const connector of connectors) {
             console.log(`WalletContext - Trying to connect with ${connector.name} (ID: ${connector.id})`);
             try {
-                const connectResult = await connect({ connector });
-                if (connectResult && connectResult.account) {
-                    console.log(`WalletContext - Successfully connected with ${connector.name}. Account:`, connectResult.account);
+                await connect({ connector });
+                // The connection attempt has been made, but we need to check the result
+                // We can use a short timeout to allow for the connection state to update
+                await new Promise(resolve => setTimeout(resolve, 100));
+                if (isConnected && address) {
+                    console.log(`WalletContext - Successfully connected with ${connector.name}. Account:`, address);
                     return true;
                 } else {
-                    console.log(`WalletContext - Connection with ${connector.name} did not return an account.`);
+                    console.log(`WalletContext - Connection with ${connector.name} did not result in a connected account.`);
                 }
             } catch (error) {
                 console.error(`WalletContext - Error connecting with ${connector.name}:`, error instanceof Error ? error.message : 'Unknown error');
@@ -59,7 +62,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
         console.error("WalletContext - Failed to connect with any available connector");
         return false;
-    }, [connect, connectors]);
+    }, [connect, connectors, isConnected, address]);
 
     return (
         <WalletContext.Provider value={{

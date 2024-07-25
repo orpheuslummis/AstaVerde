@@ -10,7 +10,7 @@ const TOKENS_PER_PAGE = 12;
 
 export default function MyTokensPage() {
 	const { address, isConnected } = useAccount();
-	const [tokens, setTokens] = useState<number[]>([]);
+	const [tokens, setTokens] = useState<bigint[]>([]);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function MyTokensPage() {
 			try {
 				console.log(`Fetching tokens for address: ${address}`);
 				const result = await getTokensOfOwner(address);
-				setTokens(result);
+				setTokens(result.map(BigInt)); // Convert each number to BigInt
 			} catch (err) {
 				console.error("Error fetching tokens:", err);
 				setError("Failed to fetch tokens. Please try again later.");
@@ -60,7 +60,7 @@ export default function MyTokensPage() {
 				<>
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 						{currentTokens.map((tokenId) => (
-							<TokenCard key={tokenId} tokenId={tokenId} />
+							<TokenCard key={tokenId.toString()} tokenId={tokenId} />
 						))}
 					</div>
 					<div className="mt-8 flex justify-center">
