@@ -13,7 +13,7 @@ deployments
 tmp
 
 # files
-*.env
+*.env.local
 *.log
 .DS_Store
 .pnp.*

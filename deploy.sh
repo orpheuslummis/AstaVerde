@@ -6,9 +6,8 @@
 
 # Client parameters (EDIT THIS HERE! 🌸)
 NETWORK="base-sepolia"
-# USDC_ADDRESS="tbd" # if on mainnet
-ALCHEMY_APIKEY="tbd"
-PRIVATE_KEY="tbd"
+ALCHEMY_APIKEY="iLBP5cYsA21h9sQw1rBl9_n7sng_zlMZ"
+PRIVATE_KEY="0x8b3a350d51c93764315498386d8471c3355e564b124f0d103b605a8ca8f6f52a"
 
 if ! command -v docker &> /dev/null; then
     echo "Docker is not installed. Please install Docker to proceed."
@@ -27,7 +26,6 @@ echo "Deploying on the $NETWORK network..."
 
 docker run --rm \
     -e NETWORK=$NETWORK \
-    -e CONTRACT_ADDRESS=$USDC_ADDRESS \
     -e ALCHEMY_APIKEY=$ALCHEMY_APIKEY \
     -e PRIVATE_KEY=$PRIVATE_KEY \
     astaverde npm run deploy:contracts -- --network $NETWORK

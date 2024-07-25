@@ -116,7 +116,7 @@ export default function Page() {
           applicable equipment or device), in each case for the sole purpose of enabling you to use the Services as
           permitted by these Terms, provided that your license in any content linked to or associated with any NFTs is
           solely as set forth by the applicable seller or creator of such NFT. Third-Party Content, Agreements, and
-          Services As a peer-to-peer web3 Services, EcoTradeZone helps you explore NFTs known as EcoAssets and interact
+          Services As a peer-to-peer web3 Services, EcoTradeZone helps you explore NFTs known as Eco Assets and interact
           with different blockchains. We also cannot guarantee that any NFTs visible on EcoTradeZone will always remain
           visible and/or available to be bought, sold, or transferred. Users are solely responsible for any content
           related to their NFTs. These Terms solely govern the use of our Services. NFTs are available on public

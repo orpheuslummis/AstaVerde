@@ -1,0 +1,6 @@
+Notes:
+- We use ethers v6.
+- We use wagmi v2. (we will have to give you information on it)
+- Ask for clarifications or extra documentation as needed.
+- We prefer not creating new files unless really needed/useful.
+- Our overall app is pureful a client-side app, with the only backend being the blockchain with smart contracts. We don't want server-side components or a server-side API.

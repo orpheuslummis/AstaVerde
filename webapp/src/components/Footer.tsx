@@ -2,15 +2,17 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="w-full flex justify-center items-center p-4 shadow-md gap-4">
-      <div className="text-center">
-        <Link href="/termsofservice" className="hover:underline">
-          Terms of service
+    <footer className="w-full bg-primary text-white p-2">
+      <div className="container mx-auto flex justify-between items-center">
+        <Link href="/termsofservice">
+          <span className="text-white/90 hover:text-white transition-colors duration-300">
+            Terms of Service
+          </span>
         </Link>
-      </div>
-      <div className="text-center">
-        <Link href="/privacy" className="hover:underline">
-          Privacy policy
+        <Link href="/privacy">
+          <span className="text-white/90 hover:text-white transition-colors duration-300">
+            Privacy Policy
+          </span>
         </Link>
       </div>
     </footer>

@@ -1,92 +1,153 @@
 # AstaVerde
 
-AstaVerde is a platform for the trading of verified carbon offsets as non-fungible tokens (NFTs).
-It is built on Ethereum as an ERC-1155 smart contract.
-Each carbon credit is part of a batch. The batch follows a Dutch Auction mechanism.
+AstaVerde is a platform for trading verified carbon offsets as non-fungible tokens (NFTs). Built on Ethereum using the ERC-1155 standard, it employs a Dutch Auction mechanism for pricing carbon credit batches.
 
-## Dutch Auction Mechanism
+## Features
 
-The auction starts at 230 USDC/unit and decays linearly over four days to a floor price of 40 USDC/unit. The price is
-recalculated every 24 hours using a specific formula. Buyers can purchase at any time within the auction window, but
-they must buy the entire batch.
+-   **Dutch Auction Mechanism**: Prices start at 230 USDC/unit and decay linearly over four days to a floor of 40 USDC/unit.
+-   **Batch Trading**: Carbon credits are grouped into batches, with all tokens in a batch sharing the same price.
+-   **ERC-1155 Smart Contract**: Utilizes OpenZeppelin's ERC1155, ERC1155Burnable, Ownable, Pausable, and ReentrancyGuard contracts.
 
-## User personas
+## User Roles
 
-- Credit Producers: Generate and verify carbon offsets, then list them as NFTs.
-- Platform Owner: Mints new batches of NFTs and manages the auction.
-- Buyers: Bid on and purchase batches of NFTs.
+-   **Credit Producers**: Generate and verify carbon offsets, listing them as NFTs.
+-   **Platform Owner**: Mints new batches of NFTs and manages the auction.
+-   **Buyers**: Bid on and purchase batches of NFTs.
 
-## Requirements
+## Prerequisites
 
-Wallet. We recommend Metamask to interact with the webapp
-ETH for transaction fee
-USDC for buying batches
+-   Node.js and npm
+-   MetaMask or another Ethereum wallet
+-   Docker (for deployment)
+
+## Local Development Setup
+
+1. Clone the repository:
+
+    ```bash
+    git clone git@github.com:orpheuslummis/AstaVerde.git
+    cd AstaVerde
+    ```
+
+2. Install dependencies:
+
+    ```bash
+    npm install
+    ```
+
+3. Set up environment variables:
+
+    ```bash
+    cp .env.local.example .env.local
+    cp ./webapp/.env.local.example ./webapp/.env.local
+    ```
+
+    Edit `.env.local` and `webapp/.env.local` with your specific private values.
+
+4. Compile the contracts:
+
+    ```bash
+    npm run compile
+    ```
+
+5. Start a local Hardhat node:
+
+    ```bash
+    npm run node
+    ```
+
+6. In a new terminal, deploy contracts to the local network:
+
+    ```bash
+    npm run deploy:local
+    ```
+
+7. Start the webapp in development mode:
+
+    ```bash
+    npm run webapp:dev
+    ```
+
+8. (Optional) For automatic recompilation and redeployment on contract changes:
+
+    ```bash
+    npm run watch:dev
+    ```
+
+9. (Optional) For local minting:
+    ```bash
+    npm run task:mintlocal
+    ```
+
+## Deployment
+
+### Using Docker
+
+1. Install Docker Desktop from https://docs.docker.com/desktop/install/mac-install/
+2. Clone the repository:
+    ```bash
+    git clone git@github.com:orpheuslummis/AstaVerde.git && cd AstaVerde
+    ```
+3. To deploy: Configure and run `./deploy.sh`
+4. To mint: Configure and run `./mint.sh`
+
+### Manual Deployment
+
+1. Deploy contract on testnet:
+
+    ```bash
+    npm run test
+    npm run compile && npm run postinstall
+    npm run deploy:contracts -- --network base-sepolia
+    ```
+
+2. Set environment variables on Vercel:
+    - CHAIN_SELECTION
+    - ALCHEMY_API_KEY
+    - WALLET_CONNECT_PROJECT_ID
 
 ## Usage
 
-Interact with the platform via EcoTradeZone. As a Credit Producer, generate and verify carbon offsets, then list them.
-As a Buyer, browse available batches and use the buyBatch function to purchase. As the Platform Owner, maintain the
-smart contract, mint new batches, and oversee the auction.
+-   **Credit Producers**: Generate and verify carbon offsets, then list them on the platform.
+-   **Buyers**: Browse available batches and use the `buyBatch` function to purchase.
+-   **Platform Owner**: Maintain the smart contract, mint new batches, and oversee the auction.
 
-Pause the market if USDC becomes depegged.
+## Minting
 
-## Contribution
+1. Prepare a CSV file with token metadata and an image folder.
+2. Update the `.env.local` file with the correct paths.
+3. Run `npm run task:mint`
 
-Understand the smart contract implementation, identify potential improvements or security vulnerabilities, and
-contribute to the codebase by implementing new features or optimizations.
+## Reading Events
 
-## Contract
-
-The contract AstaVerde.sol includes functions for setting the platform share percentage, price floor, starting price,
-and maximum batch size. It also includes functions for minting batches, getting the current price, buying batches, and
-redeeming tokens. The contract uses OpenZeppelin's ERC1155, ERC1155Burnable, Ownable, Pausable, and ReentrancyGuard
-contracts
-
-## How to use via Docker
-
-1. First, install Docker Desktop https://docs.docker.com/desktop/install/mac-install/.
-2. Obtain the repository: git clone git@github.com:orpheuslummis/
-3. `git clone git@github.com:orpheuslummis/AstaVerde.git && cd AstaVerde`
-4. To deploy: Configure and run `./deploy.sh`
-5. To mint: Configure and run `./mint.sh`
-
-## How to use as platform owner or developer
-
-Obtain and run tests locally:
-
-```shell
-git clone git@github.com:orpheuslummis/AstaVerde.git
-cd AstaVerde
-npm i
-npm run test
-```
-
-Deploy contract on testnet:
-
-```shell
-npm run test
-npm run compile && npm run postinstall
-npm run deploy:contracts -- --network base-sepolia
-```
-
-Configuring and minting:
-
-1. `cp .env.example .env`
-2. Fill out the parameters in ``.env`` (PRIVATE_KEY, ALCHEMY_APIKEY, etc)
-3. Obtain CSV and image folder
-4. `npm run task:mint`
-
-
-Reading events:
-
-1. Go to `/scripts/events/index.mjs` and follow the instructions to update the default values
+1. Update default values in `/scripts/events/index.mjs`.
 2. Run `npm run task:events`
 
-## Development notes
+## Updating the Contract
 
-When updating the contract
+When updating the contract, remember to update the contract address and ABI in:
 
-The address string and hardcoded ABI needs to be updated in
-- `webapp/src/lib/contracts.ts` for the web app
-- `scripts/events/contracts.mjs` for the events script
-- also the address in your `.env` for minting
+-   `webapp/src/lib/contracts.ts`
+-   `scripts/events/contracts.mjs`
+-   `.env.local` for minting scripts
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Security
+
+-   The market can be paused if USDC becomes depegged.
+-   Always ensure your `.env.local` and `webapp/.env.local` files are up to date and never committed to the repository.
+
+## Support
+
+For support, please open an issue in the GitHub repository.

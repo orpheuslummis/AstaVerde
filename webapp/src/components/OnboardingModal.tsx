@@ -1,14 +1,13 @@
 "use client";
 
-import React from "react";
+import { CurrencyDollarIcon, InformationCircleIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useEffect, useState } from "react";
 
 export function OnboardingModal() {
-  const [showModal, setShowModal] = React.useState(false);
+  const [showModal, setShowModal] = useState(false);
 
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      setShowModal(!localStorage.getItem("onboardingCompleted"));
-    }
+  useEffect(() => {
+    setShowModal(!localStorage.getItem("onboardingCompleted"));
   }, []);
 
   const handleConfirmation = () => {
@@ -18,77 +17,71 @@ export function OnboardingModal() {
     setShowModal(false);
   };
 
+  if (!showModal) return null;
+
   return (
-    showModal && (
-      <div className="modal fixed inset-0 flex items-center justify-center z-50">
-        <div className="flex flex-col modal-content border m-2 h-[calc(100vh-64px)] p-5 bg-white rounded shadow-lg relative max-w-xl gap-2  overflow-scroll">
-          <h2 className="text-2xl mb-4 mt-8">Welcome to the EcoTradeZone: Important Information Before You Enter</h2>
-          <p>
-            <strong>Web3 Zone Access:</strong> You're about to enter a web3 zone. This requires connecting your crypto
-            wallet to participate. Make sure your wallet is ready.
-          </p>
-          <p>
-            <strong>Tax and Legal Responsibilities:</strong> Be aware that buying and selling tokens involves local tax
-            and declaration responsibilities. By entering, you accept full responsibility for complying with these
-            obligations. More details are available in our Terms of Service.
-          </p>
-          <p>
-            <strong>Transaction Currency:</strong> Transactions here are conducted using Base native USDC, issued by
-            Circle. For more understanding:
-            <ul>
-              <li>
-                Learn about Base:{" "}
-                <a
-                  href="https://base.mirror.xyz/Ouwm--AtTIVyz40He3FxI0fDAC05lOQwN6EzFMD_2UM"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Base Information
-                </a>
-              </li>
-              <li>
-                Base from Coinbase:{" "}
-                <a
-                  href="https://help.coinbase.com/en/coinbase/other-topics/other/base"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Coinbase on Base
-                </a>
-              </li>
-              <li>
-                USDC on Base:{" "}
-                <a
-                  href="https://www.circle.com/blog/usdc-now-available-natively-on-base"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  USDC Details
-                </a>
-              </li>
-            </ul>
-          </p>
-          <p>
-            <strong>Crypto Wallet Compatibility:</strong> You'll need your crypto wallet for interactions on Base.
-            Coinbase wallets are automatically compatible. For other wallets, you may need to add Base manually. Learn
-            more on our 'About and FAQ’s' page.
-          </p>
-          <p>
-            <strong>Understanding EcoAssets:</strong> Before you buy, familiarize yourself with EcoAssets on our
-            'Everything about EcoAssets' page. Know what you’re investing in.
-          </p>
-          <p>
-            <strong>Non-reversible Redemption:</strong> Once you redeem an EcoAsset, it loses its intrinsic carbon
-            dioxide equivalent value. This redemption will be recorded in your wallet.
-          </p>
-          <p>By clicking to enter the EcoTradeZone, you acknowledge that you have read and understood these terms.</p>
-          <div className="flex w-full justify-end pt-4">
-            <button onClick={handleConfirmation} className="bg-secondary text-white py-2 px-4 rounded">
-              Confirm
-            </button>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+        <div className="flex justify-between items-center p-6 bg-gradient-to-r from-primary to-primary-light text-white">
+          <h2 className="text-3xl font-bold">Welcome to EcoTradeZone</h2>
+          <button onClick={handleConfirmation} className="text-white hover:text-gray-200">
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+        <div className="p-8 overflow-y-auto max-h-[calc(90vh-180px)]">
+          <div className="space-y-8">
+            <section className="text-center mb-8">
+              <p className="text-xl text-gray-700">You're about to enter a revolutionary marketplace for environmental assets. Before you dive in, here's what you need to know:</p>
+            </section>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              <section className="flex items-start space-x-4">
+                <ShieldCheckIcon className="h-8 w-8 text-primary flex-shrink-0" />
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-primary">Web3 Powered Security</h3>
+                  <p>EcoTradeZone operates on secure blockchain technology. Connect your crypto wallet to participate and ensure the safety of your transactions.</p>
+                </div>
+              </section>
+
+              <section className="flex items-start space-x-4">
+                <CurrencyDollarIcon className="h-8 w-8 text-primary flex-shrink-0" />
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-primary">USDC Transactions</h3>
+                  <p>We use Base native USDC for all transactions. Ensure your wallet is compatible and funded. <a href="#" className="text-blue-600 hover:underline">Learn more about Base and USDC</a>.</p>
+                </div>
+              </section>
+
+              <section className="flex items-start space-x-4">
+                <InformationCircleIcon className="h-8 w-8 text-primary flex-shrink-0" />
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-primary">Understanding Eco Assets</h3>
+                  <p>Eco Assets represent real environmental impact. Once redeemed, they're recorded in your wallet and lose their tradable value. <a href="#" className="text-blue-600 hover:underline">Explore Eco Assets</a>.</p>
+                </div>
+              </section>
+
+              <section className="flex items-start space-x-4">
+                <ShieldCheckIcon className="h-8 w-8 text-primary flex-shrink-0" />
+                <div>
+                  <h3 className="text-xl font-semibold mb-2 text-primary">Your Responsibilities</h3>
+                  <p>Trading Eco Assets may have tax implications. You're responsible for complying with local regulations. <a href="#" className="text-blue-600 hover:underline">Read our Terms of Service</a>.</p>
+                </div>
+              </section>
+            </div>
+
+            <section className="text-center mt-8">
+              <p className="text-lg text-gray-700">By entering EcoTradeZone, you acknowledge that you understand and agree to these terms.</p>
+            </section>
           </div>
         </div>
+        <div className="p-6 bg-gray-100 flex justify-end">
+          <button
+            onClick={handleConfirmation}
+            className="bg-primary text-white py-3 px-8 rounded-lg text-lg font-semibold hover:bg-primary-dark transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
+          >
+            Enter EcoTradeZone
+          </button>
+        </div>
       </div>
-    )
+    </div>
   );
 }

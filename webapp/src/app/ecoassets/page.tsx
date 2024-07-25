@@ -1,52 +1,62 @@
+"use client";
+
 export default function Page() {
   return (
-    <>
-      <div className="p-4">
-        <p className="mb-4">
-          I would like to introduce you to the EcoAsset .{"\n"}
-          {/* Uncomment the following line and replace `ImageOfEcoAsset` with the actual image path */}
-          {/* <img src={ImageOfEcoAsset} alt="EcoAsset" className="my-4" /> */}
-          There's as much below the hood as on the front of one of these beauties. On the front, you will see the time,
-          date, and location where some amazing biochar producers have been working hard to make high-quality biochar,
-          making the world a bit better. You'll be able to see from the picture and the location that this all adds up
-          :) Now let's go below the hood:
-        </p>
-        <ul className="list-disc pl-8 mb-4">
-          <li>Item ID: The next in the sequence of EcoAssets</li>
-          <li>
-            Producer wallet: The wallet of the team that is working hard day in day out to make this world better with
-            biochar
-          </li>
-          <li>
-            Audit ID: The impartial verification at great expense to a company that doesn't get paid by from the sale of
-            EcoAssets but from auditing the data against robust methodology for biochar production. This methodology
-            includes the 'additionality' of the project. The environmental sustainability of the biomass. And the
-            application of biochar.
-          </li>
-        </ul>
-        <p className="mb-4">
-          European Union concept of additionally document:{" "}
-          <a
-            href="https://www.europarl.europa.eu/RegData/etudes/note/join/2012/433785/EXPO-DEVE_NT(2012)433785_EN.pdf"
-            className="text-blue-500 underline"
-          >
-            https://www.europarl.europa.eu/RegData/etudes/note/join/2012/433785/EXPO-DEVE_NT(2012)433785_EN.pdf
-          </a>
-        </p>
-        <p className="mb-4">
-          With all of these pieces on the face of it and under the hood having been collected and verified, a proposal
-          is put together on EcoTradeZone. Where if purchased, a promised share will go to the producer and the owner
-          (EcoTradeZone).
-        </p>
-        <p className="mb-4">
-          Then the EcoAssets creation is completed as a result of the transactional purchase, and the asset is in the
-          buyer's wallet!
+    <div className="bg-gray-100 min-h-screen py-8">
+      <div className="max-w-4xl mx-auto px-6 py-8 bg-white rounded-lg shadow-sm">
+        <h1 className="text-3xl font-bold mb-6 text-gray-800">Welcome to Eco Assets</h1>
+        <p className="text-lg mb-8 text-gray-700 leading-relaxed">
+          Eco Assets are the core of our mission at EcoTradeZone. These digital assets represent the tangible environmental impact of biochar production. Each EcoAsset displays the time, date, and location of production, showcasing the efforts of our biochar producers in creating high-quality biochar and contributing to global carbon reduction.
         </p>
 
-        <a href="/What.is.an.EcoAsset.pdf" download>
-          What is an EcoAsset (PDF)
+        <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-800">Components of an EcoAsset:</h2>
+        <ul className="mb-8 text-gray-700 space-y-3">
+          <li className="flex items-start">
+            <span className="text-primary mr-2">•</span>
+            <span><strong>Item ID:</strong> A unique identifier in the sequence of Eco Assets</span>
+          </li>
+          <li className="flex items-start">
+            <span className="text-primary mr-2">•</span>
+            <span><strong>Producer wallet:</strong> The digital address of the biochar producer</span>
+          </li>
+          <li className="flex items-start">
+            <span className="text-primary mr-2">•</span>
+            <span><strong>Audit ID:</strong> An impartial verification code from an independent auditing company</span>
+          </li>
+        </ul>
+
+        <p className="mb-6 text-gray-700">
+          Our audit methodology encompasses the 'additionality' of each project, the environmental sustainability of the biomass used, and the application of the biochar produced. We adhere to global standards, including the European Union's concept of additionality.
+        </p>
+
+        <p className="mb-6 text-gray-700">
+          For more information on additionality, refer to the{" "}
+          <a
+            href="https://www.europarl.europa.eu/RegData/etudes/note/join/2012/433785/EXPO-DEVE_NT(2012)433785_EN.pdf"
+            className="text-primary hover:underline font-semibold"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            EU Additionality Document
+          </a>.
+        </p>
+
+        <p className="mb-6 text-gray-700">
+          Upon verification, we create a proposal on EcoTradeZone. When an EcoAsset is purchased, a portion of the proceeds is allocated to both the producer and EcoTradeZone, ensuring a sustainable ecosystem.
+        </p>
+
+        <p className="mb-10 text-gray-700">
+          The EcoAsset is created upon purchase and transferred directly to the buyer's wallet, completing the transaction.
+        </p>
+
+        <a
+          href="/What.is.an.EcoAsset.pdf"
+          download
+          className="inline-block bg-primary text-white py-3 px-6 rounded-lg hover:bg-primary-dark transition duration-300 text-lg font-semibold"
+        >
+          EcoAsset Guide (PDF)
         </a>
       </div>
-    </>
+    </div>
   );
 }

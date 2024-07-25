@@ -1,20 +1,20 @@
+// src/lib/contracts.ts
+import { Abi } from 'abitype';
 import { erc20Abi } from "abitype/abis";
-import ASTAVERDE_ABI from "../../../config/AstaVerde.json";
+import { getContract } from 'viem';
+import { usePublicClient } from 'wagmi';
+import astaverdeAbi from "../config/AstaVerde.json";
 
-const CHAIN_SELECTION = process.env.NEXT_PUBLIC_CHAIN_SELECTION ||
-  process.env.CHAIN_SELECTION || "local";
-
-const USDC_ADDRESS =
-  process.env[`USDC_ADDRESS_${CHAIN_SELECTION.toUpperCase()}`];
-
-const ASTAVERDE_ADDRESS =
-  process.env[`ASTAVERDE_ADDRESS_${CHAIN_SELECTION.toUpperCase()}`];
+import {
+  ASTAVERDE_CONTRACT_ADDRESS,
+  USDC_ADDRESS
+} from "../app.config";
 
 export function getUsdcContractConfig() {
-  if (CHAIN_SELECTION === "main") {
-    return mainUSDCContractConfig;
-  }
-  return mockUSDCContractConfig;
+  return {
+    address: USDC_ADDRESS as `0x${string}`,
+    abi: extendedERC20Abi,
+  };
 }
 
 const extendedERC20Abi = [
@@ -43,7 +43,7 @@ const extendedERC20Abi = [
 export const mainUSDCContractConfig = {
   address: USDC_ADDRESS as `0x${string}`,
   abi: erc20Abi,
-};
+} as const;
 
 // MockUSDC on Base Sepolia
 export const mockUSDCContractConfig = {
@@ -52,6 +52,43 @@ export const mockUSDCContractConfig = {
 } as const;
 
 export const astaverdeContractConfig = {
-  address: ASTAVERDE_ADDRESS as `0x${string}`,
-  abi: ASTAVERDE_ABI.abi,
+  address: ASTAVERDE_CONTRACT_ADDRESS as `0x${string}`,
+  abi: astaverdeAbi.abi as Abi,
 } as const;
+
+export function useAstaVerdeContract() {
+  const publicClient = usePublicClient();
+
+  if (!publicClient) {
+    throw new Error('Public client not available');
+  }
+
+  return getContract({
+    address: astaverdeContractConfig.address,
+    abi: astaverdeContractConfig.abi,
+    client: publicClient,
+  });
+}
+
+export function useIsContractDeployed() {
+  const publicClient = usePublicClient();
+
+  const checkDeployment = async () => {
+    if (!publicClient) {
+      throw new Error('Public client not available');
+    }
+    try {
+      const code = await publicClient.getCode({ address: astaverdeContractConfig.address });
+      return code !== '0x';
+    } catch (error) {
+      console.error('Error checking contract deployment:', error);
+      return false;
+    }
+  };
+
+  return checkDeployment;
+}
+
+console.log("AstaVerde Contract Config:", astaverdeContractConfig);
+
+export default astaverdeContractConfig;

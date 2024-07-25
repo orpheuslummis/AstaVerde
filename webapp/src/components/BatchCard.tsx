@@ -1,321 +1,98 @@
-"use client;";
+"use client";
 
-import { IPFS_GATEWAY_URL, USDC_DECIMALS } from "../app.config";
+import Image from "next/image";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { formatUnits } from "viem";
+import { useAccount } from 'wagmi';
+import { Slider } from "../@/components/ui/slider";
+import { USDC_DECIMALS } from "../app.config";
+import { useAppContext } from "../contexts/AppContext";
+import { useBatchOperations } from "../hooks/useContractInteraction";
 import { Batch } from "../lib/batch";
-import {
-	astaverdeContractConfig,
-	getUsdcContractConfig,
-} from "../lib/contracts";
-import { useEffect, useState } from "react";
-import { formatUnits, parseUnits } from "viem";
-import {
-	useAccount,
-	useContractRead,
-	useContractWrite,
-	usePrepareContractWrite,
-	useWaitForTransaction,
-} from "wagmi";
+import { getPlaceholderImageUrl } from "../utils/placeholderImage";
 
-/*
-obtain the first token of the batch
-fetch the metadata of the token from IPFS using its CID
-obtain the image CID from that metadata
-build a URL to the image using the image CID
-*/
+interface BatchCardProps {
+	batch: Batch;
+	updateCard?: () => void;
+}
 
-export default function BatchCard({
-	batch,
-	updateCard,
-}: { batch: Batch; updateCard: () => void }) {
-	const [batchImageUrl, setBatchImageUrl] = useState<string>();
+export const BatchCard = ({ batch, updateCard }: BatchCardProps) => {
+	const { isConnected } = useAccount();
+	const { refetchBatches } = useAppContext();
 	const [tokenAmount, setTokenAmount] = useState(1);
 
-	const { data: batchInfo } = useContractRead({
-		...astaverdeContractConfig,
-		functionName: "batches",
-		args: [BigInt(batch.id)],
-	});
+	const placeholderImage = useMemo(() => getPlaceholderImageUrl(batch.id), [batch.id]);
 
-	const { data: priceOfBatch } = useContractRead({
-		...astaverdeContractConfig,
-		functionName: "getBatchPrice",
-		args: [BigInt(batch.id)],
-	});
+	const priceInUSDC = useMemo(() => formatUnits(batch.price, USDC_DECIMALS), [batch.price]);
+	const totalPrice = useMemo(() => Number(priceInUSDC) * tokenAmount, [priceInUSDC, tokenAmount]);
 
-	const tokenInfo = useContractRead({
-		...astaverdeContractConfig,
-		functionName: "tokens",
-		enabled: batch.token_ids.length > 0,
-		args: [BigInt(batch.token_ids[0])],
-	});
+	const { handleApproveAndBuy, isLoading } = useBatchOperations(batch.id, totalPrice);
 
-	const fetchTokenImageUrl = async (tokenCID: string) => {
+	const handleBuyClick = async () => {
+		if (batch.itemsLeft === 0) return;
 		try {
-			const response = await fetch(`${IPFS_GATEWAY_URL}${tokenCID}`);
-			const metadata = await response.json();
-			console.log("BatchCard: fetched token metadata", metadata);
-			const imageUrl = metadata.image;
-			console.log("BatchCard: fetched image URL", imageUrl);
-			return imageUrl;
-		} catch (error) {
-			console.error("BatchCard: error fetching token metadata", error);
-			return null;
-		}
-	};
-
-	const getFirstBatchTokenCID = async () => {
-		if (tokenInfo.data) {
-			console.log("BatchCard: tokenInfo", tokenInfo);
-			const tokenCID = tokenInfo.data[2];
-			console.log("BatchCard: tokenCID", tokenCID);
-			return tokenCID;
-		}
-		return null;
-	};
-
-	useEffect(() => {
-		const fetchData = async () => {
-			if (tokenInfo.data) {
-				const firstBatchTokenCID = await getFirstBatchTokenCID();
-				if (firstBatchTokenCID) {
-					const batchImageCID: string | undefined =
-						await fetchTokenImageUrl(firstBatchTokenCID);
-
-					if (batchImageCID) {
-						const parts = batchImageCID.split("ipfs://");
-						if (parts.length > 1) {
-							const CID = parts[1];
-							setBatchImageUrl(IPFS_GATEWAY_URL + CID);
-						} else {
-							setBatchImageUrl(`${IPFS_GATEWAY_URL}undefined`);
-						}
-					} else {
-						setBatchImageUrl(`${IPFS_GATEWAY_URL}undefined`);
-					}
-				}
+			await handleApproveAndBuy(tokenAmount, Number(priceInUSDC));
+			if (updateCard) {
+				updateCard();
 			}
-		};
-		void fetchData();
-	}, [tokenInfo]);
+			refetchBatches();
+		} catch (error) {
+			console.error('Error in approve and buy process:', error);
+		}
+	};
 
 	return (
-		<div className="flex justify-between items-center">
-			<div className="flex-1 border rounded-lg overflow-hidden shadow-lg">
-				<div className="flex flex-col items-center w-full p-4">
-					<div className="w-full h-64 overflow-hidden rounded shadow-lg">
-						<img
-							className="w-full h-full object-cover"
-							src={batchImageUrl}
-							alt="Batch"
-						/>
-					</div>
-					<div className="w-full mt-4">
-						<p className="text-gray-900 font-bold text-2xl">
-							Batch {Number(batch.id)}
-						</p>
-						<p className="text-gray-600">
-							{batch ? `${batch.itemsLeft} items left` : "0 items left"}
-						</p>
-						<p className="text-gray-600">
-							{priceOfBatch
-								? `${Number(
-										formatUnits(priceOfBatch || BigInt(0), USDC_DECIMALS),
-								  )} USDC`
-								: "0 USDC"}
-						</p>
-					</div>
-
-					<div className="w-full mt-4">
-						<label htmlFor="quantity" className="block text-gray-600">
-							Select quantity
-						</label>
-						<input
-							id="quantity"
-							className="border rounded px-2 py-1 w-full"
-							type="number"
-							value={tokenAmount}
-							onChange={(e) => setTokenAmount(Number(e.target.value))}
-						/>
-					</div>
-				</div>
-
-				<div className="mt-4 p-4">
-					<p className="text-black mt-1 font-bold">
-						{priceOfBatch
-							? `Total: ${
-									+Number(
-										formatUnits(priceOfBatch || BigInt(0), USDC_DECIMALS),
-									).toString() * tokenAmount
-							  } USDC`
-							: "Total: 0 USDC"}
-					</p>
-					<BuyBatchButton
-						batchId={batch.id}
-						tokenAmount={tokenAmount}
-						usdcPrice={
-							Number(
-								formatUnits(priceOfBatch || BigInt(0), USDC_DECIMALS),
-							)?.toString() || "0"
-						}
-						updateCard={updateCard}
+		<Link href={`/batch/${batch.id}`} className="block">
+			<div className="bg-white shadow-lg rounded-xl overflow-hidden w-full flex flex-col transition-transform duration-300 hover:scale-105">
+				<div className="relative h-48">
+					<Image
+						src={batch.imageUrl || placeholderImage}
+						alt={`Batch ${batch.id}`}
+						fill
+						style={{ objectFit: 'cover' }}
 					/>
 				</div>
+				<div className="p-6 flex-grow flex flex-col">
+					<h2 className="text-2xl font-semibold mb-4">{`Batch ${batch.id}`}</h2>
+					<div className="flex justify-between mb-4">
+						<p className="text-gray-600">{batch.itemsLeft} items left</p>
+						<p className="font-semibold">{priceInUSDC} USDC</p>
+					</div>
+					<div className="mt-auto">
+						{batch.itemsLeft > 0 ? (
+							<>
+								<p className="mb-2">Select quantity</p>
+								<Slider
+									min={1}
+									max={Math.min(batch.itemsLeft, 10)}
+									step={1}
+									value={[tokenAmount]}
+									onValueChange={(value) => setTokenAmount(value[0])}
+									className="mb-4"
+								/>
+								<p className="text-sm text-gray-600 mb-2">Selected: {tokenAmount}</p>
+								<p className="font-bold mb-4">Total: {totalPrice.toFixed(2)} USDC</p>
+								<button
+									onClick={(e) => {
+										e.preventDefault();
+										handleBuyClick();
+									}}
+									disabled={!isConnected || isLoading}
+									className={`w-full p-3 rounded transition-colors duration-300 ${isConnected && !isLoading
+											? "bg-green-500 text-white hover:bg-green-600"
+											: "bg-gray-400 text-gray-200 cursor-not-allowed"
+										}`}
+								>
+									{isLoading ? "Processing..." : "Buy"}
+								</button>
+							</>
+						) : (
+							<p className="text-red-500 font-bold mb-4">This batch is sold out</p>
+						)}
+					</div>
+				</div>
 			</div>
-		</div>
+		</Link>
 	);
-}
-
-function BuyBatchButton({
-	batchId,
-	tokenAmount,
-	usdcPrice,
-	updateCard,
-}: {
-	batchId: number;
-	tokenAmount: number;
-	usdcPrice: string;
-	updateCard: () => void;
-}) {
-	const totalPrice = tokenAmount * Number(usdcPrice);
-	const { address } = useAccount();
-	const [awaitedHash, setAwaitedHash] = useState<`0x${string}`>();
-	const { data: txReceipt } = useWaitForTransaction({
-		hash: awaitedHash,
-	});
-
-	const usdcContractConfig = getUsdcContractConfig();
-	const { data: allowanceData, refetch: refetchAllowance } = useContractRead({
-		...usdcContractConfig,
-		functionName: "allowance",
-		enabled: address !== undefined,
-		args: [address!, astaverdeContractConfig.address],
-	} as any);
-	let allowance = BigInt(0);
-	if (allowanceData) {
-		allowance = BigInt(allowanceData as string);
-		console.log(
-			"BatchCard: allowance:",
-			Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)),
-			totalPrice,
-		);
-		console.log(
-			"BatchCard: buyBatch enabled",
-			Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)) >= totalPrice,
-		);
-	}
-
-	const { data: balanceData } = useContractRead({
-		...usdcContractConfig,
-		functionName: "balanceOf",
-		enabled: address !== undefined,
-		args: [address!],
-	} as any);
-	let balance = BigInt(0);
-	if (balanceData) {
-		balance = BigInt(balanceData as string);
-	}
-
-	const { config: configApprove } = usePrepareContractWrite({
-		...usdcContractConfig,
-		functionName: "approve",
-		// enabled: false,
-		args: [
-			astaverdeContractConfig.address,
-			parseUnits(totalPrice.toString(), USDC_DECIMALS),
-		],
-	} as any);
-	const { writeAsync: approve } = useContractWrite(configApprove);
-
-	const { config: configBuyBatch } = usePrepareContractWrite({
-		...astaverdeContractConfig,
-		functionName: "buyBatch",
-		enabled:
-			Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)) >= totalPrice, // allow buyBatch when there is enough allowance
-		args: [
-			BigInt(batchId),
-			parseUnits(totalPrice.toString(), USDC_DECIMALS),
-			BigInt(tokenAmount),
-		],
-	});
-	const { writeAsync: buyBatchAsync } = useContractWrite(configBuyBatch);
-
-	const refreshAllowance = async () => {
-		await refetchAllowance();
-	};
-
-	useEffect(() => {
-		if (txReceipt) {
-			void refreshAllowance();
-
-			void updateCard();
-		}
-	}, [txReceipt, refreshAllowance, updateCard]);
-
-	if (tokenAmount < 1) {
-		return (
-			<>
-				<button
-					className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full"
-					disabled
-					type="button"
-				>
-					Set quantity
-				</button>
-			</>
-		);
-	}
-
-	if (Number(formatUnits(balance || BigInt(0), USDC_DECIMALS)) < totalPrice) {
-		return (
-			<>
-				<button
-					className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded w-full"
-					disabled
-					type="button"
-				>
-					Not Enough Balance
-				</button>
-			</>
-		);
-	}
-
-	// If there is not enough allowance to withdraw usdc from user address.
-	if (Number(formatUnits(allowance || BigInt(0), USDC_DECIMALS)) < totalPrice) {
-		return (
-			<>
-				<button
-					className="mt-4 bg-primary hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
-					disabled={!approve}
-					type="button"
-					onClick={async () => {
-						if (approve) {
-							const result = await approve();
-							setAwaitedHash(result.hash);
-						}
-					}}
-				>
-					Approve USDC
-				</button>
-			</>
-		);
-	}
-
-	return (
-		<>
-			<button
-				className="mt-4 bg-primary hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
-				disabled={!buyBatchAsync}
-				type="button"
-				// disabled={isLoading}
-				onClick={async () => {
-					if (buyBatchAsync) {
-						const result = await buyBatchAsync();
-						setAwaitedHash(result.hash);
-					}
-				}}
-			>
-				Buy
-			</button>
-		</>
-	);
-}
+};

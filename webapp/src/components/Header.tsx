@@ -1,33 +1,44 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useAccount, useBalance } from "wagmi";
 import { getUsdcContractConfig } from "../lib/contracts";
 import { ConnectKitButton } from "./ConnectKitButton";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { formatUnits } from "viem";
-import { useAccount, useContractRead } from "wagmi";
-import { USDC_DECIMALS } from "../app.config";
 
 interface HeaderProps {
 	links: { name: string; url: string }[];
 }
 
 export function Header({ links }: HeaderProps) {
-	const { address } = useAccount();
-	const { data: balance } = useContractRead({
-		...getUsdcContractConfig(),
-		functionName: "balanceOf",
-		enabled: address !== undefined,
-		args: [address || "0x"],
-	} as any);
+	const { address, isConnected } = useAccount();
+	const usdcConfig = getUsdcContractConfig();
+	const [showBalance, setShowBalance] = useState(false);
+	const [isBalanceLoading, setIsBalanceLoading] = useState(true);
+	const { data: usdcBalance, isLoading: isBalanceDataLoading } = useBalance({
+		address,
+		token: usdcConfig.address,
+		query: {
+			enabled: isConnected && !!address,
+		},
+	});
+
+	useEffect(() => {
+		if (!isBalanceDataLoading) {
+			setIsBalanceLoading(false);
+		}
+	}, [isBalanceDataLoading]);
 
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const pathname = usePathname();
+	const router = useRouter();
 
 	const toggleMenu = () => {
-		setIsMenuOpen(!isMenuOpen);
+		setIsMenuOpen((prev) => !prev);
 	};
+
+	const balanceClassName = "hidden lg:block border border-gray-300 rounded-md bg-blue-100 p-2";
 
 	return (
 		<header className="w-full flex flex-wrap items-center justify-between bg-primary p-4 shadow-md">
@@ -40,49 +51,55 @@ export function Header({ links }: HeaderProps) {
 				>
 					☰
 				</button>
-				<div className="flex flex-row gap-2 items-center">
-					<Link href="/">
-						<img src="/eco_tradezone.png" alt="Logo" className="w-10" />
-					</Link>
-				</div>
+				<Link href="/" className="flex items-center">
+					<img src="/eco_tradezone.png" alt="Logo" className="w-10" />
+				</Link>
 			</div>
 
-			{/* Responsive Navigation */}
-			<nav
-				className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center`}
-			>
-				<ul className="flex items-center lg:flex-row flex-col lg:space-x-4 lg:space-y-0 space-y-2">
+			<nav className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center`}>
+				<ul className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
 					{links.map((link, index) => (
 						<li key={index} className="lg:mr-4">
-							<Link href={link.url}>
-								<div
-									className={`group hover:bg-white/20 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
-										pathname === link.url ? "bg-white/20" : ""
-									}`}
-								>
+							<span className={`group hover:bg-white/20 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${pathname === link.url ? "bg-white/20" : ""}`}>
+								{link.name === "My Eco Assets" ? (
 									<span
-										className={`text-white/90 hover:text-white transition-colors duration-300 ${
-											pathname === link.url ? "text-white" : ""
-										}`}
+										className={`text-white/90 hover:text-white transition-colors duration-300 ${pathname === link.url ? "text-white" : ""} ${isConnected ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+										onClick={(e) => {
+											e.preventDefault();
+											if (isConnected) {
+												router.push('/mytokens');
+											}
+										}}
 									>
 										{link.name}
 									</span>
-								</div>
-							</Link>
+								) : (
+									<Link href={link.url}>
+										<span className={`text-white/90 hover:text-white transition-colors duration-300 ${pathname === link.url ? "text-white" : ""}`}>
+											{link.name}
+										</span>
+									</Link>
+								)}
+							</span>
 						</li>
 					))}
-
-					{/* Show USDC Balance */}
-					<li className="hidden lg:block border border-gray-300 rounded-md bg-blue-100 p-2">
-						{formatUnits(
-							(balance as bigint) || BigInt(0),
-							USDC_DECIMALS,
-						)?.toString() || 0}{" "}
-						USDC
-					</li>
-
-					<li className="">
-						<ConnectKitButton />
+					{showBalance && (
+						<li className={balanceClassName}>
+							{isBalanceLoading ? (
+								"Loading..."
+							) : usdcBalance ? (
+								`${parseFloat(usdcBalance.formatted).toFixed(2)} ${usdcBalance.symbol}`
+							) : (
+								"N/A"
+							)}
+						</li>
+					)}
+					<li>
+						{isConnected ? (
+							<span className="text-white">Connected: {address?.slice(0, 6)}...{address?.slice(-4)}</span>
+						) : (
+							<ConnectKitButton />
+						)}
 					</li>
 				</ul>
 			</nav>
