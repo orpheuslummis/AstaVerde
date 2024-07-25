@@ -1,60 +1,62 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import { useAccount, useReadContract, useReadContracts } from "wagmi";
-import { BatchCard } from "../../components/BatchCard";
-import { Batch } from "../../lib/batch";
-import { astaverdeContractConfig } from "../../lib/contracts";
+import { useAccount } from "wagmi";
+import { TokenCard } from "../../components/TokenCard";
+import { usePublicClient } from "../../contexts/PublicClientContext";
 
 export default function Page() {
 	const { address } = useAccount();
-	const [batches, setBatches] = useState<Batch[]>([]);
-	const [lastBatchIDn, setLastBatchIDn] = useState<number>(0);
-
-	const { data: lastBatchID } = useReadContract({
-		...astaverdeContractConfig,
-		functionName: "lastBatchID",
-	});
+	const [tokens, setTokens] = useState([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const publicClient = usePublicClient();
 
 	useEffect(() => {
-		if (lastBatchID) {
-			setLastBatchIDn(Number(lastBatchID));
-		}
-	}, [lastBatchID]);
+		const fetchTokens = async () => {
+			if (address && publicClient) {
+				try {
+					// Implement your token fetching logic here
+					// For example:
+					// const fetchedTokens = await publicClient.readContract({
+					//     ...astaverdeContractConfig,
+					//     functionName: "getTokensOfOwner",
+					//     args: [address],
+					// });
+					// setTokens(fetchedTokens);
+				} catch (error) {
+					console.error("Error fetching tokens:", error);
+				} finally {
+					setIsLoading(false);
+				}
+			} else {
+				setIsLoading(false);
+			}
+		};
+		fetchTokens();
+	}, [address, publicClient]);
 
-	const { data: batchesData, isLoading, error } = useReadContracts({
-		contracts: Array.from({ length: lastBatchIDn }, (_, i) => ({
-			...astaverdeContractConfig,
-			functionName: "getBatchInfo",
-			args: [BigInt(i + 1)],
-		})),
-	});
-
-	if (isLoading) return <div>Loading...</div>;
-	if (error) return <div>Error: {error.message}</div>;
-
-	useEffect(() => {
-		if (batchesData) {
-			const newBatches = batchesData
-				.map((result, index) => {
-					if (result.status === "success" && Array.isArray(result.result)) {
-						const [batchID, tokenIDs, timestamp, price, itemsLeft] = result.result;
-						return new Batch(index + 1, tokenIDs, timestamp, price, itemsLeft);
-					}
-					return null;
-				})
-				.filter((batch): batch is Batch => batch !== null);
-			setBatches(newBatches);
-		}
-	}, [batchesData]);
+	if (isLoading) {
+		return <div className="container mx-auto px-4 py-8">Loading your tokens...</div>;
+	}
 
 	return (
-		<div>
-			<h1 className="font-bold text-xl py-4">My Tokens</h1>
-			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-				{batches.map((batch) => (
-					<BatchCard key={batch.id} batch={batch} />
-				))}
-			</div>
+		<div className="container mx-auto px-4 py-8">
+			<h1 className="font-bold text-2xl mb-6">My Tokens</h1>
+			{tokens.length === 0 ? (
+				<p>You don't have any tokens yet.</p>
+			) : (
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+					{tokens.map((token, index) => (
+						<div key={index} className="flex justify-center">
+							<TokenCard
+								tokenId={token[0]}
+								tokenData={token}
+								showLink={true}
+							/>
+						</div>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }

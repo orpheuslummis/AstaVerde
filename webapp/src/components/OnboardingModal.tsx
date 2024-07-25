@@ -7,9 +7,7 @@ export function OnboardingModal() {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setShowModal(!localStorage.getItem("onboardingCompleted"));
-    }
+    setShowModal(!localStorage.getItem("onboardingCompleted"));
   }, []);
 
   const handleConfirmation = () => {

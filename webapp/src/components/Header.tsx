@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAccount, useBalance } from "wagmi";
 import { getUsdcContractConfig } from "../lib/contracts";
@@ -15,11 +15,8 @@ export function Header({ links }: HeaderProps) {
 	const { address, isConnected } = useAccount();
 	const usdcConfig = getUsdcContractConfig();
 	const [showBalance, setShowBalance] = useState(false);
-
-	console.log("USDC Config:", usdcConfig);
-	console.log("Connected Address:", address);
-
-	const { data: usdcBalance, isLoading: isBalanceLoading } = useBalance({
+	const [isBalanceLoading, setIsBalanceLoading] = useState(true);
+	const { data: usdcBalance, isLoading: isBalanceDataLoading } = useBalance({
 		address,
 		token: usdcConfig.address,
 		watch: true,
@@ -27,13 +24,14 @@ export function Header({ links }: HeaderProps) {
 	});
 
 	useEffect(() => {
-		if (usdcBalance) {
-			console.log("USDC Balance:", usdcBalance);
+		if (!isBalanceDataLoading) {
+			setIsBalanceLoading(false);
 		}
-	}, [usdcBalance]);
+	}, [isBalanceDataLoading]);
 
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const pathname = usePathname();
+	const router = useRouter();
 
 	const toggleMenu = () => {
 		setIsMenuOpen((prev) => !prev);
@@ -61,13 +59,27 @@ export function Header({ links }: HeaderProps) {
 				<ul className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
 					{links.map((link, index) => (
 						<li key={index} className="lg:mr-4">
-							<Link href={link.url}>
-								<div className={`group hover:bg-white/20 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${pathname === link.url ? "bg-white/20" : ""}`}>
-									<span className={`text-white/90 hover:text-white transition-colors duration-300 ${pathname === link.url ? "text-white" : ""}`}>
+							<span className={`group hover:bg-white/20 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${pathname === link.url ? "bg-white/20" : ""}`}>
+								{link.name === "My EcoAssets" ? (
+									<span
+										className={`text-white/90 hover:text-white transition-colors duration-300 ${pathname === link.url ? "text-white" : ""} ${isConnected ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+										onClick={(e) => {
+											e.preventDefault();
+											if (isConnected) {
+												router.push('/mytokens');
+											}
+										}}
+									>
 										{link.name}
 									</span>
-								</div>
-							</Link>
+								) : (
+									<Link href={link.url}>
+										<span className={`text-white/90 hover:text-white transition-colors duration-300 ${pathname === link.url ? "text-white" : ""}`}>
+											{link.name}
+										</span>
+									</Link>
+								)}
+							</span>
 						</li>
 					))}
 					{showBalance && (

@@ -6,7 +6,7 @@ export const USDC_DECIMALS = 6;
 export const IPFS_GATEWAY_URL = "https://gateway.pinata.cloud/ipfs/";
 
 export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS || "";
-export const ASTAVERDE_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ASTAVERDE_CONTRACT_ADDRESS || "";
+export const ASTAVERDE_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS || "";
 export const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 export const WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "";
 
@@ -18,12 +18,6 @@ export const navigationLinks = [
 ];
 
 function validateConfig(): void {
-  if (!CHAIN_OPTIONS.includes(CHAIN_SELECTION)) {
-    throw new Error(
-      `Invalid CHAIN_SELECTION: ${CHAIN_SELECTION}. Must be one of ${CHAIN_OPTIONS.join(", ")}`
-    );
-  }
-
   if (!USDC_ADDRESS || !ASTAVERDE_CONTRACT_ADDRESS) {
     throw new Error(
       `USDC_ADDRESS and ASTAVERDE_CONTRACT_ADDRESS must be set for CHAIN_SELECTION: ${CHAIN_SELECTION}`
@@ -48,7 +42,7 @@ function logAppConfig() {
     USDC_ADDRESS,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_CHAIN_SELECTION: process.env.NEXT_PUBLIC_CHAIN_SELECTION,
-    NEXT_PUBLIC_ASTAVERDE_CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_ASTAVERDE_CONTRACT_ADDRESS,
+    NEXT_PUBLIC_ASTAVERDE_CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS,
     NEXT_PUBLIC_USDC_ADDRESS: process.env.NEXT_PUBLIC_USDC_ADDRESS,
   });
 }
@@ -56,3 +50,5 @@ function logAppConfig() {
 if (process.env.NODE_ENV === "development") {
   logAppConfig();
 }
+
+console.log("Environment variables:", process.env);
