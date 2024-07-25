@@ -52,7 +52,7 @@ export default function Page() {
 				<div className="space-y-6">
 					<div className="bg-gray-100 p-6 rounded-lg">
 						<h3 className="font-bold text-lg mb-2 text-primary">
-							Q: Why doesn't Ethereum work here to buy EcoAssets?
+							Q: Why don't the Ethereums work here to buy eco assets?
 						</h3>
 						<p className="text-gray-700">
 							A: This is on the Base network, which runs in parallel to the main
@@ -90,6 +90,18 @@ export default function Page() {
 							>
 								USDC on Base
 							</a>
+						</div>
+					</div>
+					<div className="bg-gray-100 p-6 rounded-lg">
+						<h3 className="font-bold text-lg mb-2 text-primary">
+							Q: What do I need to buy eco assets?
+						</h3>
+						<div className="text-gray-700">
+							<p>A: You need two currencies:</p>
+							<ol className="list-decimal list-inside mt-2">
+								<li>Enough USDC to make the auction price, and</li>
+								<li>A few dollars worth of Ethereums ON Base to pay for the transaction gas.</li>
+							</ol>
 						</div>
 					</div>
 				</div>
