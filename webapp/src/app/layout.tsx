@@ -9,11 +9,11 @@ import { Providers } from "../components/Providers";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
+      <body className="flex flex-col min-h-screen">
         <Providers>
           <OnboardingModal />
           <Header links={navigationLinks} />
-          <div className="container min-h-[calc(100vh-124px)]">
+          <div className="flex-grow container">
             <main>{children}</main>
           </div>
           <Footer />

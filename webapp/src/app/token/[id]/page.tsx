@@ -4,7 +4,7 @@
 import { BigNumberish } from "ethers";
 import { useEffect, useState } from "react";
 import { IPFS_GATEWAY_URL } from "../../../app.config";
-import { TokenCard } from "../../../components/TokenCard";
+import TokenCard from "../../../components/TokenCard";
 import { usePublicClient } from "../../../contexts/PublicClientContext";
 import { astaverdeContractConfig } from "../../../lib/contracts";
 
