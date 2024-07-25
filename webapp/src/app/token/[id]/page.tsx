@@ -1,7 +1,6 @@
 // src/app/token/[id]/page.tsx
 "use client";
 
-import { BigNumberish } from "ethers";
 import { useEffect, useState } from "react";
 import { IPFS_GATEWAY_URL } from "../../../app.config";
 import TokenCard from "../../../components/TokenCard";
@@ -9,7 +8,7 @@ import { usePublicClient } from "../../../contexts/PublicClientContext";
 import { astaverdeContractConfig } from "../../../lib/contracts";
 
 interface TokenData {
-	0: BigNumberish; // Token ID
+	0: bigint; // Token ID
 	1: string; // Producer
 	2: string; // CID
 	3: boolean; // Is redeemed
