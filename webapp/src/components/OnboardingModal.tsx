@@ -54,8 +54,8 @@ export function OnboardingModal() {
               <section className="flex items-start space-x-4">
                 <InformationCircleIcon className="h-8 w-8 text-primary flex-shrink-0" />
                 <div>
-                  <h3 className="text-xl font-semibold mb-2 text-primary">Understanding EcoAssets</h3>
-                  <p>EcoAssets represent real environmental impact. Once redeemed, they're recorded in your wallet and lose their tradable value. <a href="#" className="text-blue-600 hover:underline">Explore EcoAssets</a>.</p>
+                  <h3 className="text-xl font-semibold mb-2 text-primary">Understanding Eco Assets</h3>
+                  <p>Eco Assets represent real environmental impact. Once redeemed, they're recorded in your wallet and lose their tradable value. <a href="#" className="text-blue-600 hover:underline">Explore Eco Assets</a>.</p>
                 </div>
               </section>
 
@@ -63,7 +63,7 @@ export function OnboardingModal() {
                 <ShieldCheckIcon className="h-8 w-8 text-primary flex-shrink-0" />
                 <div>
                   <h3 className="text-xl font-semibold mb-2 text-primary">Your Responsibilities</h3>
-                  <p>Trading EcoAssets may have tax implications. You're responsible for complying with local regulations. <a href="#" className="text-blue-600 hover:underline">Read our Terms of Service</a>.</p>
+                  <p>Trading Eco Assets may have tax implications. You're responsible for complying with local regulations. <a href="#" className="text-blue-600 hover:underline">Read our Terms of Service</a>.</p>
                 </div>
               </section>
             </div>

@@ -25,7 +25,7 @@ export default function Page() {
 					href="/What.is.an.EcoAsset.pdf"
 					className="inline-block bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition duration-300"
 				>
-					Read Everything about EcoAssets before buying
+					Read Everything about Eco Assets before buying
 				</a>
 			</section>
 

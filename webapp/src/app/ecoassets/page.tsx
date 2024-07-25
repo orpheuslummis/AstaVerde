@@ -4,16 +4,16 @@ export default function Page() {
   return (
     <div className="bg-gray-100 min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-6 py-8 bg-white rounded-lg shadow-sm">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800">Welcome to EcoAssets</h1>
+        <h1 className="text-3xl font-bold mb-6 text-gray-800">Welcome to Eco Assets</h1>
         <p className="text-lg mb-8 text-gray-700 leading-relaxed">
-          EcoAssets are the core of our mission at EcoTradeZone. These digital assets represent the tangible environmental impact of biochar production. Each EcoAsset displays the time, date, and location of production, showcasing the efforts of our biochar producers in creating high-quality biochar and contributing to global carbon reduction.
+          Eco Assets are the core of our mission at EcoTradeZone. These digital assets represent the tangible environmental impact of biochar production. Each EcoAsset displays the time, date, and location of production, showcasing the efforts of our biochar producers in creating high-quality biochar and contributing to global carbon reduction.
         </p>
 
         <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-800">Components of an EcoAsset:</h2>
         <ul className="mb-8 text-gray-700 space-y-3">
           <li className="flex items-start">
             <span className="text-primary mr-2">•</span>
-            <span><strong>Item ID:</strong> A unique identifier in the sequence of EcoAssets</span>
+            <span><strong>Item ID:</strong> A unique identifier in the sequence of Eco Assets</span>
           </li>
           <li className="flex items-start">
             <span className="text-primary mr-2">•</span>

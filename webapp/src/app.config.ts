@@ -11,9 +11,9 @@ export const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 export const WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "";
 
 export const navigationLinks = [
-  { name: "About EcoAssets", url: "/ecoassets" },
+  { name: "About Eco Assets", url: "/ecoassets" },
   { name: "Market", url: "/" },
-  { name: "My EcoAssets", url: "/mytokens" },
+  { name: "My Eco Assets", url: "/mytokens" },
   { name: "About", url: "/about" },
 ];
 
