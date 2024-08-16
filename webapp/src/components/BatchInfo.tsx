@@ -25,7 +25,7 @@ export default function BatchInfo({ batchData }: BatchInfoProps) {
                 <p>{tokenIds.length}</p>
             </div>
             <div>
-                <p className="font-semibold">Remaining Tokens:</p>
+                <p className="font-semibold">Available Tokens:</p>
                 <p>{remainingTokens.toString()}</p>
             </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePublicClient } from 'wagmi';
+import { usePublicClient } from "wagmi";
 import BatchInfo from "../../../components/BatchInfo";
 import TokenCard from "../../../components/TokenCard";
 import { useAppContext } from "../../../contexts/AppContext";
@@ -30,8 +30,8 @@ export default function Page({ params }: { params: { id: string } }) {
             try {
                 const batchInfo = await publicClient.readContract({
                     ...astaverdeContractConfig,
-                    functionName: 'getBatchInfo',
-                    args: [BigInt(params.id)]
+                    functionName: "getBatchInfo",
+                    args: [BigInt(params.id)],
                 });
                 console.log("Batch info from contract:", batchInfo);
                 setBatchData(batchInfo);
@@ -54,7 +54,7 @@ export default function Page({ params }: { params: { id: string } }) {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-6">Batch Information for ID: {params.id}</h1>
+            <h1 className="text-3xl font-bold mb-6">Batch {params.id}</h1>
             <div className="bg-white shadow-md rounded-lg p-6 mb-8">
                 <BatchInfo batchData={batchData} />
             </div>

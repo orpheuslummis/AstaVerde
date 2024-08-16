@@ -1,4 +1,4 @@
-import { toast } from 'react-hot-toast';
+import { toast } from "react-hot-toast";
 
 type CustomToast = {
     success: (message: string) => void;
@@ -9,43 +9,43 @@ type CustomToast = {
 export const customToast: CustomToast = {
     success: (message: string) => {
         toast.success(message, {
-            icon: '🎉',
+            icon: "🎉",
             style: {
-                border: '2px solid #4CAF50',
-                padding: '16px',
-                color: '#4CAF50',
+                border: "2px solid #4CAF50",
+                padding: "16px",
+                color: "#4CAF50",
             },
             iconTheme: {
-                primary: '#4CAF50',
-                secondary: '#FFFAEE',
+                primary: "#4CAF50",
+                secondary: "#FFFAEE",
             },
         });
     },
     error: (message: string) => {
         toast.error(message, {
-            icon: '😕',
+            icon: "😕",
             style: {
-                border: '2px solid #FF6347',
-                padding: '16px',
-                color: '#FF6347',
+                border: "2px solid #FF6347",
+                padding: "16px",
+                color: "#FF6347",
             },
             iconTheme: {
-                primary: '#FF6347',
-                secondary: '#FFFAEE',
+                primary: "#FF6347",
+                secondary: "#FFFAEE",
             },
         });
     },
     info: (message: string) => {
         toast(message, {
-            icon: 'ℹ️',
+            icon: "ℹ️",
             style: {
-                border: '2px solid #3498db',
-                padding: '16px',
-                color: '#3498db',
+                border: "2px solid #3498db",
+                padding: "16px",
+                color: "#3498db",
             },
             iconTheme: {
-                primary: '#3498db',
-                secondary: '#FFFAEE',
+                primary: "#3498db",
+                secondary: "#FFFAEE",
             },
         });
     },
