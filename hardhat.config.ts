@@ -15,17 +15,17 @@ dotenvConfig({ path: resolve(__dirname, ".env.local") });
 
 const mnemonic: string | undefined = process.env.MNEMONIC;
 if (!mnemonic) {
-  throw new Error("Please set your MNEMONIC in a .env file");
+  throw new Error("Please set your MNEMONIC env variable");
 }
 
 const privateKey: string | undefined = process.env.PRIVATE_KEY;
 if (!privateKey) {
-  throw new Error("Please set your PRIVATE_KEY in a .env file");
+  throw new Error("Please set your PRIVATE_KEY env variable");
 }
 
 const rpcApiKey: string | undefined = process.env.RPC_API_KEY;
 if (!rpcApiKey) {
-  throw new Error("Please set your RPC_API_KEY in a .env.local file");
+  throw new Error("Please set your RPC_API_KEY env variable");
 }
 
 const chainIds = {
