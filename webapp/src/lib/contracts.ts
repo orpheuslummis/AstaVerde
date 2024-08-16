@@ -89,6 +89,4 @@ export function useIsContractDeployed() {
   return checkDeployment;
 }
 
-console.log("AstaVerde Contract Config:", astaverdeContractConfig);
-
 export default astaverdeContractConfig;
