@@ -7,10 +7,12 @@ import type { NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
 import "./tasks/fund-account";
 
-const dotenvConfigPath: string = resolve(__dirname, ".env.local");
-dotenvConfig({ path: dotenvConfigPath });
+// Load public environment variables
+dotenvConfig({ path: resolve(__dirname, ".env") });
 
-// Ensure that we have all the environment variables we need.
+// Load private environment variables
+dotenvConfig({ path: resolve(__dirname, ".env.local") });
+
 const mnemonic: string | undefined = process.env.MNEMONIC;
 if (!mnemonic) {
   throw new Error("Please set your MNEMONIC in a .env file");
