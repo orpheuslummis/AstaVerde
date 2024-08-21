@@ -1,7 +1,10 @@
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
+import { AddressLike } from "ethers";
 import { ethers, network } from "hardhat";
-
-import { createNewAddresses, mintUSDC, USDC_PRECISION } from "./helpers";
+import { AstaVerde, MockUSDC } from "../types";
+import { deployAstaVerdeFixture } from "./AstaVerde.fixture";
+import { genAddresses, USDC_PRECISION } from "./lib";
 
 const SECONDS_IN_A_DAY = 86400;
 const MAX_BATCH_SIZE = 50;
@@ -11,822 +14,438 @@ const PRICE_FLOOR = 40n * USDC_PRECISION;
 const BASE_PRICE = 230n * USDC_PRECISION;
 
 async function waitNSeconds(n: number) {
-	await network.provider.send("evm_increaseTime", [n]);
-	await network.provider.send("evm_mine");
+    console.log(`Advancing time by ${n} seconds`);
+    await network.provider.send("evm_increaseTime", [n]);
+    await network.provider.send("evm_mine");
+}
+
+async function mintBuyAndAdvance(
+    astaVerde: AstaVerde,
+    user: SignerWithAddress,
+    cids: string[],
+    tokenAmount: number,
+    advanceTimeSeconds: number = 0,
+) {
+    const producers = genAddresses(cids.length);
+    await astaVerde.mintBatch(producers, cids);
+    const batchID = await astaVerde.lastBatchID();
+    const { price } = await astaVerde.getBatchInfo(batchID);
+    const usdcAmount = price * BigInt(tokenAmount);
+
+    await astaVerde.connect(user).buyBatch(batchID, usdcAmount, tokenAmount);
+
+    if (advanceTimeSeconds > 0) {
+        await waitNSeconds(advanceTimeSeconds);
+        await astaVerde.updateBasePrice();
+    }
+
+    return { batchID, price, usdcAmount, producers };
+}
+
+async function expectBalancesAfterPurchase(
+    astaVerde: AstaVerde,
+    mockUSDC: MockUSDC,
+    user: string,
+    producers: string[],
+    tokenIds: bigint[],
+    usdcAmount: bigint,
+) {
+    for (const tokenId of tokenIds) {
+        expect(await astaVerde.balanceOf(user, tokenId)).to.equal(1);
+    }
+
+    const expectedProducerShare =
+        (usdcAmount * (100n - BigInt(PLATFORM_SHARE_PERCENTAGE))) / (100n * BigInt(producers.length));
+    for (const producer of producers) {
+        const producerBalance = await mockUSDC.balanceOf(producer);
+        expect(producerBalance).to.equal(expectedProducerShare);
+    }
+
+    const platformBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
+    expect(platformBalance).to.equal((usdcAmount * BigInt(PLATFORM_SHARE_PERCENTAGE)) / 100n);
 }
 
 export function shouldBehaveLikeAstaVerde(): void {
-	it("should reach basic deployment with default params", async function () {
-		expect(await this.astaVerde.basePrice()).to.equal(BASE_PRICE);
-		expect(await this.astaVerde.priceFloor()).to.equal(PRICE_FLOOR);
-		expect(await this.astaVerde.priceDecreaseRate()).to.equal(
-			PRICE_DECREASE_RATE,
-		);
-		expect(await this.astaVerde.maxBatchSize()).to.equal(MAX_BATCH_SIZE);
-		expect(await this.astaVerde.platformSharePercentage()).to.equal(
-			PLATFORM_SHARE_PERCENTAGE,
-		);
-	});
-
-	it("should mint a batch and check token balance", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-		const { tokenIds } = await this.astaVerde.getBatchInfo(batchID);
-		expect(tokenIds.length).to.equal(2);
-		// tokens are owned by contract at this point
-		expect(
-			await this.astaVerde.balanceOf(this.signers.admin.address, tokenIds[0]),
-		).to.equal(0);
-	});
-
-	it("should fail to mint a batch without producers", async function () {
-		const cids: string[] = ["abc", "xyz"];
-		await expect(this.astaVerde.mintBatch([], cids)).to.be.revertedWith(
-			"No producers provided",
-		);
-	});
-
-	it("should fail to mint a batch with mismatched producers and cids", async function () {
-		const cids = ["cid"];
-		const producers = createNewAddresses(cids.length + 1);
-		await expect(this.astaVerde.mintBatch(producers, cids)).to.be.revertedWith(
-			"Mismatch between producers and cids lengths",
-		);
-	});
-
-	it("should fail to mint a batch with batch size too large", async function () {
-		const cids = new Array(MAX_BATCH_SIZE + 1).fill("cid");
-		const producers = createNewAddresses(cids.length);
-		await expect(this.astaVerde.mintBatch(producers, cids)).to.be.revertedWith(
-			"Batch size exceeds max batch size",
-		);
-	});
-
-	it("should get current price", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-		expect(await this.astaVerde.getBatchPrice(batchID)).to.equal(BASE_PRICE);
-	});
-
-	it("should increment batchID after mintBatch", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchIDZero = await this.astaVerde.lastBatchID();
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-		expect(batchID).to.equal(batchIDZero + 1n);
-	});
-
-	it("should fail to get current price with invalid batchID", async function () {
-		const batchID = 999; // this batchID does not exist
-		await expect(this.astaVerde.getBatchPrice(batchID)).to.be.revertedWith(
-			"Batch does not exist",
-		);
-	});
-
-	it("should mint a small batch", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-		const { tokenIds, creationTime, price } =
-			await this.astaVerde.getBatchInfo(batchID);
-		expect(tokenIds.length).to.equal(2);
-		expect(creationTime).to.be.gt(0);
-		expect(price).to.be.gt(0);
-	});
-
-	it("should get market batches", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-		const { tokenIds, creationTime, price } =
-			await this.astaVerde.getBatchInfo(batchID);
-		expect(tokenIds.length).to.equal(2);
-		expect(creationTime).to.be.gt(0);
-		expect(price).to.be.gt(0);
-	});
-
-	it("should approve for all (erc1155)", async function () {
-		const address = await this.astaVerde.getAddress();
-		await this.astaVerde.setApprovalForAll(address, true);
-		expect(
-			await this.astaVerde.isApprovedForAll(
-				this.signers.admin.address,
-				address,
-			),
-		).to.equal(true);
-	});
-
-	it("should buy a batch", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-		const { price } = await this.astaVerde.getBatchInfo(batchID);
-		const usdcAmount = price;
-		const tokenAmount = 1;
-		const address = await this.astaVerde.getAddress();
-		await this.mockUSDC.approve(address, usdcAmount);
-		await this.astaVerde.setApprovalForAll(address, true);
-		await this.astaVerde.buyBatch(batchID, usdcAmount, tokenAmount);
-		const { tokenIds } = await this.astaVerde.getBatchInfo(batchID);
-		expect(
-			await this.astaVerde.balanceOf(this.signers.admin.address, tokenIds[0]),
-		).to.equal(1);
-	});
-
-	it("should fail to buy a batch with insufficient funds", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-		const usdcAmount = 100; // Assuming the price is more than 100
-		const tokenAmount = 1;
-		await expect(
-			this.astaVerde.buyBatch(batchID, usdcAmount, tokenAmount),
-		).to.be.revertedWith("Insufficient funds sent");
-	});
-
-	it("should set platform share percentage", async function () {
-		const newPercentage = 11;
-		await this.astaVerde.setPlatformSharePercentage(newPercentage);
-		expect(await this.astaVerde.platformSharePercentage()).to.equal(
-			newPercentage,
-		);
-	});
-
-	it("should fail to set platform share percentage with invalid value", async function () {
-		const invalidPercentage = 101;
-		await expect(
-			this.astaVerde.setPlatformSharePercentage(invalidPercentage),
-		).to.be.revertedWith("Share must be between 0 and 100");
-	});
-
-	it("should set price floor", async function () {
-		const newPriceFloor = 99;
-		await this.astaVerde.setPriceFloor(newPriceFloor);
-		expect(await this.astaVerde.priceFloor()).to.equal(newPriceFloor);
-	});
-
-	it("should fail to set price floor with zero value", async function () {
-		const zeroPriceFloor = 0;
-		await expect(
-			this.astaVerde.setPriceFloor(zeroPriceFloor),
-		).to.be.revertedWith("Invalid price floor");
-	});
-
-	it("should fail to set starting price with zero value", async function () {
-		const zeroStartingPrice = 0;
-		await expect(
-			this.astaVerde.setBasePrice(zeroStartingPrice),
-		).to.be.revertedWith("Invalid starting price");
-	});
-
-	it("should set max batch size and validate the new value", async function () {
-		const newMaxBatchSize = 100;
-		await this.astaVerde.setMaxBatchSize(newMaxBatchSize);
-		expect(await this.astaVerde.maxBatchSize()).to.equal(newMaxBatchSize);
-	});
-
-	it("should fail to set max batch size with zero value", async function () {
-		const zeroMaxBatchSize = 0;
-		await expect(
-			this.astaVerde.setMaxBatchSize(zeroMaxBatchSize),
-		).to.be.revertedWith("Invalid batch size");
-	});
-
-	it("should get batch info and validate the returned values", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-		const batchInfo = await this.astaVerde.getBatchInfo(batchID);
-		expect(batchInfo[1]).to.deep.equal([1n, 2n]); // tokenIds
-		expect(batchInfo[2]).to.be.a("bigint"); // creationTime
-		expect(batchInfo[3]).to.equal(BASE_PRICE); // price
-	});
-
-	it("should pause and unpause the contract by the owner", async function () {
-		await this.astaVerde.pause();
-		expect(await this.astaVerde.paused()).to.be.true;
-		await this.astaVerde.unpause();
-		expect(await this.astaVerde.paused()).to.be.false;
-	});
-
-	it("should fail to pause and unpause the contract by a non-owner", async function () {
-		const nonOwner = this.signers.others[0];
-		await expect(this.astaVerde.connect(nonOwner).pause()).to.be.reverted;
-		await expect(this.astaVerde.connect(nonOwner).unpause()).to.be.reverted;
-	});
-
-	it("should fail to buy a batch when the contract is paused", async function () {
-		await this.astaVerde.pause();
-		const batchID = await this.astaVerde.lastBatchID();
-		await expect(this.astaVerde.buyBatch(batchID, 1000, 1)).to.be.reverted;
-	});
-
-	it("should work to buy full batch", async function () {
-		const cids = ["cid1", "cid2", "cid3"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-
-		const { price } = await this.astaVerde.getBatchInfo(batchID);
-		const tokenAmount = cids.length;
-		const usdcAmount = price * BigInt(tokenAmount);
-
-		const user = this.signers.others[0];
-		await mintUSDC(user, this.mockUSDC, 100000n * USDC_PRECISION);
-		const userBalance = await this.mockUSDC.balanceOf(user);
-		console.log("userBalance", userBalance.toString());
-		if (userBalance < usdcAmount) {
-			throw new Error("Insufficient USDC balance");
-		}
-
-		await this.mockUSDC.connect(user).approve(this.astaVerde, usdcAmount);
-		await this.astaVerde.connect(user).setApprovalForAll(this.astaVerde, true);
-		await this.astaVerde
-			.connect(user)
-			.buyBatch(batchID, usdcAmount, tokenAmount);
-
-		const { tokenIds } = await this.astaVerde.getBatchInfo(batchID);
-		expect(await this.astaVerde.balanceOf(user.address, tokenIds[0])).to.equal(
-			1,
-		);
-		expect(await this.astaVerde.balanceOf(user.address, tokenIds[1])).to.equal(
-			1,
-		);
-		expect(await this.astaVerde.balanceOf(user.address, tokenIds[2])).to.equal(
-			1,
-		);
-
-		// Assert that each producer has received 70% of their share of the total cost
-		// In this case, each producer's share of the total cost is 1/3
-		const expectedProducerShare =
-			(usdcAmount * BigInt(Math.floor(0.7 * 100))) /
-			BigInt(producers.length * 100);
-		for (let i = 0; i < producers.length; i++) {
-			const producerBalance = await this.mockUSDC.balanceOf(producers[i]);
-			expect(producerBalance).to.equal(expectedProducerShare);
-		}
-		// Assert that the platform share is correct
-		const platformBalance = await this.mockUSDC.balanceOf(this.astaVerde);
-		expect(platformBalance).to.equal(
-			(usdcAmount * BigInt(Math.floor(0.3 * 100))) / BigInt(100),
-		);
-	});
-
-	it("should work to buy full batch with a tricky base price", async function () {
-		await this.astaVerde.setBasePrice(97);
-
-		const cids = ["cid1", "cid2", "cid3"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-
-		const { price } = await this.astaVerde.getBatchInfo(batchID);
-		const tokenAmount = BigInt(cids.length);
-		const usdcAmount = price * tokenAmount;
-
-		const user = this.signers.others[0];
-		await mintUSDC(
-			user,
-			this.mockUSDC,
-			1000000n * USDC_PRECISION * USDC_PRECISION,
-		);
-		const userBalance = await this.mockUSDC.balanceOf(user);
-		console.log("userBalance", userBalance.toString());
-		if (userBalance < usdcAmount) {
-			throw new Error("Insufficient USDC balance");
-		}
-
-		await this.mockUSDC.connect(user).approve(this.astaVerde, usdcAmount);
-		await this.astaVerde.connect(user).setApprovalForAll(this.astaVerde, true);
-		await this.astaVerde
-			.connect(user)
-			.buyBatch(batchID, usdcAmount, tokenAmount);
-
-		const { tokenIds } = await this.astaVerde.getBatchInfo(batchID);
-		expect(await this.astaVerde.balanceOf(user.address, tokenIds[0])).to.equal(
-			1,
-		);
-		expect(await this.astaVerde.balanceOf(user.address, tokenIds[1])).to.equal(
-			1,
-		);
-		expect(await this.astaVerde.balanceOf(user.address, tokenIds[2])).to.equal(
-			1,
-		);
-
-		// Assert that each producer has received 70% of their share of the total cost
-		// In this case, each producer's share of the total cost is 1/3
-		const expectedProducerShare =
-			(usdcAmount * BigInt(Math.floor(0.7 * 100))) /
-			BigInt(producers.length * 100);
-		for (let i = 0; i < producers.length; i++) {
-			const producerBalance = await this.mockUSDC.balanceOf(producers[i]);
-			expect(producerBalance).to.equal(expectedProducerShare);
-		}
-
-		// const platformSharePercentage = await this.astaVerde.platformSharePercentage();
-		// Assert that the platform share is correct
-		const platformBalance = await this.mockUSDC.balanceOf(this.astaVerde);
-		const expectedPlatformShare =
-			BigInt(Math.ceil(0.3 * Number(price))) * tokenAmount;
-		expect(platformBalance).to.equal(expectedPlatformShare);
-	});
-
-	it("should work to buy a partial batch", async function () {
-		const cids = ["cid1", "cid2", "cid3"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-
-		const { price } = await this.astaVerde.getBatchInfo(batchID);
-		const tokenAmount = BigInt(2); // Buy only 2 out of 3 tokens
-		const usdcAmount = price * tokenAmount;
-
-		const user = this.signers.others[0];
-		await mintUSDC(user, this.mockUSDC, 1000000n * USDC_PRECISION);
-		const userBalance = await this.mockUSDC.balanceOf(user);
-		console.log("userBalance", userBalance.toString());
-		if (userBalance < usdcAmount) {
-			throw new Error("Insufficient USDC balance");
-		}
-
-		await this.mockUSDC.connect(user).approve(this.astaVerde, usdcAmount);
-		await this.astaVerde.connect(user).setApprovalForAll(this.astaVerde, true);
-		await this.astaVerde
-			.connect(user)
-			.buyBatch(batchID, usdcAmount, tokenAmount);
-
-		const { tokenIds } = await this.astaVerde.getBatchInfo(batchID);
-		expect(await this.astaVerde.balanceOf(user.address, tokenIds[0])).to.equal(
-			1,
-		);
-		expect(await this.astaVerde.balanceOf(user.address, tokenIds[1])).to.equal(
-			1,
-		);
-		expect(await this.astaVerde.balanceOf(user.address, tokenIds[2])).to.equal(
-			0,
-		); // This token was not bought
-	});
-
-	it("should fail to buy too many tokens of a partial batch", async function () {
-		const cids = ["cid1", "cid2", "cid3", "cid4", "cid5"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-
-		const { price } = await this.astaVerde.getBatchInfo(batchID);
-		let tokenAmount = BigInt(2); // Buy only 2 out of 5 tokens initially
-		let usdcAmount = price * tokenAmount;
-
-		const user = this.signers.others[0];
-		await mintUSDC(user, this.mockUSDC, 1000000n * USDC_PRECISION);
-		const userBalance = await this.mockUSDC.balanceOf(user);
-		if (userBalance < usdcAmount) {
-			throw new Error("Insufficient USDC balance");
-		}
-
-		await this.mockUSDC.connect(user).approve(this.astaVerde, usdcAmount);
-		await this.astaVerde.connect(user).setApprovalForAll(this.astaVerde, true);
-		await this.astaVerde
-			.connect(user)
-			.buyBatch(batchID, usdcAmount, tokenAmount);
-
-		tokenAmount = BigInt(4); // Try to buy 4 out of the 3 remaining tokens
-		usdcAmount = price * tokenAmount;
-		await this.mockUSDC.connect(user).approve(this.astaVerde, usdcAmount);
-
-		// This should fail because there are not enough tokens left in the batch
-		await expect(
-			this.astaVerde.connect(user).buyBatch(batchID, usdcAmount, tokenAmount),
-		).to.be.revertedWith("Not enough tokens in batch");
-	});
-
-	it("should work to buy the rest of tokens of a partial batch", async function () {
-		const cids = ["cid1", "cid2", "cid3", "cid4", "cid5"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-
-		const { price } = await this.astaVerde.getBatchInfo(batchID);
-		let tokenAmount = BigInt(2); // Buy the 2 first tokens
-		let usdcAmount = price * tokenAmount;
-
-		const user = this.signers.others[0];
-		await mintUSDC(user, this.mockUSDC, 1000000n * USDC_PRECISION);
-
-		await this.mockUSDC.connect(user).approve(this.astaVerde, usdcAmount);
-		await this.astaVerde.connect(user).setApprovalForAll(this.astaVerde, true);
-		let tx = await this.astaVerde
-			.connect(user)
-			.buyBatch(batchID, usdcAmount, tokenAmount);
-		let receipt = await tx.wait();
-		let block = await ethers.provider.getBlock(receipt.blockNumber);
-		let timestamp = block.timestamp;
-		await expect(tx)
-			.to.emit(this.astaVerde, "PartialBatchSold")
-			.withArgs(batchID, timestamp, tokenAmount);
-
-		tokenAmount = BigInt(3); // Buy the 3 remaining tokens
-		usdcAmount = price * tokenAmount;
-		await this.mockUSDC.connect(user).approve(this.astaVerde, usdcAmount);
-
-		tx = await this.astaVerde
-			.connect(user)
-			.buyBatch(batchID, usdcAmount, tokenAmount);
-		receipt = await tx.wait();
-		block = await ethers.provider.getBlock(receipt.blockNumber);
-		timestamp = block.timestamp;
-		await expect(tx)
-			.to.emit(this.astaVerde, "BatchSold")
-			.withArgs(batchID, timestamp, 5);
-	});
-
-	/*
-  mint
-  buy
-  increase time for N days
-  mint
-  observe effect of the N days on the price of thew new mint
-  */
-	it("base price should decrease after 10 days", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-		await expect(this.astaVerde.mintBatch(producers, cids)).to.emit(
-			this.astaVerde,
-			"BatchMinted",
-		);
-
-		const batchID = await this.astaVerde.lastBatchID();
-		const { price } = await this.astaVerde.getBatchInfo(batchID);
-		const tokenAmount = BigInt(cids.length);
-		const usdcAmount = price * tokenAmount;
-		const address = await this.astaVerde.getAddress();
-		await this.mockUSDC.approve(address, usdcAmount);
-		await this.astaVerde.setApprovalForAll(address, true);
-		await this.astaVerde.buyBatch(batchID, usdcAmount, tokenAmount);
-		expect(await this.astaVerde.getBatchPrice(batchID)).to.equal(BASE_PRICE);
-
-		await waitNSeconds(10 * SECONDS_IN_A_DAY);
-
-		const tx = await this.astaVerde.mintBatch(producers, cids);
-		const receipt = await tx.wait();
-		const block = await ethers.provider.getBlock(receipt.blockNumber);
-		const timestamp = block.timestamp;
-
-		await expect(tx)
-			.to.emit(this.astaVerde, "BatchMinted")
-			.withArgs(1, timestamp)
-			.to.emit(this.astaVerde, "PlatformBasePriceAdjusted");
-
-		const newBatchID = await this.astaVerde.lastBatchID();
-		const { price: newPrice } = await this.astaVerde.getBatchInfo(newBatchID);
-		expect(newPrice).to.equal(price - 10n * USDC_PRECISION);
-	});
-
-	it("base price should increase before 1 days", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-
-		await expect(this.astaVerde.mintBatch(producers, cids)).to.emit(
-			this.astaVerde,
-			"BatchMinted",
-		);
-
-		const batchID = await this.astaVerde.lastBatchID();
-		const { price } = await this.astaVerde.getBatchInfo(batchID);
-		const tokenAmount = BigInt(cids.length);
-		const usdcAmount = price * tokenAmount;
-		const address = await this.astaVerde.getAddress();
-		await this.mockUSDC.approve(address, usdcAmount);
-		await this.astaVerde.setApprovalForAll(address, true);
-		await this.astaVerde.buyBatch(batchID, usdcAmount, tokenAmount);
-		expect(await this.astaVerde.getBatchPrice(batchID)).to.equal(BASE_PRICE);
-
-		await network.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY]);
-		await network.provider.send("evm_mine");
-
-		const tx = await this.astaVerde.mintBatch(producers, cids);
-		const receipt = await tx.wait();
-		const block = await ethers.provider.getBlock(receipt.blockNumber);
-		const timestamp = block.timestamp;
-
-		await expect(tx)
-			.to.emit(this.astaVerde, "BatchMinted")
-			.withArgs(1, timestamp)
-			.to.emit(this.astaVerde, "PlatformBasePriceAdjusted");
-
-		const newBatchID = await this.astaVerde.lastBatchID();
-		const { price: newPrice } = await this.astaVerde.getBatchInfo(newBatchID);
-		expect(newPrice).to.equal(price + 10n * USDC_PRECISION);
-	});
-
-	it("base price should remain the same at 6 days", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-		await expect(this.astaVerde.mintBatch(producers, cids)).to.emit(
-			this.astaVerde,
-			"BatchMinted",
-		);
-
-		const batchID = await this.astaVerde.lastBatchID();
-		const { price } = await this.astaVerde.getBatchInfo(batchID);
-		const tokenAmount = BigInt(cids.length);
-		const usdcAmount = price * tokenAmount;
-		const address = await this.astaVerde.getAddress();
-		await this.mockUSDC.approve(address, usdcAmount);
-		await this.astaVerde.setApprovalForAll(address, true);
-		await this.astaVerde.buyBatch(batchID, usdcAmount, tokenAmount);
-		expect(await this.astaVerde.getBatchPrice(batchID)).to.equal(BASE_PRICE);
-
-		await network.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 3]);
-		await network.provider.send("evm_mine");
-
-		const tx = await this.astaVerde.mintBatch(producers, cids);
-		const receipt = await tx.wait();
-		const block = await ethers.provider.getBlock(receipt.blockNumber);
-		const timestamp = block.timestamp;
-
-		await expect(tx)
-			.to.emit(this.astaVerde, "BatchMinted")
-			.withArgs(1, timestamp)
-			.to.emit(this.astaVerde, "PlatformBasePriceAdjusted");
-
-		const newBatchID = await this.astaVerde.lastBatchID();
-		const { price: newPrice } = await this.astaVerde.getBatchInfo(newBatchID);
-		expect(newPrice).to.equal(price);
-	});
-
-	it("should handle refund when the USDC amount is greater than the total cost", async function () {
-		const cids = ["cid1", "cid2", "cid3"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-		const { price } = await this.astaVerde.getBatchInfo(batchID);
-		const tokenAmount = BigInt(cids.length);
-		const usdcAmount = price * tokenAmount;
-		const overPaidAmount = usdcAmount + 1000n * USDC_PRECISION; // Overpay by 1000
-		const user = this.signers.others[0]; // Use a user to buy, not the admin
-		const initialUserBalance = 1000000n * USDC_PRECISION;
-		await mintUSDC(user, this.mockUSDC, initialUserBalance);
-		await this.mockUSDC.connect(user).approve(this.astaVerde, overPaidAmount);
-		await this.astaVerde.connect(user).setApprovalForAll(this.astaVerde, true);
-		await this.astaVerde
-			.connect(user)
-			.buyBatch(batchID, overPaidAmount, tokenAmount);
-		const userBalanceAfterPurchase = await this.mockUSDC.balanceOf(
-			user.address,
-		);
-		expect(userBalanceAfterPurchase).to.equal(initialUserBalance - usdcAmount); // Expect the overpaid amount to be refunded
-	});
-
-	// test_GetPartialIds(): Test retrieving partial IDs from a batch.
-
-	// testFail_GetPartialIdsWithZeroNumberToBuy(): Test retrieving partial IDs from a batch with a zero number to buy.
-
-	// testFail_GetPartialIdsWithNumberToBuyGreaterThanRemainingTokens(): Test retrieving partial IDs from a batch with a number to buy greater than the remaining tokens.
-
-	it("should redeem tokens by the token owner", async function () {
-		// Mint a batch of tokens
-		const cids = ["cid1", "cid2", "cid3"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-
-		// Buy the batch of tokens
-		const batchInfo = await this.astaVerde.getBatchInfo(batchID);
-		const price = batchInfo[3];
-		const tokenAmount = BigInt(cids.length);
-		const usdcAmount = price * tokenAmount;
-		const user = this.signers.others[0];
-		await mintUSDC(user, this.mockUSDC, 1000000n * USDC_PRECISION);
-		await this.mockUSDC.connect(user).approve(this.astaVerde, usdcAmount);
-		await this.astaVerde.connect(user).setApprovalForAll(this.astaVerde, true);
-		await this.astaVerde
-			.connect(user)
-			.buyBatch(batchID, usdcAmount, tokenAmount);
-
-		// Redeem the tokens
-		const tokenIds = batchInfo[1];
-		await this.astaVerde.connect(user).redeemTokens([...tokenIds]); // a copy of tokenIDs is needed
-
-		// Check that the tokens are marked as redeemed
-		for (let i = 0; i < tokenIds.length; i++) {
-			const tokenInfo = await this.astaVerde.tokens(tokenIds[i]);
-			const isRedeemed = tokenInfo[3]; // Assuming isRedeemed is the fourth property in the struct
-			expect(isRedeemed).to.be.true;
-		}
-	});
-
-	it("should fail to redeem tokens by a non-owner", async function () {
-		// Mint a batch of tokens
-		const cids = ["cid1", "cid2", "cid3"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-
-		// User 1 buys the batch of tokens
-		const user1 = this.signers.others[0];
-		const batchInfo = await this.astaVerde.getBatchInfo(batchID);
-		const price = batchInfo[3];
-		const tokenAmount = BigInt(cids.length);
-		const usdcAmount = price * tokenAmount;
-		await mintUSDC(user1, this.mockUSDC, 1000000n * USDC_PRECISION);
-		await this.mockUSDC.connect(user1).approve(this.astaVerde, usdcAmount);
-		await this.astaVerde.connect(user1).setApprovalForAll(this.astaVerde, true);
-		await this.astaVerde
-			.connect(user1)
-			.buyBatch(batchID, usdcAmount, tokenAmount);
-
-		// User 2 attempts to redeem the tokens
-		const user2 = this.signers.others[1];
-		const tokenIds = batchInfo[1];
-		await expect(
-			this.astaVerde.connect(user2).redeemTokens([...tokenIds]),
-		).to.be.revertedWith("Only the owner can redeem");
-	});
-
-	it("should fail to redeem tokens when the contract is paused", async function () {
-		// Mint a batch of tokens
-		const cids = ["cid1", "cid2", "cid3"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-
-		// Buy the batch of tokens
-		const batchInfo = await this.astaVerde.getBatchInfo(batchID);
-		const price = batchInfo[3];
-		const tokenAmount = BigInt(cids.length);
-		const usdcAmount = price * tokenAmount;
-		const user = this.signers.others[0];
-		await mintUSDC(user, this.mockUSDC, 1000000n * USDC_PRECISION);
-		await this.mockUSDC.connect(user).approve(this.astaVerde, usdcAmount);
-		await this.astaVerde.connect(user).setApprovalForAll(this.astaVerde, true);
-		await this.astaVerde
-			.connect(user)
-			.buyBatch(batchID, usdcAmount, tokenAmount);
-
-		// Pause the contract
-		await this.astaVerde.pause();
-
-		// Redeem the tokens
-		const tokenIds = batchInfo[1];
-		try {
-			await this.astaVerde.connect(user).redeemTokens([...tokenIds]);
-		} catch (error) {
-			if (!error.message.includes("EnforcedPause()")) {
-				throw new Error(
-					"Expected 'EnforcedPause()' to be included in the error message",
-				);
-			}
-		}
-	});
-
-	it("should allow the owner to claim platform funds", async function () {
-		// Mint two batches of tokens
-		const cids1 = ["cid1", "cid2", "cid3"];
-		const cids2 = ["cid4", "cid5", "cid6"];
-		const producers1 = createNewAddresses(cids1.length);
-		const producers2 = createNewAddresses(cids2.length);
-		await this.astaVerde.mintBatch(producers1, cids1);
-		const batchID1 = await this.astaVerde.lastBatchID();
-		await this.astaVerde.mintBatch(producers2, cids2);
-		const batchID2 = await this.astaVerde.lastBatchID();
-
-		// Two different users buy the batches
-		const user1 = this.signers.others[0];
-		const user2 = this.signers.others[1];
-		const batchInfo1 = await this.astaVerde.getBatchInfo(batchID1);
-		const batchInfo2 = await this.astaVerde.getBatchInfo(batchID2);
-		const price1 = batchInfo1[3];
-		const price2 = batchInfo2[3];
-		const tokenAmount1 = BigInt(cids1.length);
-		const tokenAmount2 = BigInt(cids2.length);
-		const usdcAmount1 = price1 * tokenAmount1;
-		const usdcAmount2 = price2 * tokenAmount2;
-		await mintUSDC(user1, this.mockUSDC, usdcAmount1);
-		await mintUSDC(user2, this.mockUSDC, usdcAmount2);
-		await this.mockUSDC.connect(user1).approve(this.astaVerde, usdcAmount1);
-		await this.mockUSDC.connect(user2).approve(this.astaVerde, usdcAmount2);
-		await this.astaVerde
-			.connect(user1)
-			.buyBatch(batchID1, usdcAmount1, tokenAmount1);
-		await this.astaVerde
-			.connect(user2)
-			.buyBatch(batchID2, usdcAmount2, tokenAmount2);
-
-		// The owner collects the platform funds;
-		const ownerFundsBefore = await this.mockUSDC.balanceOf(this.signers.admin);
-		console.log("ownerFundsBefore", ownerFundsBefore.toString());
-		await this.astaVerde.claimPlatformFunds(this.signers.admin.address);
-		const ownerFundsAfter = await this.mockUSDC.balanceOf(
-			this.signers.admin.address,
-		);
-		console.log("ownerFundsAfter", ownerFundsAfter.toString());
-		expect(ownerFundsAfter).to.be.gt(ownerFundsBefore);
-	});
-
-	it("should fail when a non-owner tries to claim platform funds", async function () {
-		const nonOwner = this.signers.others[0];
-		try {
-			await this.astaVerde
-				.connect(nonOwner)
-				.claimPlatformFunds(nonOwner.address);
-		} catch (error) {
-			if (!error.message.includes("OwnableUnauthorizedAccount")) {
-				throw new Error(
-					"Expected 'OwnableUnauthorizedAccount' to be included in the error message",
-				);
-			}
-		}
-	});
-
-	/*
-  testing the decreasing price of batches
-  first, mint n batches
-  then, for each, wait n days for each batch before buying it, where n is batch id
-  effective price should be base price - (n * priceDecreaseRate)
-  */
-	it("should mint n batches, each with its own price, and wait n days before buying", async function () {
-		const numBatches = 10;
-		const cids: string[] = new Array(MAX_BATCH_SIZE).fill("cid");
-		const producers = createNewAddresses(MAX_BATCH_SIZE);
-		const user = this.signers.others[0];
-
-		const usdcAmounts = [];
-		const tokenAmounts = [];
-
-		for (let i = 0; i < numBatches; i++) {
-			console.log("mint batch", i);
-			await this.astaVerde.mintBatch(producers, cids);
-		}
-
-		for (let i = 0; i < numBatches; i++) {
-			console.log("buy batch", i);
-			let batchInfo = await this.astaVerde.getBatchInfo(i);
-			let price = batchInfo[3];
-			const tokenAmount = BigInt(cids.length);
-			const usdcAmount = price * tokenAmount;
-			usdcAmounts.push(usdcAmount);
-			tokenAmounts.push(tokenAmount);
-			await mintUSDC(user, this.mockUSDC, usdcAmount);
-			await this.mockUSDC.connect(user).approve(this.astaVerde, usdcAmount);
-			await this.astaVerde.connect(user).buyBatch(i, usdcAmount, tokenAmount); // here we see the price decrease
-			const expectedPrice = BASE_PRICE - BigInt(i) * PRICE_DECREASE_RATE;
-			batchInfo = await this.astaVerde.getBatchInfo(i); // here we see it decrease again
-			price = batchInfo[3];
-
-			console.log("expectedPrice", expectedPrice);
-			console.log("price", price);
-			expect(price).to.equal(expectedPrice);
-
-			await waitNSeconds(SECONDS_IN_A_DAY);
-		}
-	});
-
-	it("should handle edge cases for time correctly", async function () {
-		const numBatches = 10;
-		const cids: string[] = new Array(MAX_BATCH_SIZE).fill("cid");
-		const producers = createNewAddresses(MAX_BATCH_SIZE);
-		// const user = this.signers.others[0];
-
-		for (let i = 0; i < numBatches; i++) {
-			await this.astaVerde.mintBatch(producers, cids);
-		}
-
-		// Edge case 1: Buying immediately after minting
-		let price = await this.astaVerde.getBatchPrice(0);
-		expect(price).to.equal(BASE_PRICE);
-
-		// Edge case 2: Buying after maximum possible time
-		const one_billion_years_approx = 60 * 60 * 24 * 365.25 * 10 ** 9;
-		await waitNSeconds(one_billion_years_approx);
-		price = await this.astaVerde.getBatchPrice(0);
-		expect(price).to.equal(PRICE_FLOOR);
-	});
-
-	it("tokens should have correct metadata after minting", async function () {
-		const cids = ["cid1", "cid2"];
-		const producers = createNewAddresses(cids.length);
-		await this.astaVerde.mintBatch(producers, cids);
-		const batchID = await this.astaVerde.lastBatchID();
-		const { tokenIds } = await this.astaVerde.getBatchInfo(batchID);
-		for (let i = 0; i < tokenIds.length; i++) {
-			const tokenInfo = await this.astaVerde.tokens(tokenIds[i]);
-			expect(tokenInfo[0]).to.equal(i + 1); // token index
-			expect(tokenInfo[2]).to.equal(cids[i]); // cid
-			expect(tokenInfo[3]).to.be.false; // is redeemed
-		}
-	});
-
-	// test paying with a non-USDC token should fail. this requires minting AnotherERC20 and using it to pay
+    let astaVerde: AstaVerde;
+    let mockUSDC: MockUSDC;
+    let admin: SignerWithAddress;
+    let user: SignerWithAddress;
+    let user1: SignerWithAddress;
+
+    async function setupBatchAndBuy(cids: string[], tokenAmount: number) {
+        const producers = genAddresses(cids.length);
+        await astaVerde.mintBatch(producers, cids);
+        const batchID = await astaVerde.lastBatchID();
+        const { price } = await astaVerde.getBatchInfo(batchID);
+        const usdcAmount = price * BigInt(tokenAmount);
+        return { batchID, price, usdcAmount, user, producers };
+    }
+
+    beforeEach(async function () {
+        const fixture = await deployAstaVerdeFixture();
+        astaVerde = fixture.astaVerde;
+        mockUSDC = fixture.mockUSDC;
+        admin = fixture.admin;
+        user = fixture.user1;
+        user1 = fixture.user2;
+    });
+
+    describe("Deployment and basic functionality", function () {
+        it("should initialize contract with expected default parameters", async function () {
+            const params = [
+                "basePrice",
+                "priceFloor",
+                "priceDecreaseRate",
+                "maxBatchSize",
+                "platformSharePercentage",
+            ] as const;
+            const expectedValues = [
+                BASE_PRICE,
+                PRICE_FLOOR,
+                PRICE_DECREASE_RATE,
+                MAX_BATCH_SIZE,
+                PLATFORM_SHARE_PERCENTAGE,
+            ];
+
+            for (let i = 0; i < params.length; i++) {
+                expect(await astaVerde[params[i]]()).to.equal(expectedValues[i]);
+            }
+        });
+
+        it("should return current price and increment batchID after minting a batch", async function () {
+            const cids = ["cid1", "cid2"];
+            await astaVerde.mintBatch(genAddresses(cids.length), cids);
+            const batchID = await astaVerde.lastBatchID();
+
+            const currentBasePrice = await astaVerde.basePrice();
+
+            const currentBatchPrice = await astaVerde.getCurrentBatchPrice(batchID);
+
+            expect(currentBatchPrice).to.equal(currentBasePrice);
+
+            await astaVerde.mintBatch(genAddresses(cids.length), cids);
+            expect(await astaVerde.lastBatchID()).to.equal(batchID + 1n);
+        });
+
+        it("should revert when getting price for non-existent batch", async function () {
+            await expect(astaVerde.getCurrentBatchPrice(999)).to.be.revertedWith("Batch does not exist");
+        });
+    });
+
+    describe("Batch minting and buying", function () {
+        it("should revert batch minting under specific invalid conditions", async function () {
+            const scenarios = [
+                {
+                    desc: "without producers",
+                    producers: [] as AddressLike[],
+                    cids: ["abc", "xyz"],
+                    error: "No producers provided",
+                },
+                {
+                    desc: "with mismatched producers and cids",
+                    producers: genAddresses(2),
+                    cids: ["cid"],
+                    error: "Mismatch between producers and cids lengths",
+                },
+                {
+                    desc: "with batch size too large",
+                    producers: genAddresses(MAX_BATCH_SIZE + 1),
+                    cids: Array(MAX_BATCH_SIZE + 1).fill("cid"),
+                    error: "Batch size exceeds max batch size",
+                },
+            ];
+
+            for (const scenario of scenarios) {
+                await expect(astaVerde.mintBatch(scenario.producers, scenario.cids)).to.be.revertedWith(scenario.error);
+            }
+        });
+
+        it("should mint a batch and assign tokens to contract", async function () {
+            const cids = ["cid1", "cid2"];
+            await astaVerde.mintBatch(genAddresses(cids.length), cids);
+            const batchID = await astaVerde.lastBatchID();
+            const { tokenIds } = await astaVerde.getBatchInfo(batchID);
+            expect(tokenIds.length).to.equal(cids.length);
+            expect(await astaVerde.balanceOf(await astaVerde.getAddress(), tokenIds[0])).to.equal(1);
+        });
+
+        it("should mint a small batch and return expected batch information", async function () {
+            await astaVerde.mintBatch(genAddresses(2), ["cid1", "cid2"]);
+            const batchID = await astaVerde.lastBatchID();
+            const { tokenIds, creationTime, price } = await astaVerde.getBatchInfo(batchID);
+            expect(tokenIds.length).to.equal(2);
+            expect(creationTime).to.be.gt(0);
+            expect(price).to.be.gt(0);
+        });
+
+        it("should allow user to buy tokens from a batch and update balances", async function () {
+            await mintBuyAndAdvance(astaVerde, user1, ["cid1", "cid2"], 1);
+            const batchID = await astaVerde.lastBatchID();
+            const { tokenIds } = await astaVerde.getBatchInfo(batchID);
+
+            console.log("BatchID:", batchID.toString());
+            console.log(
+                "TokenIDs:",
+                tokenIds.map((id) => id.toString()),
+            );
+            console.log("User1 address:", user1.address);
+
+            const balance = await astaVerde.balanceOf(user1.address, tokenIds[0]);
+            console.log("User1 balance of token:", balance.toString());
+
+            expect(balance).to.equal(1);
+        });
+
+        it("should revert batch purchase when sent funds are insufficient", async function () {
+            await astaVerde.mintBatch(genAddresses(2), ["cid1", "cid2"]);
+            const batchID = await astaVerde.lastBatchID();
+            await expect(astaVerde.buyBatch(batchID, 100, 1)).to.be.revertedWith("Insufficient funds sent");
+        });
+
+        it("should allow purchase of full batch and distribute funds accurately", async function () {
+            const { batchID, usdcAmount, producers } = await mintBuyAndAdvance(
+                astaVerde,
+                user,
+                ["cid1", "cid2", "cid3"],
+                3,
+            );
+            const { tokenIds } = await astaVerde.getBatchInfo(batchID);
+
+            await expectBalancesAfterPurchase(astaVerde, mockUSDC, user.address, producers, tokenIds, usdcAmount);
+        });
+
+        it("should handle batch purchase with non-standard base price", async function () {
+            await astaVerde.setBasePrice(97n * USDC_PRECISION);
+
+            const { batchID, usdcAmount, producers } = await mintBuyAndAdvance(
+                astaVerde,
+                user,
+                ["cid1", "cid2", "cid3"],
+                3,
+            );
+            const { tokenIds } = await astaVerde.getBatchInfo(batchID);
+
+            await expectBalancesAfterPurchase(astaVerde, mockUSDC, user.address, producers, tokenIds, usdcAmount);
+        });
+
+        it("should allow partial batch purchase and update token balances accordingly", async function () {
+            const { batchID, usdcAmount, producers } = await mintBuyAndAdvance(
+                astaVerde,
+                user,
+                ["cid1", "cid2", "cid3"],
+                2,
+            );
+            const { tokenIds } = await astaVerde.getBatchInfo(batchID);
+
+            expect(await astaVerde.balanceOf(user.address, tokenIds[0])).to.equal(1);
+            expect(await astaVerde.balanceOf(user.address, tokenIds[1])).to.equal(1);
+            expect(await astaVerde.balanceOf(user.address, tokenIds[2])).to.equal(0);
+        });
+
+        it("should revert when attempting to buy more tokens than available in batch", async function () {
+            const { batchID } = await mintBuyAndAdvance(astaVerde, user, ["cid1", "cid2", "cid3", "cid4", "cid5"], 2);
+
+            await expect(astaVerde.connect(user).buyBatch(batchID, 1000, 4)).to.be.revertedWith(
+                "Not enough tokens in batch",
+            );
+        });
+
+        it("should allow purchase of remaining tokens in a partially sold batch", async function () {
+            const { batchID, price } = await mintBuyAndAdvance(
+                astaVerde,
+                user,
+                ["cid1", "cid2", "cid3", "cid4", "cid5"],
+                2,
+            );
+
+            const usdcAmount = price * 3n;
+            const tx = await astaVerde.connect(user).buyBatch(batchID, usdcAmount, 3);
+            const receipt = await tx.wait();
+            if (receipt === null) {
+                throw new Error("Transaction receipt is null");
+            }
+            const block = await ethers.provider.getBlock(receipt.blockNumber);
+            if (block === null) {
+                throw new Error("Block is null");
+            }
+            const timestamp = block.timestamp;
+            await expect(tx).to.emit(astaVerde, "BatchSold").withArgs(batchID, timestamp, 5);
+        });
+    });
+
+    describe("Price Adjustment Mechanism", function () {
+        it("should increase price when sales occur within dayIncreaseThreshold", async function () {
+            const initialBasePrice = await astaVerde.basePrice();
+            const priceDelta = await astaVerde.priceDelta();
+            const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
+
+            await mintBuyAndAdvance(astaVerde, user, ["cid1"], 1, Number(dayIncreaseThreshold) * SECONDS_IN_A_DAY - 1);
+
+            const newBasePrice = await astaVerde.basePrice();
+            expect(newBasePrice).to.equal(initialBasePrice + priceDelta);
+        });
+
+        it("should not reduce price below priceFloor", async function () {
+            const priceFloor = await astaVerde.priceFloor();
+            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
+            await astaVerde.setBasePrice(priceFloor + 1n);
+
+            await waitNSeconds(Number(dayDecreaseThreshold) * SECONDS_IN_A_DAY);
+            await astaVerde.updateBasePrice();
+
+            const newBasePrice = await astaVerde.basePrice();
+            expect(newBasePrice).to.equal(priceFloor);
+        });
+
+        it("should maintain priceFloor when price is at floor and time passes without sales", async function () {
+            const priceFloor = await astaVerde.priceFloor();
+            await astaVerde.setBasePrice(priceFloor);
+
+            await waitNSeconds(SECONDS_IN_A_DAY * 7);
+            await astaVerde.updateBasePrice();
+
+            const newBasePrice = await astaVerde.basePrice();
+            expect(newBasePrice).to.equal(priceFloor);
+        });
+
+        it("should adjust price up and down based on sales activity over time", async function () {
+            const initialBasePrice = await astaVerde.basePrice();
+            const priceDelta = await astaVerde.priceDelta();
+            const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
+            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
+
+            await mintBuyAndAdvance(astaVerde, user, ["cid1"], 1, Number(dayIncreaseThreshold) * SECONDS_IN_A_DAY - 1);
+            let newBasePrice = await astaVerde.basePrice();
+            expect(newBasePrice).to.equal(initialBasePrice + priceDelta);
+
+            await waitNSeconds(Number(dayDecreaseThreshold) * SECONDS_IN_A_DAY);
+            await astaVerde.updateBasePrice();
+            newBasePrice = await astaVerde.basePrice();
+            expect(newBasePrice).to.be.lt(initialBasePrice + priceDelta);
+
+            await mintBuyAndAdvance(astaVerde, user, ["cid2"], 1, Number(dayIncreaseThreshold) * SECONDS_IN_A_DAY - 1);
+            newBasePrice = await astaVerde.basePrice();
+            expect(newBasePrice).to.be.gt(initialBasePrice);
+        });
+    });
+
+    describe("Revenue splitting", function () {
+        it("should distribute revenue between producers and platform according to set percentages", async function () {
+            const { batchID, usdcAmount, producers } = await mintBuyAndAdvance(
+                astaVerde,
+                user,
+                ["cid1", "cid2", "cid3"],
+                3,
+            );
+            const { tokenIds } = await astaVerde.getBatchInfo(batchID);
+
+            await expectBalancesAfterPurchase(astaVerde, mockUSDC, user.address, producers, tokenIds, usdcAmount);
+        });
+    });
+
+    describe("Contract management", function () {
+        const parameterTests = [
+            { method: "setPlatformSharePercentage", value: 11, getter: "platformSharePercentage" },
+            { method: "setPriceFloor", value: PRICE_FLOOR + 1n, getter: "priceFloor" },
+            { method: "setMaxBatchSize", value: MAX_BATCH_SIZE + 1, getter: "maxBatchSize" },
+            { method: "setBasePrice", value: BASE_PRICE + 1n, getter: "basePrice" },
+        ] as const;
+
+        parameterTests.forEach(({ method, value, getter }) => {
+            it(`should correctly set ${getter}`, async function () {
+                await astaVerde[method](value);
+                expect(await astaVerde[getter]()).to.equal(value);
+            });
+        });
+
+        it("should revert when setting parameters to invalid values", async function () {
+            const scenarios = [
+                { method: "setPlatformSharePercentage", value: 101, error: "Share must be between 0 and 100" },
+                { method: "setPriceFloor", value: 0, error: "Invalid price floor" },
+                { method: "setBasePrice", value: 0, error: "Invalid starting price" },
+                { method: "setMaxBatchSize", value: 0, error: "Invalid batch size" },
+            ] as const;
+
+            for (const scenario of scenarios) {
+                await expect(astaVerde[scenario.method](scenario.value)).to.be.revertedWith(scenario.error);
+            }
+        });
+
+        it("should revert pause attempt by non-owner account", async function () {
+            const nonOwner = (await ethers.getSigners())[1];
+            await expect(astaVerde.connect(nonOwner).pause()).to.be.reverted;
+        });
+
+        it("should revert unpause attempt by non-owner account", async function () {
+            const nonOwner = (await ethers.getSigners())[1];
+            await expect(astaVerde.connect(nonOwner).unpause()).to.be.reverted;
+        });
+
+        it("should prevent batch purchases when contract is paused", async function () {
+            await astaVerde.pause();
+            const batchID = await astaVerde.lastBatchID();
+            await expect(astaVerde.buyBatch(batchID, 1000, 1)).to.be.reverted;
+        });
+    });
+
+    describe("Token redemption", function () {
+        it("should allow token owner to redeem tokens and emit events", async function () {
+            const cids = ["cid1", "cid2", "cid3"];
+            const { batchID, usdcAmount } = await setupBatchAndBuy(cids, cids.length);
+            await astaVerde.connect(user).buyBatch(batchID, usdcAmount, cids.length);
+
+            const { tokenIds } = await astaVerde.getBatchInfo(batchID);
+
+            const redeemTx = await astaVerde.connect(user).redeemTokens([...tokenIds]);
+
+            for (let i = 0; i < tokenIds.length; i++) {
+                await expect(redeemTx)
+                    .to.emit(astaVerde, "TokenReedemed")
+                    .withArgs(
+                        tokenIds[i],
+                        user.address,
+                        await ethers.provider.getBlock("latest").then((b) => b!.timestamp),
+                    );
+            }
+
+            for (let i = 0; i < tokenIds.length; i++) {
+                const tokenInfo = await astaVerde.tokens(tokenIds[i]);
+                expect(tokenInfo.isRedeemed).to.be.true;
+            }
+        });
+        it("should revert redemption attempt by non-owner of tokens", async function () {
+            const cids = ["cid1", "cid2"];
+            const { batchID, usdcAmount } = await setupBatchAndBuy(cids, cids.length);
+            await astaVerde.connect(user).buyBatch(batchID, usdcAmount, cids.length);
+
+            const { tokenIds } = await astaVerde.getBatchInfo(batchID);
+
+            const nonOwner = (await ethers.getSigners())[2];
+            await expect(astaVerde.connect(nonOwner).redeemTokens([...tokenIds])).to.be.revertedWith(
+                "Only the owner or approved operator can perform this action",
+            );
+        });
+
+        it("should revert attempt to redeem already redeemed tokens", async function () {
+            const cids = ["cid1"];
+            const { batchID, usdcAmount } = await setupBatchAndBuy(cids, cids.length);
+            await astaVerde.connect(user).buyBatch(batchID, usdcAmount, cids.length);
+
+            const { tokenIds } = await astaVerde.getBatchInfo(batchID);
+
+            await astaVerde.connect(user).redeemTokens([...tokenIds]);
+
+            await expect(astaVerde.connect(user).redeemTokens([...tokenIds])).to.be.revertedWith(
+                "Token is already redeemed",
+            );
+        });
+
+        it("should revert attempt to redeem non-existent tokens", async function () {
+            const nonExistentTokenId = 9999;
+            const owner = await ethers.provider.getSigner(0);
+            await expect(astaVerde.connect(owner).redeemTokens([nonExistentTokenId])).to.be.revertedWith(
+                "Token does not exist",
+            );
+        });
+    });
 }

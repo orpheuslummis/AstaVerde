@@ -1,42 +1,36 @@
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ethers } from "hardhat";
+import { AstaVerde, MockUSDC } from "../types";
+import { USDC_PRECISION } from "./lib";
 
-import { USDC_PRECISION } from "./helpers";
+export async function deployAstaVerdeFixture(): Promise<{
+    astaVerde: AstaVerde;
+    mockUSDC: MockUSDC;
+    admin: HardhatEthersSigner;
+    user1: HardhatEthersSigner;
+    user2: HardhatEthersSigner;
+}> {
+    const [admin, user1, user2] = await ethers.getSigners();
 
-export async function deployAstaVerdeFixture() {
-	async function deployMockUSDCFixture(admin: HardhatEthersSigner) {
-		const mockUSDCFactory = await ethers.getContractFactory("MockUSDC");
-		const mockUSDC = await mockUSDCFactory
-			.connect(admin)
-			.deploy(10000000n * USDC_PRECISION);
-		await mockUSDC.waitForDeployment();
+    const MockUSDC = await ethers.getContractFactory("MockUSDC");
+    const mockUSDC = await MockUSDC.deploy(1000000000n * USDC_PRECISION);
+    await mockUSDC.waitForDeployment();
 
-		return mockUSDC;
-	}
-	// async function deployAnotherERC20Fixture(admin: HardhatEthersSigner) {
-	//   const anotherERC20Factory = await ethers.getContractFactory("AnotherERC20");
-	//   const anotherERC20 = await anotherERC20Factory.connect(admin).deploy(10000000);
-	//   await anotherERC20.waitForDeployment();
+    await mockUSDC.mint(admin.address, 10000000n * USDC_PRECISION);
+    await mockUSDC.mint(user1.address, 1000000n * USDC_PRECISION);
+    await mockUSDC.mint(user2.address, 1000000n * USDC_PRECISION);
 
-	//   return anotherERC20;
-	// }
+    const AstaVerde = await ethers.getContractFactory("AstaVerde");
+    const astaVerde = await AstaVerde.deploy(admin.address, await mockUSDC.getAddress());
+    await astaVerde.waitForDeployment();
 
-	// const anotherERC20 = await deployAnotherERC20Fixture(admin);
-	const signers = await ethers.getSigners();
-	const admin = signers[0];
+    await mockUSDC.connect(admin).approve(await astaVerde.getAddress(), ethers.MaxUint256);
+    await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), ethers.MaxUint256);
+    await mockUSDC.connect(user2).approve(await astaVerde.getAddress(), ethers.MaxUint256);
 
-	const mockUSDC = await deployMockUSDCFixture(admin);
-	const mockUSDCAddress = await mockUSDC.getAddress();
+    console.log("AstaVerde address:", await astaVerde.getAddress());
+    console.log("MockUSDC address:", await mockUSDC.getAddress());
+    console.log("Admin address:", await admin.getAddress());
 
-	const astaVerdeFactory = await ethers.getContractFactory("AstaVerde");
-	const astaVerde = await astaVerdeFactory
-		.connect(admin)
-		.deploy(admin, mockUSDCAddress);
-	await astaVerde.waitForDeployment();
-
-	console.log("astaVerde address:", await astaVerde.getAddress());
-	console.log("mockUSDC address:", await mockUSDC.getAddress());
-	console.log("admin address:", await admin.getAddress());
-
-	return { astaVerde, mockUSDC };
+    return { astaVerde, mockUSDC, admin, user1, user2 };
 }
