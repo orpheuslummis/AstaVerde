@@ -2,11 +2,31 @@
 
 AstaVerde is a platform for trading verified carbon offsets as non-fungible tokens (NFTs). Built on Ethereum using the ERC-1155 standard, it employs a Dutch Auction mechanism for pricing carbon credit batches.
 
-## Features
+## Dutch Auction Mechanism
 
--   **Dutch Auction Mechanism**: Prices start at 230 USDC/unit and decay linearly over four days to a floor of 40 USDC/unit.
--   **Batch Trading**: Carbon credits are grouped into batches, with all tokens in a batch sharing the same price.
--   **ERC-1155 Smart Contract**: Utilizes OpenZeppelin's ERC1155, ERC1155Burnable, Ownable, Pausable, and ReentrancyGuard contracts.
+The AstaVerde platform uses a Dutch auction mechanism for pricing carbon credit batches. Here are the key features of the auction:
+
+-   **Starting Price**: The initial base price is set to `basePrice` (default: 230 USDC) per unit.
+-   **Price Floor**: A minimum price of `priceFloor` (default: 40 USDC) per unit is enforced.
+-   **Daily Price Reduction**: The price decreases by `priceDecreaseRate` (default: 1 USDC) per day for unsold tokens.
+-   **Dynamic Pricing**: The base price for new batches is adjusted based on recent sales:
+    -   If a sale occurs within `dayIncreaseThreshold` days (default: 2) of the last price adjustment, the base price increases by `priceDelta` (default: 10 USDC).
+    -   If no sales occur for `dayDecreaseThreshold` days (default: 4), the base price decreases according to the daily reduction rate.
+-   **Revenue Split**: `100 - platformSharePercentage`% (default: 70%) of each sale goes to the token producer, while `platformSharePercentage`% (default: 30%) goes to the platform.
+-   **Batch Pricing**: All tokens within a batch share the same price, which follows the Dutch auction dynamics.
+
+The smart contract owner can adjust various parameters, including:
+
+-   `platformSharePercentage`: The percentage of sales that goes to the platform
+-   `maxBatchSize`: The maximum number of tokens in a batch
+-   `basePrice`: The starting price for new batches
+-   `priceFloor`: The minimum price for tokens
+-   `priceDelta`: The amount by which the base price increases after a quick sale
+-   `priceDecreaseRate`: The daily price reduction rate
+-   `dayIncreaseThreshold`: The number of days within which a sale triggers a price increase
+-   `dayDecreaseThreshold`: The number of days without sales that trigger a price decrease
+
+These parameters allow for fine-tuning of the auction mechanism to respond to market conditions and platform requirements. The contract owner can modify these values using specific setter functions provided in the smart contract.
 
 ## User Roles
 
@@ -106,12 +126,6 @@ AstaVerde is a platform for trading verified carbon offsets as non-fungible toke
     - ALCHEMY_API_KEY
     - WALLET_CONNECT_PROJECT_ID
 
-## Usage
-
--   **Credit Producers**: Generate and verify carbon offsets, then list them on the platform.
--   **Buyers**: Browse available batches and use the `buyBatch` function to purchase.
--   **Platform Owner**: Maintain the smart contract, mint new batches, and oversee the auction.
-
 ## Minting
 
 1. Prepare a CSV file with token metadata and an image folder.
@@ -131,14 +145,6 @@ When updating the contract, remember to update the contract address and ABI in:
 -   `scripts/events/contracts.mjs`
 -   `.env.local` for minting scripts
 
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -147,7 +153,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 -   The market can be paused if USDC becomes depegged.
 -   Always ensure your `.env.local` and `webapp/.env.local` files are up to date and never committed to the repository.
-
-## Support
-
-For support, please open an issue in the GitHub repository.
