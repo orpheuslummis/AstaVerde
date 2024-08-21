@@ -186,6 +186,37 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "newPrice",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "daysSinceLastAdjustment",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "totalPlatformSalesSinceLastAdjustment",
+          "type": "uint256"
+        }
+      ],
+      "name": "BasePriceForNewBatchesAdjusted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "batchId",
           "type": "uint256"
         },
@@ -279,37 +310,6 @@
         }
       ],
       "name": "Paused",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "newPrice",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "daysSinceLastAdjustment",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "totalSalesSinceLastAdjustment",
-          "type": "uint256"
-        }
-      ],
-      "name": "PlatformBasePriceAdjusted",
       "type": "event"
     },
     {
@@ -747,6 +747,19 @@
     },
     {
       "inputs": [],
+      "name": "lastPriceChangeTime",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "lastTokenID",
       "outputs": [
         {
@@ -971,17 +984,17 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "lastAdjustmentTime",
+          "name": "lastBaseAdjustmentTime",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "lastSaleTime",
+          "name": "lastPlatformSaleTime",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "totalSalesSinceLastAdjustment",
+          "name": "totalPlatformSalesSinceLastAdjustment",
           "type": "uint256"
         }
       ],
@@ -1105,7 +1118,7 @@
           "type": "uint256"
         }
       ],
-      "name": "setAuctionTimeThresholds",
+      "name": "setAuctionDayThresholds",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
