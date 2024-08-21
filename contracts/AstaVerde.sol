@@ -205,7 +205,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     }
 
     // Updates the base price for future batches based on overall platform activity
-    function updateBasePrice() public {
+    function updateBasePrice() public returns (uint256) {
         uint256 daysSinceLastBaseAdjustment = ((block.timestamp - pricingInfo.lastBaseAdjustmentTime) +
             SECONDS_IN_A_DAY -
             1) / SECONDS_IN_A_DAY;
@@ -240,6 +240,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
         pricingInfo.lastBaseAdjustmentTime = block.timestamp;
         pricingInfo.totalPlatformSalesSinceLastAdjustment = 0;
+
+        return basePrice;
     }
 
     function getBatchInfo(

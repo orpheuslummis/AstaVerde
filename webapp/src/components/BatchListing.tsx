@@ -7,7 +7,7 @@ export function BatchListing() {
     const { batches } = useAppContext();
 
     if (batches.length === 0) {
-        return <div>Loading batches...</div>;
+        return <div className="text-center py-8 text-gray-600">No batch minted yet.</div>;
     }
 
     // Sort batches: available first, then sold out
@@ -21,11 +21,7 @@ export function BatchListing() {
         <div className="container mx-auto px-4 py-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {sortedBatches.map((batch) => (
-                    <BatchCard
-                        key={batch.id}
-                        batch={batch}
-                        isSoldOut={batch.itemsLeft === 0}
-                    />
+                    <BatchCard key={batch.id} batch={batch} isSoldOut={batch.itemsLeft === 0} />
                 ))}
             </div>
         </div>
