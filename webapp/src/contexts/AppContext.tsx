@@ -44,19 +44,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     const { data: batchesData, refetch: refetchBatchesData } = useReadContracts({
-        contracts: lastBatchID
-            ? Array.from({ length: Number(lastBatchID) }, (_, i) => ({
-                  ...astaverdeContractConfig,
-                  functionName: "getBatchInfo",
-                  args: [BigInt(i + 1)],
-              }))
-            : [],
+        contracts:
+            lastBatchID !== undefined
+                ? Array.from({ length: Number(lastBatchID) + 1 }, (_, i) => ({
+                      ...astaverdeContractConfig,
+                      functionName: "getBatchInfo",
+                      args: [BigInt(i)],
+                  }))
+                : [],
     });
 
     const fetchBatches = useCallback(async () => {
+        console.log("Fetching batches...");
         await refetchLastBatchID();
+        console.log("Last Batch ID:", lastBatchID);
         await refetchBatchesData();
-    }, [refetchLastBatchID, refetchBatchesData]);
+        console.log("Batches Data:", batchesData);
+    }, [refetchLastBatchID, refetchBatchesData, lastBatchID, batchesData]);
 
     const refetchBatches = useCallback(async () => {
         try {
@@ -82,17 +86,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
+        console.log("batchesData changed:", batchesData);
         if (batchesData) {
+            console.log("Processing batchesData:", batchesData);
             const newBatches = batchesData
                 .map((data, index) => {
                     if (data && data.result && Array.isArray(data.result)) {
                         const [batchId, tokenIds, creationTime, price, remainingTokens] = data.result;
-                        return new Batch(BigInt(index + 1), tokenIds, creationTime, price, remainingTokens);
+                        console.log(`Processing batch ${index}:`, {
+                            batchId,
+                            tokenIds,
+                            creationTime,
+                            price,
+                            remainingTokens,
+                        });
+                        const batch = new Batch(batchId, tokenIds, creationTime, price, remainingTokens);
+                        console.log("Created Batch object:", batch);
+                        return batch;
                     }
+                    console.log(`Skipping invalid batch data for index ${index}`);
                     return null;
                 })
                 .filter((batch): batch is Batch => batch !== null);
+            console.log("New batches:", newBatches);
             setBatches(newBatches);
+        } else {
+            console.log("batchesData is null or undefined");
         }
     }, [batchesData]);
 
@@ -114,6 +133,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const redeemTokens = useContractInteraction(astaverdeContractConfig, "redeemTokens").execute;
     const mintBatch = useContractInteraction(astaverdeContractConfig, "mintBatch").execute;
     const getBatchInfo = useContractInteraction(astaverdeContractConfig, "getBatchInfo").execute;
+
+    const manuallyFetchBatch = useCallback(
+        async (batchId: number) => {
+            console.log(`Manually fetching batch ${batchId}`);
+            const result = await getBatchInfo(batchId);
+            console.log(`Manually fetched batch ${batchId} result:`, result);
+        },
+        [getBatchInfo],
+    );
+
+    useEffect(() => {
+        manuallyFetchBatch(0); // Check for batch 0
+    }, [manuallyFetchBatch]);
 
     const adminControls = useMemo(
         () => ({
@@ -140,6 +172,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 try {
                     const txHash = await mintBatch(producers, cids);
                     console.log("Mint batch transaction hash:", txHash);
+                    await refetchBatches(); // Add this line to refetch batches after minting
                     return txHash;
                 } catch (error) {
                     console.error("Error minting batch:", error);
@@ -159,6 +192,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             claimPlatformFunds,
             updateBasePrice,
             mintBatch,
+            refetchBatches,
         ],
     );
 

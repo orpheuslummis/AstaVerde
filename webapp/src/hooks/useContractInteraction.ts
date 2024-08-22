@@ -1,9 +1,10 @@
 import { multicall } from "@wagmi/core";
 import { useCallback, useState } from "react";
-import { parseUnits } from "viem";
+import { formatUnits, parseUnits } from "viem";
 import { usePublicClient, useReadContract, useSimulateContract, useWalletClient, useWriteContract } from "wagmi";
 import { USDC_DECIMALS } from "../app.config";
 import { useAppContext } from "../contexts/AppContext";
+import { Batch } from "../lib/batch";
 import { customToast } from "../utils/customToast";
 import { config } from "../wagmi";
 
@@ -112,7 +113,12 @@ export function useContractInteraction(contractConfig: any, functionName: string
                     console.log("Executing writeContractAsync with request:", request);
                     const hash = await writeContractAsync(request);
                     console.log(`${functionName} transaction hash:`, hash);
-                    return hash;
+
+                    // Wait for the transaction receipt
+                    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+                    console.log(`${functionName} transaction receipt:`, receipt);
+
+                    return receipt; // Return the receipt instead of just the hash
                 }
 
                 throw new Error(`Unknown function type: ${functionName}`);
@@ -274,7 +280,18 @@ export function useContractInteraction(contractConfig: any, functionName: string
 
     const getBatchInfo = useCallback(
         async (batchId: number) => {
-            return execute(BigInt(batchId));
+            console.log(`Fetching info for batch ${batchId}`);
+            const result = await execute(BigInt(batchId));
+            console.log(`Raw batch ${batchId} info:`, result);
+            if (Array.isArray(result) && result.length === 5) {
+                const [id, tokenIds, timestamp, price, itemsLeft] = result;
+                const batch = new Batch(id, tokenIds, timestamp, price, itemsLeft);
+                console.log(`Processed batch ${batchId} info:`, batch);
+                return batch;
+            } else {
+                console.error(`Unexpected format for batch ${batchId} info:`, result);
+                return null;
+            }
         },
         [execute],
     );
@@ -334,18 +351,42 @@ export function useBatchOperations(batchId: number, totalPrice: number) {
                     await refetchAllowance();
                 }
 
-                const buyTx = await walletClient.writeContract({
+                // Prepare the arguments for the buyBatch function
+                const buyBatchArgs = [
+                    BigInt(batchId),
+                    parseUnits(price.toString(), USDC_DECIMALS),
+                    BigInt(tokenAmount),
+                ];
+
+                // Estimate gas for the buy transaction
+                const gasEstimate = await publicClient.estimateContractGas({
                     ...astaverdeContractConfig,
                     functionName: "buyBatch",
-                    args: [BigInt(batchId), parseUnits(price.toString(), USDC_DECIMALS), BigInt(tokenAmount)],
+                    args: buyBatchArgs,
+                    account: walletClient.account.address,
                 });
+
+                // Add a buffer to the estimated gas (e.g., 20% more)
+                const estimatedGas = (gasEstimate * 120n) / 100n;
+
+                console.log("Estimated gas:", formatUnits(estimatedGas, 0));
+
+                const { request } = await publicClient.simulateContract({
+                    ...astaverdeContractConfig,
+                    functionName: "buyBatch",
+                    args: buyBatchArgs,
+                    account: walletClient.account.address,
+                    gas: estimatedGas,
+                });
+
+                const buyTx = await walletClient.writeContract(request);
                 customToast.info("Buy transaction submitted");
                 await publicClient.waitForTransactionReceipt({ hash: buyTx });
                 customToast.success("Purchase confirmed");
                 await refetchBatches();
             } catch (error) {
                 console.error("Error in approve and buy process:", error);
-                customToast.error("Transaction failed");
+                customToast.error("Transaction failed: " + (error instanceof Error ? error.message : String(error)));
             } finally {
                 setIsLoading(false);
             }
