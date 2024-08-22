@@ -61,9 +61,7 @@ export default function Page({ params }: { params: { id: string } }) {
             <h2 className="text-2xl font-semibold mb-4">Token Cards</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {tokenIds && tokenIds.length > 0 ? (
-                    tokenIds.map((tokenId: bigint) => (
-                        <TokenCard key={tokenId.toString()} tokenId={tokenId} />
-                    ))
+                    tokenIds.map((tokenId: bigint) => <TokenCard key={tokenId.toString()} tokenId={tokenId} />)
                 ) : (
                     <p>No tokens available for this batch.</p>
                 )}
