@@ -4,12 +4,12 @@ import { useState } from "react";
 import { parseUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import { USDC_DECIMALS } from "../../app.config";
-import { AppProvider, useAppContext } from "../../contexts/AppContext";
+import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import { astaverdeContractConfig, getUsdcContractConfig } from "../../lib/contracts";
 import { customToast } from "../../utils/customToast";
 
-function Page() {
+export default function Page() {
     const { address, isConnected } = useAccount();
     const { adminControls } = useAppContext();
     const [producers, setProducers] = useState<string[]>([""]);
@@ -150,13 +150,5 @@ function Page() {
                 </div>
             </div>
         </div>
-    );
-}
-
-export default function TestMintPage() {
-    return (
-        <AppProvider>
-            <Page />
-        </AppProvider>
     );
 }

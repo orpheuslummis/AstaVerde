@@ -2,7 +2,7 @@
 
 import { Client, create } from "@web3-storage/w3up-client";
 import { useCallback, useEffect, useState } from "react";
-import { AppProvider, useAppContext } from "../../contexts/AppContext";
+import { useAppContext } from "../../contexts/AppContext";
 import { useWallet } from "../../contexts/WalletContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import { customToast } from "../../utils/customToast";
@@ -21,7 +21,7 @@ interface UploadResult {
     imageCid?: string;
 }
 
-function MintPage() {
+export default function MintPage() {
     const { isConnected, address, connect } = useWallet();
     const { adminControls, astaverdeContractConfig } = useAppContext();
     const [tokens, setTokens] = useState<TokenMetadata[]>([
@@ -333,13 +333,5 @@ function MintPage() {
                 </button>
             </div>
         </div>
-    );
-}
-
-export default function MintPageWrapper() {
-    return (
-        <AppProvider>
-            <MintPage />
-        </AppProvider>
     );
 }
