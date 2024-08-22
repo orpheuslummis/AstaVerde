@@ -1,7 +1,7 @@
 "use client";
 
 import { Client, create } from "@web3-storage/w3up-client";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useAppContext } from "../../contexts/AppContext";
 import { useWallet } from "../../contexts/WalletContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
