@@ -1,13 +1,25 @@
 "use client";
 
+import { useEffect } from "react";
 import { useAppContext } from "../contexts/AppContext";
 import { BatchCard } from "./BatchCard";
 
 export function BatchListing() {
-    const { batches } = useAppContext();
+    const { batches, refetchBatches } = useAppContext();
+
+    useEffect(() => {
+        console.log("BatchListing received batches:", batches);
+        const intervalId = setInterval(() => {
+            console.log("Refetching batches...");
+            refetchBatches();
+        }, 10000); // Refetch every 10 seconds
+
+        return () => clearInterval(intervalId);
+    }, [refetchBatches, batches]);
 
     if (batches.length === 0) {
-        return <div className="text-center py-8 text-gray-600">No batch minted yet.</div>;
+        console.log("No batches available");
+        return <div className="text-center py-8 text-gray-600">No batches available yet.</div>;
     }
 
     // Sort batches: available first, then sold out
@@ -16,6 +28,8 @@ export function BatchListing() {
         if (a.itemsLeft === 0 && b.itemsLeft > 0) return 1;
         return 0;
     });
+
+    console.log("Sorted batches:", sortedBatches);
 
     return (
         <div className="container mx-auto px-4 py-8">
