@@ -13,6 +13,7 @@
     "@radix-ui/react-slider": "^1.2.0",
     "@tanstack/react-query": "^5.51.11",
     "@wagmi/core": "^2.13.1",
+    "@web3-storage/w3up-client": "^16.0.0",
     "abitype": "^1.0.5",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
