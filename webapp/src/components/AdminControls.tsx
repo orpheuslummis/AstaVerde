@@ -252,7 +252,7 @@ function AuctionTimeThresholdsControl() {
             dayDecreaseThreshold &&
             BigInt(dayIncreaseThreshold) < BigInt(dayDecreaseThreshold)
         ) {
-            adminControls.setAuctionTimeThresholds(dayIncreaseThreshold, dayDecreaseThreshold);
+            adminControls.setAuctionDayThresholds(dayIncreaseThreshold, dayDecreaseThreshold);
         } else {
             alert("Increase threshold must be lower than decrease threshold");
         }
