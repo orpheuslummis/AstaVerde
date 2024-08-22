@@ -1,11 +1,11 @@
 "use client";
 
+import { ConnectKitButton } from "connectkit";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAccount, useBalance } from "wagmi";
 import { getUsdcContractConfig } from "../lib/contracts";
-import { ConnectKitButton } from "./ConnectKitButton";
 
 interface HeaderProps {
     links: { name: string; url: string }[];
@@ -38,8 +38,7 @@ export function Header({ links }: HeaderProps) {
         setIsMenuOpen((prev) => !prev);
     };
 
-    const balanceClassName =
-        "hidden lg:block border border-gray-300 rounded-md bg-blue-100 p-2";
+    const balanceClassName = "hidden lg:block border border-gray-300 rounded-md bg-blue-100 p-2";
 
     return (
         <header className="w-full flex flex-wrap items-center justify-between bg-primary p-4 shadow-md">
@@ -57,9 +56,7 @@ export function Header({ links }: HeaderProps) {
                 </Link>
             </div>
 
-            <nav
-                className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center`}
-            >
+            <nav className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center`}>
                 <ul className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
                     {links.map((link, index) => (
                         <li key={index} className="lg:mr-4">

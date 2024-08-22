@@ -1,4 +1,3 @@
-// src/components/GlobalLoadingProvider.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const GlobalLoadingContext = createContext<{
