@@ -1,6 +1,6 @@
 "use client";
 
-import { Client, create } from "@web3-storage/w3up-client";
+import { ethers, Log } from "ethers";
 import React, { useCallback, useEffect, useState } from "react";
 import { useAppContext } from "../../contexts/AppContext";
 import { useWallet } from "../../contexts/WalletContext";
@@ -8,6 +8,7 @@ import { useContractInteraction } from "../../hooks/useContractInteraction";
 import { customToast } from "../../utils/customToast";
 
 const IPFS_PREFIX = "ipfs://";
+const EXTERNAL_URL = "https://marketplace.ecotradezone.com/token/";
 
 interface TokenMetadata {
     name: string;
@@ -16,13 +17,8 @@ interface TokenMetadata {
     image: File | null;
 }
 
-interface UploadResult {
-    metadataCid: string;
-    imageCid?: string;
-}
-
 export default function MintPage() {
-    const { isConnected, address, connect } = useWallet();
+    const { isConnected, address } = useWallet();
     const { adminControls, astaverdeContractConfig } = useAppContext();
     const [tokens, setTokens] = useState<TokenMetadata[]>([
         {
@@ -36,10 +32,25 @@ export default function MintPage() {
     const [email, setEmail] = useState("");
     const [lastTokenId, setLastTokenId] = useState<number | null>(null);
     const [uploadImages, setUploadImages] = useState(true);
-    const [spaceDID, setSpaceDID] = useState<string | null>(null);
+    const [web3StorageClient, setWeb3StorageClient] = useState<any>(null);
 
     const { execute: mintBatch } = useContractInteraction(astaverdeContractConfig, "mintBatch");
     const { execute: getLastTokenId } = useContractInteraction(astaverdeContractConfig, "lastTokenID");
+    const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
+
+    useEffect(() => {
+        const loadWeb3StorageClient = async () => {
+            try {
+                const { create } = await import("@web3-storage/w3up-client");
+                const client = await create();
+                setWeb3StorageClient(client);
+            } catch (error) {
+                console.error("Failed to load Web3Storage client:", error);
+            }
+        };
+
+        loadWeb3StorageClient();
+    }, []);
 
     useEffect(() => {
         const fetchLastTokenId = async () => {
@@ -57,94 +68,43 @@ export default function MintPage() {
         }
     }, [isConnected, getLastTokenId]);
 
-    const createAndSetSpace = useCallback(async (client: any) => {
-        try {
-            const space = await client.createSpace("astaverde-space");
-            await client.setCurrentSpace(space.did());
-            setSpaceDID(space.did());
-            return space.did();
-        } catch (error) {
-            console.error("Error creating space:", error);
-            throw new Error(`Failed to create space: ${(error as Error).message}`);
-        }
-    }, []);
-
-    const uploadToIPFS = useCallback(
-        async (content: File | object, isImage: boolean = false): Promise<UploadResult> => {
-            console.log("Starting uploadToIPFS function");
-            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                throw new Error("Invalid email format");
+    const connectToSpace = useCallback(
+        async (spaceName: string) => {
+            if (!web3StorageClient) {
+                throw new Error("Web3Storage client is not initialized");
             }
             try {
-                console.log("Creating client");
-                const client: Client = await create();
-                console.log("Client created successfully");
+                const userAccount = await web3StorageClient.login(email);
+                const space = await web3StorageClient.createSpace(spaceName);
+                await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for plan selection
+                await userAccount.provision(space.did());
+                await space.createRecovery(userAccount.did());
+                await space.save();
+                await web3StorageClient.setCurrentSpace(space.did());
+                return web3StorageClient;
+            } catch (error) {
+                console.error("Error connecting to space:", error);
+                throw error;
+            }
+        },
+        [web3StorageClient, email],
+    );
 
-                console.log("Logging in with email:", email);
-                await client.login(email as `${string}@${string}`);
-                console.log("Login successful");
-
-                console.log("Getting current space");
-                let space = client.currentSpace();
-                console.log("Current space:", space);
-
-                if (!space) {
-                    console.log("No current space, creating new space");
-                    space = (await client.createSpace("astaverde-space")) as any;
-                    console.log("New space created:", space);
-                    if (!space) {
-                        throw new Error("Failed to create space");
-                    }
-                }
-
-                console.log("Setting current space");
-                await client.setCurrentSpace(space.did());
-                console.log("Current space set successfully");
-
-                console.log("Getting accounts");
-                const accounts = await client.accounts();
-                console.log("Accounts:", accounts);
-
-                const accountDID = Object.keys(accounts)[0];
-                console.log("First account DID:", accountDID);
-
-                if (accountDID) {
-                    const account = accounts[accountDID as keyof typeof accounts]; // Type assertion
-                    console.log("Account:", account);
-
-                    if (account) {
-                        console.log("Attempting to provision space");
-                        try {
-                            await account.provision(space.did());
-                            console.log("Space provisioned successfully");
-                        } catch (error) {
-                            console.warn("Space provisioning failed, it might already be provisioned:", error);
-                        }
-                    }
-                }
-
-                if (isImage) {
-                    console.log("Uploading image");
-                    if (content instanceof File) {
-                        const imageCid = await client.uploadFile(content);
-                        console.log("Image uploaded, CID:", imageCid.toString());
-                        return { imageCid: imageCid.toString(), metadataCid: "" };
-                    } else {
-                        throw new Error("Invalid content for image upload");
-                    }
-                } else {
-                    console.log("Uploading metadata");
-                    const metadataBlob = new Blob([JSON.stringify(content)], { type: "application/json" });
-                    const metadataCid = await client.uploadFile(metadataBlob);
-                    console.log("Metadata uploaded, CID:", metadataCid.toString());
-                    return { metadataCid: metadataCid.toString() };
-                }
+    const uploadToIPFS = useCallback(
+        async (content: File | string, contentType: string): Promise<string> => {
+            if (!web3StorageClient) {
+                throw new Error("Web3Storage client is not initialized");
+            }
+            try {
+                const blob = content instanceof File ? content : new Blob([content], { type: contentType });
+                const cid = await web3StorageClient.uploadFile(blob);
+                return cid.toString();
             } catch (error) {
                 console.error("Error in uploadToIPFS:", error);
                 throw new Error(`Failed to upload to IPFS: ${(error as Error).message}`);
             }
         },
-        [email],
+        [web3StorageClient],
     );
 
     const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>, index: number) => {
@@ -158,54 +118,66 @@ export default function MintPage() {
         setTokens((prev) => prev.map((token, i) => (i === index ? { ...token, [field]: value } : token)));
     }, []);
 
+    const queryMintedTokens = useCallback(
+        async (batchId: bigint) => {
+            try {
+                const batchInfo = await getBatchInfo(batchId);
+                console.log(`\nBatch ${batchId} Info:`);
+                console.log(`Token IDs: ${batchInfo.tokenIds.map((id: bigint) => id.toString()).join(", ")}`);
+                console.log(`Creation Time: ${new Date(Number(batchInfo.creationTime) * 1000).toLocaleString()}`);
+                console.log(`Price: ${ethers.formatUnits(batchInfo.price, 6)} USDC`);
+                console.log(`Remaining Tokens: ${batchInfo.remainingTokens.toString()}`);
+
+                console.log("\nView tokens on marketplace:");
+                batchInfo.tokenIds.forEach((id: bigint) => {
+                    console.log(`Token ${id}: ${EXTERNAL_URL}${id}`);
+                });
+            } catch (error) {
+                console.error("Error querying minted tokens:", error);
+            }
+        },
+        [getBatchInfo],
+    );
+
     const handleMint = useCallback(async () => {
-        console.log("Starting handleMint function");
         if (!isConnected) {
-            console.log("Wallet not connected");
             customToast.error("Please connect your wallet first");
             return;
         }
 
         if (!email) {
-            console.log("Email not provided");
             customToast.error("Please provide an email address");
             return;
         }
 
+        setIsUploading(true);
         const producers: string[] = [];
         const cids: string[] = [];
 
         try {
-            console.log("Preparing tokens for minting");
+            const client = await connectToSpace("astaverde-dev");
+
             for (const token of tokens) {
-                console.log("Processing token:", token);
                 try {
                     let imageCid = "";
-                    if (uploadImages) {
-                        console.log("Uploading image for token");
-                        const imageFile = token.image;
-                        if (imageFile) {
-                            const imageResult = await uploadToIPFS(imageFile, true);
-                            imageCid = imageResult.imageCid || "";
-                            console.log("Image uploaded, CID:", imageCid);
-                        }
+                    if (uploadImages && token.image) {
+                        imageCid = await uploadToIPFS(token.image, token.image.type);
                     }
 
                     const metadata = {
                         name: token.name,
                         description: token.description,
+                        external_url: `${EXTERNAL_URL}${lastTokenId! + producers.length + 1}`,
                         image: imageCid ? `${IPFS_PREFIX}${imageCid}` : "",
                         properties: [{ trait_type: "Producer Address", value: token.producer_address }],
                     };
 
-                    console.log("Uploading metadata for token");
-                    const metadataResult = await uploadToIPFS(metadata);
-                    console.log("Metadata uploaded, CID:", metadataResult.metadataCid);
+                    const metadataCid = await uploadToIPFS(JSON.stringify(metadata), "application/json");
 
                     producers.push(token.producer_address);
-                    cids.push(metadataResult.metadataCid);
+                    cids.push(metadataCid);
 
-                    console.log(`Prepared token ${token.name} with metadata CID: ${metadataResult.metadataCid}`);
+                    console.log(`Prepared token ${token.name} with metadata CID: ${metadataCid}`);
                 } catch (error) {
                     console.error(`Error preparing token ${token.name}:`, error);
                     customToast.error(`Failed to prepare token ${token.name}`);
@@ -213,7 +185,6 @@ export default function MintPage() {
             }
 
             if (producers.length === 0 || cids.length === 0) {
-                console.log("No tokens were successfully prepared");
                 customToast.error("No tokens were successfully prepared for minting");
                 return;
             }
@@ -221,17 +192,44 @@ export default function MintPage() {
             console.log("Minting batch of tokens");
             console.log("Producers:", producers);
             console.log("CIDs:", cids);
-            await mintBatch(producers, cids);
-            console.log("Batch minted successfully");
+            const tx = await mintBatch(producers, cids);
+            console.log("Transaction sent:", tx.hash);
+
+            const receipt = await tx.wait();
+            console.log(`Transaction confirmed in block ${receipt.blockNumber}`);
+
+            const batchMintedEvent = receipt.logs.find(
+                (log: Log) => log.topics[0] === ethers.id("BatchMinted(uint256,uint256[])"),
+            );
+
+            if (batchMintedEvent) {
+                const [batchId] = ethers.AbiCoder.defaultAbiCoder().decode(["uint256"], batchMintedEvent.topics[1]);
+                console.log("BatchMinted event found. Batch ID:", batchId);
+                await queryMintedTokens(batchId);
+            } else {
+                console.warn("BatchMinted event not found in transaction logs");
+            }
+
             customToast.success("Batch minted successfully");
             setTokens([{ name: "", description: "", producer_address: "", image: null }]);
-            // Update lastTokenId after successful minting
             setLastTokenId((prev) => prev! + tokens.length);
         } catch (error) {
             console.error("Error minting batch:", error);
             customToast.error("Failed to mint batch: " + (error as Error).message);
+        } finally {
+            setIsUploading(false);
         }
-    }, [isConnected, email, uploadToIPFS, mintBatch, lastTokenId, uploadImages, tokens]);
+    }, [
+        isConnected,
+        email,
+        uploadToIPFS,
+        mintBatch,
+        lastTokenId,
+        uploadImages,
+        tokens,
+        connectToSpace,
+        queryMintedTokens,
+    ]);
 
     const addToken = useCallback(() => {
         setTokens((prev) => [...prev, { name: "", description: "", producer_address: "", image: null }]);
@@ -247,12 +245,7 @@ export default function MintPage() {
                     <p>Next Token ID: {lastTokenId !== null ? lastTokenId + 1 : "Loading..."}</p>
                 </div>
             ) : (
-                <button
-                    onClick={connect}
-                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                >
-                    Connect Wallet
-                </button>
+                <p>Please connect your wallet to mint tokens.</p>
             )}
 
             <div className="w-full max-w-md space-y-4">
@@ -327,7 +320,7 @@ export default function MintPage() {
                 <button
                     className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded w-full"
                     onClick={handleMint}
-                    disabled={isUploading}
+                    disabled={isUploading || !isConnected}
                 >
                     {isUploading ? "Uploading..." : "Mint Batch"}
                 </button>

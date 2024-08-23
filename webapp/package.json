@@ -19,6 +19,7 @@
     "clsx": "^2.1.1",
     "connectkit": "^1.8.2",
     "encoding": "^0.1.13",
+    "ethers": "^6.13.2",
     "lucide-react": "^0.416.0",
     "next": "^14.2.5",
     "outline": "link:@heroicons/react/24/outline",
