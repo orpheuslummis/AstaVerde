@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useAccount, useReadContract, useReadContracts } from "wagmi";
+import { useAccount, usePublicClient, useReadContract, useReadContracts } from "wagmi";
 import { useContractInteraction } from "../hooks/useContractInteraction";
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, getUsdcContractConfig } from "../lib/contracts";
@@ -31,39 +31,79 @@ interface AppContextType {
     redeemTokens: (tokenIds: number[]) => Promise<string>;
     updateBasePrice: () => Promise<string>;
     getBatchInfo: (batchId: number) => Promise<any>;
-    isAdmin: boolean; // Add isAdmin to the context type
+    isAdmin: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-    const { address } = useAccount(); // Get the current user's address
+    const { address } = useAccount();
+    const publicClient = usePublicClient();
     const [batches, setBatches] = useState<Batch[]>([]);
-    const [isAdmin, setIsAdmin] = useState(false); // State to track if the user is an admin
+    const [isAdmin, setIsAdmin] = useState(false);
 
     const { data: lastBatchID, refetch: refetchLastBatchID } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "lastBatchID",
-    });
+    }) as { data: bigint | undefined; refetch: () => void };
 
     const { data: batchesData, refetch: refetchBatchesData } = useReadContracts({
         contracts:
             lastBatchID !== undefined
-                ? Array.from({ length: Number(lastBatchID) + 1 }, (_, i) => ({
+                ? Array.from({ length: Number(lastBatchID) }, (_, i) => ({
                       ...astaverdeContractConfig,
                       functionName: "getBatchInfo",
-                      args: [BigInt(i)],
+                      args: [BigInt(i + 1)],
                   }))
                 : [],
     });
 
+    const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
+
+    const { data: contractOwner } = useReadContract({
+        ...astaverdeContractConfig,
+        functionName: "owner",
+    });
+
     const fetchBatches = useCallback(async () => {
         console.log("Fetching batches...");
-        await refetchLastBatchID();
-        console.log("Last Batch ID:", lastBatchID);
-        await refetchBatchesData();
-        console.log("Batches Data:", batchesData);
-    }, [refetchLastBatchID, refetchBatchesData, lastBatchID, batchesData]);
+        if (!publicClient) {
+            console.error("Public client not available");
+            return;
+        }
+        try {
+            const lastBatchID = (await publicClient.readContract({
+                ...astaverdeContractConfig,
+                functionName: "lastBatchID",
+            })) as bigint;
+
+            console.log("Last Batch ID:", lastBatchID);
+            if (lastBatchID !== null && lastBatchID !== undefined && lastBatchID > 0n) {
+                const batchesData = await Promise.all(
+                    Array.from({ length: Number(lastBatchID) }, (_, i) => i + 1).map(async (id) => {
+                        const batchInfo = await getBatchInfo(id);
+                        return batchInfo
+                            ? new Batch(
+                                  batchInfo.id,
+                                  batchInfo.token_ids,
+                                  batchInfo.timestamp,
+                                  batchInfo.price,
+                                  batchInfo.itemsLeft,
+                              )
+                            : null;
+                    }),
+                );
+                const validBatches = batchesData.filter((batch): batch is Batch => batch !== null);
+                setBatches(validBatches);
+            } else {
+                console.log("No batches available");
+                setBatches([]);
+            }
+        } catch (error) {
+            console.error("Error fetching batches:", error);
+            setBatches([]);
+        }
+    }, [publicClient, getBatchInfo]);
 
     const refetchBatches = useCallback(async () => {
         try {
@@ -90,13 +130,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         console.log("batchesData changed:", batchesData);
-        if (batchesData) {
+        if (batchesData && Array.isArray(batchesData) && batchesData.length > 0) {
             console.log("Processing batchesData:", batchesData);
             const newBatches = batchesData
                 .map((data, index) => {
-                    if (data && data.result && Array.isArray(data.result)) {
+                    if (data && data.result && Array.isArray(data.result) && data.result.length === 5) {
                         const [batchId, tokenIds, creationTime, price, remainingTokens] = data.result;
-                        console.log(`Processing batch ${index}:`, {
+                        console.log(`Processing batch ${index + 1}:`, {
                             batchId,
                             tokenIds,
                             creationTime,
@@ -107,14 +147,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                         console.log("Created Batch object:", batch);
                         return batch;
                     }
-                    console.log(`Skipping invalid batch data for index ${index}`);
+                    console.log(`Skipping invalid batch data for index ${index + 1}`);
                     return null;
                 })
                 .filter((batch): batch is Batch => batch !== null);
             console.log("New batches:", newBatches);
             setBatches(newBatches);
         } else {
-            console.log("batchesData is null or undefined");
+            console.log("No valid batchesData available");
+            setBatches([]);
         }
     }, [batchesData]);
 
@@ -135,32 +176,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const buyBatch = useContractInteraction(astaverdeContractConfig, "buyBatch").execute;
     const redeemTokens = useContractInteraction(astaverdeContractConfig, "redeemTokens").execute;
     const mintBatch = useContractInteraction(astaverdeContractConfig, "mintBatch").execute;
-    const getBatchInfo = useContractInteraction(astaverdeContractConfig, "getBatchInfo").execute;
-
-    const manuallyFetchBatch = useCallback(
-        async (batchId: number) => {
-            console.log(`Manually fetching batch ${batchId}`);
-            const result = await getBatchInfo(batchId);
-            console.log(`Manually fetched batch ${batchId} result:`, result);
-        },
-        [getBatchInfo],
-    );
-
-    useEffect(() => {
-        manuallyFetchBatch(0); // Check for batch 0
-    }, [manuallyFetchBatch]);
-
-    useEffect(() => {
-        // Check if the current user is an admin
-        const checkAdmin = async () => {
-            if (address) {
-                // Replace with your logic to check if the user is an admin
-                const adminAddress = "0xe16ff25a3A5ea931A81A645aF13B9726eEe82923"; // Example admin address
-                setIsAdmin(address.toLowerCase() === adminAddress.toLowerCase());
-            }
-        };
-        checkAdmin();
-    }, [address]);
 
     const adminControls = useMemo(
         () => ({
@@ -229,6 +244,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ],
     );
 
+    useEffect(() => {
+        if (address && contractOwner) {
+            setIsAdmin(address.toLowerCase() === contractOwner.toLowerCase());
+        } else {
+            setIsAdmin(false);
+        }
+    }, [address, contractOwner]);
+
     const contextValue = useMemo(
         () => ({
             batches,
@@ -244,7 +267,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             redeemTokens,
             updateBasePrice: adminControls.updateBasePrice,
             getBatchInfo,
-            isAdmin, // Add isAdmin to the context value
+            isAdmin,
         }),
         [
             batches,

@@ -17,7 +17,7 @@ function BatchListing() {
         return () => clearInterval(intervalId);
     }, [refetchBatches, batches]);
 
-    if (batches.length === 0) {
+    if (!batches || batches.length === 0) {
         console.log("No batches available");
         return <div className="text-center py-8 text-gray-600">No batches available yet.</div>;
     }

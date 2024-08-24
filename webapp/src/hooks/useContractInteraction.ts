@@ -281,19 +281,52 @@ export function useContractInteraction(contractConfig: any, functionName: string
     const getBatchInfo = useCallback(
         async (batchId: number) => {
             console.log(`Fetching info for batch ${batchId}`);
-            const result = await execute(BigInt(batchId));
-            console.log(`Raw batch ${batchId} info:`, result);
-            if (Array.isArray(result) && result.length === 5) {
-                const [id, tokenIds, timestamp, price, itemsLeft] = result;
-                const batch = new Batch(id, tokenIds, timestamp, price, itemsLeft);
-                console.log(`Processed batch ${batchId} info:`, batch);
-                return batch;
-            } else {
-                console.error(`Unexpected format for batch ${batchId} info:`, result);
+            try {
+                if (!publicClient) {
+                    console.error("Public client is not available");
+                    return null;
+                }
+
+                // Check if the requested batchId is 0
+                if (batchId === 0) {
+                    console.log("Batch ID 0 is invalid. No batches available yet.");
+                    return null;
+                }
+
+                // First, check if any batches exist
+                const lastBatchID = (await publicClient.readContract({
+                    ...contractConfig,
+                    functionName: "lastBatchID",
+                })) as bigint;
+
+                if (lastBatchID === undefined || lastBatchID === 0n) {
+                    console.log("No batches available yet");
+                    return null;
+                }
+
+                // Check if the requested batchId is within the valid range
+                if (BigInt(batchId) > lastBatchID) {
+                    console.log(`Batch ID ${batchId} is out of bounds. Last batch ID is ${lastBatchID}`);
+                    return null;
+                }
+
+                const result = await execute(BigInt(batchId));
+                console.log(`Raw batch ${batchId} info:`, result);
+                if (Array.isArray(result) && result.length === 5) {
+                    const [id, tokenIds, timestamp, price, itemsLeft] = result;
+                    const batch = new Batch(id, tokenIds, timestamp, price, itemsLeft);
+                    console.log(`Processed batch ${batchId} info:`, batch);
+                    return batch;
+                } else {
+                    console.error(`Unexpected format for batch ${batchId} info:`, result);
+                    return null;
+                }
+            } catch (error) {
+                console.error(`Error fetching batch ${batchId} info:`, error);
                 return null;
             }
         },
-        [execute],
+        [execute, publicClient, contractConfig],
     );
 
     return {
