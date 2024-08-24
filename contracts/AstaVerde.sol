@@ -8,8 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title AstaVerde
  * @dev A carbon credits marketplace using Dutch auction for batch pricing.
@@ -76,7 +74,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     event PartialBatchSold(uint256 batchId, uint256 batchSoldTime, uint256 remainingTokens);
     event TokenReedemed(uint256 tokenId, address redeemer, uint256 timestamp);
 
-    constructor(address initialOwner, IERC20 _usdcToken) ERC1155("ipfs://") Ownable(initialOwner) {
+    constructor(address owner, IERC20 _usdcToken) ERC1155("ipfs://") Ownable(owner) {
         usdcToken = _usdcToken;
         platformSharePercentage = 30;
         maxBatchSize = 50;
