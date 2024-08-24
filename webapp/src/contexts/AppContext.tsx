@@ -245,7 +245,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
 
     useEffect(() => {
-        if (address && contractOwner) {
+        if (address && typeof contractOwner === "string") {
             setIsAdmin(address.toLowerCase() === contractOwner.toLowerCase());
         } else {
             setIsAdmin(false);
