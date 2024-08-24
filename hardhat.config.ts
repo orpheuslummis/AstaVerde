@@ -28,6 +28,11 @@ if (!rpcApiKey) {
     throw new Error("Please set your RPC_API_KEY env variable");
 }
 
+const ownerAddress: string | undefined = process.env.OWNER_ADDRESS;
+if (!ownerAddress) {
+    throw new Error("Please set your OWNER_ADDRESS env variable");
+}
+
 const chainIds = {
     hardhat: 31337,
     "base-sepolia": 84532,
@@ -139,6 +144,10 @@ export const mintingConfig = {
     imageFolder: process.env.IMAGE_FOLDER,
     csvPath: process.env.CSV_PATH,
     email: process.env.EMAIL,
+};
+
+export const deploymentConfig = {
+    ownerAddress,
 };
 
 export default config;
