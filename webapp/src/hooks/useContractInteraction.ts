@@ -105,7 +105,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
                     const { request } = await publicClient.simulateContract({
                         ...contractConfig,
                         functionName,
-                        args: executionArgs,
+                        args: executionArgs.length > 0 ? executionArgs : undefined, // Only pass args if they exist
                         account: walletClient.account,
                     });
 

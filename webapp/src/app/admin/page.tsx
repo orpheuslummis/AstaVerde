@@ -1,25 +1,38 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+import { formatUnits, parseUnits } from "viem";
 import { useAccount, useReadContract } from "wagmi";
+import { USDC_DECIMALS } from "../../app.config";
 import { Connected } from "../../components/Connected";
 import { useAppContext } from "../../contexts/AppContext";
 import { astaverdeContractConfig } from "../../lib/contracts";
+import { customToast } from "../../utils/customToast";
 
 function AdminControls() {
+    const { isAdmin, adminControls } = useAppContext();
+
+    if (!isAdmin) {
+        return <div>You do not have permission to access this page.</div>;
+    }
+
     return (
         <Connected>
             <h2 className="text-2xl my-6 mx-6">Admin Controls</h2>
-            <div>
+            <Link href="/mint" className="btn btn-primary m-6 shadow-md hover:shadow-lg">
+                Go to Minting Page
+            </Link>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                <ClaimPlatformFunds />
                 <PauseContractControl />
-                <SetURI />
                 <PriceFloorControl />
                 <BasePriceControl />
-                <MaxBatchSizeControl />
+                <UpdateBasePriceControl />
                 <AuctionTimeThresholdsControl />
                 <PlatformPercentageControl />
-                <UpdateBasePriceControl />
-                <ClaimPlatformFunds />
+                <MaxBatchSizeControl />
+                <SetURI />
             </div>
         </Connected>
     );
@@ -27,7 +40,7 @@ function AdminControls() {
 
 function ControlContainer({ children, title }: { children: React.ReactNode; title: string }) {
     return (
-        <div className="card mx-auto max-w-sm my-6 bg-primary-light">
+        <div className="card bg-primary-light p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-4">{title}</h2>
             {children}
         </div>
@@ -41,19 +54,41 @@ function PauseContractControl() {
         functionName: "paused",
     });
 
+    const handlePause = async () => {
+        try {
+            await adminControls.pauseContract();
+            customToast.success("Contract paused successfully");
+            refetchIsContractPaused();
+        } catch (error) {
+            console.error("Error pausing contract:", error);
+            customToast.error("Failed to pause contract");
+        }
+    };
+
+    const handleUnpause = async () => {
+        try {
+            await adminControls.unpauseContract();
+            customToast.success("Contract unpaused successfully");
+            refetchIsContractPaused();
+        } catch (error) {
+            console.error("Error unpausing contract:", error);
+            customToast.error("Failed to unpause contract");
+        }
+    };
+
     return (
         <ControlContainer title="Pause / Unpause">
             <button
-                className="btn btn-secondary hover-lift disabled:opacity-50"
+                className="btn btn-primary m-2 shadow-md hover:shadow-lg"
                 disabled={isContractPaused as boolean}
-                onClick={adminControls.pauseContract}
+                onClick={handlePause}
             >
                 Pause
             </button>
             <button
-                className="btn btn-secondary hover-lift disabled:opacity-50"
+                className="btn btn-secondary m-2 shadow-md hover:shadow-lg"
                 disabled={!isContractPaused}
-                onClick={adminControls.unpauseContract}
+                onClick={handleUnpause}
             >
                 Unpause
             </button>
@@ -65,12 +100,21 @@ function ClaimPlatformFunds() {
     const { address } = useAccount();
     const { adminControls } = useAppContext();
 
+    const handleClaim = async () => {
+        if (address) {
+            try {
+                await adminControls.claimPlatformFunds(address);
+                customToast.success("Platform funds claimed successfully");
+            } catch (error) {
+                console.error("Error claiming platform funds:", error);
+                customToast.error("Failed to claim platform funds");
+            }
+        }
+    };
+
     return (
         <ControlContainer title="Claim Platform Funds">
-            <button
-                className="btn btn-secondary hover-lift"
-                onClick={() => address && adminControls.claimPlatformFunds(address)}
-            >
+            <button className="btn btn-secondary m-2 shadow-md hover:shadow-lg" onClick={handleClaim}>
                 Claim
             </button>
         </ControlContainer>
@@ -80,14 +124,21 @@ function ClaimPlatformFunds() {
 function SetURI() {
     const { adminControls } = useAppContext();
     const [uri, setURI] = useState("");
-    const { data: currentURI } = useReadContract({
+    const { data: currentURI, refetch: refetchCurrentURI } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "uri",
     });
 
-    const handleSetURI = () => {
+    const handleSetURI = async () => {
         if (uri) {
-            adminControls.setURI(uri);
+            try {
+                await adminControls.setURI(uri);
+                customToast.success("URI updated successfully");
+                refetchCurrentURI();
+            } catch (error) {
+                console.error("Error setting URI:", error);
+                customToast.error("Failed to update URI");
+            }
         }
     };
 
@@ -102,7 +153,7 @@ function SetURI() {
                     className="px-4 py-2 mr-2 border border-gray-300 rounded"
                 />
                 <button
-                    className="btn btn-secondary hover-lift disabled:opacity-50"
+                    className="btn btn-secondary m-2 shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!uri}
                     onClick={handleSetURI}
                 >
@@ -117,29 +168,37 @@ function SetURI() {
 function PriceFloorControl() {
     const { adminControls } = useAppContext();
     const [priceFloor, setPriceFloor] = useState("");
-    const { data: currentPriceFloor } = useReadContract({
+    const { data: currentPriceFloor, refetch: refetchCurrentPriceFloor } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "priceFloor",
     });
 
-    const handleSetPriceFloor = () => {
+    const handleSetPriceFloor = async () => {
         if (priceFloor) {
-            adminControls.setPriceFloor(priceFloor);
+            try {
+                const priceFloorInWei = parseUnits(priceFloor, USDC_DECIMALS);
+                await adminControls.setPriceFloor(priceFloorInWei.toString());
+                customToast.success("Price floor updated successfully");
+                refetchCurrentPriceFloor();
+            } catch (error) {
+                console.error("Error setting price floor:", error);
+                customToast.error("Failed to update price floor");
+            }
         }
     };
 
     return (
         <ControlContainer title="Set Price Floor">
-            <div className="flex items-center mb-4">
+            <div className="flex flex-col gap-4">
                 <input
                     type="number"
                     value={priceFloor}
                     onChange={(e) => setPriceFloor(e.target.value)}
-                    placeholder="Enter Price Floor"
-                    className="px-4 py-2 mr-2 border border-gray-300 rounded"
+                    placeholder="Enter Price Floor (USDC)"
+                    className="px-4 py-2 border border-gray-300 rounded"
                 />
                 <button
-                    className="btn btn-secondary hover-lift disabled:opacity-50"
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!priceFloor}
                     onClick={handleSetPriceFloor}
                 >
@@ -147,7 +206,9 @@ function PriceFloorControl() {
                 </button>
             </div>
             {typeof currentPriceFloor === "bigint" && (
-                <div className="text-gray-500 mb-2">Current Price Floor: {currentPriceFloor.toString()}</div>
+                <div className="text-gray-500 mt-4">
+                    Current Price Floor: {formatUnits(currentPriceFloor, USDC_DECIMALS)} USDC
+                </div>
             )}
         </ControlContainer>
     );
@@ -156,29 +217,37 @@ function PriceFloorControl() {
 function BasePriceControl() {
     const { adminControls } = useAppContext();
     const [basePrice, setBasePrice] = useState("");
-    const { data: currentBasePrice } = useReadContract({
+    const { data: currentBasePrice, refetch: refetchCurrentBasePrice } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "basePrice",
     });
 
-    const handleSetBasePrice = () => {
+    const handleSetBasePrice = async () => {
         if (basePrice) {
-            adminControls.setBasePrice(basePrice);
+            try {
+                const basePriceInWei = parseUnits(basePrice, USDC_DECIMALS);
+                await adminControls.setBasePrice(basePriceInWei.toString());
+                customToast.success("Base price updated successfully");
+                refetchCurrentBasePrice();
+            } catch (error) {
+                console.error("Error setting base price:", error);
+                customToast.error("Failed to update base price");
+            }
         }
     };
 
     return (
         <ControlContainer title="Set Base Price">
-            <div className="flex items-center mb-4">
+            <div className="flex flex-col gap-4">
                 <input
                     type="number"
                     value={basePrice}
                     onChange={(e) => setBasePrice(e.target.value)}
-                    placeholder="Enter Base Price"
-                    className="px-4 py-2 mr-2 border border-gray-300 rounded"
+                    placeholder="Enter Base Price (USDC)"
+                    className="px-4 py-2 border border-gray-300 rounded"
                 />
                 <button
-                    className="btn btn-secondary hover-lift disabled:opacity-50"
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!basePrice}
                     onClick={handleSetBasePrice}
                 >
@@ -186,7 +255,9 @@ function BasePriceControl() {
                 </button>
             </div>
             {typeof currentBasePrice === "bigint" && (
-                <div className="text-gray-500 mb-2">Current Base Price: {currentBasePrice.toString()}</div>
+                <div className="text-gray-500 mt-4">
+                    Current Base Price: {formatUnits(currentBasePrice, USDC_DECIMALS)} USDC
+                </div>
             )}
         </ControlContainer>
     );
@@ -195,29 +266,36 @@ function BasePriceControl() {
 function MaxBatchSizeControl() {
     const { adminControls } = useAppContext();
     const [maxBatchSize, setMaxBatchSize] = useState("");
-    const { data: currentMaxBatchSize } = useReadContract({
+    const { data: currentMaxBatchSize, refetch: refetchCurrentMaxBatchSize } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "maxBatchSize",
     });
 
-    const handleSetMaxBatchSize = () => {
+    const handleSetMaxBatchSize = async () => {
         if (maxBatchSize) {
-            adminControls.setMaxBatchSize(maxBatchSize);
+            try {
+                await adminControls.setMaxBatchSize(maxBatchSize);
+                customToast.success("Max batch size updated successfully");
+                refetchCurrentMaxBatchSize();
+            } catch (error) {
+                console.error("Error setting max batch size:", error);
+                customToast.error("Failed to update max batch size");
+            }
         }
     };
 
     return (
         <ControlContainer title="Set Max Batch Size">
-            <div className="flex items-center mb-4">
+            <div className="flex flex-col gap-4">
                 <input
                     type="number"
                     value={maxBatchSize}
                     onChange={(e) => setMaxBatchSize(e.target.value)}
                     placeholder="Enter Max Batch Size"
-                    className="px-4 py-2 mr-2 border border-gray-300 rounded"
+                    className="px-4 py-2 border border-gray-300 rounded"
                 />
                 <button
-                    className="btn btn-secondary hover-lift disabled:opacity-50"
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!maxBatchSize}
                     onClick={handleSetMaxBatchSize}
                 >
@@ -225,7 +303,7 @@ function MaxBatchSizeControl() {
                 </button>
             </div>
             {typeof currentMaxBatchSize === "bigint" && (
-                <div className="text-gray-500 mb-2">Current Max Batch Size: {currentMaxBatchSize.toString()}</div>
+                <div className="text-gray-500 mt-4">Current Max Batch Size: {currentMaxBatchSize.toString()}</div>
             )}
         </ControlContainer>
     );
@@ -235,30 +313,38 @@ function AuctionTimeThresholdsControl() {
     const { adminControls } = useAppContext();
     const [dayIncreaseThreshold, setDayIncreaseThreshold] = useState("");
     const [dayDecreaseThreshold, setDayDecreaseThreshold] = useState("");
-    const { data: currentDayIncreaseThreshold } = useReadContract({
+    const { data: currentDayIncreaseThreshold, refetch: refetchCurrentDayIncreaseThreshold } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "dayIncreaseThreshold",
     });
-    const { data: currentDayDecreaseThreshold } = useReadContract({
+    const { data: currentDayDecreaseThreshold, refetch: refetchCurrentDayDecreaseThreshold } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "dayDecreaseThreshold",
     });
 
-    const handleSetAuctionTimeThresholds = () => {
+    const handleSetAuctionTimeThresholds = async () => {
         if (
             dayIncreaseThreshold &&
             dayDecreaseThreshold &&
             BigInt(dayIncreaseThreshold) < BigInt(dayDecreaseThreshold)
         ) {
-            adminControls.setAuctionDayThresholds(dayIncreaseThreshold, dayDecreaseThreshold);
+            try {
+                await adminControls.setAuctionDayThresholds(dayIncreaseThreshold, dayDecreaseThreshold);
+                customToast.success("Auction time thresholds updated successfully");
+                refetchCurrentDayIncreaseThreshold();
+                refetchCurrentDayDecreaseThreshold();
+            } catch (error) {
+                console.error("Error setting auction time thresholds:", error);
+                customToast.error("Failed to update auction time thresholds");
+            }
         } else {
-            alert("Increase threshold must be lower than decrease threshold");
+            customToast.error("Increase threshold must be lower than decrease threshold");
         }
     };
 
     return (
         <ControlContainer title="Set Auction Time Thresholds">
-            <div className="flex flex-col gap-2 mb-4">
+            <div className="flex flex-col gap-4">
                 <input
                     type="number"
                     value={dayIncreaseThreshold}
@@ -274,7 +360,7 @@ function AuctionTimeThresholdsControl() {
                     className="px-4 py-2 border border-gray-300 rounded"
                 />
                 <button
-                    className="btn btn-secondary hover-lift disabled:opacity-50"
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!dayIncreaseThreshold || !dayDecreaseThreshold}
                     onClick={handleSetAuctionTimeThresholds}
                 >
@@ -282,12 +368,12 @@ function AuctionTimeThresholdsControl() {
                 </button>
             </div>
             {typeof currentDayIncreaseThreshold === "bigint" && (
-                <div className="text-gray-500 mb-2">
+                <div className="text-gray-500 mt-4">
                     Current Day Increase Threshold: {currentDayIncreaseThreshold.toString()}
                 </div>
             )}
             {typeof currentDayDecreaseThreshold === "bigint" && (
-                <div className="text-gray-500 mb-2">
+                <div className="text-gray-500 mt-4">
                     Current Day Decrease Threshold: {currentDayDecreaseThreshold.toString()}
                 </div>
             )}
@@ -298,29 +384,38 @@ function AuctionTimeThresholdsControl() {
 function PlatformPercentageControl() {
     const { adminControls } = useAppContext();
     const [platformSharePercentage, setPlatformSharePercentage] = useState("");
-    const { data: currentPlatformSharePercentage } = useReadContract({
+    const { data: currentPlatformSharePercentage, refetch: refetchCurrentPlatformSharePercentage } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "platformSharePercentage",
     });
 
-    const handleSetPlatformSharePercentage = () => {
+    const handleSetPlatformSharePercentage = async () => {
         if (platformSharePercentage) {
-            adminControls.setPlatformSharePercentage(platformSharePercentage);
+            try {
+                await adminControls.setPlatformSharePercentage(platformSharePercentage);
+                customToast.success("Platform share percentage updated successfully");
+                refetchCurrentPlatformSharePercentage();
+            } catch (error) {
+                console.error("Error setting platform share percentage:", error);
+                customToast.error("Failed to update platform share percentage");
+            }
         }
     };
 
     return (
         <ControlContainer title="Set Platform Share Percentage">
-            <div className="flex items-center mb-4">
+            <div className="flex flex-col gap-4">
                 <input
                     type="number"
                     value={platformSharePercentage}
                     onChange={(e) => setPlatformSharePercentage(e.target.value)}
-                    placeholder="Enter Platform Share Percentage"
-                    className="px-4 py-2 mr-2 border border-gray-300 rounded"
+                    placeholder="Enter Platform Share Percentage (0-100)"
+                    className="px-4 py-2 border border-gray-300 rounded"
+                    min="0"
+                    max="100"
                 />
                 <button
-                    className="btn btn-secondary hover-lift disabled:opacity-50"
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!platformSharePercentage}
                     onClick={handleSetPlatformSharePercentage}
                 >
@@ -328,8 +423,8 @@ function PlatformPercentageControl() {
                 </button>
             </div>
             {typeof currentPlatformSharePercentage === "bigint" && (
-                <div className="text-gray-500 mb-2">
-                    Current Platform Share Percentage: {currentPlatformSharePercentage.toString()}
+                <div className="text-gray-500 mt-4">
+                    Current Platform Share Percentage: {currentPlatformSharePercentage.toString()}%
                 </div>
             )}
         </ControlContainer>
@@ -339,9 +434,19 @@ function PlatformPercentageControl() {
 function UpdateBasePriceControl() {
     const { adminControls } = useAppContext();
 
+    const handleUpdateBasePrice = async () => {
+        try {
+            await adminControls.updateBasePrice();
+            customToast.success("Base price updated successfully");
+        } catch (error) {
+            console.error("Error updating base price:", error);
+            customToast.error("Failed to update base price");
+        }
+    };
+
     return (
         <ControlContainer title="Update Base Price">
-            <button className="btn btn-secondary hover-lift" onClick={adminControls.updateBasePrice}>
+            <button className="btn btn-secondary m-2 shadow-md hover:shadow-lg" onClick={handleUpdateBasePrice}>
                 Update Base Price
             </button>
         </ControlContainer>

@@ -93,15 +93,15 @@
 
 @layer components {
     .btn {
-        @apply px-4 py-2 rounded font-bold text-white transition-default;
+        @apply px-4 py-2 rounded font-bold transition-default;
     }
 
     .btn-primary {
-        @apply bg-primary hover:bg-primary-dark text-primary-foreground;
+        @apply bg-primary hover:bg-primary-dark text-white;
     }
 
     .btn-secondary {
-        @apply bg-secondary hover:bg-secondary-dark;
+        @apply bg-secondary hover:bg-secondary-dark text-secondary-foreground;
     }
 
     .card {

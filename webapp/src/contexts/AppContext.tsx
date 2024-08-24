@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useReadContract, useReadContracts } from "wagmi";
+import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import { useContractInteraction } from "../hooks/useContractInteraction";
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, getUsdcContractConfig } from "../lib/contracts";
@@ -14,8 +14,8 @@ interface AppContextType {
     updateBatch: (updatedBatch: Batch) => void;
     updateBatchItemsLeft: (batchId: number, newItemsLeft: number) => void;
     adminControls: {
-        pauseContract: () => void;
-        unpauseContract: () => void;
+        pauseContract: () => Promise<string>;
+        unpauseContract: () => Promise<string>;
         setURI: (uri: string) => void;
         setPriceFloor: (priceFloor: string) => void;
         setBasePrice: (basePrice: string) => void;
@@ -31,12 +31,15 @@ interface AppContextType {
     redeemTokens: (tokenIds: number[]) => Promise<string>;
     updateBasePrice: () => Promise<string>;
     getBatchInfo: (batchId: number) => Promise<any>;
+    isAdmin: boolean; // Add isAdmin to the context type
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+    const { address } = useAccount(); // Get the current user's address
     const [batches, setBatches] = useState<Batch[]>([]);
+    const [isAdmin, setIsAdmin] = useState(false); // State to track if the user is an admin
 
     const { data: lastBatchID, refetch: refetchLastBatchID } = useReadContract({
         ...astaverdeContractConfig,
@@ -147,10 +150,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         manuallyFetchBatch(0); // Check for batch 0
     }, [manuallyFetchBatch]);
 
+    useEffect(() => {
+        // Check if the current user is an admin
+        const checkAdmin = async () => {
+            if (address) {
+                // Replace with your logic to check if the user is an admin
+                const adminAddress = "0xe16ff25a3A5ea931A81A645aF13B9726eEe82923"; // Example admin address
+                setIsAdmin(address.toLowerCase() === adminAddress.toLowerCase());
+            }
+        };
+        checkAdmin();
+    }, [address]);
+
     const adminControls = useMemo(
         () => ({
-            pauseContract,
-            unpauseContract,
+            pauseContract: async () => {
+                try {
+                    const txHash = await pauseContract();
+                    console.log("Pause contract transaction hash:", txHash);
+                    return txHash;
+                } catch (error) {
+                    console.error("Error pausing contract:", error);
+                    throw error;
+                }
+            },
+            unpauseContract: async () => {
+                try {
+                    const txHash = await unpauseContract();
+                    console.log("Unpause contract transaction hash:", txHash);
+                    return txHash;
+                } catch (error) {
+                    console.error("Error unpausing contract:", error);
+                    throw error;
+                }
+            },
             setURI,
             setPriceFloor,
             setBasePrice,
@@ -211,6 +244,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             redeemTokens,
             updateBasePrice: adminControls.updateBasePrice,
             getBatchInfo,
+            isAdmin, // Add isAdmin to the context value
         }),
         [
             batches,
@@ -222,6 +256,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             buyBatch,
             redeemTokens,
             getBatchInfo,
+            isAdmin,
         ],
     );
 
