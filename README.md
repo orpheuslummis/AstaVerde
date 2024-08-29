@@ -101,6 +101,10 @@ These parameters allow for fine-tuning of the auction mechanism to respond to ma
 
 ## Deployment
 
+### Deploy for an owner address
+
+-   `OWNER_ADDRESS=0x... p deploy:testnet`
+
 ### Using Docker
 
 1. Install Docker Desktop from https://docs.docker.com/desktop/install/mac-install/

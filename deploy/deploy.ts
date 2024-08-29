@@ -15,9 +15,11 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const provider = hre.ethers.provider;
     const nonce = await provider.getTransactionCount(deployer);
     const pendingNonce = await provider.getTransactionCount(deployer, "pending");
+
     console.log(`Current nonce: ${nonce}, Pending nonce: ${pendingNonce}`);
 
     const feeData = await provider.getFeeData();
+
     console.log("Current fee data:", {
         gasPrice: feeData.gasPrice ? ethers.formatUnits(feeData.gasPrice, "gwei") + " gwei" : "N/A",
         maxFeePerGas: feeData.maxFeePerGas ? ethers.formatUnits(feeData.maxFeePerGas, "gwei") + " gwei" : "N/A",
