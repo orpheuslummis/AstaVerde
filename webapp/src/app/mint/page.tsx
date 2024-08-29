@@ -2,6 +2,7 @@
 
 import { ethers, Log } from "ethers";
 import React, { useCallback, useEffect, useState } from "react";
+import { useAccount } from "wagmi";
 import { useAppContext } from "../../contexts/AppContext";
 import { useWallet } from "../../contexts/WalletContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
@@ -19,7 +20,8 @@ interface TokenMetadata {
 
 export default function MintPage() {
     const { isConnected, address } = useWallet();
-    const { adminControls, astaverdeContractConfig } = useAppContext();
+    const { adminControls, astaverdeContractConfig, isAdmin } = useAppContext();
+    const { address: accountAddress } = useAccount();
     const [tokens, setTokens] = useState<TokenMetadata[]>([
         {
             name: "",
@@ -145,6 +147,11 @@ export default function MintPage() {
             return;
         }
 
+        if (!isAdmin) {
+            customToast.error("You don't have permission to mint tokens");
+            return;
+        }
+
         if (!email) {
             customToast.error("Please provide an email address");
             return;
@@ -221,6 +228,7 @@ export default function MintPage() {
         }
     }, [
         isConnected,
+        isAdmin,
         email,
         uploadToIPFS,
         mintBatch,
@@ -243,88 +251,95 @@ export default function MintPage() {
                 <div className="flex flex-col items-center space-y-2">
                     <p>Connected Address: {address}</p>
                     <p>Next Token ID: {lastTokenId !== null ? lastTokenId + 1 : "Loading..."}</p>
+                    {isAdmin ? (
+                        <p className="text-green-500">You have admin privileges</p>
+                    ) : (
+                        <p className="text-red-500">You don't have admin privileges</p>
+                    )}
                 </div>
             ) : (
                 <p>Please connect your wallet to mint tokens.</p>
             )}
 
-            <div className="w-full max-w-md space-y-4">
-                <h2 className="text-2xl font-semibold">Mint New Tokens</h2>
-                <input
-                    type="email"
-                    placeholder="Email for IPFS"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="border rounded px-2 py-1 w-full"
-                />
-                <div className="flex items-center space-x-2">
+            {isAdmin && (
+                <div className="w-full max-w-md space-y-4">
+                    <h2 className="text-2xl font-semibold">Mint New Tokens</h2>
                     <input
-                        type="checkbox"
-                        id="uploadImages"
-                        checked={uploadImages}
-                        onChange={() => setUploadImages(!uploadImages)}
+                        type="email"
+                        placeholder="Email for IPFS"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="border rounded px-2 py-1 w-full"
                     />
-                    <label htmlFor="uploadImages">Upload Images</label>
-                </div>
-                {tokens.map((token, index) => (
-                    <div key={index} className="space-y-2 p-4 border rounded">
-                        <h3 className="font-semibold">
-                            Token {lastTokenId !== null ? lastTokenId + index + 1 : "Loading..."}
-                        </h3>
-                        <div className="space-y-1">
-                            <label className="block text-sm font-medium text-gray-700">Token Name</label>
-                            <input
-                                type="text"
-                                value={token.name}
-                                onChange={(e) => handleTokenChange(index, "name", e.target.value)}
-                                className="border rounded px-2 py-1 w-full"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="block text-sm font-medium text-gray-700">Description</label>
-                            <input
-                                type="text"
-                                value={token.description}
-                                onChange={(e) => handleTokenChange(index, "description", e.target.value)}
-                                className="border rounded px-2 py-1 w-full"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="block text-sm font-medium text-gray-700">Producer Address</label>
-                            <input
-                                type="text"
-                                value={token.producer_address}
-                                onChange={(e) => handleTokenChange(index, "producer_address", e.target.value)}
-                                className="border rounded px-2 py-1 w-full"
-                            />
-                        </div>
-                        {uploadImages && (
+                    <div className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            id="uploadImages"
+                            checked={uploadImages}
+                            onChange={() => setUploadImages(!uploadImages)}
+                        />
+                        <label htmlFor="uploadImages">Upload Images</label>
+                    </div>
+                    {tokens.map((token, index) => (
+                        <div key={index} className="space-y-2 p-4 border rounded">
+                            <h3 className="font-semibold">
+                                Token {lastTokenId !== null ? lastTokenId + index + 1 : "Loading..."}
+                            </h3>
                             <div className="space-y-1">
-                                <label className="block text-sm font-medium text-gray-700">Token Image</label>
+                                <label className="block text-sm font-medium text-gray-700">Token Name</label>
                                 <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => handleImageChange(e, index)}
+                                    type="text"
+                                    value={token.name}
+                                    onChange={(e) => handleTokenChange(index, "name", e.target.value)}
                                     className="border rounded px-2 py-1 w-full"
                                 />
                             </div>
-                        )}
-                    </div>
-                ))}
-                <button
-                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
-                    onClick={addToken}
-                >
-                    Add Another Token
-                </button>
-                <button
-                    className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded w-full"
-                    onClick={handleMint}
-                    disabled={isUploading || !isConnected}
-                >
-                    {isUploading ? "Uploading..." : "Mint Batch"}
-                </button>
-            </div>
+                            <div className="space-y-1">
+                                <label className="block text-sm font-medium text-gray-700">Description</label>
+                                <input
+                                    type="text"
+                                    value={token.description}
+                                    onChange={(e) => handleTokenChange(index, "description", e.target.value)}
+                                    className="border rounded px-2 py-1 w-full"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="block text-sm font-medium text-gray-700">Producer Address</label>
+                                <input
+                                    type="text"
+                                    value={token.producer_address}
+                                    onChange={(e) => handleTokenChange(index, "producer_address", e.target.value)}
+                                    className="border rounded px-2 py-1 w-full"
+                                />
+                            </div>
+                            {uploadImages && (
+                                <div className="space-y-1">
+                                    <label className="block text-sm font-medium text-gray-700">Token Image</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => handleImageChange(e, index)}
+                                        className="border rounded px-2 py-1 w-full"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                    <button
+                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
+                        onClick={addToken}
+                    >
+                        Add Another Token
+                    </button>
+                    <button
+                        className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded w-full"
+                        onClick={handleMint}
+                        disabled={isUploading || !isConnected}
+                    >
+                        {isUploading ? "Uploading..." : "Mint Batch"}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
