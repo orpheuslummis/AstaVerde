@@ -82,18 +82,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 const batchesData = await Promise.all(
                     Array.from({ length: Number(lastBatchID) }, (_, i) => i + 1).map(async (id) => {
                         const batchInfo = await getBatchInfo(id);
-                        return batchInfo
-                            ? new Batch(
-                                  batchInfo.id,
-                                  batchInfo.token_ids,
-                                  batchInfo.timestamp,
-                                  batchInfo.price,
-                                  batchInfo.itemsLeft,
-                              )
-                            : null;
+                        console.log(`Raw batch ${id} info:`, batchInfo);
+                        if (batchInfo && Array.isArray(batchInfo) && batchInfo.length === 5) {
+                            const [batchId, tokenIds, timestamp, price, itemsLeft] = batchInfo;
+                            return new Batch(batchId, tokenIds, timestamp, price, itemsLeft);
+                        }
+                        console.warn(`Invalid batch data for ID ${id}:`, batchInfo);
+                        return null;
                     }),
                 );
                 const validBatches = batchesData.filter((batch): batch is Batch => batch !== null);
+                console.log("Processed batches:", validBatches);
                 setBatches(validBatches);
             } else {
                 console.log("No batches available");
