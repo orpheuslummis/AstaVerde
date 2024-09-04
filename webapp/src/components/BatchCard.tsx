@@ -4,12 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatUnits } from "viem";
-import { useAccount, useBalance, useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { Slider } from "../@/components/ui/slider";
 import { USDC_DECIMALS } from "../app.config";
 import { useAppContext } from "../contexts/AppContext";
 import { useBatchOperations } from "../hooks/useContractInteraction";
 import { Batch } from "../lib/batch";
+import { customToast } from "../utils/customToast";
 import { getPlaceholderImageUrl } from "../utils/placeholderImage";
 
 interface BatchCardProps {
@@ -18,55 +19,81 @@ interface BatchCardProps {
     isSoldOut: boolean;
 }
 
-export const BatchCard = ({ batch, updateCard, isSoldOut }: BatchCardProps) => {
+export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     const { isConnected } = useAccount();
     const { refetchBatches, getUsdcContractConfig } = useAppContext();
-    const [tokenAmount, setTokenAmount] = useState(1);
+    const [tokenAmount, setTokenAmount] = useState(1n);
     const { data: walletClient } = useWalletClient();
 
-    const placeholderImage = useMemo(() => getPlaceholderImageUrl(batch.id), [batch.id]);
+    const placeholderImage = useMemo(() => {
+        return getPlaceholderImageUrl(batch.id.toString(), batch.token_ids.length.toString());
+    }, [batch.id, batch.token_ids.length]);
 
     const priceInUSDC = useMemo(
         () => (isSoldOut ? null : formatUnits(batch.price, USDC_DECIMALS)),
         [batch.price, isSoldOut],
     );
-    const totalPrice = useMemo(
-        () => (priceInUSDC ? Number(priceInUSDC) * tokenAmount : null),
-        [priceInUSDC, tokenAmount],
-    );
+    const totalPrice = useMemo(() => (priceInUSDC ? batch.price * tokenAmount : null), [batch.price, tokenAmount]);
 
-    const { handleApproveAndBuy, isLoading, hasEnoughUSDC } = useBatchOperations(batch.id, totalPrice || 0);
-
-    const { data: usdcBalance } = useBalance({
-        address: walletClient?.account.address,
-        token: getUsdcContractConfig().address,
-    });
-
-    const usdcBalanceFormatted = useMemo(() => {
-        if (!usdcBalance) return "0";
-        return formatUnits(usdcBalance.value, USDC_DECIMALS);
-    }, [usdcBalance]);
+    const { handleApproveAndBuy, isLoading, hasEnoughUSDC } = useBatchOperations(batch.id, totalPrice || 0n);
+    const { getCurrentBatchPrice, getBatchInfo } = useAppContext();
 
     const handleBuyClick = async (e: React.MouseEvent) => {
         e.preventDefault();
-        if (batch.itemsLeft === 0) return;
+        if (batch.itemsLeft === 0n || isSoldOut) return;
         try {
-            await handleApproveAndBuy(tokenAmount, Number(priceInUSDC));
+            // Fetch current batch price
+            const currentPrice = await getCurrentBatchPrice(Number(batch.id));
+            if (currentPrice !== batch.price) {
+                customToast.error("Price has changed. Please refresh and try again.");
+                return;
+            }
+
+            // Check if there are enough items left
+            const batchInfo = await getBatchInfo(Number(batch.id));
+            if (batchInfo.itemsLeft < tokenAmount) {
+                customToast.error("Not enough items left in the batch.");
+                return;
+            }
+
+            console.log("Buying batch with params:", {
+                batchId: batch.id.toString(),
+                usdcAmount: totalPrice?.toString(),
+                tokenAmount: tokenAmount.toString(),
+                currentPrice: currentPrice.toString(),
+            });
+
+            await handleApproveAndBuy(tokenAmount, totalPrice!);
             if (updateCard) {
                 updateCard();
             }
             refetchBatches();
+            customToast.success("Purchase successful!");
         } catch (error) {
             console.error("Error in approve and buy process:", error);
+            if (error instanceof Error) {
+                if (error.message.includes("user rejected")) {
+                    customToast.error("Transaction rejected by user");
+                } else if (error.message.includes("insufficient funds")) {
+                    customToast.error("Insufficient USDC balance for this purchase");
+                } else {
+                    customToast.error(`Transaction failed: ${error.message}`);
+                }
+            } else {
+                customToast.error("An unknown error occurred during the transaction");
+            }
         }
     };
 
     const getButtonText = () => {
         if (isLoading) return "Processing...";
-        if (!isConnected) return "Buy";
+        if (!isConnected) return "Connect Wallet";
         if (!hasEnoughUSDC) return "Insufficient USDC";
+        if (isSoldOut || batch.itemsLeft === 0n) return "Sold Out";
         return "Buy";
     };
+
+    const isButtonDisabled = !isConnected || isLoading || !hasEnoughUSDC || isSoldOut || batch.itemsLeft === 0n;
 
     return (
         <div
@@ -99,22 +126,21 @@ export const BatchCard = ({ batch, updateCard, isSoldOut }: BatchCardProps) => {
                     <p className="mb-2">Select quantity</p>
                     <Slider
                         min={1}
-                        max={Math.min(batch.itemsLeft, 10)}
+                        max={Math.min(Number(batch.itemsLeft), 10)}
                         step={1}
-                        value={[tokenAmount]}
-                        onValueChange={(value) => setTokenAmount(value[0])}
+                        value={[Number(tokenAmount)]}
+                        onValueChange={(value) => setTokenAmount(BigInt(value[0]))}
                         className="mb-4"
                     />
-                    <p className="text-sm text-gray-600 mb-2">Selected: {tokenAmount}</p>
-                    <p className="font-bold mb-4">Total: {totalPrice?.toFixed(2)} USDC</p>
-                    <p className="text-sm text-gray-600 mb-2">Your USDC Balance: {usdcBalanceFormatted}</p>
+                    <p className="text-sm text-gray-600 mb-2">Selected: {tokenAmount.toString()}</p>
+                    <p className="font-bold mb-4">Total: {formatUnits(totalPrice || 0n, USDC_DECIMALS)} USDC</p>
                     <button
                         onClick={handleBuyClick}
-                        disabled={!isConnected || isLoading || !hasEnoughUSDC}
+                        disabled={isButtonDisabled}
                         className={`w-full p-3 rounded transition-colors duration-300 ${
-                            isConnected && !isLoading && hasEnoughUSDC
-                                ? "bg-green-500 text-white hover:bg-green-600"
-                                : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                            isButtonDisabled
+                                ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                                : "bg-green-500 text-white hover:bg-green-600"
                         }`}
                     >
                         {getButtonText()}
@@ -123,4 +149,4 @@ export const BatchCard = ({ batch, updateCard, isSoldOut }: BatchCardProps) => {
             )}
         </div>
     );
-};
+}

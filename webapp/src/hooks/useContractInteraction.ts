@@ -1,6 +1,6 @@
 import { multicall } from "@wagmi/core";
 import { useCallback, useMemo, useState } from "react";
-import { formatUnits, parseUnits } from "viem";
+import { formatUnits } from "viem";
 import {
     useBalance,
     usePublicClient,
@@ -9,7 +9,6 @@ import {
     useWalletClient,
     useWriteContract,
 } from "wagmi";
-import { USDC_DECIMALS } from "../app.config";
 import { useAppContext } from "../contexts/AppContext";
 import { Batch } from "../lib/batch";
 import { customToast } from "../utils/customToast";
@@ -286,7 +285,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
     );
 
     const getBatchInfo = useCallback(
-        async (batchId: number) => {
+        async (batchId: bigint) => {
             console.log(`Fetching info for batch ${batchId}`);
             try {
                 if (!publicClient) {
@@ -294,30 +293,24 @@ export function useContractInteraction(contractConfig: any, functionName: string
                     return null;
                 }
 
-                // Check if the requested batchId is 0
-                if (batchId === 0) {
-                    console.log("Batch ID 0 is invalid. No batches available yet.");
-                    return null;
+                if (batchId === 0n) {
+                    console.log("Batch ID 0 is valid in the new contract.");
                 }
 
-                // First, check if any batches exist
                 const lastBatchID = (await publicClient.readContract({
                     ...contractConfig,
                     functionName: "lastBatchID",
                 })) as bigint;
 
-                if (lastBatchID === undefined || lastBatchID === 0n) {
-                    console.log("No batches available yet");
-                    return null;
-                }
+                console.log(`Last Batch ID from contract: ${lastBatchID}`);
 
-                // Check if the requested batchId is within the valid range
-                if (BigInt(batchId) > lastBatchID) {
+                // Check if the requested batchId is within the valid range (0 to lastBatchID)
+                if (batchId > lastBatchID) {
                     console.log(`Batch ID ${batchId} is out of bounds. Last batch ID is ${lastBatchID}`);
                     return null;
                 }
 
-                const result = await execute(BigInt(batchId));
+                const result = await execute(batchId);
                 console.log(`Raw batch ${batchId} info:`, result);
                 if (Array.isArray(result) && result.length === 5) {
                     const [id, tokenIds, timestamp, price, itemsLeft] = result;
@@ -355,7 +348,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
     };
 }
 
-export function useBatchOperations(batchId: number, totalPrice: number) {
+export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
     const { astaverdeContractConfig, getUsdcContractConfig } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
     const publicClient = usePublicClient();
@@ -374,25 +367,23 @@ export function useBatchOperations(batchId: number, totalPrice: number) {
 
     const hasEnoughUSDC = useMemo(() => {
         if (!usdcBalance) return false;
-        const requiredAmount = parseUnits(totalPrice.toString(), USDC_DECIMALS);
-        return BigInt(usdcBalance.value) >= requiredAmount;
+        return BigInt(usdcBalance.value) >= totalPrice;
     }, [usdcBalance, totalPrice]);
 
     const handleApproveAndBuy = useCallback(
-        async (tokenAmount: number, price: number) => {
+        async (tokenAmount: bigint, usdcAmount: bigint) => {
             if (!walletClient) throw new Error("Wallet not connected");
             if (!publicClient) throw new Error("Public client not available");
             setIsLoading(true);
             try {
-                const approveAmount = parseUnits(totalPrice.toString(), USDC_DECIMALS);
                 const currentAllowance = allowance ? BigInt(allowance.toString()) : 0n;
-                const needsApproval = currentAllowance < approveAmount;
+                const needsApproval = currentAllowance < usdcAmount;
 
                 if (needsApproval) {
                     const approveTx = await walletClient.writeContract({
                         ...getUsdcContractConfig(),
                         functionName: "approve",
-                        args: [astaverdeContractConfig.address, approveAmount],
+                        args: [astaverdeContractConfig.address, usdcAmount],
                     });
                     customToast.info("Approval transaction submitted");
                     await publicClient.waitForTransactionReceipt({
@@ -403,11 +394,7 @@ export function useBatchOperations(batchId: number, totalPrice: number) {
                 }
 
                 // Prepare the arguments for the buyBatch function
-                const buyBatchArgs = [
-                    BigInt(batchId),
-                    parseUnits(price.toString(), USDC_DECIMALS),
-                    BigInt(tokenAmount),
-                ];
+                const buyBatchArgs = [batchId, usdcAmount, tokenAmount];
 
                 // Estimate gas for the buy transaction
                 const gasEstimate = await publicClient.estimateContractGas({
@@ -453,7 +440,6 @@ export function useBatchOperations(batchId: number, totalPrice: number) {
             walletClient,
             publicClient,
             allowance,
-            totalPrice,
             batchId,
             astaverdeContractConfig,
             getUsdcContractConfig,

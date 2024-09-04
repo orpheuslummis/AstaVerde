@@ -20,7 +20,7 @@ interface TokenMetadata {
 
 export default function MintPage() {
     const { isConnected, address } = useWallet();
-    const { adminControls, astaverdeContractConfig, isAdmin } = useAppContext();
+    const { adminControls, astaverdeContractConfig, isAdmin, refetchBatches } = useAppContext();
     const { address: accountAddress } = useAccount();
     const [tokens, setTokens] = useState<TokenMetadata[]>([
         {
@@ -199,10 +199,8 @@ export default function MintPage() {
             console.log("Minting batch of tokens");
             console.log("Producers:", producers);
             console.log("CIDs:", cids);
-            const tx = await mintBatch(producers, cids);
-            console.log("Transaction sent:", tx.hash);
-
-            const receipt = await tx.wait();
+            const receipt = await mintBatch(producers, cids);
+            console.log("Transaction sent:", receipt.transactionHash);
             console.log(`Transaction confirmed in block ${receipt.blockNumber}`);
 
             const batchMintedEvent = receipt.logs.find(
@@ -220,6 +218,8 @@ export default function MintPage() {
             customToast.success("Batch minted successfully");
             setTokens([{ name: "", description: "", producer_address: "", image: null }]);
             setLastTokenId((prev) => prev! + tokens.length);
+
+            await refetchBatches();
         } catch (error) {
             console.error("Error minting batch:", error);
             customToast.error("Failed to mint batch: " + (error as Error).message);
@@ -237,6 +237,7 @@ export default function MintPage() {
         tokens,
         connectToSpace,
         queryMintedTokens,
+        refetchBatches,
     ]);
 
     const addToken = useCallback(() => {

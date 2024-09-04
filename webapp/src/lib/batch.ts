@@ -1,26 +1,20 @@
 import { IPFS_GATEWAY_URL } from "../app.config";
 
 export class Batch {
-    id: number;
+    id: bigint;
     token_ids: bigint[];
     timestamp: bigint;
     price: bigint;
-    itemsLeft: number;
+    itemsLeft: bigint;
     cid: string;
     imageUrl?: string;
 
-    constructor(
-        id: number | bigint,
-        token_ids: (number | bigint)[],
-        timestamp: number | bigint,
-        price: number | bigint,
-        itemsLeft: number | bigint,
-    ) {
-        this.id = Number(id);
-        this.token_ids = token_ids.map(BigInt);
-        this.timestamp = BigInt(timestamp);
-        this.price = BigInt(price);
-        this.itemsLeft = Number(itemsLeft);
+    constructor(id: bigint, token_ids: bigint[], timestamp: bigint, price: bigint, itemsLeft: bigint) {
+        this.id = id;
+        this.token_ids = token_ids;
+        this.timestamp = timestamp;
+        this.price = price;
+        this.itemsLeft = itemsLeft;
         this.cid = "";
     }
 
@@ -32,7 +26,7 @@ export class Batch {
         return IPFS_GATEWAY_URL + this.cid;
     }
 
-    updateItemsLeft(newItemsLeft: number): Batch {
+    updateItemsLeft(newItemsLeft: bigint): Batch {
         return new Batch(this.id, this.token_ids, this.timestamp, this.price, newItemsLeft);
     }
 }

@@ -12,7 +12,7 @@ interface AppContextType {
     usdcContractConfig: ReturnType<typeof getUsdcContractConfig>;
     refetchBatches: () => void;
     updateBatch: (updatedBatch: Batch) => void;
-    updateBatchItemsLeft: (batchId: number, newItemsLeft: number) => void;
+    updateBatchItemsLeft: (batchId: bigint, newItemsLeft: bigint) => void;
     adminControls: {
         pauseContract: () => Promise<string>;
         unpauseContract: () => Promise<string>;
@@ -77,25 +77,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 functionName: "lastBatchID",
             })) as bigint;
 
-            console.log("Last Batch ID:", lastBatchID);
-            if (lastBatchID !== null && lastBatchID !== undefined && lastBatchID > 0n) {
-                const batchesData = await Promise.all(
-                    Array.from({ length: Number(lastBatchID) }, (_, i) => i + 1).map(async (id) => {
-                        const batchInfo = await getBatchInfo(id);
-                        console.log(`Raw batch ${id} info:`, batchInfo);
-                        if (batchInfo && Array.isArray(batchInfo) && batchInfo.length === 5) {
-                            const [batchId, tokenIds, timestamp, price, itemsLeft] = batchInfo;
-                            return new Batch(batchId, tokenIds, timestamp, price, itemsLeft);
-                        }
-                        console.warn(`Invalid batch data for ID ${id}:`, batchInfo);
-                        return null;
-                    }),
-                );
-                const validBatches = batchesData.filter((batch): batch is Batch => batch !== null);
-                console.log("Processed batches:", validBatches);
-                setBatches(validBatches);
+            console.log("Last Batch ID from contract:", lastBatchID);
+            if (lastBatchID !== null && lastBatchID !== undefined) {
+                const fetchedBatches: Batch[] = [];
+                for (let i = 0n; i <= lastBatchID; i++) {
+                    const batchInfo = await getBatchInfo(Number(i));
+                    console.log(`Raw batch ${i} info:`, batchInfo);
+                    if (batchInfo) {
+                        const [id, token_ids, timestamp, price, itemsLeft] = batchInfo;
+                        const batch = new Batch(
+                            BigInt(id),
+                            token_ids as bigint[],
+                            BigInt(timestamp),
+                            BigInt(price),
+                            BigInt(itemsLeft),
+                        );
+                        fetchedBatches.push(batch);
+                    }
+                }
+                console.log("Processed batches:", fetchedBatches);
+                setBatches(fetchedBatches);
             } else {
-                console.log("No batches available");
+                console.log("No batches available according to lastBatchID");
                 setBatches([]);
             }
         } catch (error) {
@@ -117,7 +120,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setBatches((prevBatches) => prevBatches.map((batch) => (batch.id === updatedBatch.id ? updatedBatch : batch)));
     }, []);
 
-    const updateBatchItemsLeft = useCallback((batchId: number, newItemsLeft: number) => {
+    const updateBatchItemsLeft = useCallback((batchId: bigint, newItemsLeft: bigint) => {
         setBatches((prevBatches) =>
             prevBatches.map((batch) =>
                 batch.id === batchId
@@ -128,35 +131,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        console.log("batchesData changed:", batchesData);
-        if (batchesData && Array.isArray(batchesData) && batchesData.length > 0) {
-            console.log("Processing batchesData:", batchesData);
-            const newBatches = batchesData
-                .map((data, index) => {
-                    if (data && data.result && Array.isArray(data.result) && data.result.length === 5) {
-                        const [batchId, tokenIds, creationTime, price, remainingTokens] = data.result;
-                        console.log(`Processing batch ${index + 1}:`, {
-                            batchId,
-                            tokenIds,
-                            creationTime,
-                            price,
-                            remainingTokens,
-                        });
-                        const batch = new Batch(batchId, tokenIds, creationTime, price, remainingTokens);
-                        console.log("Created Batch object:", batch);
-                        return batch;
-                    }
-                    console.log(`Skipping invalid batch data for index ${index + 1}`);
-                    return null;
-                })
-                .filter((batch): batch is Batch => batch !== null);
-            console.log("New batches:", newBatches);
-            setBatches(newBatches);
-        } else {
-            console.log("No valid batchesData available");
-            setBatches([]);
-        }
-    }, [batchesData]);
+        console.log("Batches state updated:", batches);
+    }, [batches]);
 
     const pauseContract = useContractInteraction(astaverdeContractConfig, "pause").execute;
     const unpauseContract = useContractInteraction(astaverdeContractConfig, "unpause").execute;
