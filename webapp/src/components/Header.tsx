@@ -3,8 +3,10 @@
 import { ConnectKitButton } from "connectkit";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { formatUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
+import { USDC_DECIMALS } from "../app.config";
 import { getUsdcContractConfig } from "../lib/contracts";
 
 interface HeaderProps {
@@ -39,6 +41,11 @@ export function Header({ links }: HeaderProps) {
     };
 
     const balanceClassName = "hidden lg:block border border-gray-300 rounded-md bg-blue-100 p-2";
+
+    const usdcBalanceFormatted = useMemo(() => {
+        if (!usdcBalance) return "0";
+        return formatUnits(usdcBalance.value, USDC_DECIMALS);
+    }, [usdcBalance]);
 
     return (
         <header className="w-full flex flex-wrap items-center justify-between bg-primary p-4 shadow-md">
@@ -87,13 +94,12 @@ export function Header({ links }: HeaderProps) {
                             </span>
                         </li>
                     ))}
-                    {showBalance && (
-                        <li className={balanceClassName}>
-                            {isBalanceLoading
-                                ? "Loading..."
-                                : usdcBalance
-                                  ? `${parseFloat(usdcBalance.formatted).toFixed(2)} ${usdcBalance.symbol}`
-                                  : "N/A"}
+                    {isConnected && (
+                        <li className="mr-4">
+                            <div className="bg-white/10 text-white rounded-lg px-3 py-2">
+                                <span className="text-sm font-medium">USDC Balance: </span>
+                                <span className="text-sm font-bold">{parseFloat(usdcBalanceFormatted).toFixed(2)}</span>
+                            </div>
                         </li>
                     )}
                     <li>
