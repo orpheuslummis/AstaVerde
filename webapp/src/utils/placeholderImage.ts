@@ -1,16 +1,5 @@
-const generateFractalPath = (
-    seed: number,
-    iterations: number,
-    angle: number,
-): string => {
-    const rules = [
-        "F+F-F-F+F",
-        "F-F+F+F-F",
-        "F+F-F+F-F",
-        "F-F+F-F+F",
-        "F+F+F-F-F",
-        "F-F-F+F+F",
-    ];
+const generateFractalPath = (seed: number, iterations: number, angle: number): string => {
+    const rules = ["F+F-F-F+F", "F-F+F+F-F", "F+F-F+F-F", "F-F+F-F+F", "F+F+F-F-F", "F-F-F+F+F"];
     let path = "F";
     const ruleIndex = seed % rules.length;
 
@@ -43,37 +32,38 @@ const generateFractalPath = (
     return svgPath;
 };
 
-const generatePlaceholderSVG = (id: number | string) => {
-    const numericId = typeof id === "string" ? parseInt(id, 10) : id;
-    const seed = (numericId * 2654435761) % 2 ** 32;
+export function getPlaceholderImageUrl(id: string, tokenCount: string): string {
+    const svg = generatePlaceholderSVG(id, tokenCount);
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
 
-    const hue1 = (seed * 137.508) % 360;
-    const hue2 = ((seed << 5) * 222.508) % 360;
-    const hue3 = ((seed << 3) * 179.508) % 360;
-    const saturation = 70 + (seed % 30);
-    const lightness = 50 + ((seed >> 3) % 20);
+function generatePlaceholderSVG(id: string, tokenCount: string): string {
+    // Convert id and tokenCount to numbers for calculations
+    const idNum = parseInt(id, 10);
+    const tokenCountNum = parseInt(tokenCount, 10);
 
-    const iterations = 4 + (seed % 3);
-    const angle = (((seed % 8) + 2) * Math.PI) / 16;
-    const fractalPath = generateFractalPath(seed, iterations, angle);
+    const hue1 = (idNum * 137.508) % 360;
+    const hue2 = ((idNum << 5) * 222.508) % 360;
+    const hue3 = ((idNum << 3) * 179.508) % 360;
+    const saturation = 70 + (idNum % 30);
+    const lightness = 50 + ((idNum >> 3) % 20);
+
+    const iterations = 4 + (idNum % 3);
+    const angle = (((idNum % 8) + 2) * Math.PI) / 16;
+    const fractalPath = generateFractalPath(idNum, iterations, angle);
 
     return `
     <svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200">
       <defs>
-        <linearGradient id="grad${numericId}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="grad${idNum}" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style="stop-color:hsl(${hue1},${saturation}%,${lightness}%);stop-opacity:1" />
           <stop offset="50%" style="stop-color:hsl(${hue2},${saturation}%,${lightness}%);stop-opacity:1" />
           <stop offset="100%" style="stop-color:hsl(${hue3},${saturation}%,${lightness}%);stop-opacity:1" />
         </linearGradient>
       </defs>
-      <rect width="100%" height="100%" fill="url(#grad${numericId})" />
+      <rect width="100%" height="100%" fill="url(#grad${idNum})" />
       <path d="${fractalPath}" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" />
       <rect x="10" y="10" width="280" height="180" fill="none" stroke="white" stroke-width="2" rx="10" ry="10" />
     </svg>
   `;
-};
-
-export const getPlaceholderImageUrl = (id: number | string) => {
-    const svgString = generatePlaceholderSVG(id);
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
-};
+}
