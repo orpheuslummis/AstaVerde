@@ -283,17 +283,25 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
         // Split the amount paid into platform and producer shares
         uint256 highPrecisionPrice = currentPrice * PRECISION_FACTOR;
-        uint256 producerSharePerToken = (highPrecisionPrice * (10000 - platformSharePercentage * 100) + 9999) / 10000;
-        producerSharePerToken = producerSharePerToken / PRECISION_FACTOR; // Convert back to USDC precision
-        uint256 platformSharePerToken = currentPrice - producerSharePerToken;
-        platformShareAccumulated += platformSharePerToken * tokenAmount;
+        uint256 totalHighPrecisionPrice = highPrecisionPrice * tokenAmount;
+
+        // Calculate platform share in high precision
+        uint256 platformShareHighPrecision = (totalHighPrecisionPrice * platformSharePercentage) / 100;
+        // Calculate producer share in high precision
+        uint256 producerShareHighPrecision = totalHighPrecisionPrice - platformShareHighPrecision;
+
+        // Convert back to USDC precision with explicit rounding
+        uint256 platformShare = (platformShareHighPrecision + PRECISION_FACTOR / 2) / PRECISION_FACTOR;
+        uint256 producerShare = (producerShareHighPrecision + PRECISION_FACTOR / 2) / PRECISION_FACTOR;
+
+        platformShareAccumulated += platformShare;
 
         // Handle token batch purchase
         uint256[] memory ids = (tokenAmount == batch.tokenIds.length)
             ? batch.tokenIds
             : getPartialIds(batchID, tokenAmount);
 
-        _handleTokenTransfer(ids, producerSharePerToken);
+        _handleTokenTransfer(ids, producerShare / tokenAmount);
 
         pricingInfo.lastPlatformSaleTime = block.timestamp;
         pricingInfo.totalPlatformSalesSinceLastAdjustment += tokenAmount;

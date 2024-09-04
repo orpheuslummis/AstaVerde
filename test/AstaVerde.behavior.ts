@@ -65,6 +65,13 @@ async function expectBalancesAfterPurchase(
     expect(platformBalance).to.equal((usdcAmount * BigInt(PLATFORM_SHARE_PERCENTAGE)) / 100n);
 }
 
+// New helper function to calculate expected shares
+function calculateShares(usdcAmount: bigint, platformSharePercentage: number) {
+    const platformShare = (usdcAmount * BigInt(platformSharePercentage)) / 100n;
+    const producerShare = usdcAmount - platformShare;
+    return { platformShare, producerShare };
+}
+
 export function shouldBehaveLikeAstaVerde(): void {
     let astaVerde: AstaVerde;
     let mockUSDC: MockUSDC;
@@ -270,6 +277,30 @@ export function shouldBehaveLikeAstaVerde(): void {
             }
             const timestamp = block.timestamp;
             await expect(tx).to.emit(astaVerde, "BatchSold").withArgs(batchID, timestamp, 5);
+        });
+
+        // New test to ensure accurate and correct calculations
+        it("should correctly split USDC between producer and platform with explicit rounding", async function () {
+            const cids = ["cid1", "cid2", "cid3"];
+            const { batchID, usdcAmount, producers } = await mintBuyAndAdvance(astaVerde, user, cids, cids.length);
+            const { tokenIds } = await astaVerde.getBatchInfo(batchID);
+
+            const { platformShare, producerShare } = calculateShares(usdcAmount, PLATFORM_SHARE_PERCENTAGE);
+
+            // Check producer balances
+            for (const producer of producers) {
+                const producerBalance = await mockUSDC.balanceOf(producer);
+                expect(producerBalance).to.equal(producerShare / BigInt(producers.length));
+            }
+
+            // Check platform balance
+            const platformBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
+            expect(platformBalance).to.equal(platformShare);
+
+            // Check user token balances
+            for (const tokenId of tokenIds) {
+                expect(await astaVerde.balanceOf(user.address, tokenId)).to.equal(1);
+            }
         });
     });
 
