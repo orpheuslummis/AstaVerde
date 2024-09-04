@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatUnits } from "viem";
-import { useAccount } from "wagmi";
+import { useAccount, useBalance, useWalletClient } from "wagmi";
 import { Slider } from "../@/components/ui/slider";
 import { USDC_DECIMALS } from "../app.config";
 import { useAppContext } from "../contexts/AppContext";
@@ -20,13 +20,11 @@ interface BatchCardProps {
 
 export const BatchCard = ({ batch, updateCard, isSoldOut }: BatchCardProps) => {
     const { isConnected } = useAccount();
-    const { refetchBatches } = useAppContext();
+    const { refetchBatches, getUsdcContractConfig } = useAppContext();
     const [tokenAmount, setTokenAmount] = useState(1);
+    const { data: walletClient } = useWalletClient();
 
-    const placeholderImage = useMemo(
-        () => getPlaceholderImageUrl(batch.id),
-        [batch.id],
-    );
+    const placeholderImage = useMemo(() => getPlaceholderImageUrl(batch.id), [batch.id]);
 
     const priceInUSDC = useMemo(
         () => (isSoldOut ? null : formatUnits(batch.price, USDC_DECIMALS)),
@@ -37,10 +35,17 @@ export const BatchCard = ({ batch, updateCard, isSoldOut }: BatchCardProps) => {
         [priceInUSDC, tokenAmount],
     );
 
-    const { handleApproveAndBuy, isLoading } = useBatchOperations(
-        batch.id,
-        totalPrice || 0,
-    );
+    const { handleApproveAndBuy, isLoading, hasEnoughUSDC } = useBatchOperations(batch.id, totalPrice || 0);
+
+    const { data: usdcBalance } = useBalance({
+        address: walletClient?.account.address,
+        token: getUsdcContractConfig().address,
+    });
+
+    const usdcBalanceFormatted = useMemo(() => {
+        if (!usdcBalance) return "0";
+        return formatUnits(usdcBalance.value, USDC_DECIMALS);
+    }, [usdcBalance]);
 
     const handleBuyClick = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -54,6 +59,13 @@ export const BatchCard = ({ batch, updateCard, isSoldOut }: BatchCardProps) => {
         } catch (error) {
             console.error("Error in approve and buy process:", error);
         }
+    };
+
+    const getButtonText = () => {
+        if (isLoading) return "Processing...";
+        if (!isConnected) return "Buy";
+        if (!hasEnoughUSDC) return "Insufficient USDC";
+        return "Buy";
     };
 
     return (
@@ -70,23 +82,15 @@ export const BatchCard = ({ batch, updateCard, isSoldOut }: BatchCardProps) => {
                     />
                     {isSoldOut && (
                         <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
-                            <span className="text-white text-xl font-bold">
-                                Sold Out
-                            </span>
+                            <span className="text-white text-xl font-bold">Sold Out</span>
                         </div>
                     )}
                 </div>
                 <div className="p-6">
                     <h2 className="text-2xl font-semibold mb-4">{`Batch ${batch.id}`}</h2>
                     <div className="flex justify-between mb-4">
-                        <p className="text-gray-600">
-                            {isSoldOut
-                                ? "Sold Out"
-                                : `${batch.itemsLeft} items left`}
-                        </p>
-                        {!isSoldOut && (
-                            <p className="font-semibold">{priceInUSDC} USDC</p>
-                        )}
+                        <p className="text-gray-600">{isSoldOut ? "Sold Out" : `${batch.itemsLeft} items left`}</p>
+                        {!isSoldOut && <p className="font-semibold">{priceInUSDC} USDC</p>}
                     </div>
                 </div>
             </Link>
@@ -101,22 +105,19 @@ export const BatchCard = ({ batch, updateCard, isSoldOut }: BatchCardProps) => {
                         onValueChange={(value) => setTokenAmount(value[0])}
                         className="mb-4"
                     />
-                    <p className="text-sm text-gray-600 mb-2">
-                        Selected: {tokenAmount}
-                    </p>
-                    <p className="font-bold mb-4">
-                        Total: {totalPrice?.toFixed(2)} USDC
-                    </p>
+                    <p className="text-sm text-gray-600 mb-2">Selected: {tokenAmount}</p>
+                    <p className="font-bold mb-4">Total: {totalPrice?.toFixed(2)} USDC</p>
+                    <p className="text-sm text-gray-600 mb-2">Your USDC Balance: {usdcBalanceFormatted}</p>
                     <button
                         onClick={handleBuyClick}
-                        disabled={!isConnected || isLoading}
+                        disabled={!isConnected || isLoading || !hasEnoughUSDC}
                         className={`w-full p-3 rounded transition-colors duration-300 ${
-                            isConnected && !isLoading
+                            isConnected && !isLoading && hasEnoughUSDC
                                 ? "bg-green-500 text-white hover:bg-green-600"
                                 : "bg-gray-400 text-gray-200 cursor-not-allowed"
                         }`}
                     >
-                        {isLoading ? "Processing..." : "Buy"}
+                        {getButtonText()}
                     </button>
                 </div>
             )}

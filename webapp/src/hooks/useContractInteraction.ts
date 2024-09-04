@@ -1,7 +1,14 @@
 import { multicall } from "@wagmi/core";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
-import { usePublicClient, useReadContract, useSimulateContract, useWalletClient, useWriteContract } from "wagmi";
+import {
+    useBalance,
+    usePublicClient,
+    useReadContract,
+    useSimulateContract,
+    useWalletClient,
+    useWriteContract,
+} from "wagmi";
 import { USDC_DECIMALS } from "../app.config";
 import { useAppContext } from "../contexts/AppContext";
 import { Batch } from "../lib/batch";
@@ -349,7 +356,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
 }
 
 export function useBatchOperations(batchId: number, totalPrice: number) {
-    const { astaverdeContractConfig, getUsdcContractConfig, refetchBatches } = useAppContext();
+    const { astaverdeContractConfig, getUsdcContractConfig } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
     const publicClient = usePublicClient();
     const { data: walletClient } = useWalletClient();
@@ -359,6 +366,17 @@ export function useBatchOperations(batchId: number, totalPrice: number) {
         functionName: "allowance",
         args: [walletClient?.account.address, astaverdeContractConfig.address],
     });
+
+    const { data: usdcBalance } = useBalance({
+        address: walletClient?.account.address,
+        token: getUsdcContractConfig().address,
+    });
+
+    const hasEnoughUSDC = useMemo(() => {
+        if (!usdcBalance) return false;
+        const requiredAmount = parseUnits(totalPrice.toString(), USDC_DECIMALS);
+        return BigInt(usdcBalance.value) >= requiredAmount;
+    }, [usdcBalance, totalPrice]);
 
     const handleApproveAndBuy = useCallback(
         async (tokenAmount: number, price: number) => {
@@ -416,10 +434,17 @@ export function useBatchOperations(batchId: number, totalPrice: number) {
                 customToast.info("Buy transaction submitted");
                 await publicClient.waitForTransactionReceipt({ hash: buyTx });
                 customToast.success("Purchase confirmed");
-                await refetchBatches();
             } catch (error) {
                 console.error("Error in approve and buy process:", error);
-                customToast.error("Transaction failed: " + (error instanceof Error ? error.message : String(error)));
+                if (error instanceof Error) {
+                    if (error.message.includes("Insufficient funds sent")) {
+                        customToast.error("Insufficient USDC balance for this purchase.");
+                    } else {
+                        customToast.error("Transaction failed: " + error.message);
+                    }
+                } else {
+                    customToast.error("An unknown error occurred during the transaction.");
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -433,9 +458,8 @@ export function useBatchOperations(batchId: number, totalPrice: number) {
             astaverdeContractConfig,
             getUsdcContractConfig,
             refetchAllowance,
-            refetchBatches,
         ],
     );
 
-    return { handleApproveAndBuy, isLoading };
+    return { handleApproveAndBuy, isLoading, hasEnoughUSDC };
 }
