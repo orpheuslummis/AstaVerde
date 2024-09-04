@@ -14,24 +14,9 @@ dotenvConfig({ path: resolve(__dirname, ".env") });
 dotenvConfig({ path: resolve(__dirname, ".env.local") });
 
 const mnemonic: string | undefined = process.env.MNEMONIC;
-if (!mnemonic) {
-    throw new Error("Please set your MNEMONIC env variable");
-}
-
 const privateKey: string | undefined = process.env.PRIVATE_KEY;
-if (!privateKey) {
-    throw new Error("Please set your PRIVATE_KEY env variable");
-}
-
 const rpcApiKey: string | undefined = process.env.RPC_API_KEY;
-if (!rpcApiKey) {
-    throw new Error("Please set your RPC_API_KEY env variable");
-}
-
 const ownerAddress: string | undefined = process.env.OWNER_ADDRESS;
-if (!ownerAddress) {
-    throw new Error("Please set your OWNER_ADDRESS env variable");
-}
 
 const chainIds = {
     hardhat: 31337,
@@ -86,7 +71,16 @@ const config: HardhatUserConfig = {
                 interval: 0,
             },
         },
-        "base-mainnet": getChainConfig("base-mainnet"),
+        "base-mainnet": {
+            ...getChainConfig("base-mainnet"),
+            accounts: [privateKey as string],
+            verify: {
+                etherscan: {
+                    apiKey: process.env.BASE_MAINNET_EXPLORER_API_KEY,
+                },
+            },
+            timeout: 300000, // 5 minutes
+        },
         "base-sepolia": {
             ...getChainConfig("base-sepolia"),
             accounts: [privateKey as string],
@@ -95,8 +89,6 @@ const config: HardhatUserConfig = {
                     apiKey: process.env.BASE_SEPOLIA_EXPLORER_API_KEY,
                 },
             },
-            // maxFeePerGas: ethers.parseUnits("10", "gwei").toString(),
-            // maxPriorityFeePerGas: ethers.parseUnits("2", "gwei").toString(),
             timeout: 300000, // 5 minutes
         },
     },
