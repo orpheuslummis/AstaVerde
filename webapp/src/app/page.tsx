@@ -22,8 +22,10 @@ function BatchListing() {
 
     const sortedBatches = useMemo(() => {
         return [...batches].sort((a, b) => {
-            if (a.itemsLeft > 0n && b.itemsLeft === 0n) return -1;
-            if (a.itemsLeft === 0n && b.itemsLeft > 0n) return 1;
+            const aItemsLeft = a.itemsLeft ?? 0n;
+            const bItemsLeft = b.itemsLeft ?? 0n;
+            if (aItemsLeft > 0n && bItemsLeft === 0n) return -1;
+            if (aItemsLeft === 0n && bItemsLeft > 0n) return 1;
             return Number(b.id ?? 0n) - Number(a.id ?? 0n);
         });
     }, [batches]);
@@ -32,15 +34,21 @@ function BatchListing() {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {sortedBatches.map((batch) => (
-                    <BatchCard
-                        key={batch.id?.toString() ?? `batch-${Math.random()}`}
-                        batch={batch}
-                        isSoldOut={batch.itemsLeft === 0n}
-                    />
-                ))}
-            </div>
+            {batches.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {sortedBatches.map((batch) => (
+                        <BatchCard
+                            key={batch.id?.toString() ?? `batch-${Math.random()}`}
+                            batch={batch}
+                            isSoldOut={batch.itemsLeft === 0n}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-8">
+                    <p className="text-xl">No batches available yet.</p>
+                </div>
+            )}
         </div>
     );
 }

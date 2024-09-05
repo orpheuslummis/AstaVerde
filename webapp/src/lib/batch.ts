@@ -1,15 +1,15 @@
 import { IPFS_GATEWAY_URL } from "../app.config";
 
 export class Batch {
-    id: bigint;
-    token_ids: bigint[];
-    timestamp: bigint;
-    price: bigint;
+    id: bigint | undefined;
+    token_ids: bigint[] | undefined;
+    timestamp: bigint | undefined;
+    price: bigint | undefined;
     itemsLeft: bigint;
     cid: string;
     imageUrl?: string;
 
-    constructor(id: bigint, token_ids: bigint[], timestamp: bigint, price: bigint, itemsLeft: bigint) {
+    constructor(id?: bigint, token_ids?: bigint[], timestamp?: bigint, price?: bigint, itemsLeft: bigint = 0n) {
         this.id = id;
         this.token_ids = token_ids;
         this.timestamp = timestamp;

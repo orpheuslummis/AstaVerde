@@ -9,8 +9,8 @@ import {
     useWalletClient,
     useWriteContract,
 } from "wagmi";
+import { USDC_DECIMALS } from "../app.config";
 import { useAppContext } from "../contexts/AppContext";
-import { Batch } from "../lib/batch";
 import { customToast } from "../utils/customToast";
 import { config } from "../wagmi";
 
@@ -82,22 +82,32 @@ export function useContractInteraction(contractConfig: any, functionName: string
     const isWriteFunction = WRITE_FUNCTIONS.includes(functionName);
 
     const execute: ExecuteFunction = useCallback(
-        async (...executionArgs) => {
+        async (...args: any[]) => {
             setIsSimulating(true);
             setError(null);
             try {
-                console.log(`Executing ${functionName} with args:`, executionArgs);
+                console.log(`Executing ${functionName} with args:`, args);
                 console.log("Contract config:", contractConfig);
 
                 if (!publicClient) {
                     throw new Error("Public client not available");
                 }
 
+                if (functionName === "getBatchInfo") {
+                    const result = await publicClient.readContract({
+                        ...contractConfig,
+                        functionName,
+                        args: args.length > 0 ? [args[0]] : undefined,
+                    });
+                    console.log(`${functionName} result:`, result);
+                    return result;
+                }
+
                 if (isReadOnlyFunction) {
                     const result = await publicClient.readContract({
                         ...contractConfig,
                         functionName,
-                        args: executionArgs,
+                        args: args.length > 0 ? [args[0]] : undefined,
                     });
                     console.log(`${functionName} result:`, result);
                     return result === undefined ? null : result;
@@ -111,7 +121,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
                     const { request } = await publicClient.simulateContract({
                         ...contractConfig,
                         functionName,
-                        args: executionArgs.length > 0 ? executionArgs : undefined, // Only pass args if they exist
+                        args,
                         account: walletClient.account,
                     });
 
@@ -164,6 +174,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
 
     const mintBatch = useCallback(
         async (producers: string[], cids: string[]) => {
+            console.log("mintBatch called with producers:", producers, "and cids:", cids);
             return execute(producers, cids);
         },
         [execute],
@@ -285,7 +296,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
     );
 
     const getBatchInfo = useCallback(
-        async (batchId: bigint) => {
+        async (batchId: number) => {
             console.log(`Fetching info for batch ${batchId}`);
             try {
                 if (!publicClient) {
@@ -293,30 +304,11 @@ export function useContractInteraction(contractConfig: any, functionName: string
                     return null;
                 }
 
-                if (batchId === 0n) {
-                    console.log("Batch ID 0 is valid in the new contract.");
-                }
-
-                const lastBatchID = (await publicClient.readContract({
-                    ...contractConfig,
-                    functionName: "lastBatchID",
-                })) as bigint;
-
-                console.log(`Last Batch ID from contract: ${lastBatchID}`);
-
-                // Check if the requested batchId is within the valid range (0 to lastBatchID)
-                if (batchId > lastBatchID) {
-                    console.log(`Batch ID ${batchId} is out of bounds. Last batch ID is ${lastBatchID}`);
-                    return null;
-                }
-
                 const result = await execute(batchId);
                 console.log(`Raw batch ${batchId} info:`, result);
+
                 if (Array.isArray(result) && result.length === 5) {
-                    const [id, tokenIds, timestamp, price, itemsLeft] = result;
-                    const batch = new Batch(id, tokenIds, timestamp, price, itemsLeft);
-                    console.log(`Processed batch ${batchId} info:`, batch);
-                    return batch;
+                    return result;
                 } else {
                     console.error(`Unexpected format for batch ${batchId} info:`, result);
                     return null;
@@ -326,7 +318,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
                 return null;
             }
         },
-        [execute, publicClient, contractConfig],
+        [execute, publicClient],
     );
 
     return {
@@ -380,10 +372,35 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                 const needsApproval = currentAllowance < usdcAmount;
 
                 if (needsApproval) {
+                    // Fetch the current max batch size from the contract
+                    const maxBatchSize = await publicClient.readContract({
+                        ...astaverdeContractConfig,
+                        functionName: "maxBatchSize",
+                    });
+
+                    // Safely convert maxBatchSize to a bigint
+                    let maxBatchSizeBigInt: bigint;
+                    if (typeof maxBatchSize === "bigint") {
+                        maxBatchSizeBigInt = maxBatchSize;
+                    } else if (typeof maxBatchSize === "number") {
+                        maxBatchSizeBigInt = BigInt(maxBatchSize);
+                    } else if (typeof maxBatchSize === "string") {
+                        maxBatchSizeBigInt = BigInt(maxBatchSize);
+                    } else {
+                        throw new Error("Unexpected type for maxBatchSize");
+                    }
+
+                    // Calculate a reasonable approval amount
+                    const pricePerUnit = BigInt(usdcAmount) / BigInt(tokenAmount);
+                    const bufferFactor = 100n; // Adjust this as needed
+                    const approvalAmount = maxBatchSizeBigInt * pricePerUnit * bufferFactor;
+
+                    console.log("Calculated approval amount:", formatUnits(approvalAmount, USDC_DECIMALS));
+
                     const approveTx = await walletClient.writeContract({
                         ...getUsdcContractConfig(),
                         functionName: "approve",
-                        args: [astaverdeContractConfig.address, usdcAmount],
+                        args: [astaverdeContractConfig.address, approvalAmount],
                     });
                     customToast.info("Approval transaction submitted");
                     await publicClient.waitForTransactionReceipt({

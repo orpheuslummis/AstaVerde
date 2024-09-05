@@ -25,22 +25,32 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     const [tokenAmount, setTokenAmount] = useState(1n);
     const { data: walletClient } = useWalletClient();
 
+    const formattedPrice = useMemo(() => {
+        if (batch.price === undefined) return "N/A";
+        return formatUnits(batch.price, USDC_DECIMALS);
+    }, [batch.price]);
+
     const placeholderImage = useMemo(() => {
-        return getPlaceholderImageUrl(batch.id.toString(), batch.token_ids.length.toString());
-    }, [batch.id, batch.token_ids.length]);
+        return getPlaceholderImageUrl(batch.id?.toString() ?? "0", batch.token_ids?.length?.toString() ?? "0");
+    }, [batch.id, batch.token_ids]);
 
     const priceInUSDC = useMemo(
-        () => (isSoldOut ? null : formatUnits(batch.price, USDC_DECIMALS)),
+        () => (isSoldOut || batch.price === undefined ? null : formatUnits(batch.price, USDC_DECIMALS)),
         [batch.price, isSoldOut],
     );
-    const totalPrice = useMemo(() => (priceInUSDC ? batch.price * tokenAmount : null), [batch.price, tokenAmount]);
+    const totalPrice = useMemo(
+        () => (priceInUSDC && batch.price !== undefined ? batch.price * tokenAmount : 0n),
+        [batch.price, tokenAmount, priceInUSDC],
+    );
 
-    const { handleApproveAndBuy, isLoading, hasEnoughUSDC } = useBatchOperations(batch.id, totalPrice || 0n);
+    const batchIdForOperations = batch.id !== undefined ? batch.id : 0n;
+    const { handleApproveAndBuy, isLoading, hasEnoughUSDC } = useBatchOperations(batchIdForOperations, totalPrice);
+
     const { getCurrentBatchPrice, getBatchInfo } = useAppContext();
 
     const handleBuyClick = async (e: React.MouseEvent) => {
         e.preventDefault();
-        if (batch.itemsLeft === 0n || isSoldOut) return;
+        if (batch.itemsLeft === 0n || isSoldOut || batch.id === undefined) return;
         try {
             // Fetch current batch price
             const currentPrice = await getCurrentBatchPrice(Number(batch.id));
@@ -58,12 +68,12 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
 
             console.log("Buying batch with params:", {
                 batchId: batch.id.toString(),
-                usdcAmount: totalPrice?.toString(),
+                usdcAmount: totalPrice.toString(),
                 tokenAmount: tokenAmount.toString(),
                 currentPrice: currentPrice.toString(),
             });
 
-            await handleApproveAndBuy(tokenAmount, totalPrice!);
+            await handleApproveAndBuy(tokenAmount, totalPrice);
             if (updateCard) {
                 updateCard();
             }
@@ -119,6 +129,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                         <p className="text-gray-600">{isSoldOut ? "Sold Out" : `${batch.itemsLeft} items left`}</p>
                         {!isSoldOut && <p className="font-semibold">{priceInUSDC} USDC</p>}
                     </div>
+                    <p className="text-lg font-semibold mt-2">Price: {formattedPrice} USDC</p>
                 </div>
             </Link>
             {!isSoldOut && (

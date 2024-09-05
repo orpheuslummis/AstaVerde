@@ -42,6 +42,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const [batches, setBatches] = useState<Batch[]>([]);
     const [isAdmin, setIsAdmin] = useState(false);
 
+    const { execute: getLastBatchID } = useContractInteraction(astaverdeContractConfig, "lastBatchID");
+    const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
+
     const { data: lastBatchID, refetch: refetchLastBatchID } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "lastBatchID",
@@ -58,8 +61,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 : [],
     });
 
-    const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
-
     const { data: contractOwner } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "owner",
@@ -67,45 +68,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const fetchBatches = useCallback(async () => {
         console.log("Fetching batches...");
-        if (!publicClient) {
-            console.error("Public client not available");
-            return;
-        }
         try {
-            const lastBatchID = (await publicClient.readContract({
-                ...astaverdeContractConfig,
-                functionName: "lastBatchID",
-            })) as bigint;
-
+            const lastBatchID = await getLastBatchID();
             console.log("Last Batch ID from contract:", lastBatchID);
-            if (lastBatchID !== null && lastBatchID !== undefined) {
+
+            if (lastBatchID !== undefined && lastBatchID >= 0n) {
                 const fetchedBatches: Batch[] = [];
                 for (let i = 0n; i <= lastBatchID; i++) {
                     const batchInfo = await getBatchInfo(Number(i));
                     console.log(`Raw batch ${i} info:`, batchInfo);
                     if (batchInfo) {
-                        const [id, token_ids, timestamp, price, itemsLeft] = batchInfo;
-                        const batch = new Batch(
-                            BigInt(id),
-                            token_ids as bigint[],
-                            BigInt(timestamp),
-                            BigInt(price),
-                            BigInt(itemsLeft),
+                        fetchedBatches.push(
+                            new Batch(batchInfo[0], batchInfo[1], batchInfo[2], batchInfo[3], batchInfo[4]),
                         );
-                        fetchedBatches.push(batch);
                     }
                 }
                 console.log("Processed batches:", fetchedBatches);
                 setBatches(fetchedBatches);
             } else {
-                console.log("No batches available according to lastBatchID");
+                console.log("No batches available yet");
                 setBatches([]);
             }
         } catch (error) {
             console.error("Error fetching batches:", error);
             setBatches([]);
         }
-    }, [publicClient, getBatchInfo]);
+    }, [getLastBatchID, getBatchInfo]);
 
     const refetchBatches = useCallback(async () => {
         try {
