@@ -6,14 +6,14 @@ AstaVerde is a platform for trading verified carbon offsets as non-fungible toke
 
 The AstaVerde platform uses a Dutch auction mechanism for pricing carbon credit batches. Here are the key features of the auction:
 
--   **Starting Price**: The initial base price is set to `basePrice` (default: 230 USDC) per unit.
--   **Price Floor**: A minimum price of `priceFloor` (default: 40 USDC) per unit is enforced.
--   **Daily Price Reduction**: The price decreases by `priceDecreaseRate` (default: 1 USDC) per day for unsold tokens.
--   **Dynamic Pricing**: The base price for new batches is adjusted based on recent sales:
-    -   If a sale occurs within `dayIncreaseThreshold` days (default: 2) of the last price adjustment, the base price increases by `priceDelta` (default: 10 USDC).
-    -   If no sales occur for `dayDecreaseThreshold` days (default: 4), the base price decreases according to the daily reduction rate.
+-   **Starting Price**: Each batch starts at the current `basePrice` (default: 230 USDC) per unit.
+-   **Price Floor**: A minimum price of `priceFloor` (default: 40 USDC) per unit is enforced for all batches.
+-   **Daily Price Reduction**: The price of each batch decreases by `priceDecreaseRate` (default: 1 USDC) per day for unsold tokens.
+-   **Dynamic Base Price**: The `basePrice` for new batches is adjusted based on recent sales:
+    -   If a sale occurs within `dayIncreaseThreshold` days (default: 2) of the last price adjustment, the `basePrice` increases by `priceDelta` (default: 10 USDC).
+    -   If no sales occur for `dayDecreaseThreshold` days (default: 4), the `basePrice` decreases according to the daily reduction rate.
+-   **Independent Batch Pricing**: Each batch's price evolves independently based on its creation time, regardless of sales within the batch.
 -   **Revenue Split**: `100 - platformSharePercentage`% (default: 70%) of each sale goes to the token producer, while `platformSharePercentage`% (default: 30%) goes to the platform.
--   **Batch Pricing**: All tokens within a batch share the same price, which follows the Dutch auction dynamics.
 
 The smart contract owner can adjust various parameters, including:
 
