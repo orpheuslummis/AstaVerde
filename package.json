@@ -30,7 +30,7 @@
     "ethers": "^6.13.2",
     "files-from-path": "^1.0.4",
     "fs-extra": "^11.2.0",
-    "hardhat": "^2.22.8",
+    "hardhat": "^2.22.10",
     "hardhat-deploy": "^0.11.44",
     "hardhat-gas-reporter": "^1.0.9",
     "helia": "^2.1.0",
