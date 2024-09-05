@@ -4,6 +4,7 @@ type CustomToast = {
     success: (message: string) => void;
     error: (message: string) => void;
     info: (message: string) => void;
+    warning: (message: string) => void;
 };
 
 export const customToast: CustomToast = {
@@ -45,6 +46,20 @@ export const customToast: CustomToast = {
             },
             iconTheme: {
                 primary: "#3498db",
+                secondary: "#FFFAEE",
+            },
+        });
+    },
+    warning: (message: string) => {
+        toast(message, {
+            icon: "⚠️",
+            style: {
+                border: "2px solid #FFA500",
+                padding: "16px",
+                color: "#FFA500",
+            },
+            iconTheme: {
+                primary: "#FFA500",
                 secondary: "#FFFAEE",
             },
         });
