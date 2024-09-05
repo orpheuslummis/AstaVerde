@@ -270,7 +270,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         require(tokenAmount <= batch.remainingTokens, "Not enough tokens in batch");
 
         uint256 currentPrice = getCurrentBatchPrice(batchID);
-        batch.price = currentPrice;
         uint256 totalCost = currentPrice * tokenAmount;
         require(usdcAmount >= totalCost, "Insufficient funds sent");
         require(usdcToken.transferFrom(msg.sender, address(this), usdcAmount), "Transfer from user failed");
