@@ -36,7 +36,7 @@ async function mintBuyAndAdvance(
 
     if (advanceTimeSeconds > 0) {
         await waitNSeconds(advanceTimeSeconds);
-        await astaVerde.updateBasePrice();
+        await astaVerde.updateBasePriceOnAction();
     }
 
     return { batchID, price, usdcAmount, producers };
@@ -322,7 +322,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             await astaVerde.setBasePrice(priceFloor + 1n);
 
             await waitNSeconds(Number(dayDecreaseThreshold) * SECONDS_IN_A_DAY);
-            await astaVerde.updateBasePrice();
+            await astaVerde.updateBasePriceOnAction();
 
             const newBasePrice = await astaVerde.basePrice();
             expect(newBasePrice).to.equal(priceFloor);
@@ -333,7 +333,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             await astaVerde.setBasePrice(priceFloor);
 
             await waitNSeconds(SECONDS_IN_A_DAY * 7);
-            await astaVerde.updateBasePrice();
+            await astaVerde.updateBasePriceOnAction();
 
             const newBasePrice = await astaVerde.basePrice();
             expect(newBasePrice).to.equal(priceFloor);
@@ -350,7 +350,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             expect(newBasePrice).to.equal(initialBasePrice + priceDelta);
 
             await waitNSeconds(Number(dayDecreaseThreshold) * SECONDS_IN_A_DAY);
-            await astaVerde.updateBasePrice();
+            await astaVerde.updateBasePriceOnAction();
             newBasePrice = await astaVerde.basePrice();
             expect(newBasePrice).to.be.lt(initialBasePrice + priceDelta);
 

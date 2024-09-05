@@ -8,12 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/**
- * @title AstaVerde
- * @dev A carbon credits marketplace using Dutch auction for batch pricing.
- * Each credit is an ERC1155 token that can be 'redeemed'.
- */
-
 contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, ReentrancyGuard {
     IERC20 public immutable usdcToken;
     uint256 constant INTERNAL_PRECISION = 1e18;
@@ -161,7 +155,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         require(producers.length == cids.length, "Mismatch between producers and cids lengths");
         require(producers.length <= maxBatchSize, "Batch size exceeds max batch size");
 
-        updateBasePrice();
+        updateBasePriceOnAction();
 
         uint256[] memory ids = new uint256[](producers.length);
         uint256[] memory amounts = new uint256[](producers.length);
@@ -203,43 +197,42 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     }
 
     // Updates the base price for future batches based on overall platform activity
-    function updateBasePrice() public returns (uint256) {
-        uint256 daysSinceLastBaseAdjustment = ((block.timestamp - pricingInfo.lastBaseAdjustmentTime) +
-            SECONDS_IN_A_DAY -
-            1) / SECONDS_IN_A_DAY;
+    function updateBasePriceOnAction() public {
+        uint256 daysSinceLastBaseAdjustment = (block.timestamp - pricingInfo.lastBaseAdjustmentTime) / SECONDS_IN_A_DAY;
 
-        if (
-            pricingInfo.totalPlatformSalesSinceLastAdjustment > 0 &&
-            (block.timestamp - pricingInfo.lastPlatformSaleTime) <= dayIncreaseThreshold * SECONDS_IN_A_DAY
-        ) {
-            basePrice += priceDelta;
-        } else if (daysSinceLastBaseAdjustment >= dayDecreaseThreshold) {
-            uint256 priceDecrease = priceDecreaseRate * dayDecreaseThreshold;
-            if (basePrice > priceFloor) {
-                if (basePrice - priceFloor > priceDecrease) {
-                    basePrice -= priceDecrease;
-                } else {
-                    basePrice = priceFloor;
+        if (daysSinceLastBaseAdjustment >= 1) {
+            // Only update if at least one day has passed since the last adjustment
+            if (
+                pricingInfo.totalPlatformSalesSinceLastAdjustment > 0 &&
+                (block.timestamp - pricingInfo.lastPlatformSaleTime) <= dayIncreaseThreshold * SECONDS_IN_A_DAY
+            ) {
+                basePrice += priceDelta;
+            } else if (daysSinceLastBaseAdjustment >= dayDecreaseThreshold) {
+                uint256 priceDecrease = priceDecreaseRate * daysSinceLastBaseAdjustment;
+                if (basePrice > priceFloor) {
+                    if (basePrice - priceFloor > priceDecrease) {
+                        basePrice -= priceDecrease;
+                    } else {
+                        basePrice = priceFloor;
+                    }
                 }
             }
+
+            // Ensure basePrice never goes below priceFloor
+            if (basePrice < priceFloor) {
+                basePrice = priceFloor;
+            }
+
+            emit BasePriceForNewBatchesAdjusted(
+                basePrice,
+                block.timestamp,
+                daysSinceLastBaseAdjustment,
+                pricingInfo.totalPlatformSalesSinceLastAdjustment
+            );
+
+            pricingInfo.lastBaseAdjustmentTime = block.timestamp;
+            pricingInfo.totalPlatformSalesSinceLastAdjustment = 0;
         }
-
-        // Ensure basePrice never goes below priceFloor
-        if (basePrice < priceFloor) {
-            basePrice = priceFloor;
-        }
-
-        emit BasePriceForNewBatchesAdjusted(
-            basePrice,
-            block.timestamp,
-            daysSinceLastBaseAdjustment,
-            pricingInfo.totalPlatformSalesSinceLastAdjustment
-        );
-
-        pricingInfo.lastBaseAdjustmentTime = block.timestamp;
-        pricingInfo.totalPlatformSalesSinceLastAdjustment = 0;
-
-        return basePrice;
     }
 
     function getBatchInfo(
@@ -263,7 +256,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
     // Allows users to purchase tokens from a batch
     function buyBatch(uint256 batchID, uint256 usdcAmount, uint256 tokenAmount) external whenNotPaused nonReentrant {
-        updateBasePrice();
+        updateBasePriceOnAction();
         Batch storage batch = batches[batchID];
         require(batch.creationTime > 0, "Batch not initialized");
         require(tokenAmount > 0, "Invalid token amount");
