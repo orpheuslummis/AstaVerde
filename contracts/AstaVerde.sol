@@ -250,7 +250,13 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     {
         require(batchID < batches.length, "Batch ID is out of bounds");
         Batch storage batch = batches[batchID];
-        price = batchID == lastBatchID ? basePrice : getCurrentBatchPrice(batchID);
+        if (batch.remainingTokens == 0) {
+            // If the batch is sold out, return the last price it was sold at
+            price = batch.price;
+        } else {
+            // For all unsold batches, including the latest, calculate the current price
+            price = getCurrentBatchPrice(batchID);
+        }
         return (batch.batchId, batch.tokenIds, batch.creationTime, price, batch.remainingTokens);
     }
 
@@ -272,6 +278,11 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         }
 
         batch.remainingTokens -= tokenAmount;
+
+        // Store the final sale price if the batch is now sold out
+        if (batch.remainingTokens == 0) {
+            batch.price = currentPrice;
+        }
 
         // Split the amount paid into platform and producer shares
         uint256 highPrecisionPrice = currentPrice * PRECISION_FACTOR;
