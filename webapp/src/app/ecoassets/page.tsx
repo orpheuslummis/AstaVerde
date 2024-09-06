@@ -4,20 +4,26 @@ export default function Page() {
     return (
         <div className="bg-gray-100 min-h-screen py-8">
             <div className="max-w-4xl mx-auto px-6 py-8 bg-white rounded-lg shadow-sm">
-                <h1 className="text-3xl font-bold mb-6 text-gray-800">Welcome to Eco Assets</h1>
+                <h1 className="text-3xl font-bold mb-6 text-gray-800">Eco Assets</h1>
                 <p className="text-lg mb-8 text-gray-700 leading-relaxed">
-                    Eco Assets are the core of our mission at EcoTradeZone. These digital assets represent the tangible
-                    environmental impact of biochar production. Each EcoAsset displays the time, date, and location of
-                    production, showcasing the efforts of our biochar producers in creating high-quality biochar and
-                    contributing to global carbon reduction.
+                    Eco asset production is the core of our mission. These digital assets make the semi-tangible
+                    commodity of 'carbon removal' into a single occurrence for a specific tonne. They do this by
+                    gathering all of the proofs and audits that someone would need to know exactly how much carbon was
+                    removed without being at the site, and then putting them in an NFT together to be exchanged and
+                    redeemed.
                 </p>
 
-                <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-800">Components of an EcoAsset:</h2>
+                <p className="mb-8 text-gray-700">
+                    The eco asset shows a picture of the production and usage of the biochar that was audited for the
+                    specific tonne of carbon removed.
+                </p>
+
+                <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-800">Components of an Eco Asset:</h2>
                 <ul className="mb-8 text-gray-700 space-y-3">
                     <li className="flex items-start">
                         <span className="text-primary mr-2">•</span>
                         <span>
-                            <strong>Item ID:</strong> A unique identifier in the sequence of Eco Assets
+                            <strong>Item ID:</strong> A unique identifier in the sequence of eco assets
                         </span>
                     </li>
                     <li className="flex items-start">
@@ -29,16 +35,18 @@ export default function Page() {
                     <li className="flex items-start">
                         <span className="text-primary mr-2">•</span>
                         <span>
-                            <strong>Audit ID:</strong> An impartial verification code from an independent auditing
-                            company
+                            <strong>Description:</strong> Contains the link to the redacted audit report image hosted on
+                            the blockchain, which specific tonne from the audit that you are purchasing, the link to the
+                            production usage image hosted on the blockchain, and the link to the Methodology audited
+                            against.
                         </span>
                     </li>
                 </ul>
 
                 <p className="mb-6 text-gray-700">
-                    Our audit methodology encompasses the 'additionality' of each project, the environmental
-                    sustainability of the biomass used, and the application of the biochar produced. We adhere to global
-                    standards, including the European Union's concept of additionality.
+                    Every tonne of carbon removal in eco assets has been audited for an independent auditor's opinion
+                    for how many tonnes are removed in accordance with ISO 14064-3. This includes meeting the EU's
+                    concept of additionality.
                 </p>
 
                 <p className="mb-6 text-gray-700">
@@ -54,14 +62,18 @@ export default function Page() {
                     .
                 </p>
 
-                <p className="mb-6 text-gray-700">
-                    Upon verification, we create a proposal on EcoTradeZone. When an EcoAsset is purchased, a portion of
-                    the proceeds is allocated to both the producer and EcoTradeZone, ensuring a sustainable ecosystem.
-                </p>
-
                 <p className="mb-10 text-gray-700">
-                    The EcoAsset is created upon purchase and transferred directly to the buyer's wallet, completing the
-                    transaction.
+                    Producers receive their payments directly from the buyer, and you can follow their local development
+                    from this on{" "}
+                    <a
+                        href="https://www.bionerg.com/"
+                        className="text-primary hover:underline font-semibold"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Bionerg
+                    </a>
+                    .
                 </p>
 
                 <div className="flex flex-col space-y-4 mt-8">
