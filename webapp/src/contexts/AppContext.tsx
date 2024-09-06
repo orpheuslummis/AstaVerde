@@ -28,7 +28,7 @@ interface AppContextType {
     };
     getCurrentBatchPrice: (batchId: number) => Promise<bigint>;
     buyBatch: (batchId: number, usdcAmount: bigint, tokenAmount: number) => Promise<string>;
-    redeemTokens: (tokenIds: number[]) => Promise<string>;
+    redeemTokens: (tokenIds: bigint[]) => Promise<string>;
     updateBasePrice: () => Promise<string>;
     getBatchInfo: (batchId: number) => Promise<any>;
     isAdmin: boolean;
@@ -215,6 +215,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
     }, [address, contractOwner]);
 
+    const { execute: balanceOf } = useContractInteraction(astaverdeContractConfig, "balanceOf");
+    const { execute: tokenOfOwnerByIndex } = useContractInteraction(astaverdeContractConfig, "tokenOfOwnerByIndex");
+
+    const { execute: getLastTokenID } = useContractInteraction(astaverdeContractConfig, "lastTokenID");
+
     const contextValue = useMemo(
         () => ({
             batches,
@@ -231,6 +236,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             updateBasePrice: adminControls.updateBasePrice,
             getBatchInfo,
             isAdmin,
+            balanceOf,
+            tokenOfOwnerByIndex,
         }),
         [
             batches,
@@ -243,6 +250,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             redeemTokens,
             getBatchInfo,
             isAdmin,
+            balanceOf,
+            tokenOfOwnerByIndex,
         ],
     );
 

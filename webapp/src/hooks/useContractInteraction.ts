@@ -34,6 +34,9 @@ const READ_ONLY_FUNCTIONS = [
     "maxBatchSize",
     "platformSharePercentage",
     "supportsInterface",
+    "balanceOf",
+    "tokenOfOwnerByIndex",
+    "lastTokenID",
 ];
 
 const WRITE_FUNCTIONS = [
@@ -82,93 +85,43 @@ export function useContractInteraction(contractConfig: any, functionName: string
     const isWriteFunction = WRITE_FUNCTIONS.includes(functionName);
 
     const execute: ExecuteFunction = useCallback(
-        async (...args: any[]) => {
-            setIsSimulating(true);
-            setError(null);
+        async (...args: unknown[]) => {
+            if (!publicClient || !contractConfig) return;
+
             try {
-                console.log(`Executing ${functionName} with args:`, args);
-                console.log("Contract config:", contractConfig);
-
-                if (!publicClient) {
-                    throw new Error("Public client not available");
-                }
-
-                if (functionName === "getBatchInfo") {
-                    const result = await publicClient.readContract({
-                        ...contractConfig,
-                        functionName,
-                        args: args.length > 0 ? [args[0]] : undefined,
-                    });
-                    console.log(`${functionName} result:`, result);
-                    return result;
-                }
-
+                let result;
                 if (isReadOnlyFunction) {
-                    const result = await publicClient.readContract({
+                    result = await publicClient.readContract({
                         ...contractConfig,
                         functionName,
-                        args: args.length > 0 ? [args[0]] : undefined,
+                        args,
                     });
-                    console.log(`${functionName} result:`, result);
-                    return result === undefined ? null : result;
-                }
-
-                if (isWriteFunction || !isReadOnlyFunction) {
-                    if (!walletClient) {
-                        throw new Error("Wallet client not connected");
-                    }
-
+                } else if (isWriteFunction) {
+                    if (!walletClient) throw new Error("Wallet not connected");
                     const { request } = await publicClient.simulateContract({
                         ...contractConfig,
                         functionName,
                         args,
                         account: walletClient.account,
                     });
-
-                    setIsPending(true);
-                    console.log("Executing writeContractAsync with request:", request);
-                    const hash = await writeContractAsync(request);
-                    console.log(`${functionName} transaction hash:`, hash);
-
-                    // Wait for the transaction receipt
-                    const receipt = await publicClient.waitForTransactionReceipt({ hash });
-                    console.log(`${functionName} transaction receipt:`, receipt);
-
-                    return receipt; // Return the receipt instead of just the hash
+                    result = await writeContractAsync(request);
+                } else {
+                    throw new Error(`Unknown function: ${functionName}`);
                 }
-
-                throw new Error(`Unknown function type: ${functionName}`);
+                return result;
             } catch (error) {
                 console.error(`Error in ${functionName} interaction:`, error);
-                if (error instanceof Error) {
-                    setError(error);
-                    if (error.message.includes("user rejected transaction")) {
-                        customToast.error("Transaction rejected by user");
-                    } else if (error.message.includes("insufficient funds")) {
-                        customToast.error("Insufficient funds for transaction");
-                    } else if (error.message.includes("execution reverted")) {
-                        customToast.error("Transaction reverted: " + error.message);
-                    } else {
-                        customToast.error(`Error: ${error.message}`);
-                    }
-                } else {
-                    setError(new Error("An unknown error occurred"));
-                    customToast.error("An unknown error occurred");
-                }
                 throw error;
-            } finally {
-                setIsSimulating(false);
-                setIsPending(false);
             }
         },
         [
             publicClient,
-            functionName,
             walletClient,
-            writeContractAsync,
             contractConfig,
+            functionName,
             isReadOnlyFunction,
             isWriteFunction,
+            writeContractAsync,
         ],
     );
 
@@ -270,29 +223,19 @@ export function useContractInteraction(contractConfig: any, functionName: string
     const redeemTokens = useCallback(
         async (tokenIds: number[]) => {
             try {
-                if (!publicClient) {
-                    throw new Error("Public client not available");
-                }
                 if (!walletClient) {
-                    throw new Error("Wallet client not available");
+                    throw new Error("Wallet not connected");
                 }
-
-                const { request } = await publicClient.simulateContract({
-                    ...contractConfig,
-                    functionName: "redeemTokens",
-                    args: [tokenIds.map((id) => BigInt(id))],
-                    account: walletClient.account,
-                });
-
-                const hash = await writeContractAsync(request);
-                console.log(`redeemTokens transaction hash:`, hash);
-                return hash;
+                console.log("Redeeming tokens:", tokenIds);
+                const result = await execute(tokenIds.map((id) => BigInt(id)));
+                console.log("Redeem tokens result:", result);
+                return result;
             } catch (error) {
                 console.error("Error in redeemTokens:", error);
                 throw error;
             }
         },
-        [publicClient, walletClient, contractConfig, writeContractAsync],
+        [execute, walletClient],
     );
 
     const getBatchInfo = useCallback(
