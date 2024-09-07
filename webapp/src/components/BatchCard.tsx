@@ -127,9 +127,8 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                     <h2 className="text-2xl font-semibold mb-4">{`Batch ${batch.id}`}</h2>
                     <div className="flex justify-between mb-4">
                         <p className="text-gray-600">{isSoldOut ? "Sold Out" : `${batch.itemsLeft} items left`}</p>
-                        {!isSoldOut && <p className="font-semibold">{priceInUSDC} USDC</p>}
+                        <p className="font-semibold">{priceInUSDC} USDC</p>
                     </div>
-                    <p className="text-lg font-semibold mt-2">Price: {formattedPrice} USDC</p>
                 </div>
             </Link>
             {!isSoldOut && (
