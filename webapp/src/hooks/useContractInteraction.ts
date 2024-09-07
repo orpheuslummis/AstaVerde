@@ -104,7 +104,9 @@ export function useContractInteraction(contractConfig: any, functionName: string
                         args,
                         account: walletClient.account,
                     });
-                    result = await writeContractAsync(request);
+                    const hash = await writeContractAsync(request);
+                    // Wait for the transaction to be mined and get the receipt
+                    result = await publicClient.waitForTransactionReceipt({ hash });
                 } else {
                     throw new Error(`Unknown function: ${functionName}`);
                 }

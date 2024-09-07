@@ -9,6 +9,9 @@ export const ASTAVERDE_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ASTAVERDE_ADDR
 export const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 export const WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "";
 
+export const IPFS_PREFIX = "ipfs://";
+export const EXTERNAL_URL = "https://marketplace.ecotradezone.com/token/";
+
 export const navigationLinks = [
     { name: "About Eco Assets", url: "/ecoassets" },
     { name: "Market", url: "/" },
