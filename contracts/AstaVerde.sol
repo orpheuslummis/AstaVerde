@@ -117,7 +117,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     }
 
     function setPlatformSharePercentage(uint256 newSharePercentage) external onlyOwner {
-        require(newSharePercentage >= 0 && newSharePercentage <= 100, "Share must be between 0 and 100");
+        require(newSharePercentage < 100, "Share must be between 0 and 99");
         platformSharePercentage = newSharePercentage;
         emit PlatformSharePercentageSet(newSharePercentage);
     }
