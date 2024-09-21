@@ -111,10 +111,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     modifier onlyTokenOwner(uint256[] memory tokenIds) {
         for (uint256 i = 0; i < tokenIds.length; i++) {
             require(tokens[tokenIds[i]].tokenId != 0, "Token does not exist");
-            require(
-                balanceOf(msg.sender, tokenIds[i]) > 0 || isApprovedForAll(msg.sender, address(this)),
-                "Only the owner or approved operator can perform this action"
-            );
+            require(balanceOf(msg.sender, tokenIds[i]) > 0, "Caller is not the token owner");
         }
         _;
     }
