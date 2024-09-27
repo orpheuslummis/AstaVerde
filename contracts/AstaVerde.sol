@@ -30,7 +30,7 @@ contract AstaVerde is ERC1155, ERC1155Holder, ERC1155Pausable, Ownable, Reentran
     uint256 public dayIncreaseThreshold;
     uint256 public dayDecreaseThreshold;
 
-    event BasePriceAdjusted(uint256 newPrice, uint256 timestamp, string adjustmentType, uint256 effectiveDays);
+    event BasePriceAdjusted(uint256 newBasePrice, uint256 timestamp, string adjustmentType, uint256 effectiveDays);
 
     struct TokenInfo {
         uint256 tokenId;
@@ -81,7 +81,6 @@ contract AstaVerde is ERC1155, ERC1155Holder, ERC1155Pausable, Ownable, Reentran
     event MaxBatchSizeSet(uint256 newSize);
     event AuctionDayThresholdsSet(uint256 increaseThreshold, uint256 decreaseThreshold);
     event PlatformFundsClaimed(address to, uint256 amount);
-    event BasePriceAdjusted(uint256 newBasePrice, uint256 timestamp, string adjustmentType, uint256 effectiveDays);
     event PriceDecreaseRateSet(uint256 newPriceDecreaseRate);
     event PriceDeltaSet(uint256 newPriceDelta);
 
