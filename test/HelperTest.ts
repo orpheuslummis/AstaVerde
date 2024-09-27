@@ -3,14 +3,14 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 
 import { deployAstaVerdeFixture } from "./AstaVerde.fixture";
-import { mintUSDC, USDC_PRECISION } from "./lib";
+import { USDC_PRECISION } from "./lib";
 import type { Signers } from "./types";
 
 function shouldHelpersBeGood() {
     it("should mint a user one million USDC and assert its correctness", async function () {
         const user = this.signers.others[0];
         const decent_amount = 1000000n * USDC_PRECISION;
-        await mintUSDC(user, this.mockUSDC, decent_amount);
+        await this.mockUSDC.mint(user.address, decent_amount);
         const userBalance = await this.mockUSDC.balanceOf(user.address);
         expect(userBalance).to.equal(decent_amount);
     });

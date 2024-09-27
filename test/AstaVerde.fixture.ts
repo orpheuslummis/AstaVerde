@@ -21,16 +21,13 @@ export async function deployAstaVerdeFixture(): Promise<{
     await mockUSDC.mint(user2.address, 1000000n * USDC_PRECISION);
 
     const AstaVerde = await ethers.getContractFactory("AstaVerde");
-    const astaVerde = await AstaVerde.deploy(admin.address, await mockUSDC.getAddress());
+    const astaVerde = await AstaVerde.deploy(await mockUSDC.getAddress(), admin.address);
     await astaVerde.waitForDeployment();
 
+    // Ensure all users have MaxUint256 allowance
     await mockUSDC.connect(admin).approve(await astaVerde.getAddress(), ethers.MaxUint256);
     await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), ethers.MaxUint256);
     await mockUSDC.connect(user2).approve(await astaVerde.getAddress(), ethers.MaxUint256);
-
-    console.log("AstaVerde address:", await astaVerde.getAddress());
-    console.log("MockUSDC address:", await mockUSDC.getAddress());
-    console.log("Admin address:", await admin.getAddress());
 
     return { astaVerde, mockUSDC, admin, user1, user2 };
 }

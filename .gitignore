@@ -20,3 +20,4 @@ tmp
 coverage.json
 yarn.lock
 .vercel
+.aider*
