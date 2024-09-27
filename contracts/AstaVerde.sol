@@ -30,6 +30,8 @@ contract AstaVerde is ERC1155, ERC1155Holder, ERC1155Pausable, Ownable, Reentran
     uint256 public dayIncreaseThreshold;
     uint256 public dayDecreaseThreshold;
 
+    event BasePriceAdjusted(uint256 newPrice, uint256 timestamp, string adjustmentType, uint256 effectiveDays);
+
     struct TokenInfo {
         uint256 tokenId;
         address producer;
@@ -93,6 +95,7 @@ contract AstaVerde is ERC1155, ERC1155Holder, ERC1155Pausable, Ownable, Reentran
         priceDecreaseRate = 1 * USDC_PRECISION;
         dayIncreaseThreshold = 2;
         dayDecreaseThreshold = 4;
+        pricingInfo.lastBaseAdjustmentTime = block.timestamp;
         lastBatchID = 0;
         lastTokenID = 0;
         pricingInfo.lastBaseAdjustmentTime = block.timestamp;
@@ -252,51 +255,32 @@ contract AstaVerde is ERC1155, ERC1155Holder, ERC1155Pausable, Ownable, Reentran
             return; // No full day has passed since last adjustment
         }
 
-        // Initialize variables to track adjustments
-        uint256 totalIncrease = 0;
-        uint256 totalDecrease = 0;
-
-        // Check if there have been any sales since the last adjustment
         bool hadSales = pricingInfo.totalPlatformSalesSinceLastAdjustment > 0;
 
         if (hadSales) {
-            // Check if the last sale was within the dayIncreaseThreshold
             uint256 timeSinceLastSale = currentTime - pricingInfo.lastPlatformSaleTime;
             if (timeSinceLastSale <= dayIncreaseThreshold * SECONDS_IN_A_DAY) {
-                // Calculate how many days are within the increase threshold
                 uint256 effectiveDays = (timeSinceLastSale / SECONDS_IN_A_DAY) < daysElapsed
                     ? (timeSinceLastSale / SECONDS_IN_A_DAY)
                     : daysElapsed;
 
-                totalIncrease = priceDelta * effectiveDays;
-                basePrice += totalIncrease;
+                basePrice += priceDelta * effectiveDays;
                 emit BasePriceAdjusted(basePrice, currentTime, "increase", effectiveDays);
             }
-        }
+        } else if (timeElapsed >= dayDecreaseThreshold * SECONDS_IN_A_DAY) {
+            uint256 decreaseDays = daysElapsed;
+            uint256 totalDecrease = priceDecreaseRate * decreaseDays;
 
-        // If no sales within the increase threshold, consider decreasing the base price
-        if (!hadSales || (currentTime - pricingInfo.lastPlatformSaleTime) > dayIncreaseThreshold * SECONDS_IN_A_DAY) {
-            if (timeElapsed >= dayDecreaseThreshold * SECONDS_IN_A_DAY) {
-                // Calculate the number of days since last adjustment
-                uint256 decreaseDays = daysElapsed;
-
-                // Calculate total decrease
-                totalDecrease = priceDecreaseRate * decreaseDays;
-
-                if (basePrice > priceFloor + totalDecrease) {
-                    basePrice -= totalDecrease;
-                    emit BasePriceAdjusted(basePrice, currentTime, "decrease", decreaseDays);
-                } else {
-                    basePrice = priceFloor;
-                    emit BasePriceAdjusted(basePrice, currentTime, "floor", decreaseDays);
-                }
+            if (basePrice > priceFloor + totalDecrease) {
+                basePrice -= totalDecrease;
+                emit BasePriceAdjusted(basePrice, currentTime, "decrease", decreaseDays);
+            } else {
+                basePrice = priceFloor;
+                emit BasePriceAdjusted(basePrice, currentTime, "floor", decreaseDays);
             }
         }
 
-        // Update the last adjustment time to account for the elapsed days
         pricingInfo.lastBaseAdjustmentTime += daysElapsed * SECONDS_IN_A_DAY;
-
-        // Reset sales counter after adjustment
         pricingInfo.totalPlatformSalesSinceLastAdjustment = 0;
     }
 

@@ -160,7 +160,7 @@ export function shouldBehaveLikeAstaVerde(): void {
     });
 
     describe("Base Price Adjustment Logic", function () {
-        it("should increase basePrice by priceDelta once when conditions are met", async function () {
+        it("should increase basePrice by priceDelta for each day when conditions are met", async function () {
             const cids = ["cid1", "cid2"];
             const tokenAmount = 1n;
 
@@ -171,12 +171,15 @@ export function shouldBehaveLikeAstaVerde(): void {
             const priceDelta = await astaVerde.priceDelta();
             expect(priceDelta).to.equal(10n * BigInt(USDC_PRECISION));
 
-            await waitNSeconds(2n * SECONDS_IN_A_DAY - 1n);
+            const daysPassed = 2n;
+            await waitNSeconds(daysPassed * SECONDS_IN_A_DAY - 1n);
 
-            await astaVerde.connect(user).buyBatch(0n, tokenAmount);
+            await expect(astaVerde.connect(user).buyBatch(0n, tokenAmount))
+                .to.emit(astaVerde, "BasePriceAdjusted")
+                .withArgs(initialBasePrice + priceDelta * daysPassed, anyValue, "increase", daysPassed);
 
             const newBasePrice = await astaVerde.basePrice();
-            expect(newBasePrice).to.equal(initialBasePrice + priceDelta);
+            expect(newBasePrice).to.equal(initialBasePrice + priceDelta * daysPassed);
         });
 
         it("should decrease basePrice when no sales occur within dayDecreaseThreshold", async function () {
