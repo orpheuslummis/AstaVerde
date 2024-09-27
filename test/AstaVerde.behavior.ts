@@ -320,7 +320,7 @@ export function shouldBehaveLikeAstaVerde(): void {
 
     describe("Time Manipulation", function () {
         it("should correctly adjust prices over an extended period with multiple sales", async function () {
-            const cids = ["cid1", "cid2", "cid3", "cid4", "cid5"];
+            const cids = Array(20).fill(0).map((_, i) => `cid${i + 1}`);
             await astaVerde.connect(admin).mintBatch(genAddresses(cids.length), cids);
 
             const initialBasePrice = await astaVerde.basePrice();
