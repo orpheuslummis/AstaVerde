@@ -288,7 +288,7 @@ contract AstaVerde is ERC1155, ERC1155Holder, ERC1155Pausable, Ownable, Reentran
                     emit BasePriceAdjusted(basePrice, currentTime, "decrease", decreaseDays);
                 } else {
                     basePrice = priceFloor;
-                    emit BasePriceAdjusted(basePrice, currentTime, "floor", decreaseDaysd);
+                    emit BasePriceAdjusted(basePrice, currentTime, "floor", decreaseDays);
                 }
             }
         }
