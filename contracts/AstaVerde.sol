@@ -260,7 +260,7 @@ contract AstaVerde is ERC1155, ERC1155Holder, ERC1155Pausable, Ownable, Reentran
             uint256 timeSinceLastSale = currentTime - pricingInfo.lastPlatformSaleTime;
             if (timeSinceLastSale <= dayIncreaseThreshold * SECONDS_IN_A_DAY) {
                 uint256 effectiveDays = 1; // Increase by one day's worth of priceDelta
-                basePrice += priceDelta * effectiveDays;
+                basePrice += priceDelta;
                 emit BasePriceAdjusted(basePrice, currentTime, "increase", effectiveDays);
             }
         } else if (timeElapsed >= dayDecreaseThreshold * SECONDS_IN_A_DAY) {
