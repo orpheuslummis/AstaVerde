@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract AstaVerde is ERC1155, ERC1155Holder, ERC1155Pausable, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -255,8 +256,9 @@ contract AstaVerde is ERC1155, ERC1155Holder, ERC1155Pausable, Ownable, Reentran
         if (hadSales) {
             uint256 timeSinceLastSale = currentTime - pricingInfo.lastPlatformSaleTime;
             if (timeSinceLastSale <= dayIncreaseThreshold * SECONDS_IN_A_DAY) {
-                basePrice += priceDelta;
-                emit BasePriceAdjusted(basePrice, currentTime, "increase", 1);
+                uint256 increaseDays = Math.min(daysElapsed, dayIncreaseThreshold);
+                basePrice += priceDelta * increaseDays;
+                emit BasePriceAdjusted(basePrice, currentTime, "increase", increaseDays);
             }
         } else if (daysElapsed >= dayDecreaseThreshold) {
             uint256 decreaseDays = daysElapsed - dayDecreaseThreshold + 1;
@@ -266,8 +268,9 @@ contract AstaVerde is ERC1155, ERC1155Holder, ERC1155Pausable, Ownable, Reentran
                 basePrice -= totalDecrease;
                 emit BasePriceAdjusted(basePrice, currentTime, "decrease", decreaseDays);
             } else {
+                uint256 oldBasePrice = basePrice;
                 basePrice = priceFloor;
-                emit BasePriceAdjusted(basePrice, currentTime, "floor", decreaseDays);
+                emit BasePriceAdjusted(basePrice, currentTime, "floor", oldBasePrice - basePrice);
             }
         }
 
