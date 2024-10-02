@@ -2,15 +2,14 @@
 
 export default function Page() {
     return (
-        <div className="bg-gray-100 min-h-screen py-8">
-            <div className="max-w-4xl mx-auto px-6 py-8 bg-white rounded-lg shadow-sm">
-                <h1 className="text-3xl font-bold mb-6 text-gray-800">Eco Assets</h1>
-                <p className="text-lg mb-8 text-gray-700 leading-relaxed">
-                    Eco asset production is the core of our mission. These digital assets make the semi-tangible
-                    commodity of 'carbon removal' into a single occurrence for a specific tonne. They do this by
-                    gathering all of the proofs and audits that someone would need to know exactly how much carbon was
-                    removed without being at the site, and then putting them in an NFT together to be exchanged and
-                    redeemed.
+        <div className="min-h-screen py-12">
+            <div className="max-w-4xl mx-auto px-8 py-10 bg-white rounded-xl shadow-lg">
+                <h1 className="text-4xl font-bold mb-8 text-emerald-800">Eco Assets</h1>
+                <p className="text-xl mb-8 text-gray-700 leading-relaxed">
+                    Eco asset production is the core of our mission. These digital assets transform the semi-tangible
+                    commodity of 'carbon removal' into a specific, verifiable occurrence for each tonne. By gathering
+                    comprehensive proofs and audits, we enable anyone to understand exactly how much carbon was
+                    removed without being at the site, all encapsulated in an exchangeable and redeemable NFT.
                 </p>
 
                 <p className="mb-8 text-gray-700">
@@ -18,12 +17,12 @@ export default function Page() {
                     specific tonne of carbon removed.
                 </p>
 
-                <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-800">Components of an Eco Asset:</h2>
-                <ul className="mb-8 text-gray-700 space-y-3">
+                <h2 className="text-3xl font-semibold mt-12 mb-6 text-emerald-700">Components of an Eco Asset:</h2>
+                <ul className="mb-10 text-gray-700 space-y-4">
                     <li className="flex items-start">
-                        <span className="text-primary mr-2">•</span>
+                        <span className="text-emerald-500 mr-3 text-xl">•</span>
                         <span>
-                            <strong>Item ID:</strong> A unique identifier in the sequence of eco assets
+                            <strong className="text-emerald-600">Item ID:</strong> A unique identifier in the sequence of eco assets
                         </span>
                     </li>
                     <li className="flex items-start">
@@ -76,11 +75,11 @@ export default function Page() {
                     .
                 </p>
 
-                <div className="flex flex-col space-y-4 mt-8">
+                <div className="flex flex-col space-y-6 mt-12">
                     <a
                         href="/Everything.about.eco.asset.pdf"
                         download
-                        className="inline-block bg-emerald-600 text-white py-4 px-8 rounded-lg hover:bg-emerald-700 transition duration-300 text-lg font-semibold text-center shadow-md hover:shadow-lg"
+                        className="eco-btn eco-btn-primary"
                     >
                         Eco Asset Guide (PDF)
                     </a>
@@ -88,15 +87,15 @@ export default function Page() {
                         href="https://xd.adobe.com/view/642e9fdf-2a25-4424-a4d0-d68c748a8c2b-317d/?fullscreen"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block bg-blue-600 text-white py-4 px-8 rounded-lg hover:bg-blue-700 transition duration-300 text-lg font-semibold text-center shadow-md hover:shadow-lg"
+                        className="eco-btn eco-btn-secondary"
                     >
                         Explore the eco asset
                     </a>
                 </div>
 
-                <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-800">FAQ</h2>
-                <div className="mb-8">
-                    <h3 className="text-xl font-semibold mb-2 text-gray-800">
+                <h2 className="text-3xl font-semibold mt-16 mb-6 text-emerald-700">FAQ</h2>
+                <div className="mb-8 bg-emerald-50 p-6 rounded-lg">
+                    <h3 className="text-2xl font-semibold mb-4 text-emerald-800">
                         How do I create a wallet and connect it?
                     </h3>
                     <p className="text-gray-700">
