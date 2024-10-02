@@ -66,7 +66,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     event BatchMinted(uint256 batchId, uint256 batchCreationTime);
     event BatchSold(uint256 batchId, uint256 batchSoldTime, uint256 tokensSold);
     event PartialBatchSold(uint256 batchId, uint256 batchSoldTime, uint256 remainingTokens);
-    event TokenReedemed(uint256 tokenId, address redeemer, uint256 timestamp);
+    event TokenRedeemed(uint256 tokenId, address redeemer, uint256 timestamp);
 
     constructor(address owner, IERC20 _usdcToken) ERC1155("ipfs://") Ownable(owner) {
         usdcToken = _usdcToken;
@@ -371,7 +371,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             uint256 tokenId = tokenIds[i];
             require(!tokens[tokenId].isRedeemed, "Token is already redeemed");
             tokens[tokenId].isRedeemed = true;
-            emit TokenReedemed(tokenId, msg.sender, block.timestamp);
+            emit TokenRedeemed(tokenId, msg.sender, block.timestamp);
         }
     }
 
