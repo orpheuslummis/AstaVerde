@@ -66,13 +66,13 @@ export default function Page({ params }: { params: { id: bigint } }) {
 
     if (isLoading) {
         return (
-            <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-screen">
+            <div className="container mx-auto px-4 py-4 flex justify-center items-center min-h-[calc(100vh-4rem)]">
                 <p>Loading token data...</p>
             </div>
         );
     } else if (error) {
         return (
-            <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-screen">
+            <div className="container mx-auto px-4 py-4 flex justify-center items-center min-h-[calc(100vh-4rem)]">
                 <p>Error: {error}</p>
             </div>
         );
@@ -80,21 +80,8 @@ export default function Page({ params }: { params: { id: bigint } }) {
 
     if (!tokenData || tokenData[1] === "0x0000000000000000000000000000000000000000") {
         return (
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: "100vh",
-                }}
-            >
-                <div
-                    style={{
-                        backgroundColor: "#f0f0f0",
-                        padding: "20px",
-                        borderRadius: "5px",
-                    }}
-                >
+            <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
+                <div className="bg-gray-100 p-5 rounded-lg">
                     Token doesn&apos;t exist
                 </div>
             </div>
@@ -102,7 +89,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-screen">
+        <div className="container mx-auto px-4 py-4 flex justify-center items-start min-h-[calc(100vh-4rem)]">
             <div className="w-full max-w-2xl">
                 <TokenCard tokenId={params.id} />
             </div>

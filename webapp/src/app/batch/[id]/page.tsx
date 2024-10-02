@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { usePublicClient } from "wagmi";
+import Image from "next/image";
 import BatchInfo from "../../../components/BatchInfo";
 import TokenCard from "../../../components/TokenCard";
 import { useAppContext } from "../../../contexts/AppContext";
+import { getPlaceholderImageUrl } from "../../../utils/placeholderImage";
 
 export default function Page({ params }: { params: { id: string } }) {
     const [batchData, setBatchData] = useState<any>(null);
@@ -12,6 +14,13 @@ export default function Page({ params }: { params: { id: string } }) {
     const [error, setError] = useState<string | null>(null);
     const { astaverdeContractConfig } = useAppContext();
     const publicClient = usePublicClient();
+
+    const placeholderImage = useMemo(() => {
+        return getPlaceholderImageUrl(
+            params.id,
+            batchData ? batchData[1].length.toString() : "0"
+        );
+    }, [params.id, batchData]);
 
     useEffect(() => {
         const fetchBatchData = async () => {
@@ -54,14 +63,30 @@ export default function Page({ params }: { params: { id: string } }) {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-6">Batch {params.id}</h1>
-            <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-                <BatchInfo batchData={batchData} />
+            <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
+                <div className="flex items-center p-6">
+                    <div className="relative w-24 h-24 mr-6">
+                        <Image
+                            src={placeholderImage}
+                            alt={`Batch ${params.id}`}
+                            fill
+                            className="rounded-lg object-cover"
+                        />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-bold mb-2">Batch {params.id}</h1>
+                        <BatchInfo batchData={batchData} />
+                    </div>
+                </div>
             </div>
             <h2 className="text-2xl font-semibold mb-4">Token Cards</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {tokenIds && tokenIds.length > 0 ? (
-                    tokenIds.map((tokenId: bigint) => <TokenCard key={tokenId.toString()} tokenId={tokenId} />)
+                    tokenIds.map((tokenId: bigint) => (
+                        <div key={tokenId.toString()} className="token-card-wrapper">
+                            <TokenCard tokenId={tokenId} />
+                        </div>
+                    ))
                 ) : (
                     <p>No tokens available for this batch.</p>
                 )}

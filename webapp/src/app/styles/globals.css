@@ -10,9 +10,9 @@
         --card-foreground: 222.2 84% 4.9%;
         --popover: 0 0% 100%;
         --popover-foreground: 222.2 84% 4.9%;
-        --primary: 142.1 76.2% 36.3%; /* Adjusted to a green color */
+        --primary: 151 55% 41.6%; /* Adjusted to a more vibrant green */
         --primary-foreground: 355.7 100% 97.3%;
-        --primary-dark: 142.1 76.2% 26.3%; /* Darker shade of primary */
+        --primary-dark: 151 55% 31.6%; /* Darker shade of primary */
         --secondary: 240 4.8% 95.9%;
         --secondary-foreground: 240 5.9% 10%;
         --secondary-dark: 240 4.8% 85.9%; /* Darker shade of secondary */
@@ -64,7 +64,7 @@
         @apply border-border;
     }
     body {
-        @apply bg-background text-foreground min-h-screen;
+        @apply bg-background text-foreground min-h-screen font-sans;
     }
 
     h1,
@@ -73,35 +73,35 @@
     h4,
     h5,
     h6 {
-        @apply font-bold mb-2;
+        @apply font-bold mb-4 text-emerald-800;
     }
 
     h1 {
-        @apply text-2xl;
+        @apply text-4xl;
     }
     h2 {
-        @apply text-xl;
+        @apply text-3xl;
     }
     h3 {
-        @apply text-lg;
+        @apply text-2xl;
     }
 
     a {
-        @apply text-blue-500 hover:text-blue-700 transition-default;
+        @apply text-emerald-600 hover:text-emerald-800 transition-default;
     }
 }
 
 @layer components {
     .btn {
-        @apply px-4 py-2 rounded font-bold transition-default;
+        @apply px-4 py-2 rounded font-medium text-base transition-colors duration-200;
     }
 
     .btn-primary {
-        @apply bg-primary hover:bg-primary-dark text-white;
+        @apply bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white;
     }
 
     .btn-secondary {
-        @apply bg-secondary hover:bg-secondary-dark text-secondary-foreground;
+        @apply bg-teal-600 text-white hover:bg-teal-700;
     }
 
     .card {
@@ -115,6 +115,80 @@
     .container {
         @apply max-w-6xl mx-auto px-4;
     }
+
+    .batch-card {
+        @apply bg-white shadow-md rounded-lg overflow-hidden transition-all duration-300;
+    }
+
+    .token-card {
+        @apply bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-300;
+    }
+
+    .token-card-compact {
+        @apply relative;
+    }
+
+    .token-card-wrapper {
+        @apply relative overflow-hidden;
+    }
+
+    .token-card-wrapper:hover .token-card-compact {
+        @apply scale-105 shadow-lg;
+    }
+
+    .token-card-wrapper:hover::after {
+        content: '';
+        @apply absolute inset-0 bg-black bg-opacity-10 transition-opacity duration-300;
+    }
+
+    .token-card:hover {
+        @apply shadow-lg;
+    }
+
+    .token-card h2 {
+        @apply text-lg font-semibold mb-2 truncate;
+    }
+
+    .token-card p {
+        @apply text-sm text-gray-600 line-clamp-2;
+    }
+
+    .shimmer {
+        @apply relative overflow-hidden bg-gray-200;
+    }
+
+    .shimmer::after {
+        content: '';
+        @apply absolute top-0 left-0 w-full h-full;
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+        0% {
+            transform: translateX(-100%);
+        }
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    .eco-btn {
+        @apply px-6 py-3 rounded-lg font-semibold text-lg text-center transition-all duration-300 shadow-md;
+    }
+
+    .eco-btn-primary {
+        @apply bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white hover:shadow-lg;
+    }
+
+    .eco-btn-secondary {
+        @apply bg-teal-600 text-white hover:bg-teal-700 hover:text-white hover:shadow-lg;
+    }
 }
 
 @layer utilities {
@@ -127,7 +201,7 @@
     }
 
     .text-gradient {
-        @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+        @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500;
     }
 
     .transition-default {
@@ -136,5 +210,9 @@
 
     .hover-lift {
         @apply hover:-translate-y-1 transition-default;
+    }
+
+    .min-h-content {
+        min-height: calc(100vh - 4rem);
     }
 }
