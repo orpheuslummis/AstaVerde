@@ -9,7 +9,7 @@ import { Slider } from "../@/components/ui/slider";
 import { USDC_DECIMALS } from "../app.config";
 import { useAppContext } from "../contexts/AppContext";
 import { useBatchOperations } from "../hooks/useContractInteraction";
-import { Batch } from "../lib/batch";
+import type { Batch } from "../lib/batch";
 import { customToast } from "../utils/customToast";
 import { getPlaceholderImageUrl } from "../utils/placeholderImage";
 

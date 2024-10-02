@@ -9,7 +9,7 @@ export class Batch {
     cid: string;
     imageUrl?: string;
 
-    constructor(id?: bigint, token_ids?: bigint[], timestamp?: bigint, price?: bigint, itemsLeft: bigint = 0n) {
+    constructor(id?: bigint, token_ids?: bigint[], timestamp?: bigint, price?: bigint, itemsLeft = 0n) {
         this.id = id;
         this.token_ids = token_ids;
         this.timestamp = timestamp;

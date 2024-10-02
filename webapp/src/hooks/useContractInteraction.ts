@@ -165,7 +165,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
 
                 const batchSize = 500; // Adjust based on your needs and RPC provider limits
                 const batches = Math.ceil(Number(lastTokenID) / batchSize);
-                let ownedTokens: number[] = [];
+                const ownedTokens: number[] = [];
 
                 for (let i = 0; i < batches; i++) {
                     const start = i * batchSize + 1;

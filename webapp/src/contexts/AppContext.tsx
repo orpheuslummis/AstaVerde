@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAccount, usePublicClient, useReadContract, useReadContracts } from "wagmi";
 import { useContractInteraction } from "../hooks/useContractInteraction";
 import { Batch } from "../lib/batch";

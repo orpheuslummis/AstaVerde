@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef } from 'react';
+import type React from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { customToast } from '../utils/customToast';
 

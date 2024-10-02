@@ -39,8 +39,8 @@ export function getPlaceholderImageUrl(id: string, tokenCount: string): string {
 
 function generatePlaceholderSVG(id: string, tokenCount: string): string {
     // Convert id and tokenCount to numbers for calculations
-    const idNum = parseInt(id, 10);
-    const tokenCountNum = parseInt(tokenCount, 10);
+    const idNum = Number.parseInt(id, 10);
+    const tokenCountNum = Number.parseInt(tokenCount, 10);
 
     const hue1 = (idNum * 137.508) % 360;
     const hue2 = ((idNum << 5) * 222.508) % 360;

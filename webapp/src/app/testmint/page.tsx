@@ -61,7 +61,7 @@ export default function Page() {
                 <div className="flex flex-col items-center space-y-2">
                     <p>Connected Address: {address}</p>
                     <p>
-                        Your USDC Balance: {usdcBalance ? parseFloat(usdcBalance.formatted).toFixed(2) : "Loading..."}{" "}
+                        Your USDC Balance: {usdcBalance ? Number.parseFloat(usdcBalance.formatted).toFixed(2) : "Loading..."}{" "}
                         USDC
                     </p>
                 </div>

@@ -1,4 +1,5 @@
-import React, { createContext, useContext } from 'react';
+import type React from 'react';
+import { createContext, useContext } from 'react';
 import { createPublicClient, http } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 import { CHAIN_SELECTION } from '../app.config';

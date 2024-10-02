@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { EXTERNAL_URL, IPFS_PREFIX } from "../../app.config";
 import { useAppContext } from "../../contexts/AppContext";
 import { useWallet } from "../../contexts/WalletContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import { customToast } from "../../utils/customToast";
-import { connectToSpace, initializeWeb3StorageClient, TokenMetadata, uploadToIPFS } from "../../utils/ipfsHelper";
+import { connectToSpace, initializeWeb3StorageClient, type TokenMetadata, uploadToIPFS } from "../../utils/ipfsHelper";
 
 export default function MintPage() {
     const { isConnected, address } = useWallet();
@@ -81,7 +82,7 @@ export default function MintPage() {
 
             for (const token of tokens) {
                 try {
-                    let imageCid =
+                    const imageCid =
                         uploadImages && token.image ? await uploadToIPFS(client, token.image, token.image.type) : "";
                     if (imageCid) customToast.success(`Image uploaded for token: ${token.name}`);
 

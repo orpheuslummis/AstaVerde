@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import type { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ethers } from "ethers";
 
 export const USDC_PRECISION = 10n ** 6n;

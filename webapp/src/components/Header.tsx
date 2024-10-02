@@ -98,7 +98,7 @@ export function Header({ links }: HeaderProps) {
                         <li className="mr-4">
                             <div className="bg-white/10 text-white rounded-lg px-3 py-2">
                                 <span className="text-sm font-medium">USDC Balance: </span>
-                                <span className="text-sm font-bold">{parseFloat(usdcBalanceFormatted).toFixed(2)}</span>
+                                <span className="text-sm font-bold">{Number.parseFloat(usdcBalanceFormatted).toFixed(2)}</span>
                             </div>
                         </li>
                     )}
