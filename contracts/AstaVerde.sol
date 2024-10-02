@@ -75,7 +75,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         basePrice = 230 * USDC_PRECISION;
         priceFloor = 40 * USDC_PRECISION;
         priceDelta = 10 * USDC_PRECISION;
-        priceDecreaseRate = 1 * USDC_PRECISION;
+        priceDecreaseRate = 5 * USDC_PRECISION;
         dayIncreaseThreshold = 2;
         dayDecreaseThreshold = 4;
         lastBatchID = 0;
