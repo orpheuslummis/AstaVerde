@@ -3,7 +3,6 @@
 import { useEffect, useMemo } from "react";
 import { BatchCard } from "../components/BatchCard";
 import { useAppContext } from "../contexts/AppContext";
-import Link from "next/link";
 
 function BatchListing() {
     const { batches, refetchBatches } = useAppContext();
@@ -38,16 +37,11 @@ function BatchListing() {
             {batches.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {sortedBatches.map((batch) => (
-                        <Link 
+                        <BatchCard
                             key={batch.id?.toString() ?? `batch-${Math.random()}`}
-                            href={`/batch/${batch.id}`}
-                            className="block hover:no-underline"
-                        >
-                            <BatchCard
-                                batch={batch}
-                                isSoldOut={batch.itemsLeft === 0n}
-                            />
-                        </Link>
+                            batch={batch}
+                            isSoldOut={batch.itemsLeft === 0n}
+                        />
                     ))}
                 </div>
             ) : (

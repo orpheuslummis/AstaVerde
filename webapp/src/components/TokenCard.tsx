@@ -130,9 +130,7 @@ export default function TokenCard({
 
     const cardClasses = `
         token-card
-        bg-white rounded-lg shadow-md overflow-hidden
-        border-2 transition-all duration-300
-        ${isSelected ? "border-blue-500" : "border-gray-200"}
+        ${isSelected ? "border-emerald-500" : "border-gray-200"}
         ${isMyTokensPage ? "" : "hover:shadow-lg cursor-pointer"}
         ${isCompact ? "w-full h-full token-card-compact" : ""}
     `;
