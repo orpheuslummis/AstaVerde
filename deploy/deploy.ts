@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
-import { DeployFunction } from "hardhat-deploy/types";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+import type { DeployFunction } from "hardhat-deploy/types";
+import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import { deploymentConfig } from "../hardhat.config";
 
 const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
@@ -24,14 +24,14 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const feeData = await provider.getFeeData();
 
     console.log("Current fee data:", {
-        gasPrice: feeData.gasPrice ? ethers.formatUnits(feeData.gasPrice, "gwei") + " gwei" : "N/A",
-        maxFeePerGas: feeData.maxFeePerGas ? ethers.formatUnits(feeData.maxFeePerGas, "gwei") + " gwei" : "N/A",
+        gasPrice: feeData.gasPrice ? `${ethers.formatUnits(feeData.gasPrice, "gwei")} gwei` : "N/A",
+        maxFeePerGas: feeData.maxFeePerGas ? `${ethers.formatUnits(feeData.maxFeePerGas, "gwei")} gwei` : "N/A",
         maxPriorityFeePerGas: feeData.maxPriorityFeePerGas
-            ? ethers.formatUnits(feeData.maxPriorityFeePerGas, "gwei") + " gwei"
+            ? `${ethers.formatUnits(feeData.maxPriorityFeePerGas, "gwei")} gwei`
             : "N/A",
     });
 
-    const deployContract = async (contractName: string, args: any[]) => {
+    const deployContract = async (contractName: string, args: unknown[]) => {
         console.log(`Deploying ${contractName}...`);
 
         try {
@@ -55,8 +55,8 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
                         contract: `contracts/${contractName}.sol:${contractName}`,
                     });
                     console.log("Contract verified successfully");
-                } catch (error: any) {
-                    if (error.message.toLowerCase().includes("already verified")) {
+                } catch (error: unknown) {
+                    if (error instanceof Error && error.message.toLowerCase().includes("already verified")) {
                         console.log("Contract is already verified");
                     } else {
                         console.error("Error verifying contract:", error);
@@ -76,13 +76,13 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
             const currentFeeData = await provider.getFeeData();
             console.log("Fee data after error:", {
                 gasPrice: currentFeeData.gasPrice
-                    ? ethers.formatUnits(currentFeeData.gasPrice, "gwei") + " gwei"
+                    ? `${ethers.formatUnits(currentFeeData.gasPrice, "gwei")} gwei`
                     : "N/A",
                 maxFeePerGas: currentFeeData.maxFeePerGas
-                    ? ethers.formatUnits(currentFeeData.maxFeePerGas, "gwei") + " gwei"
+                    ? `${ethers.formatUnits(currentFeeData.maxFeePerGas, "gwei")} gwei`
                     : "N/A",
                 maxPriorityFeePerGas: currentFeeData.maxPriorityFeePerGas
-                    ? ethers.formatUnits(currentFeeData.maxPriorityFeePerGas, "gwei") + " gwei"
+                    ? `${ethers.formatUnits(currentFeeData.maxPriorityFeePerGas, "gwei")} gwei`
                     : "N/A",
             });
             throw error;
@@ -95,10 +95,11 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         const mockUSDC = await deployContract("MockUSDC", [ethers.parseUnits("1000000", 6)]);
         usdcTokenAddress = mockUSDC.address;
     } else {
-        usdcTokenAddress = process.env.USDC_ADDRESS!;
-        if (!ethers.isAddress(usdcTokenAddress)) {
+        const envUsdcAddress = process.env.USDC_ADDRESS;
+        if (!envUsdcAddress || !ethers.isAddress(envUsdcAddress)) {
             throw new Error("Invalid USDC_ADDRESS in the environment for this network");
         }
+        usdcTokenAddress = envUsdcAddress;
         console.log("Using existing USDC at address:", usdcTokenAddress);
     }
 

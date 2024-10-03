@@ -101,7 +101,7 @@ async function mintTokens(isLocal, tokenCount) {
     const cids = [];
 
     for (const token of tokenData) {
-      const imagePath = getImagePath(parseInt(token.id));
+      const imagePath = getImagePath(Number.parseInt(token.id));
       const imageCid = isLocal ? imagePath : await uploadToIPFS(client, await fs.readFile(imagePath), 'image/jpeg');
       
       const metadata = {

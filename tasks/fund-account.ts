@@ -1,5 +1,5 @@
 import { task } from "hardhat/config";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+import type { HardhatRuntimeEnvironment } from "hardhat/types";
 
 task("fund-account", "Funds an account with 100 ETH")
     .addParam("account", "The account's address")

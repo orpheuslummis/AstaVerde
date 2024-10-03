@@ -1,5 +1,5 @@
 import { task } from "hardhat/config";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+import type { HardhatRuntimeEnvironment } from "hardhat/types";
 
 task("show-balance", "Shows the balance of an account")
     .addParam("account", "The account's address")
