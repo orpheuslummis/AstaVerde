@@ -65,15 +65,16 @@ export function Header({ links }: HeaderProps) {
 
             <nav className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center`}>
                 <ul className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
-                    {links.map((link, index) => (
-                        <li key={index} className="lg:mr-4">
+                    {links.map((link) => (
+                        <li key={link.url} className="lg:mr-4">
                             <span
                                 className={`group hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
                                     pathname === link.url ? "bg-white/20 dark:bg-gray-700" : ""
                                 }`}
                             >
                                 {link.name === "My Eco Assets" ? (
-                                    <span
+                                    <button
+                                        type="button"
                                         className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 ${
                                             pathname === link.url ? "text-white dark:text-white" : ""
                                         } ${isConnected ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
@@ -83,9 +84,10 @@ export function Header({ links }: HeaderProps) {
                                                 router.push("/mytokens");
                                             }
                                         }}
+                                        disabled={!isConnected}
                                     >
                                         {link.name}
-                                    </span>
+                                    </button>
                                 ) : (
                                     <Link href={link.url}>
                                         <span
