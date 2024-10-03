@@ -1,7 +1,7 @@
-import path from 'node:path';
+const path = require('path');
 
 /** @type {import('next').NextConfig} */
-module.exports = {
+const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   webpack: (config) => {
@@ -13,3 +13,5 @@ module.exports = {
     domains: ['gateway.pinata.cloud'],
   },
 };
+
+module.exports = nextConfig;
