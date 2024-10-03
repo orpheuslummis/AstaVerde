@@ -7,7 +7,6 @@
     "url": "https://github.com/orpheuslummis"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.3",
     "@helia/json": "^1.0.3",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
     "@nomicfoundation/hardhat-ethers": "^3.0.6",
@@ -38,6 +37,7 @@
     "lodash": "^4.17.21",
     "mocha": "^10.2.0",
     "nodemon": "^3.1.0",
+    "oxc": "^1.0.1",
     "prettier": "^3.1.0",
     "prettier-plugin-solidity": "^1.2.0",
     "rimraf": "^5.0.5",
