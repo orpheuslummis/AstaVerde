@@ -124,14 +124,25 @@ export default function MyTokensPage() {
                 <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {currentTokens.map((tokenId) => (
-                            <TokenCard
-                                key={tokenId.toString()}
-                                tokenId={tokenId}
-                                isMyTokensPage={true}
-                                isRedeemed={redeemStatus[tokenId.toString()]}
-                                isSelected={selectedTokens.has(tokenId)}
-                                onSelect={handleTokenSelect}
-                            />
+                            <div key={tokenId.toString()} className="flex flex-col">
+                                <TokenCard
+                                    tokenId={tokenId}
+                                    isMyTokensPage={true}
+                                    isRedeemed={redeemStatus[tokenId.toString()]}
+                                    isSelected={selectedTokens.has(tokenId)}
+                                />
+                                {!redeemStatus[tokenId.toString()] && (
+                                    <label className="flex items-center mt-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedTokens.has(tokenId)}
+                                            onChange={() => handleTokenSelect(tokenId)}
+                                            className="form-checkbox h-5 w-5 text-emerald-600 dark:text-emerald-400"
+                                        />
+                                        <span className="ml-2 text-sm dark:text-gray-300">Select for redemption</span>
+                                    </label>
+                                )}
+                            </div>
                         ))}
                     </div>
                     <div className="mt-8">

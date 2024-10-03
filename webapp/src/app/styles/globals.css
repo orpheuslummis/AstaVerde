@@ -123,23 +123,23 @@
     }
 
     .token-card {
-        @apply bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border-2 transition-all duration-300;
+        @apply bg-white dark:bg-gray-800 shadow-md overflow-hidden transition-all duration-300;
     }
 
     .token-card-compact {
-        @apply relative border border-gray-200 dark:border-gray-700;
+        @apply relative;
     }
 
     .token-card-wrapper {
-        @apply relative overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg;
+        @apply flex flex-col;
     }
 
     .token-card-wrapper:hover .token-card-compact {
-        @apply scale-105 shadow-lg border-emerald-500;
+        @apply scale-105 shadow-lg;
     }
 
     .token-card:hover {
-        @apply shadow-lg border-emerald-500;
+        @apply shadow-lg;
     }
 
     .shimmer {
@@ -223,6 +223,14 @@
 
     .section {
         @apply bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8;
+    }
+
+    .token-selection-label {
+        @apply flex items-center mt-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300;
+    }
+
+    .token-selection-checkbox {
+        @apply form-checkbox h-5 w-5 text-emerald-600 dark:text-emerald-400 rounded;
     }
 }
 
