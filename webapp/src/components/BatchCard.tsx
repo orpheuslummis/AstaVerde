@@ -19,7 +19,6 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     const { isConnected } = useAccount();
     const { refetchBatches } = useAppContext();
     const [tokenAmount, setTokenAmount] = useState(1);
-    const [showBuyOptions, setShowBuyOptions] = useState(false);
 
     const formattedPrice = useMemo(() => {
         if (batch.price === undefined) return "N/A";
@@ -28,21 +27,20 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
 
     const placeholderImage = useMemo(() => {
         return getPlaceholderImageUrl(
-            batch.id?.toString() ?? "0",
-            batch.token_ids?.length?.toString() ?? "0"
+            batch.batchId.toString(),
+            batch.tokenIds.length.toString()
         );
-    }, [batch.id, batch.token_ids]);
+    }, [batch.batchId, batch.tokenIds]);
 
     const totalPrice = useMemo(
         () => (batch.price !== undefined ? batch.price * BigInt(tokenAmount) : 0n),
         [batch.price, tokenAmount]
     );
 
-    const batchIdForOperations = batch.id !== undefined ? batch.id : 0n;
-    const { handleApproveAndBuy, isLoading, hasEnoughUSDC } = useBatchOperations(batchIdForOperations, totalPrice);
+    const { handleApproveAndBuy, isLoading, hasEnoughUSDC } = useBatchOperations(batch.batchId, totalPrice);
 
     const handleBuyClick = async () => {
-        if (batch.itemsLeft === 0n || isSoldOut || batch.id === undefined) return;
+        if (batch.itemsLeft === 0n || isSoldOut) return;
         try {
             await handleApproveAndBuy(BigInt(tokenAmount), totalPrice);
             if (updateCard) {
@@ -50,7 +48,6 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
             }
             refetchBatches();
             customToast.success("Purchase successful!");
-            setShowBuyOptions(false);
         } catch (error) {
             console.error("Error in approve and buy process:", error);
             if (error instanceof Error) {
@@ -72,23 +69,23 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     const isButtonDisabled =
         !isConnected || isLoading || !hasEnoughUSDC || isSoldOut || batch.itemsLeft === 0n;
 
-    const displayedTokens = batch.token_ids?.slice(0, 3) || [];
-    const remainingTokens = (batch.token_ids?.length || 0) - displayedTokens.length;
+    const displayedTokens = batch.tokenIds.slice(0, 3);
+    const remainingTokens = batch.tokenIds.length - displayedTokens.length;
 
     return (
         <div className={`batch-card hover:shadow-xl ${isSoldOut ? 'opacity-50' : ''} dark:bg-gray-800 dark:border-gray-700`}>
             <div className="flex flex-col p-4">
-                <Link href={`/batch/${batch.id}`} className="flex items-center mb-4">
+                <Link href={`/batch/${batch.batchId}`} className="flex items-center mb-4">
                     <div className="relative w-24 h-24 mr-4">
                         <Image
                             src={batch.imageUrl || placeholderImage}
-                            alt={`Batch ${batch.id}`}
+                            alt={`Batch ${batch.batchId}`}
                             fill
                             className="rounded-lg object-cover"
                         />
                     </div>
                     <div className="flex-grow">
-                        <h2 className="text-xl font-semibold mb-1 dark:text-white">{`Batch ${batch.id}`}</h2>
+                        <h2 className="text-xl font-semibold mb-1 dark:text-white">{`Batch ${batch.batchId}`}</h2>
                         <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mb-2">
                             <TagIcon className="w-4 h-4 mr-1" />
                             <span className="font-medium mr-2">{formattedPrice} USDC per unit</span>
@@ -102,21 +99,21 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                 
                 {!isSoldOut && (
                     <div className="mt-4">
-                        <label htmlFor={`quantity-${batch.id}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label htmlFor={`quantity-${batch.batchId}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Quantity: {tokenAmount}
                         </label>
                         <input
                             type="range"
-                            id={`quantity-${batch.id}`}
+                            id={`quantity-${batch.batchId}`}
                             min="1"
-                            max={batch.itemsLeft?.toString()}
+                            max={batch.itemsLeft.toString()}
                             value={tokenAmount}
                             onChange={(e) => setTokenAmount(Number.parseInt(e.target.value, 10))}
                             className="w-full h-4 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
                         />
                         <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mt-1">
                             <span>1</span>
-                            <span>{batch.itemsLeft?.toString()}</span>
+                            <span>{batch.itemsLeft.toString()}</span>
                         </div>
                         <p className="text-sm font-medium mt-2 dark:text-white">
                             Total: {formatUnits(totalPrice, USDC_DECIMALS)} USDC
@@ -133,7 +130,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                 )}
             </div>
 
-            {batch.token_ids && batch.token_ids.length > 0 && (
+            {batch.tokenIds.length > 0 && (
                 <div className="p-4 border-t dark:border-gray-700">
                     <h3 className="text-sm font-semibold mb-2 dark:text-white">Tokens in this batch</h3>
                     <div className="grid grid-cols-3 gap-2">
@@ -149,7 +146,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                         ))}
                         {remainingTokens > 0 && (
                             <Link
-                                href={`/batch/${batch.id}`}
+                                href={`/batch/${batch.batchId}`}
                                 className="flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg aspect-square hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                             >
                                 <span className="text-sm font-semibold mr-1 dark:text-white">+{remainingTokens}</span>

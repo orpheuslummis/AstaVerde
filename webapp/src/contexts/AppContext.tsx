@@ -6,6 +6,7 @@ import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, getUsdcContractConfig } from "../lib/contracts";
 import { customToast } from "../utils/customToast";
 import type { AppContextType } from "../types";
+import { serializeBigInt, deserializeBigInt } from "../utils/bigIntHelper";
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -29,7 +30,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 ? Array.from({ length: Number(lastBatchID) }, (_, i) => ({
                       ...astaverdeContractConfig,
                       functionName: "getBatchInfo",
-                      args: [BigInt(i + 1)],
+                      args: [serializeBigInt(BigInt(i + 1))],
                   }))
                 : [],
     });
@@ -41,30 +42,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const fetchBatches = useCallback(async () => {
         console.log("Fetching batches...");
-        try {
-            const lastBatchID = await getLastBatchID();
-            console.log("Last Batch ID from contract:", lastBatchID);
+        if (getLastBatchID && getBatchInfo) {
+            try {
+                const lastBatchID = await getLastBatchID();
+                console.log("Last Batch ID from contract:", lastBatchID.toString());
 
-            if (lastBatchID !== undefined && lastBatchID >= 0n) {
-                const fetchedBatches: Batch[] = [];
-                for (let i = 0n; i <= lastBatchID; i++) {
-                    const batchInfo = await getBatchInfo(Number(i));
-                    console.log(`Raw batch ${i} info:`, batchInfo);
-                    if (batchInfo) {
-                        fetchedBatches.push(
-                            new Batch(batchInfo[0], batchInfo[1], batchInfo[2], batchInfo[3], batchInfo[4]),
-                        );
+                if (lastBatchID !== undefined && lastBatchID >= 0n) {
+                    const batchPromises = [];
+                    for (let i = 0n; i <= lastBatchID; i++) {
+                        batchPromises.push(getBatchInfo(i));
                     }
+                    const batchesInfo = await Promise.all(batchPromises);
+                    console.log("Raw batch info:", batchesInfo);
+
+                    const processedBatches = batchesInfo.map((batchInfo, index) => {
+                        console.log(`Raw batch ${index} info:`, batchInfo);
+                        const [batchId, tokenIds, creationTime, price, remainingTokens] = batchInfo;
+                        return new Batch(
+                            BigInt(batchId),
+                            tokenIds.map(BigInt),
+                            BigInt(creationTime),
+                            BigInt(price),
+                            BigInt(remainingTokens)
+                        );
+                    });
+
+                    console.log("Processed batches:", processedBatches);
+                    setBatches(processedBatches);
                 }
-                console.log("Processed batches:", fetchedBatches);
-                setBatches(fetchedBatches);
-            } else {
-                console.log("No batches available yet");
-                setBatches([]);
+            } catch (error) {
+                console.error("Error fetching batches:", error);
+                customToast.error("Failed to fetch batches");
             }
-        } catch (error) {
-            console.error("Error fetching batches:", error);
-            setBatches([]);
         }
     }, [getLastBatchID, getBatchInfo]);
 
@@ -78,21 +87,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, [fetchBatches]);
 
     const updateBatch = useCallback((updatedBatch: Batch) => {
-        setBatches((prevBatches) => prevBatches.map((batch) => (batch.id === updatedBatch.id ? updatedBatch : batch)));
+        setBatches((prevBatches) => prevBatches.map((batch) => (batch.batchId === updatedBatch.batchId ? updatedBatch : batch)));
     }, []);
 
     const updateBatchItemsLeft = useCallback((batchId: bigint, newItemsLeft: bigint) => {
         setBatches((prevBatches) =>
             prevBatches.map((batch) =>
-                batch.id === batchId
-                    ? new Batch(batch.id, batch.token_ids, batch.timestamp, batch.price, newItemsLeft)
+                batch.batchId === batchId
+                    ? new Batch(batch.batchId, batch.tokenIds, batch.creationTime, batch.price, newItemsLeft)
                     : batch,
             ),
         );
     }, []);
 
     useEffect(() => {
-        console.log("Batches state updated:", batches);
+        console.log("Batches state updated:", serializeBigInt(batches));
     }, [batches]);
 
     const pauseContract = useContractInteraction(astaverdeContractConfig, "pause").execute;

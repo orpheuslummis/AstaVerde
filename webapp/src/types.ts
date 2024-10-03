@@ -7,7 +7,7 @@ export type BatchData = [
   bigint[],  // tokenIds
   bigint,  // creationTime
   bigint,  // price
-  bigint   // remainingTokens
+  bigint   // itemsLeft (or remainingTokens)
 ];
 
 export interface BatchParams {
