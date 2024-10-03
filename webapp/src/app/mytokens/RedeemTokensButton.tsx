@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { usePublicClient } from "wagmi";
 import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
@@ -24,10 +24,37 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
     const { redeemTokens } = useContractInteraction(astaverdeContractConfig, "redeemTokens");
 
     /**
+     * Redeems tokens in batches to manage gas consumption.
+     *
+     * @param {bigint[]} tokens - Array of token IDs to redeem.
+     */
+    const redeemBatch = useCallback(async (tokens: bigint[]) => {
+        const batch = tokens.slice(0, BATCH_SIZE);
+        const remaining = tokens.slice(BATCH_SIZE);
+
+        setStatusMessage(`Redeeming batch of ${batch.length} tokens...`);
+        console.log("Attempting to redeem batch:", batch);
+        const receipt = await redeemTokens(batch.map(Number));
+        console.log("Redemption receipt:", receipt);
+
+        // Check if the transaction was successful
+        if (receipt && receipt.status === "success") {
+            setStatusMessage(`${batch.length} tokens redeemed successfully`);
+            setProgress((prev) => prev + batch.length);
+        } else {
+            throw new Error("Redemption transaction failed");
+        }
+
+        if (remaining.length > 0) {
+            await redeemBatch(remaining);
+        }
+    }, [redeemTokens]);
+
+    /**
      * Handles the redemption process for selected tokens.
      * Initiates the batch redemption process and manages UI state.
      */
-    const handleRedeem = async () => {
+    const handleRedeem = useCallback(async () => {
         if (selectedTokens.length === 0) {
             customToast.warning("No tokens selected for redemption");
             return;
@@ -41,46 +68,24 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
             await redeemBatch(selectedTokens);
             customToast.success("All selected tokens redeemed successfully");
             onRedeemComplete();
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Error redeeming tokens:", error);
             if (error instanceof Error) {
-                customToast.error(`Failed to redeem tokens: ${error.message}`);
+                const errorMessage = error.message.includes("Redemption transaction failed")
+                    ? "Transaction failed. Please check your wallet for details."
+                    : error.message;
+                customToast.error(`Failed to redeem tokens: ${errorMessage}`);
+                setStatusMessage(`Error: ${errorMessage}`);
             } else {
                 customToast.error("An unknown error occurred while redeeming tokens");
+                setStatusMessage("An unknown error occurred during redemption.");
             }
         } finally {
             setIsRedeeming(false);
             setProgress(0);
             setStatusMessage("");
         }
-    };
-
-    const redeemBatch = async (tokens: bigint[]) => {
-        const batch = tokens.slice(0, BATCH_SIZE);
-        const remaining = tokens.slice(BATCH_SIZE);
-
-        setStatusMessage(`Redeeming batch of ${batch.length} tokens...`);
-        console.log("Attempting to redeem batch:", batch);
-        const result = await redeemTokens(batch.map(Number));
-        console.log("Redemption result:", result);
-
-        if (typeof result === "string") {
-            setStatusMessage(`Transaction submitted for ${batch.length} tokens. Waiting for confirmation...`);
-            if (publicClient) {
-                await publicClient.waitForTransactionReceipt({ hash: result as `0x${string}` });
-                setStatusMessage(`${batch.length} tokens redeemed successfully`);
-                setProgress((prev) => prev + batch.length);
-            } else {
-                throw new Error("Public client not available");
-            }
-        } else {
-            throw new Error("Unexpected result from redeemTokens");
-        }
-
-        if (remaining.length > 0) {
-            await redeemBatch(remaining);
-        }
-    };
+    }, [selectedTokens, onRedeemComplete, redeemBatch]);
 
     const progressPercentage = isRedeeming ? (progress / selectedTokens.length) * 100 : 0;
 

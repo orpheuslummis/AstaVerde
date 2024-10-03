@@ -40,21 +40,19 @@ export default function MyTokensPage() {
             if (lastTokenID === undefined || lastTokenID === null) {
                 throw new Error("Failed to fetch last token ID: Received undefined or null");
             }
-            const lastTokenIDNumber = typeof lastTokenID === "bigint" ? Number(lastTokenID) : Number(lastTokenID);
-            const userTokens = [];
-            for (let i = 1; i <= lastTokenIDNumber; i++) {
-                const balance = await getTokensOfOwner(address, BigInt(i));
+            const userTokens: bigint[] = [];
+            for (let i = 1n; i <= lastTokenID; i++) {
+                const balance = await getTokensOfOwner(address, i);
                 console.log(`Token ${i} balance:`, balance);
                 if (balance && balance > 0n) {
                     userTokens.push(i);
                 }
             }
             console.log("User Tokens:", userTokens);
-            const bigintTokens = userTokens.map(BigInt);
-            setTokens(bigintTokens);
+            setTokens(userTokens);
 
             const status: Record<string, boolean> = {};
-            for (const tokenId of bigintTokens) {
+            for (const tokenId of userTokens) {
                 const tokenInfo = await getTokenInfo(tokenId);
                 console.log(`Token ${tokenId} info:`, tokenInfo);
                 status[tokenId.toString()] = tokenInfo[3]; // isRedeemed is the fourth element
