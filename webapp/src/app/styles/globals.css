@@ -33,31 +33,33 @@
         --chart-5: 27 87% 67%;
     }
 
-    .dark {
-        --background: 20 14.3% 4.1%;
-        --foreground: 0 0% 95%;
-        --card: 24 9.8% 10%;
-        --card-foreground: 0 0% 95%;
-        --popover: 0 0% 9%;
-        --popover-foreground: 0 0% 95%;
-        --primary: 142.1 70.6% 45.3%;
-        --primary-foreground: 144.9 80.4% 10%;
-        --secondary: 240 3.7% 15.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 15%;
-        --muted-foreground: 240 5% 64.9%;
-        --accent: 12 6.5% 15.1%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 85.7% 97.3%;
-        --border: 240 3.7% 15.9%;
-        --input: 240 3.7% 15.9%;
-        --ring: 142.4 71.8% 29.2%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --background: 222.2 84% 4.9%;
+            --foreground: 210 40% 98%;
+            --card: 222.2 84% 4.9%;
+            --card-foreground: 210 40% 98%;
+            --popover: 222.2 84% 4.9%;
+            --popover-foreground: 210 40% 98%;
+            --primary: 142.1 70.6% 45.3%;
+            --primary-foreground: 144.9 80.4% 10%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 142.4 71.8% 29.2%;
+            --chart-1: 220 70% 50%;
+            --chart-2: 160 60% 45%;
+            --chart-3: 30 80% 55%;
+            --chart-4: 280 65% 60%;
+            --chart-5: 340 75% 55%;
+        }
     }
 
     * {
@@ -73,7 +75,7 @@
     h4,
     h5,
     h6 {
-        @apply font-bold mb-4 text-emerald-800;
+        @apply font-bold mb-4 text-emerald-800 dark:text-emerald-400;
     }
 
     h1 {
@@ -87,7 +89,7 @@
     }
 
     a {
-        @apply text-emerald-600 hover:text-emerald-800 transition-default;
+        @apply text-emerald-600 hover:text-emerald-800 transition-default dark:text-emerald-400 dark:hover:text-emerald-300;
     }
 }
 
@@ -97,19 +99,19 @@
     }
 
     .btn-primary {
-        @apply bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white;
+        @apply bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white dark:bg-emerald-700 dark:hover:bg-emerald-600;
     }
 
     .btn-secondary {
-        @apply bg-teal-600 text-white hover:bg-teal-700;
+        @apply bg-teal-600 text-white hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600;
     }
 
     .card {
-        @apply bg-white rounded-lg shadow-md p-4;
+        @apply bg-white dark:bg-gray-800 rounded-lg shadow-md p-4;
     }
 
     .input {
-        @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+        @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white;
     }
 
     .container {
@@ -117,19 +119,19 @@
     }
 
     .batch-card {
-        @apply bg-white shadow-md rounded-lg overflow-hidden transition-all duration-300 border-2 border-gray-200;
+        @apply bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden transition-all duration-300 border-2 border-gray-200 dark:border-gray-700;
     }
 
     .token-card {
-        @apply bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-300;
+        @apply bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border-2 transition-all duration-300;
     }
 
     .token-card-compact {
-        @apply relative border border-gray-200;
+        @apply relative border border-gray-200 dark:border-gray-700;
     }
 
     .token-card-wrapper {
-        @apply relative overflow-hidden border border-gray-200 rounded-lg;
+        @apply relative overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg;
     }
 
     .token-card-wrapper:hover .token-card-compact {
@@ -141,7 +143,7 @@
     }
 
     .shimmer {
-        @apply relative overflow-hidden bg-gray-200;
+        @apply relative overflow-hidden bg-gray-200 dark:bg-gray-700;
     }
 
     .shimmer::after {
@@ -170,11 +172,11 @@
     }
 
     .eco-btn-primary {
-        @apply bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white hover:shadow-lg;
+        @apply bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white hover:shadow-lg dark:bg-emerald-700 dark:hover:bg-emerald-600;
     }
 
     .eco-btn-secondary {
-        @apply bg-teal-600 text-white hover:bg-teal-700 hover:text-white hover:shadow-lg;
+        @apply bg-teal-600 text-white hover:bg-teal-700 hover:text-white hover:shadow-lg dark:bg-teal-700 dark:hover:bg-teal-600;
     }
 
     .slider-thumb {
@@ -210,6 +212,18 @@
         cursor: pointer;
         border-radius: 50%;
     }
+
+    .page-container {
+        @apply min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+    }
+
+    .content-wrapper {
+        @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+    }
+
+    .section {
+        @apply bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8;
+    }
 }
 
 @layer utilities {
@@ -235,5 +249,17 @@
 
     .min-h-content {
         min-height: calc(100vh - 4rem);
+    }
+
+    .text-primary {
+        @apply text-emerald-600 dark:text-emerald-400;
+    }
+
+    .bg-primary {
+        @apply bg-emerald-600 dark:bg-emerald-700;
+    }
+
+    .border-primary {
+        @apply border-emerald-600 dark:border-emerald-400;
     }
 }

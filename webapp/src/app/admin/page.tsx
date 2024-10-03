@@ -121,49 +121,53 @@ function ClaimPlatformFunds() {
     );
 }
 
-function SetURI() {
-    const { adminControls } = useAppContext();
-    const [uri, setURI] = useState("");
-    const { data: currentURI, refetch: refetchCurrentURI } = useReadContract({
-        ...astaverdeContractConfig,
-        functionName: "uri",
-    });
+// change decrease rate
 
-    const handleSetURI = async () => {
-        if (uri) {
-            try {
-                await adminControls.setURI(uri);
-                customToast.success("URI updated successfully");
-                refetchCurrentURI();
-            } catch (error) {
-                console.error("Error setting URI:", error);
-                customToast.error("Failed to update URI");
-            }
-        }
-    };
 
-    return (
-        <ControlContainer title="Set URI">
-            <div className="flex items-center mb-4">
-                <input
-                    type="text"
-                    value={uri}
-                    onChange={(e) => setURI(e.target.value)}
-                    placeholder="Enter URI"
-                    className="px-4 py-2 mr-2 border border-gray-300 rounded"
-                />
-                <button
-                    className="btn btn-secondary m-2 shadow-md hover:shadow-lg disabled:opacity-50"
-                    disabled={!uri}
-                    onClick={handleSetURI}
-                >
-                    Set URI
-                </button>
-            </div>
-            {typeof currentURI === "string" && <div className="text-gray-500 mb-2">Current URI: {currentURI}</div>}
-        </ControlContainer>
-    );
-}
+
+// function SetURI() {
+//     const { adminControls } = useAppContext();
+//     const [uri, setURI] = useState("");
+//     const { data: currentURI, refetch: refetchCurrentURI } = useReadContract({
+//         ...astaverdeContractConfig,
+//         functionName: "uri",
+//     });
+
+//     const handleSetURI = async () => {
+//         if (uri) {
+//             try {
+//                 await adminControls.setURI(uri);
+//                 customToast.success("URI updated successfully");
+//                 refetchCurrentURI();
+//             } catch (error) {
+//                 console.error("Error setting URI:", error);
+//                 customToast.error("Failed to update URI");
+//             }
+//         }
+//     };
+
+//     return (
+//         <ControlContainer title="Set URI">
+//             <div className="flex items-center mb-4">
+//                 <input
+//                     type="text"
+//                     value={uri}
+//                     onChange={(e) => setURI(e.target.value)}
+//                     placeholder="Enter URI"
+//                     className="px-4 py-2 mr-2 border border-gray-300 rounded"
+//                 />
+//                 <button
+//                     className="btn btn-secondary m-2 shadow-md hover:shadow-lg disabled:opacity-50"
+//                     disabled={!uri}
+//                     onClick={handleSetURI}
+//                 >
+//                     Set URI
+//                 </button>
+//             </div>
+//             {typeof currentURI === "string" && <div className="text-gray-500 mb-2">Current URI: {currentURI}</div>}
+//         </ControlContainer>
+//     );
+// }
 
 function PriceFloorControl() {
     const { adminControls } = useAppContext();

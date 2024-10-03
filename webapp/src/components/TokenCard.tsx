@@ -77,7 +77,7 @@ export default function TokenCard({
     const cardContent = (
         <>
             {error ? (
-                <p className="text-red-500">{error}</p>
+                <p className="text-red-500 dark:text-red-400">{error}</p>
             ) : tokenData ? (
                 <>
                     {tokenData.image ? (
@@ -91,26 +91,26 @@ export default function TokenCard({
                             />
                         </div>
                     ) : (
-                        <div className="w-full aspect-square shimmer"></div>
+                        <div className="w-full aspect-square shimmer dark:bg-gray-700"></div>
                     )}
                     {!isCompact && (
                         <div className="p-4">
-                            <h2 className="text-lg font-semibold mb-2 truncate">
+                            <h2 className="text-lg font-semibold mb-2 truncate dark:text-white">
                                 {tokenData.name || `Token ${tokenId}`}
                             </h2>
-                            <p className="text-sm text-gray-600 line-clamp-2">
+                            <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
                                 {tokenData.description}
                             </p>
                         </div>
                     )}
                 </>
             ) : (
-                <div className="w-full aspect-square shimmer"></div>
+                <div className="w-full aspect-square shimmer dark:bg-gray-700"></div>
             )}
 
             {isMyTokensPage && !isCompact && (
                 <div className="mt-4">
-                    <p className="text-sm font-semibold mb-2">
+                    <p className="text-sm font-semibold mb-2 dark:text-white">
                         Status: {isRedeemed ? "Redeemed" : "Not Redeemed"}
                     </p>
                     <label className="flex items-center">
@@ -118,10 +118,10 @@ export default function TokenCard({
                             type="checkbox"
                             checked={isSelected}
                             onChange={handleSelect}
-                            className="form-checkbox h-5 w-5 text-blue-600"
+                            className="form-checkbox h-5 w-5 text-blue-600 dark:text-blue-400"
                             disabled={isRedeemed}
                         />
-                        <span className="ml-2 text-sm">Select for redemption</span>
+                        <span className="ml-2 text-sm dark:text-gray-300">Select for redemption</span>
                     </label>
                 </div>
             )}
@@ -130,9 +130,10 @@ export default function TokenCard({
 
     const cardClasses = `
         token-card
-        ${isSelected ? "border-emerald-500" : "border-gray-200"}
+        ${isSelected ? "border-emerald-500" : "border-gray-200 dark:border-gray-700"}
         ${isMyTokensPage ? "" : "hover:shadow-lg cursor-pointer"}
         ${isCompact ? "w-full h-full token-card-compact" : ""}
+        dark:bg-gray-800
     `;
 
     const cardElement = <div className={cardClasses}>{cardContent}</div>;

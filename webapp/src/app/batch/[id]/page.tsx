@@ -55,15 +55,15 @@ export default function Page({ params }: { params: { id: string } }) {
         fetchBatchData();
     }, [params.id, publicClient, astaverdeContractConfig]);
 
-    if (isLoading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
-    if (!batchData) return <div>No batch data available.</div>;
+    if (isLoading) return <div className="text-center py-8 dark:text-white">Loading...</div>;
+    if (error) return <div className="text-center py-8 text-red-500 dark:text-red-400">Error: {error}</div>;
+    if (!batchData) return <div className="text-center py-8 dark:text-white">No batch data available.</div>;
 
     const [, tokenIds, creationTime, price, remainingTokens] = batchData;
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
+            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden mb-8">
                 <div className="flex items-center p-6">
                     <div className="relative w-24 h-24 mr-6">
                         <Image
@@ -74,23 +74,23 @@ export default function Page({ params }: { params: { id: string } }) {
                         />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold mb-2">Batch {params.id}</h1>
+                        <h1 className="text-3xl font-bold mb-2 dark:text-white">Batch {params.id}</h1>
                         <BatchInfo batchData={batchData} />
                     </div>
                 </div>
             </div>
-            <h2 className="text-2xl font-semibold mb-4">Tokens in this Batch</h2>
+            <h2 className="text-2xl font-semibold mb-4 dark:text-white">Tokens in this Batch</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {tokenIds && tokenIds.length > 0 ? (
                     tokenIds.map((tokenId: bigint) => (
                         <TokenCard 
                             key={tokenId.toString()} 
                             tokenId={tokenId} 
-                            isCompact={false} // Changed to false to show full info
+                            isCompact={false}
                         />
                     ))
                 ) : (
-                    <p>No tokens available for this batch.</p>
+                    <p className="dark:text-white">No tokens available for this batch.</p>
                 )}
             </div>
         </div>
