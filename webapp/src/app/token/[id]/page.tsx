@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { IPFS_GATEWAY_URL } from "../../../app.config";
 import TokenCard from "../../../components/TokenCard";
 import { usePublicClient } from "../../../contexts/PublicClientContext";
@@ -39,7 +39,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
         fetchTokenData();
     }, [publicClient, params.id]);
 
-    const fetchTokenImageUrl = async (tokenCID: string) => {
+    const fetchTokenImageUrl = useCallback(async (tokenCID: string) => {
         try {
             const response = await fetch(`${IPFS_GATEWAY_URL}${tokenCID}`);
             const metadata = await response.json();
@@ -48,11 +48,11 @@ export default function Page({ params }: { params: { id: bigint } }) {
         } catch (error) {
             return null;
         }
-    };
+    }, []);  // Empty dependency array if IPFS_GATEWAY_URL is constant
 
     useEffect(() => {
         const fetchData = async () => {
-            if (tokenData && tokenData[2]) {
+            if (tokenData?.[ 2 ]) {
                 const tokenImageCID = await fetchTokenImageUrl(tokenData[2]);
                 if (tokenImageCID) {
                     const parts = tokenImageCID.split("ipfs://");
@@ -62,7 +62,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
             }
         };
         void fetchData();
-    }, [tokenData, isLoading]);
+    }, [tokenData, fetchTokenImageUrl]);
 
     if (isLoading) {
         return (
@@ -70,7 +70,9 @@ export default function Page({ params }: { params: { id: bigint } }) {
                 <p>Loading token data...</p>
             </div>
         );
-    } else if (error) {
+    }
+
+    if (error) {
         return (
             <div className="container mx-auto px-4 py-4 flex justify-center items-center min-h-[calc(100vh-4rem)]">
                 <p>Error: {error}</p>

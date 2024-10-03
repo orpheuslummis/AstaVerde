@@ -21,7 +21,7 @@ export default function MintPage() {
     const [email, setEmail] = useState("");
     const [lastTokenId, setLastTokenId] = useState<number | null>(null);
     const [uploadImages, setUploadImages] = useState(true);
-    const [web3StorageClient, setWeb3StorageClient] = useState<any>(null);
+    const [web3StorageClient, setWeb3StorageClient] = useState<unknown>(null);
 
     const { execute: mintBatch } = useContractInteraction(astaverdeContractConfig, "mintBatch");
     const { execute: getLastTokenId } = useContractInteraction(astaverdeContractConfig, "lastTokenID");
@@ -89,7 +89,7 @@ export default function MintPage() {
                     const metadata = {
                         name: token.name,
                         description: token.description,
-                        external_url: `${EXTERNAL_URL}${lastTokenId! + producers.length + 1}`,
+                        external_url: `${EXTERNAL_URL}${lastTokenId ? lastTokenId + producers.length + 1 : ''}`,
                         image: imageCid ? `${IPFS_PREFIX}${imageCid}` : "",
                         properties: [{ trait_type: "Producer Address", value: token.producer_address }],
                     };
@@ -116,7 +116,7 @@ export default function MintPage() {
 
             customToast.success("Batch minted successfully");
             setTokens([{ name: "", description: "", producer_address: "", image: null }]);
-            setLastTokenId((prev) => prev! + tokens.length);
+            setLastTokenId((prev) => prev ? prev + tokens.length : null);
             await refetchBatches();
             customToast.success("Batch information updated");
         } catch (error) {
@@ -212,7 +212,7 @@ function MintForm({
             </div>
             {tokens.map((token, index) => (
                 <TokenForm
-                    key={index}
+                    key={`token-${token.name}-${index}`}
                     token={token}
                     index={index}
                     lastTokenId={lastTokenId}
@@ -222,12 +222,14 @@ function MintForm({
                 />
             ))}
             <button
+                type="button"
                 className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
                 onClick={addToken}
             >
                 Add Another Token
             </button>
             <button
+                type="button"
                 className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded w-full"
                 onClick={handleMint}
                 disabled={isUploading}
@@ -268,8 +270,9 @@ function TokenForm({ token, index, lastTokenId, handleTokenChange, handleImageCh
             />
             {uploadImages && (
                 <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">Token Image</label>
+                    <label htmlFor={`tokenImage-${index}`} className="block text-sm font-medium text-gray-700">Token Image</label>
                     <input
+                        id={`tokenImage-${index}`}
                         type="file"
                         accept="image/*"
                         onChange={(e) => handleImageChange(e, index)}
@@ -288,10 +291,17 @@ interface InputFieldProps {
 }
 
 function InputField({ label, value, onChange }: InputFieldProps) {
+    const id = `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
     return (
         <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">{label}</label>
-            <input type="text" value={value} onChange={onChange} className="border rounded px-2 py-1 w-full" />
+            <label htmlFor={id} className="block text-sm font-medium text-gray-700">{label}</label>
+            <input 
+                id={id}
+                type="text" 
+                value={value} 
+                onChange={onChange} 
+                className="border rounded px-2 py-1 w-full" 
+            />
         </div>
     );
 }

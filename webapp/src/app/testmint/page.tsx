@@ -72,6 +72,7 @@ export default function Page() {
             <div className="w-full max-w-md space-y-4">
                 <h2 className="text-2xl font-semibold">USDC Operations</h2>
                 <button
+                    type="button"
                     className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                     onClick={handleMintUSDC}
                     disabled={!address}
@@ -80,6 +81,7 @@ export default function Page() {
                 </button>
 
                 <button
+                    type="button"
                     className="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
                     onClick={handleApproveUSDC}
                     disabled={!address}

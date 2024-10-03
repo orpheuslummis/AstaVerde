@@ -3,21 +3,7 @@ import { usePublicClient } from "wagmi";
 import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import { customToast } from "../../utils/customToast";
-
-/**
- * Props for the RedeemTokensButton component.
- * @interface RedeemTokensButtonProps
- * @property {bigint[]} selectedTokens - Array of selected token IDs to be redeemed.
- * @property {() => void} onRedeemComplete - Callback function to be called when redemption is complete.
- * @property {() => void} onSelectAll - Function to select all available tokens.
- * @property {bigint[]} allTokens - Array of all available token IDs.
- */
-interface RedeemTokensButtonProps {
-    selectedTokens: bigint[];
-    onRedeemComplete: () => void;
-    onSelectAll: () => void;
-    allTokens: bigint[];
-}
+import type { RedeemTokensButtonProps } from "../../types";
 
 // Maximum number of tokens to redeem in a single transaction
 const BATCH_SIZE = 50; // Adjust this value based on gas limit and contract requirements
@@ -105,6 +91,7 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
                     onClick={handleRedeem}
                     disabled={isRedeeming || selectedTokens.length === 0}
                     className="px-4 py-2 bg-green-500 text-white rounded disabled:bg-gray-300"
+                    type="button"
                 >
                     {isRedeeming ? "Redeeming..." : `Redeem Selected (${selectedTokens.length})`}
                 </button>
@@ -112,6 +99,7 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
                     onClick={onSelectAll}
                     disabled={isRedeeming || allTokens.length === selectedTokens.length}
                     className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
+                    type="button"
                 >
                     Select All
                 </button>
@@ -122,7 +110,7 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
                         <div
                             className="bg-blue-600 h-2.5 rounded-full"
                             style={{ width: `${progressPercentage}%` }}
-                        ></div>
+                        />
                     </div>
                     <p className="text-sm mt-1">{statusMessage}</p>
                     <p className="text-sm">{`Progress: ${progress}/${selectedTokens.length} tokens redeemed`}</p>

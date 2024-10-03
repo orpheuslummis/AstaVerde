@@ -1,5 +1,6 @@
 "use client";
 
+import type { BatchData, BatchParams } from '../../../types';
 import { useEffect, useState, useMemo } from "react";
 import { usePublicClient } from "wagmi";
 import Image from "next/image";
@@ -8,19 +9,19 @@ import TokenCard from "../../../components/TokenCard";
 import { useAppContext } from "../../../contexts/AppContext";
 import { getPlaceholderImageUrl } from "../../../utils/placeholderImage";
 
-export default function Page({ params }: { params: { id: string } }) {
-    const [batchData, setBatchData] = useState<any>(null);
+export default function Page({ params }: { params: BatchParams }) {
+    const [batchData, setBatchData] = useState<BatchData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { astaverdeContractConfig } = useAppContext();
     const publicClient = usePublicClient();
 
-    const placeholderImage = useMemo(() => {
-        return getPlaceholderImageUrl(
+    const placeholderImage = useMemo(() => 
+        getPlaceholderImageUrl(
             params.id,
             batchData ? batchData[1].length.toString() : "0"
-        );
-    }, [params.id, batchData]);
+        ),
+    [params.id, batchData]);
 
     useEffect(() => {
         const fetchBatchData = async () => {
@@ -43,7 +44,7 @@ export default function Page({ params }: { params: { id: string } }) {
                     args: [BigInt(params.id)],
                 });
                 console.log("Batch info from contract:", batchInfo);
-                setBatchData(batchInfo);
+                setBatchData(batchInfo as BatchData);
                 setIsLoading(false);
             } catch (err) {
                 console.error("Error fetching batch data:", err);
@@ -59,7 +60,7 @@ export default function Page({ params }: { params: { id: string } }) {
     if (error) return <div className="text-center py-8 text-red-500 dark:text-red-400">Error: {error}</div>;
     if (!batchData) return <div className="text-center py-8 dark:text-white">No batch data available.</div>;
 
-    const [, tokenIds, creationTime, price, remainingTokens] = batchData;
+    const [batchId, tokenIds, creationTime, price, remainingTokens] = batchData;
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -74,7 +75,7 @@ export default function Page({ params }: { params: { id: string } }) {
                         />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold mb-2 dark:text-white">Batch {params.id}</h1>
+                        <h1 className="text-3xl font-bold mb-2 dark:text-white">Batch {batchId.toString()}</h1>
                         <BatchInfo batchData={batchData} />
                     </div>
                 </div>

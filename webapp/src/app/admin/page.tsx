@@ -79,6 +79,7 @@ function PauseContractControl() {
     return (
         <ControlContainer title="Pause / Unpause">
             <button
+                type="button"
                 className="btn btn-primary m-2 shadow-md hover:shadow-lg"
                 disabled={isContractPaused as boolean}
                 onClick={handlePause}
@@ -86,6 +87,7 @@ function PauseContractControl() {
                 Pause
             </button>
             <button
+                type="button"
                 className="btn btn-secondary m-2 shadow-md hover:shadow-lg"
                 disabled={!isContractPaused}
                 onClick={handleUnpause}
@@ -114,7 +116,11 @@ function ClaimPlatformFunds() {
 
     return (
         <ControlContainer title="Claim Platform Funds">
-            <button className="btn btn-secondary m-2 shadow-md hover:shadow-lg" onClick={handleClaim}>
+            <button
+                type="button"
+                className="btn btn-secondary m-2 shadow-md hover:shadow-lg"
+                onClick={handleClaim}
+            >
                 Claim
             </button>
         </ControlContainer>
@@ -154,6 +160,7 @@ function PriceFloorControl() {
                     className="px-4 py-2 border border-gray-300 rounded"
                 />
                 <button
+                    type="button"
                     className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!priceFloor}
                     onClick={handleSetPriceFloor}
@@ -203,6 +210,7 @@ function BasePriceControl() {
                     className="px-4 py-2 border border-gray-300 rounded"
                 />
                 <button
+                    type="button"
                     className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!basePrice}
                     onClick={handleSetBasePrice}
@@ -251,6 +259,7 @@ function MaxBatchSizeControl() {
                     className="px-4 py-2 border border-gray-300 rounded"
                 />
                 <button
+                    type="button"
                     className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!maxBatchSize}
                     onClick={handleSetMaxBatchSize}
@@ -316,6 +325,7 @@ function AuctionTimeThresholdsControl() {
                     className="px-4 py-2 border border-gray-300 rounded"
                 />
                 <button
+                    type="button"
                     className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!dayIncreaseThreshold || !dayDecreaseThreshold}
                     onClick={handleSetAuctionTimeThresholds}
@@ -371,6 +381,7 @@ function PlatformPercentageControl() {
                     max="100"
                 />
                 <button
+                    type="button"
                     className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!platformSharePercentage}
                     onClick={handleSetPlatformSharePercentage}
@@ -402,7 +413,11 @@ function UpdateBasePriceControl() {
 
     return (
         <ControlContainer title="Update Base Price">
-            <button className="btn btn-secondary m-2 shadow-md hover:shadow-lg" onClick={handleUpdateBasePrice}>
+            <button
+                type="button"
+                className="btn btn-secondary m-2 shadow-md hover:shadow-lg"
+                onClick={handleUpdateBasePrice}
+            >
                 Update Base Price
             </button>
         </ControlContainer>
@@ -422,9 +437,14 @@ function PriceDecreaseRateControl() {
         if (priceDecreaseRate) {
             try {
                 const priceDecreaseRateInWei = parseUnits(priceDecreaseRate, USDC_DECIMALS);
-                await adminControls.setPriceDecreaseRate(priceDecreaseRateInWei.toString());
-                customToast.success("Price decrease rate updated successfully");
-                refetchCurrentPriceDecreaseRate();
+                // Fix the TypeScript error by checking if the method exists
+                if (typeof adminControls.setPriceDecreaseRate === 'function') {
+                    await adminControls.setPriceDecreaseRate(priceDecreaseRateInWei.toString());
+                    customToast.success("Price decrease rate updated successfully");
+                    refetchCurrentPriceDecreaseRate();
+                } else {
+                    throw new Error("setPriceDecreaseRate method not found");
+                }
             } catch (error) {
                 console.error("Error setting price decrease rate:", error);
                 customToast.error("Failed to update price decrease rate");
@@ -443,6 +463,7 @@ function PriceDecreaseRateControl() {
                     className="px-4 py-2 border border-gray-300 rounded"
                 />
                 <button
+                    type="button"
                     className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
                     disabled={!priceDecreaseRate}
                     onClick={handleSetPriceDecreaseRate}

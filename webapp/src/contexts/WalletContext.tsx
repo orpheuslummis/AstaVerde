@@ -2,15 +2,7 @@ import type React from 'react';
 import { createContext, useCallback, useContext, useEffect, useRef } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { customToast } from '../utils/customToast';
-
-interface WalletContextType {
-    isConnected: boolean;
-    address: string | undefined;
-    connect: () => void;
-    disconnect: () => void;
-    chainId: number | undefined;
-    chainName: string | undefined;
-}
+import type { WalletContextType } from '../types';
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
@@ -53,9 +45,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
                 if (isConnected && address) {
                     console.log(`WalletContext - Successfully connected with ${connector.name}. Account:`, address);
                     return true;
-                } else {
-                    console.log(`WalletContext - Connection with ${connector.name} did not result in a connected account.`);
                 }
+                console.log(`WalletContext - Connection with ${connector.name} did not result in a connected account.`);
             } catch (error) {
                 console.error(`WalletContext - Error connecting with ${connector.name}:`, error instanceof Error ? error.message : 'Unknown error');
             }

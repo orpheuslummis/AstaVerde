@@ -147,13 +147,15 @@ export default function MyTokensPage() {
                             onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                             disabled={currentPage === 1}
                             className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 mr-2"
+                            type="button"
                         >
                             Previous
                         </button>
                         <button
-                            onClick={() => setCurrentPage((prev) => prev + 1))}
+                            onClick={() => setCurrentPage((prev) => prev + 1)}
                             disabled={currentPage * TOKENS_PER_PAGE >= tokens.length}
                             className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
+                            type="button"
                         >
                             Next
                         </button>

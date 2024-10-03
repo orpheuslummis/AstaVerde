@@ -5,35 +5,7 @@ import { useContractInteraction } from "../hooks/useContractInteraction";
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, getUsdcContractConfig } from "../lib/contracts";
 import { customToast } from "../utils/customToast";
-
-interface AppContextType {
-    batches: Batch[];
-    astaverdeContractConfig: typeof astaverdeContractConfig;
-    getUsdcContractConfig: typeof getUsdcContractConfig;
-    usdcContractConfig: ReturnType<typeof getUsdcContractConfig>;
-    refetchBatches: () => void;
-    updateBatch: (updatedBatch: Batch) => void;
-    updateBatchItemsLeft: (batchId: bigint, newItemsLeft: bigint) => void;
-    adminControls: {
-        pauseContract: () => Promise<string>;
-        unpauseContract: () => Promise<string>;
-        setURI: (uri: string) => void;
-        setPriceFloor: (priceFloor: string) => void;
-        setBasePrice: (basePrice: string) => void;
-        setMaxBatchSize: (maxBatchSize: string) => void;
-        setAuctionDayThresholds: (increase: string, decrease: string) => void;
-        setPlatformSharePercentage: (percentage: string) => void;
-        claimPlatformFunds: (address: string) => void;
-        updateBasePrice: () => Promise<string>;
-        mintBatch: (producers: string[], cids: string[]) => Promise<string>;
-    };
-    getCurrentBatchPrice: (batchId: number) => Promise<bigint>;
-    buyBatch: (batchId: number, usdcAmount: bigint, tokenAmount: number) => Promise<string>;
-    redeemTokens: (tokenIds: bigint[]) => Promise<string>;
-    updateBasePrice: () => Promise<string>;
-    getBatchInfo: (batchId: number) => Promise<any>;
-    isAdmin: boolean;
-}
+import type { AppContextType } from "../types";
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -140,6 +112,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const buyBatch = useContractInteraction(astaverdeContractConfig, "buyBatch").execute;
     const redeemTokens = useContractInteraction(astaverdeContractConfig, "redeemTokens").execute;
     const mintBatch = useContractInteraction(astaverdeContractConfig, "mintBatch").execute;
+    const setPriceDecreaseRate = useContractInteraction(astaverdeContractConfig, "setPriceDecreaseRate").execute;
 
     const adminControls = useMemo(
         () => ({
@@ -191,6 +164,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     throw error;
                 }
             },
+            setPriceDecreaseRate: async (rate: string) => {
+                try {
+                    const txHash = await setPriceDecreaseRate(rate);
+                    console.log("Set price decrease rate transaction hash:", txHash);
+                    return txHash;
+                } catch (error) {
+                    console.error("Error setting price decrease rate:", error);
+                    throw error;
+                }
+            },
         }),
         [
             pauseContract,
@@ -205,6 +188,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             updateBasePrice,
             mintBatch,
             refetchBatches,
+            setPriceDecreaseRate, // Add this line
         ],
     );
 

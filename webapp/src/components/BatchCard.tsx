@@ -13,12 +13,7 @@ import { customToast } from "../utils/customToast";
 import { getPlaceholderImageUrl } from "../utils/placeholderImage";
 import { ChevronRightIcon, ShoppingCartIcon, TagIcon } from "@heroicons/react/24/solid";
 import TokenCard from "./TokenCard";
-
-interface BatchCardProps {
-    batch: Batch;
-    updateCard?: () => void;
-    isSoldOut: boolean;
-}
+import type { BatchCardProps } from "../types";
 
 export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     const { isConnected } = useAccount();
@@ -116,7 +111,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                             min="1"
                             max={batch.itemsLeft?.toString()}
                             value={tokenAmount}
-                            onChange={(e) => setTokenAmount(parseInt(e.target.value))}
+                            onChange={(e) => setTokenAmount(Number.parseInt(e.target.value, 10))}
                             className="w-full h-4 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
                         />
                         <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -130,6 +125,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                             onClick={handleBuyClick}
                             disabled={isButtonDisabled}
                             className={`w-full btn mt-2 ${isButtonDisabled ? 'btn-secondary' : 'btn-primary'}`}
+                            type="button"
                         >
                             {getButtonText()}
                         </button>
