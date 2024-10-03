@@ -4,7 +4,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "initialOwner",
+          "name": "owner",
           "type": "address"
         },
         {
@@ -366,7 +366,7 @@
           "type": "uint256"
         }
       ],
-      "name": "TokenReedemed",
+      "name": "TokenRedeemed",
       "type": "event"
     },
     {
@@ -1263,14 +1263,8 @@
     },
     {
       "inputs": [],
-      "name": "updateBasePrice",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
+      "name": "updateBasePriceOnAction",
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },

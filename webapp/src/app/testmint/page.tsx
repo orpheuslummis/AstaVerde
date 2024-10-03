@@ -3,7 +3,7 @@
 import { parseUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import { USDC_DECIMALS } from "../../app.config";
-// import { useAppContext } from "../../contexts/AppContext";
+// import { useAppContext } from "../../contexts/AppContext"
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import { astaverdeContractConfig, getUsdcContractConfig } from "../../lib/contracts";
 import { customToast } from "../../utils/customToast";
@@ -27,7 +27,7 @@ export default function Page() {
         if (!address) return;
         try {
             const amount = parseUnits("10000", USDC_DECIMALS);
-            await mintUSDC(address, amount);
+            await mintUSDC(address, amount); 
             customToast.success("Successfully minted 10000 USDC");
         } catch (error) {
             console.error("Error minting USDC:", error);
@@ -61,7 +61,7 @@ export default function Page() {
                 <div className="flex flex-col items-center space-y-2">
                     <p>Connected Address: {address}</p>
                     <p>
-                        Your USDC Balance: {usdcBalance ? parseFloat(usdcBalance.formatted).toFixed(2) : "Loading..."}{" "}
+                        Your USDC Balance: {usdcBalance ? Number.parseFloat(usdcBalance.formatted).toFixed(2) : "Loading..."}{" "}
                         USDC
                     </p>
                 </div>
@@ -72,6 +72,7 @@ export default function Page() {
             <div className="w-full max-w-md space-y-4">
                 <h2 className="text-2xl font-semibold">USDC Operations</h2>
                 <button
+                    type="button"
                     className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                     onClick={handleMintUSDC}
                     disabled={!address}
@@ -80,6 +81,7 @@ export default function Page() {
                 </button>
 
                 <button
+                    type="button"
                     className="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
                     onClick={handleApproveUSDC}
                     disabled={!address}

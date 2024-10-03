@@ -1,8 +1,8 @@
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import type { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
-import { AddressLike } from "ethers";
+import type { AddressLike } from "ethers";
 import { ethers, network } from "hardhat";
-import { AstaVerde, MockUSDC } from "../types";
+import type { AstaVerde, MockUSDC } from "../types";
 import { deployAstaVerdeFixture } from "./AstaVerde.fixture";
 import { genAddresses, USDC_PRECISION } from "./lib";
 
@@ -24,7 +24,7 @@ async function mintBuyAndAdvance(
     user: SignerWithAddress,
     cids: string[],
     tokenAmount: number,
-    advanceTimeSeconds: number = 0,
+    advanceTimeSeconds = 0,
 ) {
     const producers = genAddresses(cids.length);
     await astaVerde.mintBatch(producers, cids);
@@ -88,7 +88,7 @@ export function shouldBehaveLikeAstaVerde(): void {
         return { batchID, price, usdcAmount, user, producers };
     }
 
-    beforeEach(async function () {
+    beforeEach(async () => {
         const fixture = await deployAstaVerdeFixture();
         astaVerde = fixture.astaVerde;
         mockUSDC = fixture.mockUSDC;
@@ -97,8 +97,8 @@ export function shouldBehaveLikeAstaVerde(): void {
         user1 = fixture.user2;
     });
 
-    describe("Deployment and basic functionality", function () {
-        it("should initialize contract with expected default parameters", async function () {
+    describe("Deployment and basic functionality", () => {
+        it("should initialize contract with expected default parameters", async () => {
             const params = [
                 "basePrice",
                 "priceFloor",
@@ -119,7 +119,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             }
         });
 
-        it("should return current price and increment batchID after minting a batch", async function () {
+        it("should return current price and increment batchID after minting a batch", async () => {
             const cids = ["cid1", "cid2"];
             await astaVerde.mintBatch(genAddresses(cids.length), cids);
             const batchID = await astaVerde.lastBatchID();
@@ -134,13 +134,13 @@ export function shouldBehaveLikeAstaVerde(): void {
             expect(await astaVerde.lastBatchID()).to.equal(batchID + 1n);
         });
 
-        it("should revert when getting price for non-existent batch", async function () {
+        it("should revert when getting price for non-existent batch", async () => {
             await expect(astaVerde.getCurrentBatchPrice(999)).to.be.revertedWith("Batch does not exist");
         });
     });
 
-    describe("Batch minting and buying", function () {
-        it("should revert batch minting under specific invalid conditions", async function () {
+    describe("Batch minting and buying", () => {
+        it("should revert batch minting under specific invalid conditions", async () => {
             const scenarios = [
                 {
                     desc: "without producers",
@@ -167,7 +167,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             }
         });
 
-        it("should mint a batch and assign tokens to contract", async function () {
+        it("should mint a batch and assign tokens to contract", async () => {
             const cids = ["cid1", "cid2"];
             await astaVerde.mintBatch(genAddresses(cids.length), cids);
             const batchID = await astaVerde.lastBatchID();
@@ -176,7 +176,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             expect(await astaVerde.balanceOf(await astaVerde.getAddress(), tokenIds[0])).to.equal(1);
         });
 
-        it("should mint a small batch and return expected batch information", async function () {
+        it("should mint a small batch and return expected batch information", async () => {
             await astaVerde.mintBatch(genAddresses(2), ["cid1", "cid2"]);
             const batchID = await astaVerde.lastBatchID();
             const { tokenIds, creationTime, price } = await astaVerde.getBatchInfo(batchID);
@@ -185,7 +185,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             expect(price).to.be.gt(0);
         });
 
-        it("should allow user to buy tokens from a batch and update balances", async function () {
+        it("should allow user to buy tokens from a batch and update balances", async () => {
             await mintBuyAndAdvance(astaVerde, user1, ["cid1", "cid2"], 1);
             const batchID = await astaVerde.lastBatchID();
             const { tokenIds } = await astaVerde.getBatchInfo(batchID);
@@ -203,13 +203,13 @@ export function shouldBehaveLikeAstaVerde(): void {
             expect(balance).to.equal(1);
         });
 
-        it("should revert batch purchase when sent funds are insufficient", async function () {
+        it("should revert batch purchase when sent funds are insufficient", async () => {
             await astaVerde.mintBatch(genAddresses(2), ["cid1", "cid2"]);
             const batchID = await astaVerde.lastBatchID();
             await expect(astaVerde.buyBatch(batchID, 100, 1)).to.be.revertedWith("Insufficient funds sent");
         });
 
-        it("should allow purchase of full batch and distribute funds accurately", async function () {
+        it("should allow purchase of full batch and distribute funds accurately", async () => {
             const { batchID, usdcAmount, producers } = await mintBuyAndAdvance(
                 astaVerde,
                 user,
@@ -221,7 +221,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             await expectBalancesAfterPurchase(astaVerde, mockUSDC, user.address, producers, tokenIds, usdcAmount);
         });
 
-        it("should handle batch purchase with non-standard base price", async function () {
+        it("should handle batch purchase with non-standard base price", async () => {
             await astaVerde.setBasePrice(97n * USDC_PRECISION);
 
             const { batchID, usdcAmount, producers } = await mintBuyAndAdvance(
@@ -235,7 +235,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             await expectBalancesAfterPurchase(astaVerde, mockUSDC, user.address, producers, tokenIds, usdcAmount);
         });
 
-        it("should allow partial batch purchase and update token balances accordingly", async function () {
+        it("should allow partial batch purchase and update token balances accordingly", async () => {
             const { batchID, usdcAmount, producers } = await mintBuyAndAdvance(
                 astaVerde,
                 user,
@@ -249,7 +249,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             expect(await astaVerde.balanceOf(user.address, tokenIds[2])).to.equal(0);
         });
 
-        it("should revert when attempting to buy more tokens than available in batch", async function () {
+        it("should revert when attempting to buy more tokens than available in batch", async () => {
             const { batchID } = await mintBuyAndAdvance(astaVerde, user, ["cid1", "cid2", "cid3", "cid4", "cid5"], 2);
 
             await expect(astaVerde.connect(user).buyBatch(batchID, 1000, 4)).to.be.revertedWith(
@@ -257,7 +257,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             );
         });
 
-        it("should allow purchase of remaining tokens in a partially sold batch", async function () {
+        it("should allow purchase of remaining tokens in a partially sold batch", async () => {
             const { batchID, price } = await mintBuyAndAdvance(
                 astaVerde,
                 user,
@@ -280,7 +280,7 @@ export function shouldBehaveLikeAstaVerde(): void {
         });
 
         // New test to ensure accurate and correct calculations
-        it("should correctly split USDC between producer and platform with explicit rounding", async function () {
+        it("should correctly split USDC between producer and platform with explicit rounding", async () => {
             const cids = ["cid1", "cid2", "cid3"];
             const { batchID, usdcAmount, producers } = await mintBuyAndAdvance(astaVerde, user, cids, cids.length);
             const { tokenIds } = await astaVerde.getBatchInfo(batchID);
@@ -304,8 +304,8 @@ export function shouldBehaveLikeAstaVerde(): void {
         });
     });
 
-    describe("Price Adjustment Mechanism", function () {
-        it("should increase price when sales occur within dayIncreaseThreshold", async function () {
+    describe("Price Adjustment Mechanism", () => {
+        it("should increase price when sales occur within dayIncreaseThreshold", async () => {
             const initialBasePrice = await astaVerde.basePrice();
             const priceDelta = await astaVerde.priceDelta();
             const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
@@ -316,7 +316,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             expect(newBasePrice).to.equal(initialBasePrice + priceDelta);
         });
 
-        it("should not reduce price below priceFloor", async function () {
+        it("should not reduce price below priceFloor", async () => {
             const priceFloor = await astaVerde.priceFloor();
             const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
             await astaVerde.setBasePrice(priceFloor + 1n);
@@ -328,7 +328,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             expect(newBasePrice).to.equal(priceFloor);
         });
 
-        it("should maintain priceFloor when price is at floor and time passes without sales", async function () {
+        it("should maintain priceFloor when price is at floor and time passes without sales", async () => {
             const priceFloor = await astaVerde.priceFloor();
             await astaVerde.setBasePrice(priceFloor);
 
@@ -339,7 +339,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             expect(newBasePrice).to.equal(priceFloor);
         });
 
-        it("should adjust price up and down based on sales activity over time", async function () {
+        it("should adjust price up and down based on sales activity over time", async () => {
             const initialBasePrice = await astaVerde.basePrice();
             const priceDelta = await astaVerde.priceDelta();
             const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
@@ -360,8 +360,8 @@ export function shouldBehaveLikeAstaVerde(): void {
         });
     });
 
-    describe("Revenue splitting", function () {
-        it("should distribute revenue between producers and platform according to set percentages", async function () {
+    describe("Revenue splitting", () => {
+        it("should distribute revenue between producers and platform according to set percentages", async () => {
             const { batchID, usdcAmount, producers } = await mintBuyAndAdvance(
                 astaVerde,
                 user,
@@ -374,7 +374,7 @@ export function shouldBehaveLikeAstaVerde(): void {
         });
     });
 
-    describe("Contract management", function () {
+    describe("Contract management", () => {
         const parameterTests = [
             { method: "setPlatformSharePercentage", value: 11, getter: "platformSharePercentage" },
             { method: "setPriceFloor", value: PRICE_FLOOR + 1n, getter: "priceFloor" },
@@ -383,13 +383,13 @@ export function shouldBehaveLikeAstaVerde(): void {
         ] as const;
 
         parameterTests.forEach(({ method, value, getter }) => {
-            it(`should correctly set ${getter}`, async function () {
+            it(`should correctly set ${getter}`, async () => {
                 await astaVerde[method](value);
                 expect(await astaVerde[getter]()).to.equal(value);
             });
         });
 
-        it("should revert when setting parameters to invalid values", async function () {
+        it("should revert when setting parameters to invalid values", async () => {
             const scenarios = [
                 { method: "setPlatformSharePercentage", value: 101, error: "Share must be between 0 and 100" },
                 { method: "setPriceFloor", value: 0, error: "Invalid price floor" },
@@ -402,25 +402,25 @@ export function shouldBehaveLikeAstaVerde(): void {
             }
         });
 
-        it("should revert pause attempt by non-owner account", async function () {
+        it("should revert pause attempt by non-owner account", async () => {
             const nonOwner = (await ethers.getSigners())[1];
             await expect(astaVerde.connect(nonOwner).pause()).to.be.reverted;
         });
 
-        it("should revert unpause attempt by non-owner account", async function () {
+        it("should revert unpause attempt by non-owner account", async () => {
             const nonOwner = (await ethers.getSigners())[1];
             await expect(astaVerde.connect(nonOwner).unpause()).to.be.reverted;
         });
 
-        it("should prevent batch purchases when contract is paused", async function () {
+        it("should prevent batch purchases when contract is paused", async () => {
             await astaVerde.pause();
             const batchID = await astaVerde.lastBatchID();
             await expect(astaVerde.buyBatch(batchID, 1000, 1)).to.be.reverted;
         });
     });
 
-    describe("Token redemption", function () {
-        it("should allow token owner to redeem tokens and emit events", async function () {
+    describe("Token redemption", () => {
+        it("should allow token owner to redeem tokens and emit events", async () => {
             const cids = ["cid1", "cid2", "cid3"];
             const { batchID, usdcAmount } = await setupBatchAndBuy(cids, cids.length);
             await astaVerde.connect(user).buyBatch(batchID, usdcAmount, cids.length);
@@ -444,7 +444,7 @@ export function shouldBehaveLikeAstaVerde(): void {
                 expect(tokenInfo.isRedeemed).to.be.true;
             }
         });
-        it("should revert redemption attempt by non-owner of tokens", async function () {
+        it("should revert redemption attempt by non-owner of tokens", async () => {
             const cids = ["cid1", "cid2"];
             const { batchID, usdcAmount } = await setupBatchAndBuy(cids, cids.length);
             await astaVerde.connect(user).buyBatch(batchID, usdcAmount, cids.length);
@@ -457,7 +457,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             );
         });
 
-        it("should revert attempt to redeem already redeemed tokens", async function () {
+        it("should revert attempt to redeem already redeemed tokens", async () => {
             const cids = ["cid1"];
             const { batchID, usdcAmount } = await setupBatchAndBuy(cids, cids.length);
             await astaVerde.connect(user).buyBatch(batchID, usdcAmount, cids.length);
@@ -471,7 +471,7 @@ export function shouldBehaveLikeAstaVerde(): void {
             );
         });
 
-        it("should revert attempt to redeem non-existent tokens", async function () {
+        it("should revert attempt to redeem non-existent tokens", async () => {
             const nonExistentTokenId = 9999;
             const owner = await ethers.provider.getSigner(0);
             await expect(astaVerde.connect(owner).redeemTokens([nonExistentTokenId])).to.be.revertedWith(

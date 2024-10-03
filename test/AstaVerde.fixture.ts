@@ -1,6 +1,6 @@
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ethers } from "hardhat";
-import { AstaVerde, MockUSDC } from "../types";
+import type { AstaVerde, MockUSDC } from "../types";
 import { USDC_PRECISION } from "./lib";
 
 export async function deployAstaVerdeFixture(): Promise<{

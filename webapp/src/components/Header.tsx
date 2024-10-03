@@ -48,10 +48,10 @@ export function Header({ links }: HeaderProps) {
     }, [usdcBalance]);
 
     return (
-        <header className="w-full flex flex-wrap items-center justify-between bg-primary p-4 shadow-md">
+        <header className="w-full flex flex-wrap items-center justify-between bg-primary dark:bg-gray-800 p-4 shadow-md">
             <div className="flex items-center">
                 <button
-                    className="lg:hidden text-white text-2xl px-4 py-2"
+                    className="lg:hidden text-white dark:text-gray-200 text-2xl px-4 py-2"
                     onClick={toggleMenu}
                     aria-label="Toggle Menu"
                     type="button"
@@ -65,27 +65,35 @@ export function Header({ links }: HeaderProps) {
 
             <nav className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center`}>
                 <ul className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
-                    {links.map((link, index) => (
-                        <li key={index} className="lg:mr-4">
+                    {links.map((link) => (
+                        <li key={link.url} className="lg:mr-4">
                             <span
-                                className={`group hover:bg-white/20 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${pathname === link.url ? "bg-white/20" : ""}`}
+                                className={`group hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
+                                    pathname === link.url ? "bg-white/20 dark:bg-gray-700" : ""
+                                }`}
                             >
                                 {link.name === "My Eco Assets" ? (
-                                    <span
-                                        className={`text-white/90 hover:text-white transition-colors duration-300 ${pathname === link.url ? "text-white" : ""} ${isConnected ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                                    <button
+                                        type="button"
+                                        className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 ${
+                                            pathname === link.url ? "text-white dark:text-white" : ""
+                                        } ${isConnected ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
                                         onClick={(e) => {
                                             e.preventDefault();
                                             if (isConnected) {
                                                 router.push("/mytokens");
                                             }
                                         }}
+                                        disabled={!isConnected}
                                     >
                                         {link.name}
-                                    </span>
+                                    </button>
                                 ) : (
                                     <Link href={link.url}>
                                         <span
-                                            className={`text-white/90 hover:text-white transition-colors duration-300 ${pathname === link.url ? "text-white" : ""}`}
+                                            className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 ${
+                                                pathname === link.url ? "text-white dark:text-white" : ""
+                                            }`}
                                         >
                                             {link.name}
                                         </span>
@@ -96,9 +104,9 @@ export function Header({ links }: HeaderProps) {
                     ))}
                     {isConnected && (
                         <li className="mr-4">
-                            <div className="bg-white/10 text-white rounded-lg px-3 py-2">
+                            <div className="bg-white/10 dark:bg-gray-700 text-white dark:text-gray-200 rounded-lg px-3 py-2">
                                 <span className="text-sm font-medium">USDC Balance: </span>
-                                <span className="text-sm font-bold">{parseFloat(usdcBalanceFormatted).toFixed(2)}</span>
+                                <span className="text-sm font-bold">{Number.parseFloat(usdcBalanceFormatted).toFixed(2)}</span>
                             </div>
                         </li>
                     )}

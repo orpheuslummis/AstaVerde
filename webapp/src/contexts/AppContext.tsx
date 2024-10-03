@@ -1,38 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAccount, usePublicClient, useReadContract, useReadContracts } from "wagmi";
 import { useContractInteraction } from "../hooks/useContractInteraction";
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, getUsdcContractConfig } from "../lib/contracts";
 import { customToast } from "../utils/customToast";
-
-interface AppContextType {
-    batches: Batch[];
-    astaverdeContractConfig: typeof astaverdeContractConfig;
-    getUsdcContractConfig: typeof getUsdcContractConfig;
-    usdcContractConfig: ReturnType<typeof getUsdcContractConfig>;
-    refetchBatches: () => void;
-    updateBatch: (updatedBatch: Batch) => void;
-    updateBatchItemsLeft: (batchId: bigint, newItemsLeft: bigint) => void;
-    adminControls: {
-        pauseContract: () => Promise<string>;
-        unpauseContract: () => Promise<string>;
-        setURI: (uri: string) => void;
-        setPriceFloor: (priceFloor: string) => void;
-        setBasePrice: (basePrice: string) => void;
-        setMaxBatchSize: (maxBatchSize: string) => void;
-        setAuctionDayThresholds: (increase: string, decrease: string) => void;
-        setPlatformSharePercentage: (percentage: string) => void;
-        claimPlatformFunds: (address: string) => void;
-        updateBasePrice: () => Promise<string>;
-        mintBatch: (producers: string[], cids: string[]) => Promise<string>;
-    };
-    getCurrentBatchPrice: (batchId: number) => Promise<bigint>;
-    buyBatch: (batchId: number, usdcAmount: bigint, tokenAmount: number) => Promise<string>;
-    redeemTokens: (tokenIds: bigint[]) => Promise<string>;
-    updateBasePrice: () => Promise<string>;
-    getBatchInfo: (batchId: number) => Promise<any>;
-    isAdmin: boolean;
-}
+import type { AppContextType } from "../types";
+import { serializeBigInt, deserializeBigInt } from "../utils/bigIntHelper";
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -56,7 +30,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 ? Array.from({ length: Number(lastBatchID) }, (_, i) => ({
                       ...astaverdeContractConfig,
                       functionName: "getBatchInfo",
-                      args: [BigInt(i + 1)],
+                      args: [serializeBigInt(BigInt(i + 1))],
                   }))
                 : [],
     });
@@ -68,30 +42,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const fetchBatches = useCallback(async () => {
         console.log("Fetching batches...");
-        try {
-            const lastBatchID = await getLastBatchID();
-            console.log("Last Batch ID from contract:", lastBatchID);
+        if (getLastBatchID && getBatchInfo) {
+            try {
+                const lastBatchID = await getLastBatchID();
+                console.log("Last Batch ID from contract:", lastBatchID.toString());
 
-            if (lastBatchID !== undefined && lastBatchID >= 0n) {
-                const fetchedBatches: Batch[] = [];
-                for (let i = 0n; i <= lastBatchID; i++) {
-                    const batchInfo = await getBatchInfo(Number(i));
-                    console.log(`Raw batch ${i} info:`, batchInfo);
-                    if (batchInfo) {
-                        fetchedBatches.push(
-                            new Batch(batchInfo[0], batchInfo[1], batchInfo[2], batchInfo[3], batchInfo[4]),
-                        );
+                if (lastBatchID !== undefined && lastBatchID >= 0n) {
+                    const batchPromises = [];
+                    for (let i = 0n; i <= lastBatchID; i++) {
+                        batchPromises.push(getBatchInfo(i));
                     }
+                    const batchesInfo = await Promise.all(batchPromises);
+                    console.log("Raw batch info:", batchesInfo);
+
+                    const processedBatches = batchesInfo.map((batchInfo, index) => {
+                        console.log(`Raw batch ${index} info:`, batchInfo);
+                        const [batchId, tokenIds, creationTime, price, remainingTokens] = batchInfo;
+                        return new Batch(
+                            BigInt(batchId),
+                            tokenIds.map(BigInt),
+                            BigInt(creationTime),
+                            BigInt(price),
+                            BigInt(remainingTokens)
+                        );
+                    });
+
+                    console.log("Processed batches:", processedBatches);
+                    setBatches(processedBatches);
                 }
-                console.log("Processed batches:", fetchedBatches);
-                setBatches(fetchedBatches);
-            } else {
-                console.log("No batches available yet");
-                setBatches([]);
+            } catch (error) {
+                console.error("Error fetching batches:", error);
+                customToast.error("Failed to fetch batches");
             }
-        } catch (error) {
-            console.error("Error fetching batches:", error);
-            setBatches([]);
         }
     }, [getLastBatchID, getBatchInfo]);
 
@@ -105,21 +87,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, [fetchBatches]);
 
     const updateBatch = useCallback((updatedBatch: Batch) => {
-        setBatches((prevBatches) => prevBatches.map((batch) => (batch.id === updatedBatch.id ? updatedBatch : batch)));
+        setBatches((prevBatches) => prevBatches.map((batch) => (batch.batchId === updatedBatch.batchId ? updatedBatch : batch)));
     }, []);
 
     const updateBatchItemsLeft = useCallback((batchId: bigint, newItemsLeft: bigint) => {
         setBatches((prevBatches) =>
             prevBatches.map((batch) =>
-                batch.id === batchId
-                    ? new Batch(batch.id, batch.token_ids, batch.timestamp, batch.price, newItemsLeft)
+                batch.batchId === batchId
+                    ? new Batch(batch.batchId, batch.tokenIds, batch.creationTime, batch.price, newItemsLeft)
                     : batch,
             ),
         );
     }, []);
 
     useEffect(() => {
-        console.log("Batches state updated:", batches);
+        console.log("Batches state updated:", serializeBigInt(batches));
     }, [batches]);
 
     const pauseContract = useContractInteraction(astaverdeContractConfig, "pause").execute;
@@ -139,6 +121,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const buyBatch = useContractInteraction(astaverdeContractConfig, "buyBatch").execute;
     const redeemTokens = useContractInteraction(astaverdeContractConfig, "redeemTokens").execute;
     const mintBatch = useContractInteraction(astaverdeContractConfig, "mintBatch").execute;
+    const setPriceDecreaseRate = useContractInteraction(astaverdeContractConfig, "setPriceDecreaseRate").execute;
 
     const adminControls = useMemo(
         () => ({
@@ -190,6 +173,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     throw error;
                 }
             },
+            setPriceDecreaseRate: async (rate: string) => {
+                try {
+                    const txHash = await setPriceDecreaseRate(rate);
+                    console.log("Set price decrease rate transaction hash:", txHash);
+                    return txHash;
+                } catch (error) {
+                    console.error("Error setting price decrease rate:", error);
+                    throw error;
+                }
+            },
         }),
         [
             pauseContract,
@@ -204,6 +197,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             updateBasePrice,
             mintBatch,
             refetchBatches,
+            setPriceDecreaseRate, // Add this line
         ],
     );
 

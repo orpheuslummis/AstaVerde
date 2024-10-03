@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { IPFS_GATEWAY_URL } from "../../../app.config";
 import TokenCard from "../../../components/TokenCard";
 import { usePublicClient } from "../../../contexts/PublicClientContext";
@@ -39,7 +39,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
         fetchTokenData();
     }, [publicClient, params.id]);
 
-    const fetchTokenImageUrl = async (tokenCID: string) => {
+    const fetchTokenImageUrl = useCallback(async (tokenCID: string) => {
         try {
             const response = await fetch(`${IPFS_GATEWAY_URL}${tokenCID}`);
             const metadata = await response.json();
@@ -48,11 +48,11 @@ export default function Page({ params }: { params: { id: bigint } }) {
         } catch (error) {
             return null;
         }
-    };
+    }, []);  // Empty dependency array if IPFS_GATEWAY_URL is constant
 
     useEffect(() => {
         const fetchData = async () => {
-            if (tokenData && tokenData[2]) {
+            if (tokenData?.[ 2 ]) {
                 const tokenImageCID = await fetchTokenImageUrl(tokenData[2]);
                 if (tokenImageCID) {
                     const parts = tokenImageCID.split("ipfs://");
@@ -62,17 +62,19 @@ export default function Page({ params }: { params: { id: bigint } }) {
             }
         };
         void fetchData();
-    }, [tokenData, isLoading]);
+    }, [tokenData, fetchTokenImageUrl]);
 
     if (isLoading) {
         return (
-            <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-screen">
+            <div className="container mx-auto px-4 py-4 flex justify-center items-center min-h-[calc(100vh-4rem)]">
                 <p>Loading token data...</p>
             </div>
         );
-    } else if (error) {
+    }
+
+    if (error) {
         return (
-            <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-screen">
+            <div className="container mx-auto px-4 py-4 flex justify-center items-center min-h-[calc(100vh-4rem)]">
                 <p>Error: {error}</p>
             </div>
         );
@@ -80,21 +82,8 @@ export default function Page({ params }: { params: { id: bigint } }) {
 
     if (!tokenData || tokenData[1] === "0x0000000000000000000000000000000000000000") {
         return (
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: "100vh",
-                }}
-            >
-                <div
-                    style={{
-                        backgroundColor: "#f0f0f0",
-                        padding: "20px",
-                        borderRadius: "5px",
-                    }}
-                >
+            <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
+                <div className="bg-gray-100 p-5 rounded-lg">
                     Token doesn&apos;t exist
                 </div>
             </div>
@@ -102,7 +91,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-screen">
+        <div className="container mx-auto px-4 py-4 flex justify-center items-start min-h-[calc(100vh-4rem)]">
             <div className="w-full max-w-2xl">
                 <TokenCard tokenId={params.id} />
             </div>

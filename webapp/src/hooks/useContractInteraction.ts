@@ -53,9 +53,11 @@ const WRITE_FUNCTIONS = [
     "setMaxBatchSize",
     "setAuctionDayThresholds",
     "setPlatformSharePercentage",
+    "mint",
+    "setPriceDecreaseRate",
 ];
 
-type ExecuteFunction = (...args: any[]) => Promise<any>;
+type ExecuteFunction = (...args: unknown[]) => Promise<any>;
 
 type ContractError = Error | null;
 
@@ -98,14 +100,17 @@ export function useContractInteraction(contractConfig: any, functionName: string
                     });
                 } else if (isWriteFunction) {
                     if (!walletClient) throw new Error("Wallet not connected");
+                    
+                    // Simulate the transaction first
                     const { request } = await publicClient.simulateContract({
                         ...contractConfig,
                         functionName,
                         args,
                         account: walletClient.account,
                     });
+                    
+                    // If simulation is successful, send the actual transaction
                     const hash = await writeContractAsync(request);
-                    // Wait for the transaction to be mined and get the receipt
                     result = await publicClient.waitForTransactionReceipt({ hash });
                 } else {
                     throw new Error(`Unknown function: ${functionName}`);
@@ -165,7 +170,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
 
                 const batchSize = 500; // Adjust based on your needs and RPC provider limits
                 const batches = Math.ceil(Number(lastTokenID) / batchSize);
-                let ownedTokens: number[] = [];
+                const ownedTokens: number[] = [];
 
                 for (let i = 0; i < batches; i++) {
                     const start = i * batchSize + 1;
@@ -222,6 +227,16 @@ export function useContractInteraction(contractConfig: any, functionName: string
         [publicClient, contractConfig],
     );
 
+    const getRevertReason = (error: any): string => {
+        if (error.data && error.data.message) {
+            return error.data.message;
+        } else if (error.message) {
+            return error.message;
+        } else {
+            return "Transaction failed without a reason.";
+        }
+    };
+
     const redeemTokens = useCallback(
         async (tokenIds: number[]) => {
             try {
@@ -232,9 +247,10 @@ export function useContractInteraction(contractConfig: any, functionName: string
                 const result = await execute(tokenIds.map((id) => BigInt(id)));
                 console.log("Redeem tokens result:", result);
                 return result;
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error in redeemTokens:", error);
-                throw error;
+                const revertReason = getRevertReason(error);
+                throw new Error(`Failed to redeem tokens: ${revertReason}`);
             }
         },
         [execute, walletClient],
@@ -245,8 +261,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
             console.log(`Fetching info for batch ${batchId}`);
             try {
                 if (!publicClient) {
-                    console.error("Public client is not available");
-                    return null;
+                    throw new Error("Public client is not available");
                 }
 
                 const result = await execute(batchId);
@@ -255,12 +270,11 @@ export function useContractInteraction(contractConfig: any, functionName: string
                 if (Array.isArray(result) && result.length === 5) {
                     return result;
                 } else {
-                    console.error(`Unexpected format for batch ${batchId} info:`, result);
-                    return null;
+                    throw new Error(`Unexpected format for batch ${batchId} info`);
                 }
             } catch (error) {
                 console.error(`Error fetching batch ${batchId} info:`, error);
-                return null;
+                throw error;
             }
         },
         [execute, publicClient],

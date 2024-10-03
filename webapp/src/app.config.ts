@@ -13,9 +13,9 @@ export const IPFS_PREFIX = "ipfs://";
 export const EXTERNAL_URL = "https://marketplace.ecotradezone.com/token/";
 
 export const navigationLinks = [
-    { name: "About Eco Assets", url: "/ecoassets" },
     { name: "Market", url: "/" },
     { name: "My Eco Assets", url: "/mytokens" },
+    { name: "About Eco Assets", url: "/ecoassets" },
     { name: "About", url: "/about" },
 ];
 

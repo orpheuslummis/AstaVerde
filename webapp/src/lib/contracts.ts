@@ -1,5 +1,5 @@
 // src/lib/contracts.ts
-import { Abi } from 'abitype';
+import type { Abi } from 'abitype';
 import { erc20Abi } from "abitype/abis";
 import { getContract } from 'viem';
 import { usePublicClient } from 'wagmi';

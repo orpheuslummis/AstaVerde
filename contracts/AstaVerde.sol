@@ -66,7 +66,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     event BatchMinted(uint256 batchId, uint256 batchCreationTime);
     event BatchSold(uint256 batchId, uint256 batchSoldTime, uint256 tokensSold);
     event PartialBatchSold(uint256 batchId, uint256 batchSoldTime, uint256 remainingTokens);
-    event TokenReedemed(uint256 tokenId, address redeemer, uint256 timestamp);
+    event TokenRedeemed(uint256 tokenId, address redeemer, uint256 timestamp);
+    event PriceDecreaseRateSet(uint256 newPriceDecreaseRate);
 
     constructor(address owner, IERC20 _usdcToken) ERC1155("ipfs://") Ownable(owner) {
         usdcToken = _usdcToken;
@@ -75,7 +76,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         basePrice = 230 * USDC_PRECISION;
         priceFloor = 40 * USDC_PRECISION;
         priceDelta = 10 * USDC_PRECISION;
-        priceDecreaseRate = 1 * USDC_PRECISION;
+        priceDecreaseRate = 5 * USDC_PRECISION;
         dayIncreaseThreshold = 2;
         dayDecreaseThreshold = 4;
         lastBatchID = 0;
@@ -371,7 +372,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             uint256 tokenId = tokenIds[i];
             require(!tokens[tokenId].isRedeemed, "Token is already redeemed");
             tokens[tokenId].isRedeemed = true;
-            emit TokenReedemed(tokenId, msg.sender, block.timestamp);
+            emit TokenRedeemed(tokenId, msg.sender, block.timestamp);
         }
     }
 
@@ -381,6 +382,12 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         require(platformShareAccumulated > 0, "No funds to withdraw");
         require(usdcToken.transfer(to, platformShareAccumulated), "Withdrawal failed");
         platformShareAccumulated = 0;
+    }
+
+    function setPriceDecreaseRate(uint256 newPriceDecreaseRate) external onlyOwner {
+        require(newPriceDecreaseRate > 0, "Invalid price decrease rate");
+        priceDecreaseRate = newPriceDecreaseRate;
+        emit PriceDecreaseRateSet(newPriceDecreaseRate);
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, ERC1155Holder) returns (bool) {
