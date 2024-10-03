@@ -32,7 +32,7 @@ function AdminControls() {
                 <AuctionTimeThresholdsControl />
                 <PlatformPercentageControl />
                 <MaxBatchSizeControl />
-                <SetURI />
+                <PriceDecreaseRateControl />
             </div>
         </Connected>
     );
@@ -120,54 +120,6 @@ function ClaimPlatformFunds() {
         </ControlContainer>
     );
 }
-
-// change decrease rate
-
-
-
-// function SetURI() {
-//     const { adminControls } = useAppContext();
-//     const [uri, setURI] = useState("");
-//     const { data: currentURI, refetch: refetchCurrentURI } = useReadContract({
-//         ...astaverdeContractConfig,
-//         functionName: "uri",
-//     });
-
-//     const handleSetURI = async () => {
-//         if (uri) {
-//             try {
-//                 await adminControls.setURI(uri);
-//                 customToast.success("URI updated successfully");
-//                 refetchCurrentURI();
-//             } catch (error) {
-//                 console.error("Error setting URI:", error);
-//                 customToast.error("Failed to update URI");
-//             }
-//         }
-//     };
-
-//     return (
-//         <ControlContainer title="Set URI">
-//             <div className="flex items-center mb-4">
-//                 <input
-//                     type="text"
-//                     value={uri}
-//                     onChange={(e) => setURI(e.target.value)}
-//                     placeholder="Enter URI"
-//                     className="px-4 py-2 mr-2 border border-gray-300 rounded"
-//                 />
-//                 <button
-//                     className="btn btn-secondary m-2 shadow-md hover:shadow-lg disabled:opacity-50"
-//                     disabled={!uri}
-//                     onClick={handleSetURI}
-//                 >
-//                     Set URI
-//                 </button>
-//             </div>
-//             {typeof currentURI === "string" && <div className="text-gray-500 mb-2">Current URI: {currentURI}</div>}
-//         </ControlContainer>
-//     );
-// }
 
 function PriceFloorControl() {
     const { adminControls } = useAppContext();
@@ -453,6 +405,56 @@ function UpdateBasePriceControl() {
             <button className="btn btn-secondary m-2 shadow-md hover:shadow-lg" onClick={handleUpdateBasePrice}>
                 Update Base Price
             </button>
+        </ControlContainer>
+    );
+}
+
+// New component for setting price decrease rate
+function PriceDecreaseRateControl() {
+    const { adminControls } = useAppContext();
+    const [priceDecreaseRate, setPriceDecreaseRate] = useState("");
+    const { data: currentPriceDecreaseRate, refetch: refetchCurrentPriceDecreaseRate } = useReadContract({
+        ...astaverdeContractConfig,
+        functionName: "priceDecreaseRate",
+    });
+
+    const handleSetPriceDecreaseRate = async () => {
+        if (priceDecreaseRate) {
+            try {
+                const priceDecreaseRateInWei = parseUnits(priceDecreaseRate, USDC_DECIMALS);
+                await adminControls.setPriceDecreaseRate(priceDecreaseRateInWei.toString());
+                customToast.success("Price decrease rate updated successfully");
+                refetchCurrentPriceDecreaseRate();
+            } catch (error) {
+                console.error("Error setting price decrease rate:", error);
+                customToast.error("Failed to update price decrease rate");
+            }
+        }
+    };
+
+    return (
+        <ControlContainer title="Set Price Decrease Rate">
+            <div className="flex flex-col gap-4">
+                <input
+                    type="number"
+                    value={priceDecreaseRate}
+                    onChange={(e) => setPriceDecreaseRate(e.target.value)}
+                    placeholder="Enter Price Decrease Rate (USDC)"
+                    className="px-4 py-2 border border-gray-300 rounded"
+                />
+                <button
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
+                    disabled={!priceDecreaseRate}
+                    onClick={handleSetPriceDecreaseRate}
+                >
+                    Set Price Decrease Rate
+                </button>
+            </div>
+            {typeof currentPriceDecreaseRate === "bigint" && (
+                <div className="text-gray-500 mt-4">
+                    Current Price Decrease Rate: {formatUnits(currentPriceDecreaseRate, USDC_DECIMALS)} USDC
+                </div>
+            )}
         </ControlContainer>
     );
 }
