@@ -20,6 +20,10 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     const { refetchBatches } = useAppContext();
     const [tokenAmount, setTokenAmount] = useState(1);
 
+    const handleTokenAmountChange = (newAmount: number) => {
+        setTokenAmount(Math.max(1, Math.min(Number(batch.itemsLeft), newAmount)));
+    };
+
     const formattedPrice = useMemo(() => {
         if (batch.price === undefined) return "N/A";
         return formatUnits(batch.price, USDC_DECIMALS);
@@ -99,17 +103,39 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                 
                 {!isSoldOut && (
                     <div className="mt-4">
-                        <label htmlFor={`quantity-${batch.batchId}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Quantity: {tokenAmount}
-                        </label>
+                        <div className="flex justify-between items-center mb-2">
+                            <label htmlFor={`quantity-${batch.batchId}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Quantity:
+                            </label>
+                            <div className="flex items-center">
+                                <button
+                                    onClick={() => handleTokenAmountChange(tokenAmount - 1)}
+                                    className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-l"
+                                    type="button"
+                                >
+                                    -
+                                </button>
+                                <span className="px-4 py-1 bg-gray-100 dark:bg-gray-600 font-medium">
+                                    {tokenAmount}
+                                </span>
+                                <button
+                                    onClick={() => handleTokenAmountChange(tokenAmount + 1)}
+                                    className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-r"
+                                    type="button"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
                         <input
                             type="range"
                             id={`quantity-${batch.batchId}`}
                             min="1"
                             max={batch.itemsLeft.toString()}
+                            step="1"
                             value={tokenAmount}
-                            onChange={(e) => setTokenAmount(Number.parseInt(e.target.value, 10))}
-                            className="w-full h-4 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
+                            onChange={(e) => handleTokenAmountChange(Number.parseInt(e.target.value, 10))}
+                            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
                         />
                         <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mt-1">
                             <span>1</span>
