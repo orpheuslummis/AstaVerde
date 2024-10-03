@@ -9,6 +9,11 @@ import RedeemTokensButton from "./RedeemTokensButton";
 
 const TOKENS_PER_PAGE = 12;
 
+/**
+ * MyTokensPage component displays user's tokens and provides redemption functionality.
+ * 
+ * @returns {JSX.Element} The rendered component.
+ */
 export default function MyTokensPage() {
     const { address } = useAccount();
     const [tokens, setTokens] = useState<bigint[]>([]);
@@ -22,6 +27,10 @@ export default function MyTokensPage() {
     const { execute: getTokenInfo } = useContractInteraction(astaverdeContractConfig, "tokens");
     const { execute: getLastTokenID } = useContractInteraction(astaverdeContractConfig, "lastTokenID");
 
+    /**
+     * Fetches user's tokens and their redemption status.
+     * Updates the component state with the fetched data.
+     */
     const fetchTokens = useCallback(async () => {
         if (!address) return;
         try {
@@ -67,6 +76,11 @@ export default function MyTokensPage() {
         fetchTokens();
     }, [fetchTokens]);
 
+    /**
+     * Toggles the selection state of a token.
+     * 
+     * @param {bigint} tokenId - The ID of the token to toggle.
+     */
     const handleTokenSelect = (tokenId: bigint) => {
         setSelectedTokens((prev) => {
             const newSet = new Set(prev);
@@ -79,12 +93,23 @@ export default function MyTokensPage() {
         });
     };
 
+    /**
+     * Callback function to be executed when token redemption is complete.
+     * Refreshes the token list and clears the selection.
+     */
     const handleRedeemComplete = useCallback(() => {
         fetchTokens();
         setSelectedTokens(new Set());
     }, [fetchTokens]);
 
     const currentTokens = tokens.slice((currentPage - 1) * TOKENS_PER_PAGE, currentPage * TOKENS_PER_PAGE);
+
+    /**
+     * Selects all available tokens.
+     */
+    const handleSelectAll = () => {
+        setSelectedTokens(new Set(tokens));
+    };
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -109,10 +134,12 @@ export default function MyTokensPage() {
                             />
                         ))}
                     </div>
-                    <div className="mt-8 flex justify-between items-center">
+                    <div className="mt-8">
                         <RedeemTokensButton
                             selectedTokens={Array.from(selectedTokens)}
                             onRedeemComplete={handleRedeemComplete}
+                            onSelectAll={handleSelectAll}
+                            allTokens={tokens}
                         />
                     </div>
                     <div className="mt-4 flex justify-center">
@@ -124,7 +151,7 @@ export default function MyTokensPage() {
                             Previous
                         </button>
                         <button
-                            onClick={() => setCurrentPage((prev) => prev + 1)}
+                            onClick={() => setCurrentPage((prev) => prev + 1))}
                             disabled={currentPage * TOKENS_PER_PAGE >= tokens.length}
                             className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
                         >
