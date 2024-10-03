@@ -53,6 +53,7 @@ const WRITE_FUNCTIONS = [
     "setMaxBatchSize",
     "setAuctionDayThresholds",
     "setPlatformSharePercentage",
+    "mint", // Add this line
 ];
 
 type ExecuteFunction = (...args: any[]) => Promise<any>;
