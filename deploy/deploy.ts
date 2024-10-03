@@ -10,7 +10,10 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
     console.log("Deploying contracts with account:", deployer);
     console.log("Network:", network.name);
-    console.log("Owner address:", deploymentConfig.ownerAddress);
+
+    // Use the deployer address if ownerAddress is not set in the config
+    const ownerAddress = deploymentConfig.ownerAddress || deployer;
+    console.log("Owner address:", ownerAddress);
 
     const provider = hre.ethers.provider;
     const nonce = await provider.getTransactionCount(deployer);
@@ -99,10 +102,10 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         console.log("Using existing USDC at address:", usdcTokenAddress);
     }
 
-    // Use the owner address from the deployment config
-    await deployContract("AstaVerde", [deploymentConfig.ownerAddress, usdcTokenAddress]);
+    // Use the ownerAddress variable instead of deploymentConfig.ownerAddress
+    await deployContract("AstaVerde", [ownerAddress, usdcTokenAddress]);
 
-    console.log("AstaVerde deployed with owner:", deploymentConfig.ownerAddress);
+    console.log("AstaVerde deployed with owner:", ownerAddress);
     console.log("Deployment completed successfully");
 };
 

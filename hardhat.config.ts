@@ -139,7 +139,7 @@ export const mintingConfig = {
 };
 
 export const deploymentConfig = {
-    ownerAddress,
+    ownerAddress: process.env.OWNER_ADDRESS || undefined,
 };
 
 export default config;
