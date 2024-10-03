@@ -51,7 +51,6 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                 updateCard();
             }
             refetchBatches();
-            customToast.success("Purchase successful!");
         } catch (error) {
             console.error("Error in approve and buy process:", error);
             if (error instanceof Error) {
