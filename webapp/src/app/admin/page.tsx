@@ -19,7 +19,7 @@ function AdminControls() {
 
     return (
         <Connected>
-            <h2 className="text-2xl my-6 mx-6 text-emerald-800 dark:text-emerald-300">Admin Controls</h2>
+            <h2 className="text-2xl my-10 mx-10 text-emerald-800 dark:text-emerald-300">Admin Controls</h2>
             <Link href="/mint" className="btn btn-primary m-6 shadow-md hover:shadow-lg">
                 Go to Minting Page
             </Link>
@@ -28,7 +28,6 @@ function AdminControls() {
                 <PauseContractControl />
                 <PriceFloorControl />
                 <BasePriceControl />
-                <UpdateBasePriceControl />
                 <AuctionTimeThresholdsControl />
                 <PlatformPercentageControl />
                 <MaxBatchSizeControl />
@@ -398,33 +397,6 @@ function PlatformPercentageControl() {
     );
 }
 
-function UpdateBasePriceControl() {
-    const { adminControls } = useAppContext();
-
-    const handleUpdateBasePrice = async () => {
-        try {
-            await adminControls.updateBasePrice();
-            customToast.success("Base price updated successfully");
-        } catch (error) {
-            console.error("Error updating base price:", error);
-            customToast.error("Failed to update base price");
-        }
-    };
-
-    return (
-        <ControlContainer title="Update Base Price">
-            <button
-                type="button"
-                className="btn btn-secondary m-2 shadow-md hover:shadow-lg text-white"
-                onClick={handleUpdateBasePrice}
-            >
-                Update Base Price
-            </button>
-        </ControlContainer>
-    );
-}
-
-// New component for setting price decrease rate
 function PriceDecreaseRateControl() {
     const { adminControls } = useAppContext();
     const [priceDecreaseRate, setPriceDecreaseRate] = useState("");
