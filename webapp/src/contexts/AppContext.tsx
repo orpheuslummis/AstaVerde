@@ -12,7 +12,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
     const { address } = useAccount();
-    const publicClient = usePublicClient();
     const [batches, setBatches] = useState<Batch[]>([]);
     const [isAdmin, setIsAdmin] = useState(false);
 
@@ -104,17 +103,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.log("Batches state updated:", serializeBigInt(batches));
     }, [batches]);
 
-    const pauseContract = useContractInteraction(astaverdeContractConfig, "pause").execute;
-    const unpauseContract = useContractInteraction(astaverdeContractConfig, "unpause").execute;
+    const getPauseContract = useCallback(() => {
+        return useContractInteraction(astaverdeContractConfig, "pause").execute;
+    }, []);
+
+    const getUnpauseContract = useCallback(() => {
+        return useContractInteraction(astaverdeContractConfig, "unpause").execute;
+    }, []);
+
     const setURI = useContractInteraction(astaverdeContractConfig, "setURI").execute;
     const setPriceFloor = useContractInteraction(astaverdeContractConfig, "setPriceFloor").execute;
     const setBasePrice = useContractInteraction(astaverdeContractConfig, "setBasePrice").execute;
     const setMaxBatchSize = useContractInteraction(astaverdeContractConfig, "setMaxBatchSize").execute;
     const setAuctionDayThresholds = useContractInteraction(astaverdeContractConfig, "setAuctionDayThresholds").execute;
-    const setPlatformSharePercentage = useContractInteraction(
-        astaverdeContractConfig,
-        "setPlatformSharePercentage",
-    ).execute;
+    const setPlatformSharePercentage = useContractInteraction(astaverdeContractConfig, "setPlatformSharePercentage").execute;
     const claimPlatformFunds = useContractInteraction(astaverdeContractConfig, "claimPlatformFunds").execute;
     const updateBasePrice = useContractInteraction(astaverdeContractConfig, "updateBasePrice").execute;
     const getCurrentBatchPrice = useContractInteraction(astaverdeContractConfig, "getCurrentBatchPrice").execute;
@@ -126,7 +128,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const adminControls = useMemo(
         () => ({
             pauseContract: async () => {
+                if (!isAdmin || !address) {
+                    console.log("Not authorized to pause contract");
+                    return;
+                }
                 try {
+                    const pauseContract = getPauseContract();
                     const txHash = await pauseContract();
                     console.log("Pause contract transaction hash:", txHash);
                     return txHash;
@@ -136,7 +143,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 }
             },
             unpauseContract: async () => {
+                if (!isAdmin || !address) {
+                    console.log("Not authorized to unpause contract");
+                    return;
+                }
                 try {
+                    const unpauseContract = getUnpauseContract();
                     const txHash = await unpauseContract();
                     console.log("Unpause contract transaction hash:", txHash);
                     return txHash;
@@ -166,7 +178,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 try {
                     const txHash = await mintBatch(producers, cids);
                     console.log("Mint batch transaction hash:", txHash);
-                    await refetchBatches(); // Add this line to refetch batches after minting
+                    await refetchBatches();
                     return txHash;
                 } catch (error) {
                     console.error("Error minting batch:", error);
@@ -185,8 +197,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             },
         }),
         [
-            pauseContract,
-            unpauseContract,
+            isAdmin,
+            address,
+            getPauseContract,
+            getUnpauseContract,
             setURI,
             setPriceFloor,
             setBasePrice,
@@ -197,8 +211,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             updateBasePrice,
             mintBatch,
             refetchBatches,
-            setPriceDecreaseRate, // Add this line
-        ],
+            setPriceDecreaseRate,
+        ]
     );
 
     useEffect(() => {
@@ -211,8 +225,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const { execute: balanceOf } = useContractInteraction(astaverdeContractConfig, "balanceOf");
     const { execute: tokenOfOwnerByIndex } = useContractInteraction(astaverdeContractConfig, "tokenOfOwnerByIndex");
-
-    const { execute: getLastTokenID } = useContractInteraction(astaverdeContractConfig, "lastTokenID");
 
     const contextValue = useMemo(
         () => ({
@@ -246,7 +258,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             isAdmin,
             balanceOf,
             tokenOfOwnerByIndex,
-        ],
+        ]
     );
 
     return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
