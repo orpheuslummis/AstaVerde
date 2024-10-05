@@ -73,7 +73,7 @@ const config: HardhatUserConfig = {
         },
         "base-mainnet": {
             ...getChainConfig("base-mainnet"),
-            accounts: [privateKey as string],
+            accounts: privateKey ? [privateKey] : [],
             verify: {
                 etherscan: {
                     apiKey: process.env.BASE_MAINNET_EXPLORER_API_KEY,
@@ -83,7 +83,7 @@ const config: HardhatUserConfig = {
         },
         "base-sepolia": {
             ...getChainConfig("base-sepolia"),
-            accounts: [privateKey as string],
+            accounts: privateKey ? [privateKey] : [],
             verify: {
                 etherscan: {
                     apiKey: process.env.BASE_SEPOLIA_EXPLORER_API_KEY,
