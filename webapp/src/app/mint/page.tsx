@@ -77,8 +77,9 @@ export default function MintPage() {
         const cids: string[] = [];
 
         try {
+            customToast.info("Verifying email...");
             const client = await connectToSpace(web3StorageClient, email, "astaverde-dev");
-            customToast.success("Connected to Web3Storage space");
+            customToast.success("Email verified and connected to Web3Storage space");
 
             for (const token of tokens) {
                 try {
@@ -295,12 +296,12 @@ function InputField({ label, value, onChange }: InputFieldProps) {
     return (
         <div className="space-y-1">
             <label htmlFor={id} className="block text-sm font-medium text-gray-700">{label}</label>
-            <input 
+            <input
                 id={id}
-                type="text" 
-                value={value} 
-                onChange={onChange} 
-                className="border rounded px-2 py-1 w-full" 
+                type="text"
+                value={value}
+                onChange={onChange}
+                className="border rounded px-2 py-1 w-full"
             />
         </div>
     );
