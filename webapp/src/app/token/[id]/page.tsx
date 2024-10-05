@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { IPFS_GATEWAY_URL } from "../../../app.config";
 import TokenCard from "../../../components/TokenCard";
-import { usePublicClient } from "../../../contexts/PublicClientContext";
 import { astaverdeContractConfig } from "../../../lib/contracts";
+import { usePublicClient } from "wagmi";
 
 interface TokenData {
     0: bigint; // Token ID
@@ -22,7 +22,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
     useEffect(() => {
         async function fetchTokenData() {
             try {
-                const data = (await publicClient.readContract({
+                const data = (await publicClient?.readContract({
                     ...astaverdeContractConfig,
                     functionName: "tokens",
                     args: [params.id],
@@ -52,7 +52,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
 
     useEffect(() => {
         const fetchData = async () => {
-            if (tokenData?.[ 2 ]) {
+            if (tokenData?.[2]) {
                 const tokenImageCID = await fetchTokenImageUrl(tokenData[2]);
                 if (tokenImageCID) {
                     const parts = tokenImageCID.split("ipfs://");
@@ -93,7 +93,12 @@ export default function Page({ params }: { params: { id: bigint } }) {
     return (
         <div className="container mx-auto px-4 py-4 flex justify-center items-start min-h-[calc(100vh-4rem)]">
             <div className="w-full max-w-2xl">
-                <TokenCard tokenId={params.id} />
+                <TokenCard 
+                    tokenId={params.id} 
+                    isCompact={false}
+                    isMyTokensPage={false}
+                    isRedeemed={false}
+                />
             </div>
         </div>
     );
