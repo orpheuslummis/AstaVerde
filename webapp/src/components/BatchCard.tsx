@@ -161,12 +161,13 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                     <div className="grid grid-cols-3 gap-2">
                         {displayedTokens.map((tokenId) => (
                             <div key={tokenId.toString()} className="aspect-square token-card-wrapper">
-                                <Link href={`/token/${tokenId}`}>
-                                    <TokenCard
-                                        tokenId={tokenId}
-                                        isCompact={true}
-                                    />
-                                </Link>
+                                <TokenCard
+                                    tokenId={tokenId}
+                                    isCompact={true}
+                                    linkTo={`/token/${tokenId}`}
+                                    isMyTokensPage={false}
+                                    isRedeemed={false}
+                                />
                             </div>
                         ))}
                         {remainingTokens > 0 && (

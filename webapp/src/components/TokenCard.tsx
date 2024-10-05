@@ -19,6 +19,7 @@ interface TokenCardProps {
     isRedeemed?: boolean;
     isSelected?: boolean;
     onSelect?: (tokenId: bigint, isSelected: boolean) => void;
+    linkTo?: string;
 }
 
 export default function TokenCard({
@@ -28,21 +29,21 @@ export default function TokenCard({
     isRedeemed,
     isSelected,
     onSelect,
+    linkTo,
 }: TokenCardProps) {
     const [tokenData, setTokenData] = useState<TokenMetadata | null>(null);
     const [error, setError] = useState<string | null>(null);
     const { ref, inView } = useInView({
         triggerOnce: true,
         rootMargin: "200px 0px",
+        threshold: 0.1,
     });
     const { astaverdeContractConfig } = useAppContext();
     const { execute } = useContractInteraction(astaverdeContractConfig, "uri");
 
     const fetchTokenData = useCallback(async () => {
         try {
-            console.log(`Fetching data for token ID: ${tokenId}`);
             const tokenURI = await execute(tokenId);
-            console.log(`Token URI: ${tokenURI}`);
 
             if (typeof tokenURI !== "string") {
                 throw new Error("Invalid token URI returned");
@@ -54,19 +55,15 @@ export default function TokenCard({
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            console.log(`Fetched token data:`, data);
             setTokenData(data);
         } catch (err) {
-            console.error(`Error fetching data for token ${tokenId}:`, err);
             setError(`Failed to load token data. Please try again later.`);
         }
     }, [execute, tokenId]);
 
     useEffect(() => {
-        if (inView) {
-            fetchTokenData();
-        }
-    }, [inView, fetchTokenData]);
+        fetchTokenData();
+    }, [fetchTokenData, tokenId]);
 
     const handleSelect = useCallback(() => {
         if (onSelect && !isRedeemed) {
@@ -93,11 +90,10 @@ export default function TokenCard({
                             <div className="w-full h-full shimmer dark:bg-gray-700 rounded-t-lg"></div>
                         )}
                         {isMyTokensPage && (
-                            <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                                isRedeemed 
-                                    ? "bg-gray-500 text-white" 
-                                    : "bg-emerald-500 text-white"
-                            }`}>
+                            <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold ${isRedeemed
+                                ? "bg-gray-500 text-white"
+                                : "bg-emerald-500 text-white"
+                                }`}>
                                 {isRedeemed ? "Redeemed" : "Not redeemed"}
                             </div>
                         )}
@@ -129,17 +125,26 @@ export default function TokenCard({
         dark:bg-gray-800
     `;
 
-    const cardElement = <div className={cardClasses}>{cardContent}</div>;
+    const cardElement = (
+        <div
+            className={cardClasses}
+            onClick={isMyTokensPage ? handleSelect : undefined}
+        >
+            {cardContent}
+        </div>
+    );
+
+    if (linkTo) {
+        return (
+            <Link href={linkTo} className={isCompact ? "w-full h-full" : ""}>
+                {cardElement}
+            </Link>
+        );
+    }
 
     return (
         <div ref={ref} className={isCompact ? "w-full h-full" : ""}>
-            {isMyTokensPage ? (
-                cardElement
-            ) : (
-                <Link href={`/token/${tokenId}`} className="block w-full h-full">
-                    {cardElement}
-                </Link>
-            )}
+            {isMyTokensPage ? cardElement : cardElement}
         </div>
     );
 }
