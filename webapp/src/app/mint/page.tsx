@@ -137,12 +137,12 @@ export default function MintPage() {
     }
 
     return (
-        <div className="flex flex-col items-center space-y-8 p-4">
-            <h1 className="text-3xl font-bold mb-4">AstaVerde Minting Page</h1>
-            <div className="flex flex-col items-center space-y-2">
+        <div className="flex flex-col items-center space-y-8 p-4 bg-gray-100 dark:bg-gray-800 min-h-screen">
+            <h1 className="text-3xl font-bold mb-4 text-emerald-700 dark:text-emerald-300">AstaVerde Minting Page</h1>
+            <div className="flex flex-col items-center space-y-2 text-gray-800 dark:text-gray-200">
                 <p>Connected Address: {address}</p>
                 <p>Next Token ID: {lastTokenId !== null ? lastTokenId + 1 : "Loading..."}</p>
-                <p className={isAdmin ? "text-green-500" : "text-red-500"}>
+                <p className={isAdmin ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
                     {isAdmin ? "You have admin privileges" : "You don't have admin privileges"}
                 </p>
             </div>
@@ -193,21 +193,22 @@ function MintForm({
     isUploading,
 }: MintFormProps) {
     return (
-        <div className="w-full max-w-md space-y-4">
-            <h2 className="text-2xl font-semibold">Mint New Tokens</h2>
+        <div className="w-full max-w-md space-y-4 bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-semibold text-emerald-700 dark:text-emerald-300">Mint New Tokens</h2>
             <input
                 type="email"
                 placeholder="Email for IPFS"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border rounded px-2 py-1 w-full"
+                className="input"
             />
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 text-gray-800 dark:text-gray-200">
                 <input
                     type="checkbox"
                     id="uploadImages"
                     checked={uploadImages}
                     onChange={() => setUploadImages(!uploadImages)}
+                    className="form-checkbox h-5 w-5 text-emerald-600 dark:text-emerald-400 rounded"
                 />
                 <label htmlFor="uploadImages">Upload Images</label>
             </div>
@@ -224,14 +225,14 @@ function MintForm({
             ))}
             <button
                 type="button"
-                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
+                className="btn btn-secondary w-full"
                 onClick={addToken}
             >
                 Add Another Token
             </button>
             <button
                 type="button"
-                className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded w-full"
+                className="btn btn-primary w-full"
                 onClick={handleMint}
                 disabled={isUploading}
             >
@@ -252,8 +253,8 @@ interface TokenFormProps {
 
 function TokenForm({ token, index, lastTokenId, handleTokenChange, handleImageChange, uploadImages }: TokenFormProps) {
     return (
-        <div className="space-y-2 p-4 border rounded">
-            <h3 className="font-semibold">Token {lastTokenId !== null ? lastTokenId + index + 1 : "Loading..."}</h3>
+        <div className="space-y-2 p-4 border rounded bg-gray-50 dark:bg-gray-600">
+            <h3 className="font-semibold text-emerald-700 dark:text-emerald-300">Token {lastTokenId !== null ? lastTokenId + index + 1 : "Loading..."}</h3>
             <InputField
                 label="Token Name"
                 value={token.name}
@@ -271,13 +272,13 @@ function TokenForm({ token, index, lastTokenId, handleTokenChange, handleImageCh
             />
             {uploadImages && (
                 <div className="space-y-1">
-                    <label htmlFor={`tokenImage-${index}`} className="block text-sm font-medium text-gray-700">Token Image</label>
+                    <label htmlFor={`tokenImage-${index}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">Token Image</label>
                     <input
                         id={`tokenImage-${index}`}
                         type="file"
                         accept="image/*"
                         onChange={(e) => handleImageChange(e, index)}
-                        className="border rounded px-2 py-1 w-full"
+                        className="input"
                     />
                 </div>
             )}
@@ -295,13 +296,13 @@ function InputField({ label, value, onChange }: InputFieldProps) {
     const id = `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
     return (
         <div className="space-y-1">
-            <label htmlFor={id} className="block text-sm font-medium text-gray-700">{label}</label>
+            <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
             <input
                 id={id}
                 type="text"
                 value={value}
                 onChange={onChange}
-                className="border rounded px-2 py-1 w-full"
+                className="input"
             />
         </div>
     );
