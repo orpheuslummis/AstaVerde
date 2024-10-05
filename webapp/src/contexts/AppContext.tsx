@@ -1,12 +1,12 @@
 import type React from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useAccount, usePublicClient, useReadContract, useReadContracts } from "wagmi";
+import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import { useContractInteraction } from "../hooks/useContractInteraction";
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, getUsdcContractConfig } from "../lib/contracts";
 import { customToast } from "../utils/customToast";
 import type { AppContextType } from "../types";
-import { serializeBigInt, deserializeBigInt } from "../utils/bigIntHelper";
+import { serializeBigInt } from "../utils/bigIntHelper";
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -19,19 +19,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const { execute: getLastBatchID } = useContractInteraction(astaverdeContractConfig, "lastBatchID");
     const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
 
-    const { data: lastBatchID, refetch: refetchLastBatchID } = useReadContract({
+    const { data: lastBatchID } = useReadContract({
         ...astaverdeContractConfig,
         functionName: "lastBatchID",
-    }) as { data: bigint | undefined; refetch: () => void };
+    }) as { data: bigint | undefined };
 
-    const { data: batchesData, refetch: refetchBatchesData } = useReadContracts({
+    useReadContracts({
         contracts:
             lastBatchID !== undefined
                 ? Array.from({ length: Number(lastBatchID) }, (_, i) => ({
-                      ...astaverdeContractConfig,
-                      functionName: "getBatchInfo",
-                      args: [serializeBigInt(BigInt(i + 1))],
-                  }))
+                    ...astaverdeContractConfig,
+                    functionName: "getBatchInfo",
+                    args: [serializeBigInt(BigInt(i + 1))],
+                }))
                 : [],
     });
 
@@ -47,16 +47,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 const lastBatchID = await getLastBatchID();
                 console.log("Last Batch ID from contract:", lastBatchID.toString());
 
-                if (lastBatchID !== undefined && lastBatchID >= 0n) {
+                if (lastBatchID !== undefined && lastBatchID > 0n) {
                     const batchPromises = [];
-                    for (let i = 0n; i <= lastBatchID; i++) {
+                    for (let i = 1n; i <= lastBatchID; i++) {
                         batchPromises.push(getBatchInfo(i));
                     }
                     const batchesInfo = await Promise.all(batchPromises);
                     console.log("Raw batch info:", batchesInfo);
 
-                    const processedBatches = batchesInfo.map((batchInfo, index) => {
-                        console.log(`Raw batch ${index} info:`, batchInfo);
+                    const processedBatches = batchesInfo.map((batchInfo) => {
+                        console.log(`Raw batch info:`, batchInfo);
                         const [batchId, tokenIds, creationTime, price, remainingTokens] = batchInfo;
                         return new Batch(
                             BigInt(batchId),

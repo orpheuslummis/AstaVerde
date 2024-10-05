@@ -167,7 +167,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
         _mintBatch(address(this), ids, amounts, "");
 
-        lastBatchID = batches.length;
+        lastBatchID++;
         batches.push(Batch(lastBatchID, ids, block.timestamp, basePrice, basePrice, producers.length));
         emit BatchMinted(lastBatchID, block.timestamp);
     }
