@@ -8,9 +8,7 @@ function BatchListing() {
     const { batches, refetchBatches } = useAppContext();
 
     useEffect(() => {
-        console.log("BatchListing effect running");
         const fetchBatches = async () => {
-            console.log("Refetching batches...");
             await refetchBatches();
         };
 
@@ -30,12 +28,10 @@ function BatchListing() {
         });
     }, [batches]);
 
-    console.log("BatchListing render, batches:", batches);
-
     return (
         <div className="container mx-auto px-4 py-8">
-            {batches.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {sortedBatches.length > 0 ? (
+                <div className="grid-responsive">
                     {sortedBatches.map((batch) => (
                         <BatchCard
                             key={batch.id?.toString() ?? `batch-${Math.random()}`}
