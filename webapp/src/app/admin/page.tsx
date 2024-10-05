@@ -19,7 +19,7 @@ function AdminControls() {
 
     return (
         <Connected>
-            <h2 className="text-2xl my-6 mx-6">Admin Controls</h2>
+            <h2 className="text-2xl my-6 mx-6 text-emerald-800 dark:text-emerald-300">Admin Controls</h2>
             <Link href="/mint" className="btn btn-primary m-6 shadow-md hover:shadow-lg">
                 Go to Minting Page
             </Link>
@@ -40,8 +40,8 @@ function AdminControls() {
 
 function ControlContainer({ children, title }: { children: React.ReactNode; title: string }) {
     return (
-        <div className="card bg-primary-light p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4">{title}</h2>
+        <div className="card bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-bold mb-4 text-emerald-700 dark:text-emerald-300">{title}</h2>
             {children}
         </div>
     );
@@ -80,7 +80,7 @@ function PauseContractControl() {
         <ControlContainer title="Pause / Unpause">
             <button
                 type="button"
-                className="btn btn-primary m-2 shadow-md hover:shadow-lg"
+                className="btn btn-primary m-2 shadow-md hover:shadow-lg text-white"
                 disabled={isContractPaused as boolean}
                 onClick={handlePause}
             >
@@ -88,7 +88,7 @@ function PauseContractControl() {
             </button>
             <button
                 type="button"
-                className="btn btn-secondary m-2 shadow-md hover:shadow-lg"
+                className="btn btn-secondary m-2 shadow-md hover:shadow-lg text-white"
                 disabled={!isContractPaused}
                 onClick={handleUnpause}
             >
@@ -118,7 +118,7 @@ function ClaimPlatformFunds() {
         <ControlContainer title="Claim Platform Funds">
             <button
                 type="button"
-                className="btn btn-secondary m-2 shadow-md hover:shadow-lg"
+                className="btn btn-secondary m-2 shadow-md hover:shadow-lg text-white"
                 onClick={handleClaim}
             >
                 Claim
@@ -157,11 +157,11 @@ function PriceFloorControl() {
                     value={priceFloor}
                     onChange={(e) => setPriceFloor(e.target.value)}
                     placeholder="Enter Price Floor (USDC)"
-                    className="px-4 py-2 border border-gray-300 rounded"
+                    className="px-4 py-2 border border-gray-300 rounded text-gray-800 dark:text-white dark:bg-gray-700"
                 />
                 <button
                     type="button"
-                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50 text-white"
                     disabled={!priceFloor}
                     onClick={handleSetPriceFloor}
                 >
@@ -169,7 +169,7 @@ function PriceFloorControl() {
                 </button>
             </div>
             {typeof currentPriceFloor === "bigint" && (
-                <div className="text-gray-500 mt-4">
+                <div className="text-gray-600 dark:text-gray-300 mt-4">
                     Current Price Floor: {formatUnits(currentPriceFloor, USDC_DECIMALS)} USDC
                 </div>
             )}
@@ -207,11 +207,11 @@ function BasePriceControl() {
                     value={basePrice}
                     onChange={(e) => setBasePrice(e.target.value)}
                     placeholder="Enter Base Price (USDC)"
-                    className="px-4 py-2 border border-gray-300 rounded"
+                    className="px-4 py-2 border border-gray-300 rounded text-gray-800 dark:text-white dark:bg-gray-700"
                 />
                 <button
                     type="button"
-                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50 text-white"
                     disabled={!basePrice}
                     onClick={handleSetBasePrice}
                 >
@@ -219,7 +219,7 @@ function BasePriceControl() {
                 </button>
             </div>
             {typeof currentBasePrice === "bigint" && (
-                <div className="text-gray-500 mt-4">
+                <div className="text-gray-600 dark:text-gray-300 mt-4">
                     Current Base Price: {formatUnits(currentBasePrice, USDC_DECIMALS)} USDC
                 </div>
             )}
@@ -256,11 +256,11 @@ function MaxBatchSizeControl() {
                     value={maxBatchSize}
                     onChange={(e) => setMaxBatchSize(e.target.value)}
                     placeholder="Enter Max Batch Size"
-                    className="px-4 py-2 border border-gray-300 rounded"
+                    className="px-4 py-2 border border-gray-300 rounded text-gray-800 dark:text-white dark:bg-gray-700"
                 />
                 <button
                     type="button"
-                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50 text-white"
                     disabled={!maxBatchSize}
                     onClick={handleSetMaxBatchSize}
                 >
@@ -268,7 +268,7 @@ function MaxBatchSizeControl() {
                 </button>
             </div>
             {typeof currentMaxBatchSize === "bigint" && (
-                <div className="text-gray-500 mt-4">Current Max Batch Size: {currentMaxBatchSize.toString()}</div>
+                <div className="text-gray-600 dark:text-gray-300 mt-4">Current Max Batch Size: {currentMaxBatchSize.toString()}</div>
             )}
         </ControlContainer>
     );
@@ -315,18 +315,18 @@ function AuctionTimeThresholdsControl() {
                     value={dayIncreaseThreshold}
                     onChange={(e) => setDayIncreaseThreshold(e.target.value)}
                     placeholder="Enter Increase Days"
-                    className="px-4 py-2 border border-gray-300 rounded"
+                    className="px-4 py-2 border border-gray-300 rounded text-gray-800 dark:text-white dark:bg-gray-700"
                 />
                 <input
                     type="number"
                     value={dayDecreaseThreshold}
                     onChange={(e) => setDayDecreaseThreshold(e.target.value)}
                     placeholder="Enter Decrease Days"
-                    className="px-4 py-2 border border-gray-300 rounded"
+                    className="px-4 py-2 border border-gray-300 rounded text-gray-800 dark:text-white dark:bg-gray-700"
                 />
                 <button
                     type="button"
-                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50 text-white"
                     disabled={!dayIncreaseThreshold || !dayDecreaseThreshold}
                     onClick={handleSetAuctionTimeThresholds}
                 >
@@ -334,12 +334,12 @@ function AuctionTimeThresholdsControl() {
                 </button>
             </div>
             {typeof currentDayIncreaseThreshold === "bigint" && (
-                <div className="text-gray-500 mt-4">
+                <div className="text-gray-600 dark:text-gray-300 mt-4">
                     Current Day Increase Threshold: {currentDayIncreaseThreshold.toString()}
                 </div>
             )}
             {typeof currentDayDecreaseThreshold === "bigint" && (
-                <div className="text-gray-500 mt-4">
+                <div className="text-gray-600 dark:text-gray-300 mt-4">
                     Current Day Decrease Threshold: {currentDayDecreaseThreshold.toString()}
                 </div>
             )}
@@ -376,13 +376,13 @@ function PlatformPercentageControl() {
                     value={platformSharePercentage}
                     onChange={(e) => setPlatformSharePercentage(e.target.value)}
                     placeholder="Enter Platform Share Percentage (0-100)"
-                    className="px-4 py-2 border border-gray-300 rounded"
+                    className="px-4 py-2 border border-gray-300 rounded text-gray-800 dark:text-white dark:bg-gray-700"
                     min="0"
                     max="100"
                 />
                 <button
                     type="button"
-                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50 text-white"
                     disabled={!platformSharePercentage}
                     onClick={handleSetPlatformSharePercentage}
                 >
@@ -390,7 +390,7 @@ function PlatformPercentageControl() {
                 </button>
             </div>
             {typeof currentPlatformSharePercentage === "bigint" && (
-                <div className="text-gray-500 mt-4">
+                <div className="text-gray-600 dark:text-gray-300 mt-4">
                     Current Platform Share Percentage: {currentPlatformSharePercentage.toString()}%
                 </div>
             )}
@@ -415,7 +415,7 @@ function UpdateBasePriceControl() {
         <ControlContainer title="Update Base Price">
             <button
                 type="button"
-                className="btn btn-secondary m-2 shadow-md hover:shadow-lg"
+                className="btn btn-secondary m-2 shadow-md hover:shadow-lg text-white"
                 onClick={handleUpdateBasePrice}
             >
                 Update Base Price
@@ -460,11 +460,11 @@ function PriceDecreaseRateControl() {
                     value={priceDecreaseRate}
                     onChange={(e) => setPriceDecreaseRate(e.target.value)}
                     placeholder="Enter Price Decrease Rate (USDC)"
-                    className="px-4 py-2 border border-gray-300 rounded"
+                    className="px-4 py-2 border border-gray-300 rounded text-gray-800 dark:text-white dark:bg-gray-700"
                 />
                 <button
                     type="button"
-                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50"
+                    className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50 text-white"
                     disabled={!priceDecreaseRate}
                     onClick={handleSetPriceDecreaseRate}
                 >
@@ -472,7 +472,7 @@ function PriceDecreaseRateControl() {
                 </button>
             </div>
             {typeof currentPriceDecreaseRate === "bigint" && (
-                <div className="text-gray-500 mt-4">
+                <div className="text-gray-600 dark:text-gray-300 mt-4">
                     Current Price Decrease Rate: {formatUnits(currentPriceDecreaseRate, USDC_DECIMALS)} USDC
                 </div>
             )}
