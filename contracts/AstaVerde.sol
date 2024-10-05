@@ -174,8 +174,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
     // Calculates the current price for a batch based on the Dutch auction mechanism
     function getCurrentBatchPrice(uint256 batchID) public view returns (uint256) {
-        require(batchID < batches.length, "Batch does not exist");
-        Batch storage batch = batches[batchID];
+        require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
+        Batch storage batch = batches[batchID - 1];
         uint256 timeSinceCreation = block.timestamp - batch.creationTime;
         uint256 daysSinceCreation = timeSinceCreation / SECONDS_IN_A_DAY;
 
@@ -246,8 +246,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             uint256 remainingTokens
         )
     {
-        require(batchID < batches.length, "Batch ID is out of bounds");
-        Batch storage batch = batches[batchID];
+        require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
+        Batch storage batch = batches[batchID - 1];
         if (batch.remainingTokens == 0) {
             // If the batch is sold out, return the last price it was sold at
             price = batch.price;
@@ -261,7 +261,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     // Allows users to purchase tokens from a batch
     function buyBatch(uint256 batchID, uint256 usdcAmount, uint256 tokenAmount) external whenNotPaused nonReentrant {
         updateBasePriceOnAction();
-        Batch storage batch = batches[batchID];
+        require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
+        Batch storage batch = batches[batchID - 1];
         require(batch.creationTime > 0, "Batch not initialized");
         require(tokenAmount > 0, "Invalid token amount");
         require(tokenAmount <= batch.remainingTokens, "Not enough tokens in batch");
@@ -349,12 +350,13 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
     // Fetches a specified number of available token IDs from a given batch
     function getPartialIds(uint256 batchID, uint256 numberToBuy) internal view returns (uint256[] memory) {
+        require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
         require(numberToBuy > 0, "Number to buy must be greater than zero");
         uint256[] memory partialIds = new uint256[](numberToBuy);
         uint256 counter = 0;
 
-        for (uint256 i = 0; i < batches[batchID].tokenIds.length && counter < numberToBuy; i++) {
-            uint256 tokenId = batches[batchID].tokenIds[i];
+        for (uint256 i = 0; i < batches[batchID - 1].tokenIds.length && counter < numberToBuy; i++) {
+            uint256 tokenId = batches[batchID - 1].tokenIds[i];
             if (balanceOf(address(this), tokenId) > 0) {
                 partialIds[counter] = tokenId;
                 counter++;

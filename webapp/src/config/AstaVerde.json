@@ -350,6 +350,19 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "newPriceDecreaseRate",
+          "type": "uint256"
+        }
+      ],
+      "name": "PriceDecreaseRateSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "tokenId",
           "type": "uint256"
         },
@@ -1158,6 +1171,19 @@
         }
       ],
       "name": "setPlatformSharePercentage",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "newPriceDecreaseRate",
+          "type": "uint256"
+        }
+      ],
+      "name": "setPriceDecreaseRate",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
