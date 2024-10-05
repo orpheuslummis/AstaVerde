@@ -99,6 +99,11 @@ These parameters allow for fine-tuning of the auction mechanism to respond to ma
     npm run task:mintlocal
     ```
 
+
+With local hardhat node:
+- `OWNER_ADDRESS=xyz p node`
+- `NODE_ENV=development p webapp:dev`
+
 ## Deployment
 
 ### Deploy for an owner address

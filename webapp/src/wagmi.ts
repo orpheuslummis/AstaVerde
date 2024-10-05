@@ -1,6 +1,6 @@
 import { getDefaultConfig } from "connectkit";
 import { createConfig } from "wagmi";
-import { base, baseSepolia } from "wagmi/chains";
+import { base, baseSepolia, hardhat } from "wagmi/chains";
 import { ALCHEMY_API_KEY, CHAIN_SELECTION, WALLET_CONNECT_PROJECT_ID } from "./app.config";
 
 const chains = (() => {
@@ -8,7 +8,6 @@ const chains = (() => {
         case "base_mainnet":
             return [base] as const;
         case "base_sepolia":
-        default:
             return [
                 {
                     ...baseSepolia,
@@ -19,6 +18,10 @@ const chains = (() => {
                     },
                 },
             ] as const;
+        case "local":
+            return [hardhat] as const;
+        default:
+            throw new Error(`Unsupported chain selection: ${CHAIN_SELECTION}`);
     }
 })();
 
