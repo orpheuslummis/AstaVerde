@@ -72,7 +72,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     const isButtonDisabled =
         !isConnected || isLoading || !hasEnoughUSDC || isSoldOut || batch.itemsLeft === 0n;
 
-    const displayedTokens = batch.tokenIds.slice(0, 3);
+    const displayedTokens = batch.tokenIds.slice(0, 5);
     const remainingTokens = batch.tokenIds.length - displayedTokens.length;
 
     return (
