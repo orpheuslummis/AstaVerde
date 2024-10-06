@@ -8,13 +8,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "hardhat/console.sol";
-
 contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, ReentrancyGuard {
     IERC20 public immutable usdcToken;
     uint256 constant INTERNAL_PRECISION = 1e18;
     uint256 constant USDC_PRECISION = 1e6;
-    uint256 constant PRECISION_FACTOR = INTERNAL_PRECISION / USDC_PRECISION; // 1e12
+    uint256 constant PRECISION_FACTOR = INTERNAL_PRECISION / USDC_PRECISION;
     uint256 public constant SECONDS_IN_A_DAY = 86400;
 
     uint256 public platformSharePercentage;
@@ -195,20 +193,12 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         uint256 daysSinceLastBaseAdjustment = (block.timestamp - pricingInfo.lastBaseAdjustmentTime) / SECONDS_IN_A_DAY;
         uint256 timeSinceLastSale = block.timestamp - pricingInfo.lastPlatformSaleTime;
 
-        console.log("Current base price:", basePrice);
-        console.log("Day increase threshold:", dayIncreaseThreshold);
-        console.log("Day decrease threshold:", dayDecreaseThreshold);
-        console.log("Days since last adjustment:", daysSinceLastBaseAdjustment);
-        console.log("Total sales since last adjustment:", pricingInfo.totalPlatformSalesSinceLastAdjustment);
-        console.log("Time since last sale:", timeSinceLastSale);
-
         bool priceAdjusted = false;
 
         if (
             pricingInfo.totalPlatformSalesSinceLastAdjustment > 0 && daysSinceLastBaseAdjustment < dayIncreaseThreshold
         ) {
             basePrice += priceDelta;
-            console.log("Increasing base price to:", basePrice);
             emit BasePriceIncreased(basePrice, block.timestamp);
             priceAdjusted = true;
         } else if (daysSinceLastBaseAdjustment >= dayDecreaseThreshold) {
@@ -216,7 +206,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             uint256 totalPriceDecrease = daysToDecrease * priceDecreaseRate;
             uint256 newBasePrice = (basePrice > totalPriceDecrease) ? (basePrice - totalPriceDecrease) : priceFloor;
             basePrice = (newBasePrice > priceFloor) ? newBasePrice : priceFloor;
-            console.log("Decreasing base price to:", basePrice);
             emit BasePriceDecreased(basePrice, block.timestamp);
             priceAdjusted = true;
         }
@@ -226,7 +215,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             pricingInfo.totalPlatformSalesSinceLastAdjustment = 0;
         }
 
-        // Always update the last sale time
         pricingInfo.lastPlatformSaleTime = block.timestamp;
     }
 
@@ -246,16 +234,13 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
         Batch storage batch = batches[batchID - 1];
         if (batch.remainingTokens == 0) {
-            // If the batch is sold out, return the last price it was sold at
             price = batch.price;
         } else {
-            // For all unsold batches, including the latest, calculate the current price
             price = getCurrentBatchPrice(batchID);
         }
         return (batch.batchId, batch.tokenIds, batch.creationTime, price, batch.remainingTokens);
     }
 
-    // Allows users to purchase tokens from a batch
     function buyBatch(uint256 batchID, uint256 usdcAmount, uint256 tokenAmount) external whenNotPaused nonReentrant {
         require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
         Batch storage batch = batches[batchID - 1];
@@ -274,33 +259,25 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
         batch.remainingTokens -= tokenAmount;
 
-        // Update sale information before updating the base price
         pricingInfo.totalPlatformSalesSinceLastAdjustment += tokenAmount;
 
-        // Now update the base price
         updateBasePriceOnAction();
 
-        // Store the final sale price if the batch is now sold out
         if (batch.remainingTokens == 0) {
             batch.price = currentPrice;
         }
 
-        // Split the amount paid into platform and producer shares
         uint256 highPrecisionPrice = currentPrice * PRECISION_FACTOR;
         uint256 totalHighPrecisionPrice = highPrecisionPrice * tokenAmount;
 
-        // Calculate platform share in high precision
         uint256 platformShareHighPrecision = (totalHighPrecisionPrice * platformSharePercentage) / 100;
-        // Calculate producer share in high precision
         uint256 producerShareHighPrecision = totalHighPrecisionPrice - platformShareHighPrecision;
 
-        // Convert back to USDC precision with explicit rounding
         uint256 platformShare = (platformShareHighPrecision + PRECISION_FACTOR / 2) / PRECISION_FACTOR;
         uint256 producerShare = (producerShareHighPrecision + PRECISION_FACTOR / 2) / PRECISION_FACTOR;
 
         platformShareAccumulated += platformShare;
 
-        // Handle token batch purchase
         uint256[] memory ids = (tokenAmount == batch.tokenIds.length)
             ? batch.tokenIds
             : getPartialIds(batchID, tokenAmount);
@@ -347,7 +324,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         _safeBatchTransferFrom(address(this), msg.sender, ids, amounts, "");
     }
 
-    // Fetches a specified number of available token IDs from a given batch
     function getPartialIds(uint256 batchID, uint256 numberToBuy) internal view returns (uint256[] memory) {
         require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
         require(numberToBuy > 0, "Number to buy must be greater than zero");
@@ -366,7 +342,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         return partialIds;
     }
 
-    // Allows token owners to mark their credits as redeemed
     function redeemTokens(uint256[] memory tokenIds) public onlyTokenOwner(tokenIds) nonReentrant whenNotPaused {
         require(tokenIds.length > 0, "No tokens provided for redemption");
         for (uint256 i = 0; i < tokenIds.length; i++) {
@@ -377,7 +352,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         }
     }
 
-    // Allows the contract owner to claim accumulated platform funds
     function claimPlatformFunds(address to) external onlyOwner nonReentrant whenNotPaused {
         require(to != address(0), "Address must not be zero");
         require(platformShareAccumulated > 0, "No funds to withdraw");
