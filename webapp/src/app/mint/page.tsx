@@ -1,8 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useCallback, useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { EXTERNAL_URL, IPFS_PREFIX } from "../../app.config";
 import { useAppContext } from "../../contexts/AppContext";
 import { useWallet } from "../../contexts/WalletContext";
@@ -13,7 +11,6 @@ import { connectToSpace, initializeWeb3StorageClient, type TokenMetadata, upload
 export default function MintPage() {
     const { isConnected, address } = useWallet();
     const { astaverdeContractConfig, isAdmin, refetchBatches } = useAppContext();
-    const { address: accountAddress } = useAccount();
     const [tokens, setTokens] = useState<TokenMetadata[]>([
         { name: "", description: "", producer_address: "", image: null },
     ]);
@@ -25,7 +22,6 @@ export default function MintPage() {
 
     const { execute: mintBatch } = useContractInteraction(astaverdeContractConfig, "mintBatch");
     const { execute: getLastTokenId } = useContractInteraction(astaverdeContractConfig, "lastTokenID");
-    const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
 
     useEffect(() => {
         initializeWeb3StorageClient()
@@ -33,8 +29,7 @@ export default function MintPage() {
                 setWeb3StorageClient(client);
                 customToast.success("Web3Storage client initialized successfully");
             })
-            .catch((error) => {
-                console.error("Failed to initialize Web3Storage client:", error);
+            .catch(() => {
                 customToast.error("Failed to initialize Web3Storage client");
             });
     }, []);
@@ -46,12 +41,15 @@ export default function MintPage() {
                     setLastTokenId(Number(id));
                     customToast.success(`Last token ID fetched: ${Number(id)}`);
                 })
-                .catch((error) => {
-                    console.error("Error fetching last token ID:", error);
+                .catch(() => {
                     customToast.error("Failed to fetch last token ID");
                 });
         }
     }, [isConnected, getLastTokenId]);
+
+    const handleTokenChange = useCallback((index: number, field: keyof TokenMetadata, value: string) => {
+        setTokens((prev) => prev.map((token, i) => (i === index ? { ...token, [field]: value } : token)));
+    }, []);
 
     const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>, index: number) => {
         const file = e.target.files?.[0];
@@ -61,10 +59,6 @@ export default function MintPage() {
         }
     }, []);
 
-    const handleTokenChange = useCallback((index: number, field: keyof TokenMetadata, value: string) => {
-        setTokens((prev) => prev.map((token, i) => (i === index ? { ...token, [field]: value } : token)));
-    }, []);
-
     const handleMint = useCallback(async () => {
         if (!isConnected || !isAdmin || !email) {
             customToast.error("Please ensure you're connected, have admin rights, and provided an email.");
@@ -72,12 +66,10 @@ export default function MintPage() {
         }
 
         setIsUploading(true);
-        customToast.info("Starting batch minting process...");
         const producers: string[] = [];
         const cids: string[] = [];
 
         try {
-            customToast.info("Verifying email...");
             const client = await connectToSpace(web3StorageClient, email, "astaverde-dev");
             customToast.success("Email verified and connected to Web3Storage space");
 
@@ -99,9 +91,7 @@ export default function MintPage() {
 
                     producers.push(token.producer_address);
                     cids.push(metadataCid);
-                    console.log(`Prepared token ${token.name} with metadata CID: ${metadataCid}`);
-                } catch (error) {
-                    console.error(`Error preparing token ${token.name}:`, error);
+                } catch {
                     customToast.error(`Failed to prepare token ${token.name}`);
                 }
             }
@@ -110,18 +100,13 @@ export default function MintPage() {
                 throw new Error("No tokens were successfully prepared for minting");
             }
 
-            console.log("Minting batch of tokens", { producers, cids });
-            customToast.info("Submitting transaction to mint batch...");
             await mintBatch(producers, cids);
-            customToast.success("Batch minting transaction confirmed");
-
             customToast.success("Batch minted successfully");
             setTokens([{ name: "", description: "", producer_address: "", image: null }]);
             setLastTokenId((prev) => prev ? prev + tokens.length : null);
             await refetchBatches();
             customToast.success("Batch information updated");
         } catch (error) {
-            console.error("Error minting batch:", error);
             customToast.error(`Failed to mint batch: ${(error as Error).message}`);
         } finally {
             setIsUploading(false);
@@ -251,24 +236,28 @@ interface TokenFormProps {
     uploadImages: boolean;
 }
 
-function TokenForm({ token, index, lastTokenId, handleTokenChange, handleImageChange, uploadImages }: TokenFormProps) {
+const TokenForm = React.memo(({ token, index, lastTokenId, handleTokenChange, handleImageChange, uploadImages }: TokenFormProps) => {
+    const handleInputChange = useCallback((field: keyof TokenMetadata, value: string) => {
+        handleTokenChange(index, field, value);
+    }, [index, handleTokenChange]);
+
     return (
         <div className="space-y-2 p-4 border rounded bg-gray-50 dark:bg-gray-600">
             <h3 className="font-semibold text-emerald-700 dark:text-emerald-300">Token {lastTokenId !== null ? lastTokenId + index + 1 : "Loading..."}</h3>
             <InputField
                 label="Token Name"
                 value={token.name}
-                onChange={(e) => handleTokenChange(index, "name", e.target.value)}
+                onChange={(value) => handleInputChange("name", value)}
             />
             <InputField
                 label="Description"
                 value={token.description}
-                onChange={(e) => handleTokenChange(index, "description", e.target.value)}
+                onChange={(value) => handleInputChange("description", value)}
             />
             <InputField
                 label="Producer Address"
                 value={token.producer_address}
-                onChange={(e) => handleTokenChange(index, "producer_address", e.target.value)}
+                onChange={(value) => handleInputChange("producer_address", value)}
             />
             {uploadImages && (
                 <div className="space-y-1">
@@ -284,26 +273,44 @@ function TokenForm({ token, index, lastTokenId, handleTokenChange, handleImageCh
             )}
         </div>
     );
-}
+});
 
 interface InputFieldProps {
     label: string;
     value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onChange: (value: string) => void;
 }
 
-function InputField({ label, value, onChange }: InputFieldProps) {
+const InputField = React.memo(({ label, value: propValue, onChange }: InputFieldProps) => {
+    const [localValue, setLocalValue] = useState(propValue);
+    const inputRef = useRef<HTMLInputElement>(null);
     const id = `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
+
+    useEffect(() => {
+        setLocalValue(propValue);
+    }, [propValue]);
+
+    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value;
+        setLocalValue(newValue);
+    }, []);
+
+    const handleBlur = useCallback(() => {
+        onChange(localValue);
+    }, [onChange, localValue]);
+
     return (
         <div className="space-y-1">
             <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
             <input
                 id={id}
+                ref={inputRef}
                 type="text"
-                value={value}
-                onChange={onChange}
+                value={localValue}
+                onChange={handleChange}
+                onBlur={handleBlur}
                 className="input"
             />
         </div>
     );
-}
+});
