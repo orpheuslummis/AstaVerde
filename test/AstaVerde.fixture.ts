@@ -13,7 +13,7 @@ export async function deployAstaVerdeFixture(): Promise<{
     const [admin, user1, user2] = await ethers.getSigners();
 
     const MockUSDC = await ethers.getContractFactory("MockUSDC");
-    const mockUSDC = await MockUSDC.deploy(1000000000n * USDC_PRECISION);
+    const mockUSDC = await MockUSDC.deploy(0);
     await mockUSDC.waitForDeployment();
 
     await mockUSDC.mint(admin.address, 10000000n * USDC_PRECISION);

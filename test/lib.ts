@@ -2,6 +2,7 @@ import type { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers"
 import { ethers } from "ethers";
 
 export const USDC_PRECISION = 10n ** 6n;
+export const SECONDS_IN_A_DAY = 86400n;
 
 export function genAddresses(num: number) {
     const addresses = [];
