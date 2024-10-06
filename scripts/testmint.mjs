@@ -90,16 +90,6 @@ async function setupProvider() {
             console.error("Contract interface is undefined. Check if the contract is deployed and ABI is correct.");
             throw new Error("Contract interface is undefined");
         }
-
-        console.log("Contract interface:", contract.interface ? "Exists" : "Does not exist");
-        console.log("Contract interface type:", typeof contract.interface);
-        console.log("Contract interface properties:", Object.keys(contract.interface));
-
-        // Remove the check for contract.interface.functions
-        // Instead, log the available functions directly from the ABI
-        const functions = ABI.filter(item => item.type === 'function').map(func => func.name);
-        console.log("Contract functions:", functions);
-
         return { provider, wallet, contract };
     } catch (error) {
         console.error("Error in setupProvider:", error);
