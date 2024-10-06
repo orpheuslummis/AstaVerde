@@ -4,6 +4,7 @@ import type { BatchData, BatchParams } from '../../../types';
 import { useEffect, useState, useMemo } from "react";
 import { usePublicClient } from "wagmi";
 import Image from "next/image";
+import Link from "next/link";
 import BatchInfo from "../../../components/BatchInfo";
 import TokenCard from "../../../components/TokenCard";
 import Loader from "../../../components/Loader";
@@ -85,11 +86,12 @@ export default function Page({ params }: { params: BatchParams }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {tokenIds && tokenIds.length > 0 ? (
                     tokenIds.map((tokenId: bigint) => (
-                        <TokenCard 
-                            key={tokenId.toString()} 
-                            tokenId={tokenId} 
-                            isCompact={false}
-                        />
+                        <Link key={tokenId.toString()} href={`/token/${tokenId.toString()}`}>
+                            <TokenCard 
+                                tokenId={tokenId} 
+                                isCompact={false}
+                            />
+                        </Link>
                     ))
                 ) : (
                     <p className="dark:text-white">No tokens available for this batch.</p>
