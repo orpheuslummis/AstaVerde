@@ -6,6 +6,7 @@ import { usePublicClient } from "wagmi";
 import Image from "next/image";
 import BatchInfo from "../../../components/BatchInfo";
 import TokenCard from "../../../components/TokenCard";
+import Loader from "../../../components/Loader";
 import { useAppContext } from "../../../contexts/AppContext";
 import { getPlaceholderImageUrl } from "../../../utils/placeholderImage";
 
@@ -56,7 +57,7 @@ export default function Page({ params }: { params: BatchParams }) {
         fetchBatchData();
     }, [params.id, publicClient, astaverdeContractConfig]);
 
-    if (isLoading) return <div className="text-center py-8 dark:text-white">Loading...</div>;
+    if (isLoading) return <Loader message={`Loading batch ${params.id}...`} />;
     if (error) return <div className="text-center py-8 text-red-500 dark:text-red-400">Error: {error}</div>;
     if (!batchData) return <div className="text-center py-8 dark:text-white">No batch data available.</div>;
 

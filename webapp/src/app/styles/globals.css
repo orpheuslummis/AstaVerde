@@ -249,6 +249,37 @@
     .tooltip-arrow {
         @apply absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-4 h-4 bg-gray-900 rotate-45;
     }
+
+    .loader-spinner {
+        @apply relative w-16 h-16;
+    }
+
+    .loader-spinner::before,
+    .loader-spinner::after {
+        content: '';
+        @apply absolute top-0 left-0 w-full h-full rounded-full;
+        animation: pulse 2s linear infinite;
+    }
+
+    .loader-spinner::before {
+        @apply bg-emerald-500 opacity-30;
+    }
+
+    .loader-spinner::after {
+        @apply bg-emerald-500 opacity-60;
+        animation-delay: 1s;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(0);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0;
+        }
+    }
 }
 
 @layer utilities {

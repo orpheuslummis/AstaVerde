@@ -6,6 +6,7 @@ import TokenCard from "../../components/TokenCard";
 import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import RedeemTokensButton from "./RedeemTokensButton";
+import Loader from "../../components/Loader";
 
 const TOKENS_PER_PAGE = 12;
 
@@ -113,7 +114,7 @@ export default function MyTokensPage() {
         <div className="container mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold mb-8">My Tokens</h1>
             {isLoading ? (
-                <p>Loading your tokens...</p>
+                <Loader message="Loading your tokens..." />
             ) : error ? (
                 <p className="text-red-500">{error}</p>
             ) : tokens.length === 0 ? (

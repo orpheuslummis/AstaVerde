@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BatchCard } from "../components/BatchCard";
 import { useAppContext } from "../contexts/AppContext";
+import Loader from "../components/Loader";
 
 function BatchListing() {
     const { batches, refetchBatches } = useAppContext();
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchBatches = async () => {
+            setIsLoading(true);
             await refetchBatches();
+            setIsLoading(false);
         };
 
         fetchBatches();
@@ -27,6 +31,10 @@ function BatchListing() {
             return Number(b.id ?? 0n) - Number(a.id ?? 0n);
         });
     }, [batches]);
+
+    if (isLoading) {
+        return <Loader message="Loading batches..." />;
+    }
 
     return (
         <div className="container mx-auto px-4 py-8">
