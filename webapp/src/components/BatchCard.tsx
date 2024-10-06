@@ -1,14 +1,11 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import { USDC_DECIMALS } from "../app.config";
 import { useAppContext } from "../contexts/AppContext";
 import { useBatchOperations } from "../hooks/useContractInteraction";
-import type { Batch } from "../lib/batch";
 import { customToast } from "../utils/customToast";
 import { getPlaceholderImageUrl } from "../utils/placeholderImage";
 import { ChevronRightIcon, ShoppingCartIcon, TagIcon } from "@heroicons/react/24/solid";
@@ -20,6 +17,10 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     const { refetchBatches } = useAppContext();
     const [tokenAmount, setTokenAmount] = useState(1);
 
+    useEffect(() => {
+        setTokenAmount(prev => Math.min(prev, Number(batch.itemsLeft)));
+    }, [batch.itemsLeft]);
+
     const handleTokenAmountChange = (newAmount: number) => {
         setTokenAmount(Math.max(1, Math.min(Number(batch.itemsLeft), newAmount)));
     };
@@ -30,10 +31,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     }, [batch.price]);
 
     const placeholderImage = useMemo(() => {
-        return getPlaceholderImageUrl(
-            batch.batchId.toString(),
-            batch.tokenIds.length.toString()
-        );
+        return getPlaceholderImageUrl(batch.batchId.toString(), batch.tokenIds.length.toString());
     }, [batch.batchId, batch.tokenIds]);
 
     const totalPrice = useMemo(
@@ -62,18 +60,29 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     };
 
     const getButtonText = () => {
+        if (!isConnected) return "Buy";
         if (isLoading) return "Processing...";
-        if (!isConnected) return "Connect Wallet";
-        if (!hasEnoughUSDC) return "Insufficient USDC";
         if (isSoldOut || batch.itemsLeft === 0n) return "Sold Out";
+        if (!hasEnoughUSDC) return "Insufficient USDC";
         return "Buy";
     };
 
-    const isButtonDisabled =
-        !isConnected || isLoading || !hasEnoughUSDC || isSoldOut || batch.itemsLeft === 0n;
+    const isButtonDisabled = !isConnected || isLoading || isSoldOut || batch.itemsLeft === 0n || (!isConnected && !hasEnoughUSDC);
 
-    const displayedTokens = batch.tokenIds.slice(0, 5);
-    const remainingTokens = batch.tokenIds.length - displayedTokens.length;
+    const buttonContent = (
+        <button
+            onClick={isConnected ? handleBuyClick : undefined}
+            disabled={isButtonDisabled}
+            className={`w-full btn mt-2 ${isButtonDisabled ? 'btn-secondary' : 'btn-primary'}`}
+            type="button"
+        >
+            {getButtonText()}
+        </button>
+    );
+
+    const MAX_DISPLAYED_TOKENS = 5;
+    const displayedTokens = batch.tokenIds.slice(0, MAX_DISPLAYED_TOKENS);
+    const remainingTokens = Math.max(0, batch.tokenIds.length - MAX_DISPLAYED_TOKENS);
 
     return (
         <div className={`batch-card hover:shadow-xl ${isSoldOut ? 'opacity-50' : ''} dark:bg-gray-800 dark:border-gray-700`}>
@@ -99,7 +108,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                         </div>
                     </div>
                 </Link>
-                
+
                 {!isSoldOut && (
                     <div className="mt-4">
                         <div className="flex justify-between items-center mb-2">
@@ -143,14 +152,17 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                         <p className="text-sm font-medium mt-2 dark:text-white">
                             Total: {formatUnits(totalPrice, USDC_DECIMALS)} USDC
                         </p>
-                        <button
-                            onClick={handleBuyClick}
-                            disabled={isButtonDisabled}
-                            className={`w-full btn mt-2 ${isButtonDisabled ? 'btn-secondary' : 'btn-primary'}`}
-                            type="button"
-                        >
-                            {getButtonText()}
-                        </button>
+                        {isConnected ? (
+                            buttonContent
+                        ) : (
+                            <div className="tooltip-container">
+                                {buttonContent}
+                                <div className="tooltip-content">
+                                    <p>Please connect your wallet to purchase tokens. Once connected, you'll be able to buy tokens from this batch.</p>
+                                    <div className="tooltip-arrow"></div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
