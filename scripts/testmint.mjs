@@ -4,6 +4,7 @@ import { ethers } from "ethers";
 import fs from "fs/promises";
 import path from "path";
 import fetch from "node-fetch";
+import { formatUnits } from "ethers";
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
@@ -45,13 +46,10 @@ function validateConfig(config) {
         throw new Error('Invalid private key format');
     }
 
-    console.log('Configuration validation passed');
     console.log('Using the following configuration:');
     console.log(`- Contract Address: ${config.contractAddress}`);
     console.log(`- Chain ID: ${config.chainId}`);
     console.log(`- Email: ${config.email}`);
-    console.log(`- RPC API Key: ${config.rpcApiKey.slice(0, 5)}...${config.rpcApiKey.slice(-5)}`);
-    console.log(`- Private Key: ${config.privateKey.slice(0, 6)}...${config.privateKey.slice(-4)}`);
     console.log(`- External URL: ${EXTERNAL_URL}`);
     console.log(`- IPFS Prefix: ${IPFS_PREFIX}`);
 }
@@ -175,7 +173,7 @@ async function mintRandomTokens(tokenCount = 50) {
             try {
                 const parsedLog = contract.interface.parseLog(log);
                 console.log(`- Event: ${parsedLog.name}`);
-                console.log(`  Args: ${JSON.stringify(parsedLog.args)}`);
+                console.log(`  Args: ${serializeBigInt(parsedLog.args)}`);
             } catch (e) {
                 console.log(`- Unable to parse log: ${e.message}`);
             }
@@ -206,7 +204,7 @@ async function queryMintedTokens(contract, batchId) {
         console.log(`\nBatch ${batchId} Info:`);
         console.log(`Token IDs: ${batchInfo.tokenIds.map(id => id.toString()).join(', ')}`);
         console.log(`Creation Time: ${new Date(Number(batchInfo.creationTime) * 1000).toLocaleString()}`);
-        console.log(`Price: ${ethers.formatUnits(batchInfo.price, 6)} USDC`);
+        console.log(`Price: ${formatUnits(batchInfo.price, 6)} USDC`);
         console.log(`Remaining Tokens: ${batchInfo.remainingTokens.toString()}`);
     } catch (error) {
         console.error(`Error querying batch ${batchId}:`, error);
