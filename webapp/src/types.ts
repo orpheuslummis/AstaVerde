@@ -87,6 +87,7 @@ export interface RedeemTokensButtonProps {
   onRedeemComplete: () => void;
   onSelectAll: () => void;
   allTokens: bigint[];
+  redeemStatus: Record<string, boolean>;
 }
 
 export type ExecuteFunction = (...args: unknown[]) => Promise<unknown>;

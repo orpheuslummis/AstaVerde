@@ -149,6 +149,7 @@ export default function MyTokensPage() {
                             onRedeemComplete={handleRedeemComplete}
                             onSelectAll={handleSelectAll}
                             allTokens={tokens}
+                            redeemStatus={redeemStatus}
                         />
                     </div>
                     <div className="mt-4 flex justify-center">

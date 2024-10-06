@@ -15,7 +15,7 @@ const BATCH_SIZE = 50; // Adjust this value based on gas limit and contract requ
  * @param {RedeemTokensButtonProps} props - The component props.
  * @returns {JSX.Element} The rendered component.
  */
-export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, onSelectAll, allTokens }: RedeemTokensButtonProps) {
+export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, onSelectAll, allTokens, redeemStatus }: RedeemTokensButtonProps) {
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [progress, setProgress] = useState(0);
     const [statusMessage, setStatusMessage] = useState("");
@@ -29,15 +29,20 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
      * @param {bigint[]} tokens - Array of token IDs to redeem.
      */
     const redeemBatch = useCallback(async (tokens: bigint[]) => {
-        const batch = tokens.slice(0, BATCH_SIZE);
-        const remaining = tokens.slice(BATCH_SIZE);
+        const unredeemed = tokens.filter(tokenId => !redeemStatus[tokenId.toString()]);
+        const batch = unredeemed.slice(0, BATCH_SIZE);
+        const remaining = unredeemed.slice(BATCH_SIZE);
+
+        if (batch.length === 0) {
+            setStatusMessage("No unredeemed tokens in this batch");
+            return;
+        }
 
         setStatusMessage(`Redeeming batch of ${batch.length} tokens...`);
         console.log("Attempting to redeem batch:", batch);
         const receipt = await redeemTokens(batch.map(Number));
         console.log("Redemption receipt:", receipt);
 
-        // Check if the transaction was successful
         if (receipt && receipt.status === "success") {
             setStatusMessage(`${batch.length} tokens redeemed successfully`);
             setProgress((prev) => prev + batch.length);
@@ -48,15 +53,17 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
         if (remaining.length > 0) {
             await redeemBatch(remaining);
         }
-    }, [redeemTokens]);
+    }, [redeemTokens, redeemStatus]);
 
     /**
      * Handles the redemption process for selected tokens.
      * Initiates the batch redemption process and manages UI state.
      */
     const handleRedeem = useCallback(async () => {
-        if (selectedTokens.length === 0) {
-            customToast.warning("No tokens selected for redemption");
+        const unredeemedTokens = selectedTokens.filter(tokenId => !redeemStatus[tokenId.toString()]);
+        
+        if (unredeemedTokens.length === 0) {
+            customToast.warning("No unredeemed tokens selected for redemption");
             return;
         }
 
@@ -65,8 +72,8 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
         setStatusMessage("Initiating redemption process...");
 
         try {
-            await redeemBatch(selectedTokens);
-            customToast.success("All selected tokens redeemed successfully");
+            await redeemBatch(unredeemedTokens);
+            customToast.success("All selected unredeemed tokens redeemed successfully");
             onRedeemComplete();
         } catch (error: unknown) {
             console.error("Error redeeming tokens:", error);
@@ -85,20 +92,21 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
             setProgress(0);
             setStatusMessage("");
         }
-    }, [selectedTokens, onRedeemComplete, redeemBatch]);
+    }, [selectedTokens, onRedeemComplete, redeemBatch, redeemStatus]);
 
-    const progressPercentage = isRedeeming ? (progress / selectedTokens.length) * 100 : 0;
+    const unredeemedSelectedTokens = selectedTokens.filter(tokenId => !redeemStatus[tokenId.toString()]);
+    const progressPercentage = isRedeeming ? (progress / unredeemedSelectedTokens.length) * 100 : 0;
 
     return (
         <div className="flex flex-col space-y-2">
             <div className="flex space-x-2">
                 <button
                     onClick={handleRedeem}
-                    disabled={isRedeeming || selectedTokens.length === 0}
+                    disabled={isRedeeming || unredeemedSelectedTokens.length === 0}
                     className="px-4 py-2 bg-green-500 text-white rounded disabled:bg-gray-300"
                     type="button"
                 >
-                    {isRedeeming ? "Redeeming..." : `Redeem Selected (${selectedTokens.length})`}
+                    {isRedeeming ? "Redeeming..." : `Redeem Selected (${unredeemedSelectedTokens.length})`}
                 </button>
                 <button
                     onClick={onSelectAll}
@@ -118,7 +126,7 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
                         />
                     </div>
                     <p className="text-sm mt-1">{statusMessage}</p>
-                    <p className="text-sm">{`Progress: ${progress}/${selectedTokens.length} tokens redeemed`}</p>
+                    <p className="text-sm">{`Progress: ${progress}/${unredeemedSelectedTokens.length} tokens redeemed`}</p>
                 </div>
             )}
         </div>
