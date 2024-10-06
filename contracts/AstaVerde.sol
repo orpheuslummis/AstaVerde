@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+import "hardhat/console.sol";
+
 contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, ReentrancyGuard {
     IERC20 public immutable usdcToken;
     uint256 constant INTERNAL_PRECISION = 1e18;
@@ -68,6 +70,10 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     event PartialBatchSold(uint256 batchId, uint256 batchSoldTime, uint256 remainingTokens);
     event TokenRedeemed(uint256 tokenId, address redeemer, uint256 timestamp);
     event PriceDecreaseRateSet(uint256 newPriceDecreaseRate);
+    event BasePriceIncreased(uint256 newPrice, uint256 timestamp);
+    event BasePriceDecreased(uint256 newPrice, uint256 timestamp);
+    event PlatformFundsClaimed(address to, uint256 amount);
+    event MaxBatchSizeSet(uint256 newMaxBatchSize);
 
     constructor(address owner, IERC20 _usdcToken) ERC1155("ipfs://") Ownable(owner) {
         usdcToken = _usdcToken;
@@ -138,6 +144,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     function setMaxBatchSize(uint256 newSize) external onlyOwner {
         require(newSize > 0, "Invalid batch size");
         maxBatchSize = newSize;
+        emit MaxBatchSizeSet(newSize);
     }
 
     function setAuctionDayThresholds(uint256 increase, uint256 decrease) external onlyOwner {
@@ -172,65 +179,55 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         emit BatchMinted(lastBatchID, block.timestamp);
     }
 
-    // Calculates the current price for a batch based on the Dutch auction mechanism
     function getCurrentBatchPrice(uint256 batchID) public view returns (uint256) {
         require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
         Batch storage batch = batches[batchID - 1];
         uint256 timeSinceCreation = block.timestamp - batch.creationTime;
         uint256 daysSinceCreation = timeSinceCreation / SECONDS_IN_A_DAY;
 
-        uint256 currentPrice = batch.startingPrice;
         uint256 priceDecrease = daysSinceCreation * priceDecreaseRate;
-        if (priceDecrease >= currentPrice - priceFloor) {
-            currentPrice = priceFloor;
-        } else {
-            currentPrice -= priceDecrease;
-            // Ensure the price doesn't go below the floor
-            if (currentPrice < priceFloor) {
-                currentPrice = priceFloor;
-            }
-        }
+        uint256 currentPrice = batch.startingPrice > priceDecrease ? batch.startingPrice - priceDecrease : priceFloor;
 
-        return currentPrice;
+        return currentPrice > priceFloor ? currentPrice : priceFloor;
     }
 
-    // Updates the base price for future batches based on overall platform activity
     function updateBasePriceOnAction() public {
         uint256 daysSinceLastBaseAdjustment = (block.timestamp - pricingInfo.lastBaseAdjustmentTime) / SECONDS_IN_A_DAY;
+        uint256 timeSinceLastSale = block.timestamp - pricingInfo.lastPlatformSaleTime;
 
-        if (daysSinceLastBaseAdjustment >= 1) {
-            // Only update if at least one day has passed since the last adjustment
-            if (
-                pricingInfo.totalPlatformSalesSinceLastAdjustment > 0 &&
-                (block.timestamp - pricingInfo.lastPlatformSaleTime) <= dayIncreaseThreshold * SECONDS_IN_A_DAY
-            ) {
-                basePrice += priceDelta;
-            } else if (daysSinceLastBaseAdjustment >= dayDecreaseThreshold) {
-                uint256 priceDecrease = priceDecreaseRate * daysSinceLastBaseAdjustment;
-                if (basePrice > priceFloor) {
-                    if (basePrice - priceFloor > priceDecrease) {
-                        basePrice -= priceDecrease;
-                    } else {
-                        basePrice = priceFloor;
-                    }
-                }
-            }
+        console.log("Current base price:", basePrice);
+        console.log("Day increase threshold:", dayIncreaseThreshold);
+        console.log("Day decrease threshold:", dayDecreaseThreshold);
+        console.log("Days since last adjustment:", daysSinceLastBaseAdjustment);
+        console.log("Total sales since last adjustment:", pricingInfo.totalPlatformSalesSinceLastAdjustment);
+        console.log("Time since last sale:", timeSinceLastSale);
 
-            // Ensure basePrice never goes below priceFloor
-            if (basePrice < priceFloor) {
-                basePrice = priceFloor;
-            }
+        bool priceAdjusted = false;
 
-            emit BasePriceForNewBatchesAdjusted(
-                basePrice,
-                block.timestamp,
-                daysSinceLastBaseAdjustment,
-                pricingInfo.totalPlatformSalesSinceLastAdjustment
-            );
+        if (
+            pricingInfo.totalPlatformSalesSinceLastAdjustment > 0 && daysSinceLastBaseAdjustment < dayIncreaseThreshold
+        ) {
+            basePrice += priceDelta;
+            console.log("Increasing base price to:", basePrice);
+            emit BasePriceIncreased(basePrice, block.timestamp);
+            priceAdjusted = true;
+        } else if (daysSinceLastBaseAdjustment >= dayDecreaseThreshold) {
+            uint256 daysToDecrease = daysSinceLastBaseAdjustment;
+            uint256 totalPriceDecrease = daysToDecrease * priceDecreaseRate;
+            uint256 newBasePrice = (basePrice > totalPriceDecrease) ? (basePrice - totalPriceDecrease) : priceFloor;
+            basePrice = (newBasePrice > priceFloor) ? newBasePrice : priceFloor;
+            console.log("Decreasing base price to:", basePrice);
+            emit BasePriceDecreased(basePrice, block.timestamp);
+            priceAdjusted = true;
+        }
 
+        if (priceAdjusted) {
             pricingInfo.lastBaseAdjustmentTime = block.timestamp;
             pricingInfo.totalPlatformSalesSinceLastAdjustment = 0;
         }
+
+        // Always update the last sale time
+        pricingInfo.lastPlatformSaleTime = block.timestamp;
     }
 
     function getBatchInfo(
@@ -260,7 +257,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
     // Allows users to purchase tokens from a batch
     function buyBatch(uint256 batchID, uint256 usdcAmount, uint256 tokenAmount) external whenNotPaused nonReentrant {
-        updateBasePriceOnAction();
         require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
         Batch storage batch = batches[batchID - 1];
         require(batch.creationTime > 0, "Batch not initialized");
@@ -277,6 +273,12 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         }
 
         batch.remainingTokens -= tokenAmount;
+
+        // Update sale information before updating the base price
+        pricingInfo.totalPlatformSalesSinceLastAdjustment += tokenAmount;
+
+        // Now update the base price
+        updateBasePriceOnAction();
 
         // Store the final sale price if the batch is now sold out
         if (batch.remainingTokens == 0) {
@@ -304,9 +306,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             : getPartialIds(batchID, tokenAmount);
 
         _handleTokenTransfer(ids, producerShare / tokenAmount);
-
-        pricingInfo.lastPlatformSaleTime = block.timestamp;
-        pricingInfo.totalPlatformSalesSinceLastAdjustment += tokenAmount;
 
         if (batch.remainingTokens == 0) {
             emit BatchSold(batchID, block.timestamp, batch.tokenIds.length);
@@ -382,8 +381,10 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     function claimPlatformFunds(address to) external onlyOwner nonReentrant whenNotPaused {
         require(to != address(0), "Address must not be zero");
         require(platformShareAccumulated > 0, "No funds to withdraw");
-        require(usdcToken.transfer(to, platformShareAccumulated), "Withdrawal failed");
+        uint256 amountToWithdraw = platformShareAccumulated;
         platformShareAccumulated = 0;
+        require(usdcToken.transfer(to, amountToWithdraw), "Withdrawal failed");
+        emit PlatformFundsClaimed(to, amountToWithdraw);
     }
 
     function setPriceDecreaseRate(uint256 newPriceDecreaseRate) external onlyOwner {

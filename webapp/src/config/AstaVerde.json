@@ -194,6 +194,25 @@
           "internalType": "uint256",
           "name": "timestamp",
           "type": "uint256"
+        }
+      ],
+      "name": "BasePriceDecreased",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newPrice",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
         },
         {
           "indexed": false,
@@ -209,6 +228,25 @@
         }
       ],
       "name": "BasePriceForNewBatchesAdjusted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newPrice",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "BasePriceIncreased",
       "type": "event"
     },
     {
