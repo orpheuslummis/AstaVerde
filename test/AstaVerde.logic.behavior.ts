@@ -844,5 +844,91 @@ describe.only("AstaVerde Logic and Behavior", function () {
 
             expect(batch3Price).to.equal(newBasePrice);
         });
-    });
+    }),
+        describe("Producer payouts", function () {
+            it("Should correctly pay producers when selling part of a batch", async function () {
+                const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
+
+                // Mint a batch with multiple tokens from the same producer
+                await astaVerde.mintBatch([user2.address, user2.address, user2.address], ["QmValidCID1", "QmValidCID2", "QmValidCID3"]);
+                const batchID = 1n;
+
+                // Get initial balance
+                const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
+
+                // User1 buys two out of three tokens
+                const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+                const totalCost = currentPrice * 2n;
+                await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+                await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
+
+                // Check final balance
+                const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
+
+                // Calculate expected producer share
+                const platformSharePercentage = await astaVerde.platformSharePercentage();
+                const expectedProducerShare = currentPrice * 2n * (100n - platformSharePercentage) / 100n;
+
+                // Verify balance
+                expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
+            });
+
+            it("Should correctly distribute payments to multiple producers in a batch", async function () {
+                const { astaVerde, mockUSDC, user1, user2, user3 } = await loadFixture(deployAstaVerdeFixture);
+
+                // Mint a batch with multiple producers
+                await astaVerde.mintBatch([user2.address, user3.address], ["QmValidCID1", "QmValidCID2"]);
+                const batchID = 1n;
+
+                // Get initial balances
+                const initialProducer1Balance = await mockUSDC.balanceOf(user2.address);
+                const initialProducer2Balance = await mockUSDC.balanceOf(user3.address);
+
+                // User1 buys both tokens
+                const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+                const totalCost = currentPrice * 2n;
+                await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+                await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
+
+                // Check final balances
+                const finalProducer1Balance = await mockUSDC.balanceOf(user2.address);
+                const finalProducer2Balance = await mockUSDC.balanceOf(user3.address);
+
+                // Calculate expected producer share
+                const platformSharePercentage = await astaVerde.platformSharePercentage();
+                const expectedProducerShare = currentPrice * (100n - platformSharePercentage) / 100n;
+
+                // Verify balances
+                expect(finalProducer1Balance).to.equal(initialProducer1Balance + expectedProducerShare);
+                expect(finalProducer2Balance).to.equal(initialProducer2Balance + expectedProducerShare);
+            });
+            it("Should transfer correct amount to producer when tokens are sold", async function () {
+                const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
+
+                // Mint a batch with user2 as the producer
+                await astaVerde.mintBatch([user2.address], ["QmValidCID"]);
+                const batchID = 1n;
+
+                // Get initial balances
+                const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
+                const initialContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
+
+                // User1 buys the token
+                const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+                await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
+                await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
+
+                // Check final balances
+                const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
+                const finalContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
+
+                // Calculate expected producer share
+                const platformSharePercentage = await astaVerde.platformSharePercentage();
+                const expectedProducerShare = currentPrice * (100n - platformSharePercentage) / 100n;
+
+                // Verify balances
+                expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
+                expect(finalContractBalance).to.equal(initialContractBalance + currentPrice - expectedProducerShare);
+            });
+        });
 });
