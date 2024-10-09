@@ -2,77 +2,39 @@
 
 AstaVerde is a platform for trading verified carbon offsets as non-fungible tokens (NFTs). Built on Ethereum using the ERC-1155 standard, it employs a Dutch Auction mechanism for pricing carbon credit batches.
 
-## Dutch Auction Mechanism
+## Auction and Batch Pricing Mechanism
 
-The AstaVerde platform uses a Dutch auction mechanism for pricing carbon credit batches. Here are the key features of the auction:
+AstaVerde implements a dynamic pricing system for carbon credit tokens, combining elements of a Dutch auction with automatic price adjustments based on market demand.
 
--   **Starting Price**: Each batch starts at the current `basePrice` per unit.
--   **Price Floor**: A minimum price of `priceFloor` per unit is enforced for all batches.
--   **Daily Price Reduction**: The price of each batch decreases by `priceDecreaseRate` per day for unsold tokens.
--   **Dynamic Base Price**: The `basePrice` for new batches is adjusted based on recent sales:
-    -   If a sale occurs within `dayIncreaseThreshold` days of the last price adjustment, the `basePrice` increases by `priceDelta`.
-    -   If no sales occur for `dayDecreaseThreshold` days, the `basePrice` decreases by `priceDecreaseRate` for each day since the last price adjustment.
--   **Independent Batch Pricing**: Each batch's price evolves independently based on its creation time, regardless of sales within the batch.
--   **Revenue Split**: `100 - platformSharePercentage`% of each sale goes to the token producer, while `platformSharePercentage`% goes to the platform.
+### Key Features:
 
-The smart contract owner can adjust various parameters, including:
+1. **Base Price**: The starting point for new batches, adjusted based on market activity.
 
--   `platformSharePercentage`: The percentage of sales that goes to the platform
--   `maxBatchSize`: The maximum number of tokens in a batch
--   `basePrice`: The starting price for new batches
--   `priceFloor`: The minimum price for tokens
--   `priceDelta`: The amount by which the base price increases after a quick sale
--   `priceDecreaseRate`: The daily price reduction rate
--   `dayIncreaseThreshold`: The number of days within which a sale triggers a price increase
--   `dayDecreaseThreshold`: The number of days without sales that trigger a price decrease
+2. **Batch Creation**: Each batch starts at the current base price.
 
-These parameters allow for fine-tuning of the auction mechanism to respond to market conditions and platform requirements. The contract owner can modify these values using specific setter functions provided in the smart contract.
+3. **Price Decrease**: 
+   - Batch prices decrease over time, starting after a threshold period (`dayDecreaseThreshold`).
+   - The decrease rate is controlled by `priceDelta`.
+   - Prices never fall below the `priceFloor`.
 
-## Implemented Pricing Mechanism
+4. **Base Price Adjustments**:
+   - Increases: If multiple batches sell out within `dayIncreaseThreshold`, the base price increases.
+   - Decreases: If no sales occur for an extended period, the base price decreases.
+   - Adjustments are made in increments of `priceDelta`.
 
-The actual implementation of the pricing mechanism in the smart contract introduces some nuances to the original design. These adjustments aim to balance market responsiveness with price stability:
+5. **Independent Batch Pricing**: Each batch's price is calculated independently based on its creation time.
 
-### Base Price Adjustments
+6. **Price Floor**: A minimum price (`priceFloor`) below which no batch can be sold.
 
-- **Price Increase**: 
-  - The `basePrice` increases by `priceDelta` if both of these conditions are met:
-    1. There have been one or more sales since the last price adjustment.
-    2. Less than `dayIncreaseThreshold` days have passed since the last base price adjustment.
-  - This increase occurs immediately upon a qualifying sale or minting action.
-  - The `basePrice` can increase multiple times in succession if sales continue to occur within the threshold.
+### Key Parameters:
 
-- **Price Decrease**: 
-  - If `dayDecreaseThreshold` days or more have passed since the last base price adjustment, the `basePrice` decreases.
-  - The decrease is calculated as `priceDecreaseRate` multiplied by the number of days since the last adjustment.
-  - The `basePrice` will not decrease below the `priceFloor`.
+- `basePrice`: Starting price for new batches
+- `priceFloor`: Minimum allowed price
+- `priceDelta`: Amount of price adjustment (increase or decrease)
+- `dayIncreaseThreshold`: Days within which batch sellouts trigger price increases
+- `dayDecreaseThreshold`: Days of inactivity before price decreases begin
 
-### Batch Pricing
-
-- Each new batch starts at the current `basePrice` when minted.
-- The price of unsold tokens in a batch decreases daily by `priceDecreaseRate`, but not below `priceFloor`.
-- Batch prices evolve independently based on their creation time, regardless of sales within the batch.
-
-### Price Update Trigger
-
-- The `updateBasePriceOnAction()` function is called during both minting and purchasing actions.
-- This function updates the base price and resets relevant counters and timestamps.
-
-### High Precision Calculations
-
-- The contract uses high precision calculations (multiplying by `PRECISION_FACTOR`) when splitting the sale price between the platform and producers.
-- This approach helps to minimize rounding errors in price calculations.
-
-### Key Parameters
-
-- `platformSharePercentage`: The percentage of sales that goes to the platform
-- `basePrice`: The starting price for new batches
-- `priceFloor`: The minimum price for tokens
-- `priceDelta`: The amount by which the base price increases after a qualifying sale
-- `priceDecreaseRate`: The daily price reduction rate
-- `dayIncreaseThreshold`: The number of days within which a sale triggers a price increase
-- `dayDecreaseThreshold`: The number of days without sales that trigger a price decrease
-
-These parameters allow for fine-tuning of the auction mechanism to respond to market conditions and platform requirements. The contract owner can modify these values using specific setter functions provided in the smart contract.
+This system aims to balance supply and demand by adjusting prices based on market activity while maintaining independent pricing for each batch.
 
 ## User Roles
 

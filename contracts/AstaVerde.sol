@@ -22,17 +22,16 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     uint256 public platformShareAccumulated;
     uint256 public basePrice;
     uint256 public priceFloor;
-    uint256 public priceDelta;
-    uint256 public priceDecreaseRate;
+    uint256 public priceDelta; // Consolidated variable for price adjustments
     uint256 public dayIncreaseThreshold;
     uint256 public dayDecreaseThreshold;
-    uint256 public lastPriceChangeTime;
 
     struct TokenInfo {
+        address owner;
         uint256 tokenId;
         address producer;
         string cid;
-        bool isRedeemed;
+        bool redeemed;
     }
 
     struct Batch {
@@ -40,14 +39,12 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         uint256[] tokenIds;
         uint256 creationTime;
         uint256 startingPrice;
-        uint256 price;
         uint256 remainingTokens;
     }
 
     struct PricingInfo {
-        uint256 lastBaseAdjustmentTime;
-        uint256 lastPlatformSaleTime;
-        uint256 totalPlatformSalesSinceLastAdjustment;
+        uint256 lastBasePriceAdjustmentTime;
+        uint256[] batchSoldOutTimes;
     }
 
     PricingInfo public pricingInfo;
@@ -67,11 +64,15 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     event BatchSold(uint256 batchId, uint256 batchSoldTime, uint256 tokensSold);
     event PartialBatchSold(uint256 batchId, uint256 batchSoldTime, uint256 remainingTokens);
     event TokenRedeemed(uint256 tokenId, address redeemer, uint256 timestamp);
-    event PriceDecreaseRateSet(uint256 newPriceDecreaseRate);
-    event BasePriceIncreased(uint256 newPrice, uint256 timestamp);
-    event BasePriceDecreased(uint256 newPrice, uint256 timestamp);
+    event PriceDeltaSet(uint256 newPriceDelta);
+    event BasePriceAdjusted(uint256 newBasePrice, uint256 timestamp, bool increased);
+    event DaysSinceLastSale(uint256 daysSinceLastSale);
     event PlatformFundsClaimed(address to, uint256 amount);
     event MaxBatchSizeSet(uint256 newMaxBatchSize);
+
+    error NotProducer(address caller);
+    error NotTokenOwner(address caller);
+    error TokenAlreadyRedeemed(uint256 tokenId);
 
     constructor(address owner, IERC20 _usdcToken) ERC1155("ipfs://") Ownable(owner) {
         usdcToken = _usdcToken;
@@ -79,13 +80,11 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         maxBatchSize = 50;
         basePrice = 230 * USDC_PRECISION;
         priceFloor = 40 * USDC_PRECISION;
-        priceDelta = 10 * USDC_PRECISION;
-        priceDecreaseRate = 5 * USDC_PRECISION;
+        priceDelta = 10 * USDC_PRECISION; // Initial price delta
         dayIncreaseThreshold = 2;
         dayDecreaseThreshold = 4;
         lastBatchID = 0;
-        pricingInfo.lastBaseAdjustmentTime = block.timestamp;
-        lastPriceChangeTime = block.timestamp;
+        pricingInfo.lastBasePriceAdjustmentTime = block.timestamp;
     }
 
     function setURI(string memory newuri) public onlyOwner {
@@ -116,7 +115,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     modifier onlyTokenOwner(uint256[] memory tokenIds) {
         for (uint256 i = 0; i < tokenIds.length; i++) {
             require(tokens[tokenIds[i]].tokenId != 0, "Token does not exist");
-            require(balanceOf(msg.sender, tokenIds[i]) > 0, "Caller is not the token owner");
+            require(balanceOf(msg.sender, tokens[tokenIds[i]].tokenId) > 0, "Caller is not the token owner");
         }
         _;
     }
@@ -153,12 +152,18 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         dayDecreaseThreshold = decrease;
     }
 
+    function setPriceDelta(uint256 newPriceDelta) external onlyOwner {
+        require(newPriceDelta > 0, "Price delta must be positive");
+        priceDelta = newPriceDelta;
+        emit PriceDeltaSet(newPriceDelta);
+    }
+
     function mintBatch(address[] memory producers, string[] memory cids) public onlyOwner whenNotPaused {
         require(producers.length > 0, "No producers provided");
         require(producers.length == cids.length, "Mismatch between producers and cids lengths");
         require(producers.length <= maxBatchSize, "Batch size exceeds max batch size");
 
-        updateBasePriceOnAction();
+        updateBasePrice();
 
         uint256[] memory ids = new uint256[](producers.length);
         uint256[] memory amounts = new uint256[](producers.length);
@@ -167,55 +172,71 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             lastTokenID++;
             ids[i] = lastTokenID;
             amounts[i] = 1;
-            tokens[lastTokenID] = TokenInfo(lastTokenID, producers[i], cids[i], false);
+            tokens[lastTokenID] = TokenInfo(msg.sender, lastTokenID, producers[i], cids[i], false);
         }
 
         _mintBatch(address(this), ids, amounts, "");
 
         lastBatchID++;
-        batches.push(Batch(lastBatchID, ids, block.timestamp, basePrice, basePrice, producers.length));
+        batches.push(Batch(lastBatchID, ids, block.timestamp, basePrice, producers.length));
         emit BatchMinted(lastBatchID, block.timestamp);
+    }
+
+    function calculatePrice(uint256 startingPrice, uint256 startTime) internal view returns (uint256) {
+        if (startingPrice <= priceFloor) {
+            return priceFloor;
+        }
+
+        uint256 maxPriceDecrease = startingPrice - priceFloor;
+        uint256 maxDays = maxPriceDecrease / priceDelta;
+
+        uint256 daysSinceCreation = (block.timestamp - startTime) / SECONDS_IN_A_DAY;
+
+        if (daysSinceCreation > maxDays) {
+            daysSinceCreation = maxDays;
+        }
+
+        uint256 priceDecrease = daysSinceCreation * priceDelta;
+
+        uint256 currentPrice = startingPrice - priceDecrease;
+
+        return currentPrice >= priceFloor ? currentPrice : priceFloor;
     }
 
     function getCurrentBatchPrice(uint256 batchID) public view returns (uint256) {
         require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
         Batch storage batch = batches[batchID - 1];
-        uint256 timeSinceCreation = block.timestamp - batch.creationTime;
-        uint256 daysSinceCreation = timeSinceCreation / SECONDS_IN_A_DAY;
 
-        uint256 priceDecrease = daysSinceCreation * priceDecreaseRate;
-        uint256 currentPrice = batch.startingPrice > priceDecrease ? batch.startingPrice - priceDecrease : priceFloor;
+        uint256 startingPrice = batch.startingPrice;
 
-        return currentPrice > priceFloor ? currentPrice : priceFloor;
-    }
-
-    function updateBasePriceOnAction() public {
-        uint256 daysSinceLastBaseAdjustment = (block.timestamp - pricingInfo.lastBaseAdjustmentTime) / SECONDS_IN_A_DAY;
-        uint256 timeSinceLastSale = block.timestamp - pricingInfo.lastPlatformSaleTime;
-
-        bool priceAdjusted = false;
-
-        if (
-            pricingInfo.totalPlatformSalesSinceLastAdjustment > 0 && daysSinceLastBaseAdjustment < dayIncreaseThreshold
-        ) {
-            basePrice += priceDelta;
-            emit BasePriceIncreased(basePrice, block.timestamp);
-            priceAdjusted = true;
-        } else if (daysSinceLastBaseAdjustment >= dayDecreaseThreshold) {
-            uint256 daysToDecrease = daysSinceLastBaseAdjustment;
-            uint256 totalPriceDecrease = daysToDecrease * priceDecreaseRate;
-            uint256 newBasePrice = (basePrice > totalPriceDecrease) ? (basePrice - totalPriceDecrease) : priceFloor;
-            basePrice = (newBasePrice > priceFloor) ? newBasePrice : priceFloor;
-            emit BasePriceDecreased(basePrice, block.timestamp);
-            priceAdjusted = true;
+        if (startingPrice <= priceFloor) {
+            return priceFloor;
         }
 
-        if (priceAdjusted) {
-            pricingInfo.lastBaseAdjustmentTime = block.timestamp;
-            pricingInfo.totalPlatformSalesSinceLastAdjustment = 0;
+        if (priceDelta == 0) {
+            return startingPrice;
         }
 
-        pricingInfo.lastPlatformSaleTime = block.timestamp;
+        uint256 maxPriceDecrease = startingPrice - priceFloor;
+        uint256 maxDays = maxPriceDecrease / priceDelta;
+
+        uint256 daysSinceCreation = (block.timestamp - batch.creationTime) / SECONDS_IN_A_DAY;
+
+        if (daysSinceCreation <= dayDecreaseThreshold) {
+            return startingPrice; // No decrease yet
+        }
+
+        uint256 daysOverThreshold = daysSinceCreation - dayDecreaseThreshold;
+
+        if (daysOverThreshold > maxDays) {
+            daysOverThreshold = maxDays;
+        }
+
+        uint256 priceDecrease = daysOverThreshold * priceDelta;
+
+        uint256 currentPrice = startingPrice - priceDecrease;
+
+        return currentPrice >= priceFloor ? currentPrice : priceFloor;
     }
 
     function getBatchInfo(
@@ -234,7 +255,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
         Batch storage batch = batches[batchID - 1];
         if (batch.remainingTokens == 0) {
-            price = batch.price;
+            price = batch.startingPrice;
         } else {
             price = getCurrentBatchPrice(batchID);
         }
@@ -251,44 +272,47 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         uint256 currentPrice = getCurrentBatchPrice(batchID);
         uint256 totalCost = currentPrice * tokenAmount;
         require(usdcAmount >= totalCost, "Insufficient funds sent");
-        require(usdcToken.transferFrom(msg.sender, address(this), usdcAmount), "Transfer from user failed");
+        require(usdcToken.transferFrom(msg.sender, address(this), totalCost), "Transfer from user failed");
 
         if (usdcAmount > totalCost) {
             require(usdcToken.transfer(msg.sender, usdcAmount - totalCost), "Refund failed");
         }
 
+        // Additional explicit check before decrementing
+        require(batch.remainingTokens >= tokenAmount, "Attempting to buy more tokens than available");
         batch.remainingTokens -= tokenAmount;
 
-        pricingInfo.totalPlatformSalesSinceLastAdjustment += tokenAmount;
-
-        updateBasePriceOnAction();
-
         if (batch.remainingTokens == 0) {
-            batch.price = currentPrice;
+            pricingInfo.batchSoldOutTimes.push(block.timestamp);
+            emit BatchSold(batchID, block.timestamp, tokenAmount);
+        } else {
+            emit PartialBatchSold(batchID, block.timestamp, batch.remainingTokens);
         }
 
-        uint256 highPrecisionPrice = currentPrice * PRECISION_FACTOR;
-        uint256 totalHighPrecisionPrice = highPrecisionPrice * tokenAmount;
+        updateBasePrice();
 
+        uint256[] memory ids = (tokenAmount == batch.tokenIds.length)
+            ? batch.tokenIds
+            : getPartialIds(batchID, tokenAmount);
+
+        distributeFundsAndTransferTokens(ids, currentPrice, tokenAmount);
+    }
+
+    function distributeFundsAndTransferTokens(uint256[] memory ids, uint256 currentPrice, uint256 tokenAmount) private {
+        uint256 totalHighPrecisionPrice = currentPrice * PRECISION_FACTOR * tokenAmount;
         uint256 platformShareHighPrecision = (totalHighPrecisionPrice * platformSharePercentage) / 100;
         uint256 producerShareHighPrecision = totalHighPrecisionPrice - platformShareHighPrecision;
 
         uint256 platformShare = (platformShareHighPrecision + PRECISION_FACTOR / 2) / PRECISION_FACTOR;
         uint256 producerShare = (producerShareHighPrecision + PRECISION_FACTOR / 2) / PRECISION_FACTOR;
 
-        platformShareAccumulated += platformShare;
+        uint256 producerSharePerToken = producerShare / tokenAmount;
+        uint256 totalDistributedToProducers = producerSharePerToken * tokenAmount;
+        uint256 undistributedAmount = producerShare - totalDistributedToProducers;
 
-        uint256[] memory ids = (tokenAmount == batch.tokenIds.length)
-            ? batch.tokenIds
-            : getPartialIds(batchID, tokenAmount);
+        platformShareAccumulated += platformShare + undistributedAmount;
 
-        _handleTokenTransfer(ids, producerShare / tokenAmount);
-
-        if (batch.remainingTokens == 0) {
-            emit BatchSold(batchID, block.timestamp, batch.tokenIds.length);
-        } else {
-            emit PartialBatchSold(batchID, block.timestamp, tokenAmount);
-        }
+        _handleTokenTransfer(ids, producerSharePerToken);
     }
 
     function _handleTokenTransfer(uint256[] memory ids, uint256 producerSharePerToken) private {
@@ -342,14 +366,13 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         return partialIds;
     }
 
-    function redeemTokens(uint256[] memory tokenIds) public onlyTokenOwner(tokenIds) nonReentrant whenNotPaused {
-        require(tokenIds.length > 0, "No tokens provided for redemption");
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            uint256 tokenId = tokenIds[i];
-            require(!tokens[tokenId].isRedeemed, "Token is already redeemed");
-            tokens[tokenId].isRedeemed = true;
-            emit TokenRedeemed(tokenId, msg.sender, block.timestamp);
-        }
+    function redeemToken(uint256 tokenId) external nonReentrant {
+        TokenInfo storage token = tokens[tokenId];
+        require(balanceOf(msg.sender, tokenId) > 0, "Caller is not the token owner");
+        require(!token.redeemed, "Token already redeemed");
+
+        token.redeemed = true;
+        emit TokenRedeemed(tokenId, msg.sender, block.timestamp);
     }
 
     function claimPlatformFunds(address to) external onlyOwner nonReentrant whenNotPaused {
@@ -361,13 +384,49 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         emit PlatformFundsClaimed(to, amountToWithdraw);
     }
 
-    function setPriceDecreaseRate(uint256 newPriceDecreaseRate) external onlyOwner {
-        require(newPriceDecreaseRate > 0, "Invalid price decrease rate");
-        priceDecreaseRate = newPriceDecreaseRate;
-        emit PriceDecreaseRateSet(newPriceDecreaseRate);
-    }
-
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, ERC1155Holder) returns (bool) {
         return super.supportsInterface(interfaceId);
+    }
+
+    function updateBasePrice() private {
+        uint256 timeElapsed = block.timestamp - pricingInfo.lastBasePriceAdjustmentTime;
+        uint256 daysSinceLastAdjustment = timeElapsed / SECONDS_IN_A_DAY;
+
+        bool shouldDecrease = daysSinceLastAdjustment > dayDecreaseThreshold;
+        bool shouldIncrease = false;
+        uint256 batchesSoldOutWithinThreshold = 0;
+
+        // Calculate batches sold out within the dayIncreaseThreshold
+        for (uint256 i = 0; i < pricingInfo.batchSoldOutTimes.length; i++) {
+            uint256 daysSinceBatchSoldOut = (block.timestamp - pricingInfo.batchSoldOutTimes[i]) / SECONDS_IN_A_DAY;
+            if (daysSinceBatchSoldOut <= dayIncreaseThreshold) {
+                batchesSoldOutWithinThreshold++;
+            }
+        }
+
+        if (batchesSoldOutWithinThreshold > 0) {
+            shouldIncrease = true;
+        }
+
+        if (shouldIncrease) {
+            uint256 increaseAmount = batchesSoldOutWithinThreshold * priceDelta;
+            basePrice += increaseAmount;
+            pricingInfo.lastBasePriceAdjustmentTime = block.timestamp;
+            // Clear the batchSoldOutTimes array
+            delete pricingInfo.batchSoldOutTimes;
+            emit BasePriceAdjusted(basePrice, block.timestamp, true);
+        } else if (shouldDecrease) {
+            uint256 daysToDecrease = daysSinceLastAdjustment - dayDecreaseThreshold;
+            uint256 decreaseAmount = daysToDecrease * priceDelta;
+
+            if (decreaseAmount >= (basePrice - priceFloor)) {
+                basePrice = priceFloor;
+            } else {
+                basePrice -= decreaseAmount;
+            }
+
+            pricingInfo.lastBasePriceAdjustmentTime = block.timestamp;
+            emit BasePriceAdjusted(basePrice, block.timestamp, false);
+        }
     }
 }

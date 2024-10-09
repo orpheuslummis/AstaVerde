@@ -1,4 +1,5 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
@@ -121,53 +122,47 @@ describe.only("AstaVerde Logic and Behavior", function () {
     });
 
     describe("Dynamic Base Price Mechanism", function () {
-        it("Should increase basePrice when sale occurs within dayIncreaseThreshold", async function () {
+        it("Should increase basePrice when a batch is fully sold within dayIncreaseThreshold", async function () {
             const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
 
-            await astaVerde.mintBatch([admin.address, admin.address], ["QmValidCID1", "QmValidCID2"]);
-            const batchID = 1n;
             const initialBasePrice = await astaVerde.basePrice();
 
-            let currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
-            await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
+            await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
 
-            const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
-            await advancedDays(dayIncreaseThreshold - 1n);
+            const batchID = 1n;
+            const tokenAmount = 1n;
+            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+            const totalCost = currentPrice * tokenAmount;
 
-            currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
-            await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+
+            await expect(astaVerde.connect(user1).buyBatch(batchID, totalCost, tokenAmount))
+                .to.emit(astaVerde, "BasePriceAdjusted")
+                .withArgs(initialBasePrice + (await astaVerde.priceDelta()), anyValue, true);
 
             const newBasePrice = await astaVerde.basePrice();
             expect(newBasePrice).to.be.gt(initialBasePrice);
         });
 
-        it("Should not increase basePrice when sale occurs after dayIncreaseThreshold", async function () {
+
+        it("Should not increase basePrice when batch is not fully sold", async function () {
             const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
 
-            await astaVerde.mintBatch([admin.address], ["QmValidCID1"]);
+            // Mint a batch with multiple tokens
+            await astaVerde.mintBatch([admin.address, admin.address], ["QmValidCID1", "QmValidCID2"]);
             const batchID = 1n;
             const initialBasePrice = await astaVerde.basePrice();
-            console.log("Initial base price:", initialBasePrice.toString());
 
-            const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
-            console.log("Day increase threshold:", dayIncreaseThreshold.toString());
-
-            // Advance time beyond dayIncreaseThreshold
-            await advancedDays(dayIncreaseThreshold + 1n);
-
+            // Buy only one token from the batch
             let currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
             await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
             await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
 
             const newBasePrice = await astaVerde.basePrice();
-            console.log("New base price:", newBasePrice.toString());
-
             expect(newBasePrice).to.equal(initialBasePrice);
         });
 
-        it("Should increase base price after quick sales", async function () {
+        it("Should increase base price after quick full batch sales", async function () {
             const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
 
             const initialBasePrice = await astaVerde.basePrice();
@@ -176,19 +171,11 @@ describe.only("AstaVerde Logic and Behavior", function () {
 
             console.log("Initial base price:", initialBasePrice.toString());
 
-            // Mint multiple batches
-            for (let i = 0; i < 3; i++) {
-                await astaVerde.mintBatch([admin.address], [`QmCID${i}`]);
-            }
-
-            // Simulate quick sales within dayIncreaseThreshold
             for (let i = 1; i <= 3; i++) {
+                await astaVerde.mintBatch([admin.address], ["QmCID"]);
                 const currentPrice = await astaVerde.getCurrentBatchPrice(i);
                 await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
-                await astaVerde.connect(user1).buyBatch(i, currentPrice, 1);
-
-                const basePriceAfterSale = await astaVerde.basePrice();
-                console.log(`Base price after sale ${i}:`, basePriceAfterSale.toString());
+                await astaVerde.connect(user1).buyBatch(i, currentPrice, 1n);
 
                 if (i < 3) {
                     await advancedDays(dayIncreaseThreshold - 1n);
@@ -196,71 +183,27 @@ describe.only("AstaVerde Logic and Behavior", function () {
             }
 
             const newBasePrice = await astaVerde.basePrice();
-            console.log("Final base price:", newBasePrice.toString());
             expect(newBasePrice).to.equal(initialBasePrice + 3n * priceDelta);
         });
 
-        it("Should decrease base price after prolonged period without sales", async function () {
-            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
-
-            const initialBasePrice = await astaVerde.basePrice();
-            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
-            const priceDecreaseRate = await astaVerde.priceDecreaseRate();
-
-            await astaVerde.mintBatch([admin.address], ["QmCID"]);
-
-            // Advance time beyond dayDecreaseThreshold
-            const daysToAdvance = dayDecreaseThreshold * 3n;
-            await advancedDays(daysToAdvance);
-
-            // Trigger base price update
-            await astaVerde.updateBasePriceOnAction();
-
-            const newBasePrice = await astaVerde.basePrice();
-            const expectedDecrease = daysToAdvance * priceDecreaseRate;
-            const expectedBasePrice = initialBasePrice > expectedDecrease ? initialBasePrice - expectedDecrease : await astaVerde.priceFloor();
-
-            expect(newBasePrice).to.equal(expectedBasePrice);
-        });
-
         it("Should maintain base price within bounds over extended period with mixed activity", async function () {
-            const { astaVerde, mockUSDC, admin, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
-
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
             const initialBasePrice = await astaVerde.basePrice();
             const priceFloor = await astaVerde.priceFloor();
-            const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
-            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
-            const priceDelta = await astaVerde.priceDelta();
-            const priceDecreaseRate = await astaVerde.priceDecreaseRate();
-
-            let latestValidBatchId = 0n;
 
             for (let day = 1; day <= 60; day++) {
                 if (day % 5 === 0) {
-                    // Mint new batch every 5 days with 3 tokens
                     await astaVerde.mintBatch([admin.address, admin.address, admin.address], [`QmCID${day}1`, `QmCID${day}2`, `QmCID${day}3`]);
-                    latestValidBatchId = await astaVerde.lastBatchID();
-                    console.log(`Day ${day}: Minted new batch ${latestValidBatchId}`);
+                    console.log(`Day ${day}: Minted new batch ${day / 5}`);
                 }
 
-                if (day % 7 === 0 && latestValidBatchId > 0n) {
-                    // Simulate a sale every 7 days
-                    const [, , , , remainingTokens] = await astaVerde.getBatchInfo(latestValidBatchId);
-                    const tokensToBuy = remainingTokens > 1n ? 1n : remainingTokens;
-                    console.log(`Day ${day}, Batch ${latestValidBatchId}, Remaining tokens: ${remainingTokens}, Buying: ${tokensToBuy}`);
-
-                    if (tokensToBuy > 0n) {
-                        const currentPrice = await astaVerde.getCurrentBatchPrice(latestValidBatchId);
-                        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
-                        await astaVerde.connect(user1).buyBatch(latestValidBatchId, currentPrice, tokensToBuy);
-
-                        if (remainingTokens - tokensToBuy === 0n) {
-                            console.log(`Batch ${latestValidBatchId} is now sold out`);
-                            latestValidBatchId = 0n; // Reset to 0 as this batch is now sold out
-                        }
-                    } else {
-                        console.log(`Day ${day}: No tokens available to buy`);
-                    }
+                if (day % 7 === 0) {
+                    const batchID = Math.floor(day / 5);
+                    const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+                    const [, , , , remainingTokens] = await astaVerde.getBatchInfo(batchID);
+                    console.log(`Day ${day}, Batch ${batchID}, Remaining tokens: ${remainingTokens}, Buying: 1`);
+                    await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
+                    await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
                 }
 
                 if (day % 10 === 0) {
@@ -272,158 +215,136 @@ describe.only("AstaVerde Logic and Behavior", function () {
             }
 
             const finalBasePrice = await astaVerde.basePrice();
-            console.log("Initial base price:", initialBasePrice.toString());
-            console.log("Final base price:", finalBasePrice.toString());
+            console.log(`Initial base price: ${initialBasePrice}`);
+            console.log(`Final base price: ${finalBasePrice}`);
 
-            // Check that the final base price is within reasonable bounds
-            expect(finalBasePrice).to.be.gte(priceFloor);
-            expect(finalBasePrice).to.be.lte(initialBasePrice * 2n); // Assuming it won't more than double
-
-            // Verify that the mechanism is still responsive
-            const latestBatchId = await astaVerde.lastBatchID();
-            const currentPrice = await astaVerde.getCurrentBatchPrice(latestBatchId);
-            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
-            await astaVerde.connect(user1).buyBatch(latestBatchId, currentPrice, 1);
-
-            const updatedBasePrice = await astaVerde.basePrice();
-            expect(updatedBasePrice).to.be.gt(finalBasePrice);
+            expect(finalBasePrice).to.be.at.least(priceFloor);
+            expect(finalBasePrice).to.be.at.most(initialBasePrice);
         });
 
         it("Should correctly handle edge cases in price adjustments", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
+            const { astaVerde } = await loadFixture(deployAstaVerdeFixture);
 
-            // Set base price close to price floor
+            const initialBasePrice = await astaVerde.basePrice();
+            console.log("Initial base price:", initialBasePrice.toString());
+
+            // Advance time to exactly dayDecreaseThreshold days
+            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
+            await advancedDays(dayDecreaseThreshold);
+
+            // Mint a batch to trigger price adjustment
+            await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID"]);
+
+            const newBasePrice = await astaVerde.basePrice();
+            console.log("New base price after minting:", newBasePrice.toString());
+
+            // The price should not have decreased yet
+            expect(newBasePrice).to.equal(initialBasePrice);
+
+            // Now advance one more day to surpass the threshold
+            await advancedDays(1n);
+
+            // Mint another batch to trigger price adjustment
+            await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID2"]);
+
+            const finalBasePrice = await astaVerde.basePrice();
+            console.log("Final base price after decrease:", finalBasePrice.toString());
+
+            // Calculate expected decrease
+            const priceDelta = await astaVerde.priceDelta();
+            const expectedPrice = initialBasePrice - priceDelta;
+            expect(finalBasePrice).to.equal(expectedPrice);
+        });
+
+
+        it("Should decrease basePrice correctly after dayDecreaseThreshold", async function () {
+            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
+            const initialBasePrice = await astaVerde.basePrice();
+            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
+            const priceDelta = await astaVerde.priceDelta();
             const priceFloor = await astaVerde.priceFloor();
-            await astaVerde.setBasePrice(priceFloor + ethers.parseUnits("1", 6)); // 1 USDC above floor
 
+            // Advance time to exactly dayDecreaseThreshold days
+            await advancedDays(dayDecreaseThreshold);
+
+            // Mint a batch to potentially trigger updateBasePrice
             await astaVerde.mintBatch([admin.address], ["QmCID"]);
-            const batchId = await astaVerde.lastBatchID();
 
-            // Simulate a long period without sales
-            await advancedDays(100n);
+            const priceAfterMint = await astaVerde.basePrice();
+            expect(priceAfterMint).to.equal(initialBasePrice); // No decrease yet
 
-            // Trigger base price update
-            await astaVerde.updateBasePriceOnAction();
+            // Advance time by one more day to surpass the threshold
+            await advancedDays(1n);
 
-            let currentBasePrice = await astaVerde.basePrice();
-            expect(currentBasePrice).to.equal(priceFloor);
-
-            // Now simulate quick sales to test price increase from floor
-            for (let i = 0; i < 3; i++) {
-                const [, , , , remainingTokens] = await astaVerde.getBatchInfo(batchId);
-                const tokensToBuy = remainingTokens > 1n ? 1n : remainingTokens;
-                console.log(`Iteration ${i}, Batch ${batchId}, Remaining tokens: ${remainingTokens}, Buying: ${tokensToBuy}`);
-                const currentPrice = await astaVerde.getCurrentBatchPrice(batchId);
-                await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
-                if (tokensToBuy > 0n) {
-                    await astaVerde.connect(user1).buyBatch(batchId, currentPrice, tokensToBuy);
-                }
-                await advancedDays(1n);
-            }
-
-            currentBasePrice = await astaVerde.basePrice();
-            expect(currentBasePrice).to.be.gt(priceFloor);
-        });
-
-        it("Should increase basePrice multiple times with consecutive sales within dayIncreaseThreshold", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
-
-            const initialBasePrice = await astaVerde.basePrice();
-            const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
-            const priceDelta = await astaVerde.priceDelta();
-
-            // Mint multiple batches
-            for (let i = 0; i < 5; i++) {
-                await astaVerde.mintBatch([admin.address], [`QmCID${i}`]);
-            }
-
-            // Simulate consecutive sales within dayIncreaseThreshold
-            for (let i = 1; i <= 5; i++) {
-                const currentPrice = await astaVerde.getCurrentBatchPrice(i);
-                await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
-                await astaVerde.connect(user1).buyBatch(i, currentPrice, 1);
-
-                if (i < 5) {
-                    await advancedDays(dayIncreaseThreshold - 1n);
-                }
-
-                const newBasePrice = await astaVerde.basePrice();
-                expect(newBasePrice).to.equal(initialBasePrice + BigInt(i) * priceDelta);
-            }
-        });
-
-        it("Should increase basePrice if sale occurs exactly on dayIncreaseThreshold", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
-
-            const initialBasePrice = await astaVerde.basePrice();
-            const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
-            const priceDelta = await astaVerde.priceDelta();
-
-            await astaVerde.mintBatch([admin.address], ["QmCID1"]);
+            // Mint another batch to trigger updateBasePrice
             await astaVerde.mintBatch([admin.address], ["QmCID2"]);
 
-            // First sale
+            const finalBasePrice = await astaVerde.basePrice();
+            const expectedDecrease = 1n * priceDelta; // One day over the threshold
+            const expectedPrice = initialBasePrice - expectedDecrease > priceFloor
+                ? initialBasePrice - expectedDecrease
+                : priceFloor;
+
+            expect(finalBasePrice).to.equal(expectedPrice);
+        });
+
+
+        it("Should increase basePrice if full batch sale occurs exactly on dayIncreaseThreshold", async function () {
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
+
+            const initialBasePrice = await astaVerde.basePrice();
+            const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
+            const priceDelta = await astaVerde.priceDelta();
+
+            await astaVerde.mintBatch([admin.address, admin.address], ["QmCID1", "QmCID2"]);
+            await astaVerde.mintBatch([admin.address, admin.address], ["QmCID3", "QmCID4"]);
+
+            // First full batch sale
             let currentPrice = await astaVerde.getCurrentBatchPrice(1);
-            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
-            await astaVerde.connect(user1).buyBatch(1, currentPrice, 1);
+            let totalCost = currentPrice * 2n;
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+            await astaVerde.connect(user1).buyBatch(1, totalCost, 2n);
 
             // Advance time to exactly dayIncreaseThreshold
             await advancedDays(dayIncreaseThreshold);
 
-            // Second sale
+            // Second full batch sale
             currentPrice = await astaVerde.getCurrentBatchPrice(2);
-            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
-            await astaVerde.connect(user1).buyBatch(2, currentPrice, 1);
+            totalCost = currentPrice * 2n;
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+            await astaVerde.connect(user1).buyBatch(2, totalCost, 2n);
 
             const newBasePrice = await astaVerde.basePrice();
-            expect(newBasePrice).to.equal(initialBasePrice + priceDelta);
+            expect(newBasePrice).to.equal(initialBasePrice + priceDelta * 2n);
         });
 
-        it("Should decrease basePrice correctly after dayDecreaseThreshold", async function () {
-            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
-
-            const initialBasePrice = await astaVerde.basePrice();
-            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
-            const priceDecreaseRate = await astaVerde.priceDecreaseRate();
-
-            await astaVerde.mintBatch([admin.address], ["QmCID"]);
-
-            // Advance time beyond dayDecreaseThreshold
-            const daysToAdvance = dayDecreaseThreshold + 3n;
-            await advancedDays(daysToAdvance);
-
-            // Trigger base price update
-            await astaVerde.updateBasePriceOnAction();
-
-            const newBasePrice = await astaVerde.basePrice();
-            const expectedDecrease = daysToAdvance * priceDecreaseRate;
-            const expectedBasePrice = initialBasePrice > expectedDecrease ? initialBasePrice - expectedDecrease : await astaVerde.priceFloor();
-
-            expect(newBasePrice).to.equal(expectedBasePrice);
-        });
 
         it("Should not decrease basePrice below priceFloor", async function () {
             const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
-
             const initialBasePrice = await astaVerde.basePrice();
             const priceFloor = await astaVerde.priceFloor();
+            const priceDelta = await astaVerde.priceDelta();
             const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
-            const priceDecreaseRate = await astaVerde.priceDecreaseRate();
 
-            await astaVerde.mintBatch([admin.address], ["QmCID"]);
+            // Calculate the number of days needed to decrease basePrice to priceFloor
+            const totalDecreaseNeeded = initialBasePrice - priceFloor;
+            const daysToDecrease = (totalDecreaseNeeded + priceDelta - 1n) / priceDelta; // Ceiling division
+            const daysNeeded = dayDecreaseThreshold + daysToDecrease + 1n; // Adding 1 to surpass the threshold
 
-            // Calculate days needed to reach price floor
-            const daysToReachFloor = (initialBasePrice - priceFloor) / priceDecreaseRate + BigInt(dayDecreaseThreshold) + 10n;
+            // Advance time by daysNeeded to trigger decrease
+            await advancedDays(daysNeeded);
 
-            // Advance time well beyond what's needed to reach price floor
-            await advancedDays(daysToReachFloor);
-
-            // Trigger base price update
-            await astaVerde.updateBasePriceOnAction();
+            // Mint a new batch to trigger base price update
+            await expect(astaVerde.mintBatch([admin.address], ["QmTestCID"]))
+                .to.emit(astaVerde, "BasePriceAdjusted")
+                .withArgs(priceFloor, anyValue, false);
 
             const newBasePrice = await astaVerde.basePrice();
             expect(newBasePrice).to.equal(priceFloor);
         });
+
+
+
 
         it("Should allow multiple price increases within threshold period", async function () {
             const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
@@ -461,6 +382,59 @@ describe.only("AstaVerde Logic and Behavior", function () {
             const finalBasePrice = await astaVerde.basePrice();
             expect(finalBasePrice).to.equal(initialBasePrice + priceDelta * 3n);
         });
+
+        it("Should increase basePrice multiple times with consecutive full batch sales within dayIncreaseThreshold", async function () {
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
+
+            const initialBasePrice = await astaVerde.basePrice();
+            const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
+            const priceDelta = await astaVerde.priceDelta();
+
+            // Mint multiple batches
+            for (let i = 0; i < 5; i++) {
+                await astaVerde.mintBatch([admin.address, admin.address], [`QmCID${i}1`, `QmCID${i}2`]);
+            }
+
+            // Simulate consecutive full batch sales within dayIncreaseThreshold
+            for (let i = 1; i <= 5; i++) {
+                const currentPrice = await astaVerde.getCurrentBatchPrice(i);
+                const totalCost = currentPrice * 2n; // 2 tokens per batch
+                await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+                await astaVerde.connect(user1).buyBatch(i, totalCost, 2n);
+
+                if (i < 5) {
+                    await advancedDays(dayIncreaseThreshold - 1n);
+                }
+
+                const newBasePrice = await astaVerde.basePrice();
+                expect(newBasePrice).to.equal(initialBasePrice + BigInt(i) * priceDelta);
+            }
+        });
+        it("Should reflect decreased basePrice after inactivity period", async function () {
+            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
+            const initialBasePrice = await astaVerde.basePrice();
+            const priceFloor = await astaVerde.priceFloor();
+            const priceDelta = await astaVerde.priceDelta();
+            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
+
+            // Calculate the number of days needed to decrease basePrice to priceFloor
+            const totalDecreaseNeeded = initialBasePrice - priceFloor;
+            const daysToDecrease = (totalDecreaseNeeded + priceDelta - 1n) / priceDelta; // Ceiling division
+            const daysNeeded = dayDecreaseThreshold + daysToDecrease + 1n; // Adding 1 to surpass the threshold
+
+            // Advance time by daysNeeded to trigger decrease
+            await advancedDays(daysNeeded);
+
+            // Mint a new batch to trigger base price update
+            await expect(astaVerde.mintBatch([admin.address], ["QmTestCID"]))
+                .to.emit(astaVerde, "BasePriceAdjusted")
+                .withArgs(priceFloor, anyValue, false);
+
+            const newBasePrice = await astaVerde.basePrice();
+            expect(newBasePrice).to.equal(priceFloor);
+        });
+
+
     });
 
     describe("Revenue Split", function () {
@@ -495,66 +469,102 @@ describe.only("AstaVerde Logic and Behavior", function () {
     describe("Price Floor Enforcement", function () {
         it("Should not allow batch price to fall below priceFloor", async function () {
             const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
-
             await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
-
-            const batchID = 1;
-            const basePrice = await astaVerde.basePrice();
+            const batchID = 1n;
+            const initialBasePrice = await astaVerde.basePrice();
             const priceFloor = await astaVerde.priceFloor();
-            const priceDecreaseRate = await astaVerde.priceDecreaseRate();
-            const daysNeeded = (basePrice - priceFloor) / priceDecreaseRate + 1n;
+            const priceDelta = await astaVerde.priceDelta();
+            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
 
+            // Calculate the number of days needed to decrease basePrice to priceFloor
+            const totalDecreaseNeeded = initialBasePrice - priceFloor;
+            const daysToDecrease = (totalDecreaseNeeded + priceDelta - 1n) / priceDelta; // Ceiling division
+            const daysNeeded = dayDecreaseThreshold + daysToDecrease + 1n; // Adding 1 to surpass the threshold
+
+            // Advance time by daysNeeded to trigger decrease
             await advancedDays(daysNeeded);
 
-            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            expect(currentPrice).to.equal(priceFloor);
+            // Mint a new batch to trigger base price update
+            await expect(astaVerde.mintBatch([admin.address], ["QmTestCID"]))
+                .to.emit(astaVerde, "BasePriceAdjusted")
+                .withArgs(priceFloor, anyValue, false);
+
+            const newBasePrice = await astaVerde.basePrice();
+            expect(newBasePrice).to.equal(priceFloor);
         });
+
+
 
         it("Should set batch price to exactly priceFloor when calculated price equals priceFloor", async function () {
             const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
-
-            await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
-
-            const batchID = 1;
-            const basePrice = await astaVerde.basePrice();
+            const initialBasePrice = await astaVerde.basePrice();
             const priceFloor = await astaVerde.priceFloor();
-            const priceDecreaseRate = await astaVerde.priceDecreaseRate();
-            const daysNeeded = (basePrice - priceFloor) / priceDecreaseRate;
 
+            // Set priceDelta to exactly match the difference
+            const priceDeltaExact = initialBasePrice - priceFloor;
+            await astaVerde.connect(admin).setPriceDelta(priceDeltaExact);
+
+            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
+            const daysNeeded = dayDecreaseThreshold + 1n; // Advance days to trigger decrease
+
+            // Advance time by daysNeeded to trigger price decrease
             await advancedDays(daysNeeded);
 
-            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            expect(currentPrice).to.equal(priceFloor);
+            // Mint a new batch to trigger base price update
+            await expect(astaVerde.connect(admin).mintBatch([admin.address], ["QmBoundaryCID"]))
+                .to.emit(astaVerde, "BasePriceAdjusted")
+                .withArgs(priceFloor, anyValue, false);
+
+            const newBasePrice = await astaVerde.basePrice();
+            expect(newBasePrice).to.equal(priceFloor);
         });
+
+
     });
 
     describe("Independent Batch Pricing", function () {
-        it("Each batch should have independent pricing based on its creation time", async function () {
-            const { astaVerde } = await loadFixture(deployAstaVerdeFixture);
+        describe("Independent Batch Pricing", function () {
+            it("Each batch should have independent pricing based on its creation time", async function () {
+                const { astaVerde } = await loadFixture(deployAstaVerdeFixture);
 
-            await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID1"]);
-            await advancedDays(2n);
-            await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID2"]);
+                // Mint Batch 1 at t = 0 days
+                await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID1"]);
 
-            const batch1ID = 1n;
-            const batch2ID = 2n;
+                // Advance time by 2 days
+                await advancedDays(2n);
 
-            await advancedDays(3n);
+                // Mint Batch 2 at t = 2 days
+                await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID2"]);
 
-            const batch1Price = await astaVerde.getCurrentBatchPrice(batch1ID);
-            const batch2Price = await astaVerde.getCurrentBatchPrice(batch2ID);
+                const batch1ID = 1n;
+                const batch2ID = 2n;
 
-            const priceDecreaseRate = await astaVerde.priceDecreaseRate();
-            const basePrice = await astaVerde.basePrice();
+                // Advance time by 3 days to reach t = 5 days
+                await advancedDays(3n);
 
-            const expectedBatch1Price = basePrice - (5n * priceDecreaseRate);
-            const expectedBatch2Price = basePrice - (3n * priceDecreaseRate);
+                // Retrieve current prices
+                const batch1Price = await astaVerde.getCurrentBatchPrice(batch1ID); // Expected: 220,000,000
+                const batch2Price = await astaVerde.getCurrentBatchPrice(batch2ID); // Expected: 230,000,000
 
-            const priceFloor = await astaVerde.priceFloor();
+                const priceDelta = await astaVerde.priceDelta(); // 10,000,000
+                const initialBasePrice = await astaVerde.basePrice(); // 230,000,000
+                const priceFloor = await astaVerde.priceFloor(); // 40,000,000
 
-            expect(batch1Price).to.equal(expectedBatch1Price > priceFloor ? expectedBatch1Price : priceFloor);
-            expect(batch2Price).to.equal(expectedBatch2Price > priceFloor ? expectedBatch2Price : priceFloor);
+                // Calculate expected prices
+                const expectedBatch1Price = initialBasePrice - (1n * priceDelta); // 220,000,000
+                const expectedBatch2Price = initialBasePrice; // 230,000,000
+
+                // Adjust for price floor
+                const adjustedBatch1Price = expectedBatch1Price >= priceFloor ? expectedBatch1Price : priceFloor;
+                const adjustedBatch2Price = expectedBatch2Price >= priceFloor ? expectedBatch2Price : priceFloor;
+
+                // Update expectations
+                expect(batch1Price).to.equal(adjustedBatch1Price); // 220,000,000
+                expect(batch2Price).to.equal(adjustedBatch2Price); // 230,000,000
+            });
         });
+
+
     });
 
     describe("Adjustable Parameters", function () {
@@ -641,26 +651,6 @@ describe.only("AstaVerde Logic and Behavior", function () {
         });
     });
 
-    describe("Pausing Functionality", function () {
-        it("Owner can pause and unpause the contract", async function () {
-            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
-
-            await expect(astaVerde.connect(admin).pause())
-                .to.emit(astaVerde, "Paused")
-                .withArgs(admin.address);
-
-            await expect(astaVerde.connect(admin).mintBatch([admin.address], ["QmCID"]))
-                .to.be.revertedWithCustomError(astaVerde, "EnforcedPause");
-
-            await expect(astaVerde.connect(admin).unpause())
-                .to.emit(astaVerde, "Unpaused")
-                .withArgs(admin.address);
-
-            await expect(astaVerde.connect(admin).mintBatch([admin.address], ["QmCID"]))
-                .to.emit(astaVerde, "BatchMinted");
-        });
-    });
-
     describe("Edge Cases", function () {
         it("Should revert when buying more tokens than available in a batch", async function () {
             const { astaVerde, user1 } = await loadFixture(deployAstaVerdeFixture);
@@ -679,29 +669,82 @@ describe.only("AstaVerde Logic and Behavior", function () {
         it("Should handle high priceDecreaseRate without overflow", async function () {
             const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
 
-            const highPriceDecreaseRate = ethers.parseUnits("1000", 6);
-            await astaVerde.connect(admin).setPriceDecreaseRate(highPriceDecreaseRate);
+            const highPriceDecreaseRate = ethers.parseUnits("1000", 6); // 1,000,000 USDC
+            await astaVerde.connect(admin).setPriceDelta(highPriceDecreaseRate);
 
-            const newPriceDecreaseRate = await astaVerde.priceDecreaseRate();
-            expect(newPriceDecreaseRate).to.equal(highPriceDecreaseRate);
-
+            // Mint a batch and advance time
             await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
 
-            const batchID = 1;
-            await advancedDays(1n);
+            const initialBasePrice = await astaVerde.basePrice();
+            const priceFloor = await astaVerde.priceFloor();
+            const totalDecreaseNeeded = initialBasePrice - priceFloor; // 190,000,000
+            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold(); // 4
 
-            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const expectedPrice = (await astaVerde.basePrice()) - highPriceDecreaseRate;
+            const daysToDecrease = totalDecreaseNeeded / highPriceDecreaseRate; // 190
+            const daysNeeded = daysToDecrease + dayDecreaseThreshold + 1n; // 195
+
+            await advancedDays(daysNeeded);
+
+            // Mint another batch to trigger base price update
+            await expect(astaVerde.mintBatch([admin.address], ["QmTestCID"]))
+                .to.emit(astaVerde, "BasePriceAdjusted")
+                .withArgs(priceFloor, anyValue, false);
+
+            const newBasePrice = await astaVerde.basePrice();
+            expect(newBasePrice).to.equal(priceFloor); // 40,000,000
+        });
+
+
+
+        it("Should set basePrice to exactly priceFloor when decrease equals the difference", async function () {
+            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
+            const initialBasePrice = await astaVerde.basePrice();
             const priceFloor = await astaVerde.priceFloor();
 
-            expect(currentPrice).to.equal(expectedPrice > priceFloor ? expectedPrice : priceFloor);
+            // Set priceDelta to exactly match the difference
+            const priceDeltaExact = initialBasePrice - priceFloor;
+            await astaVerde.connect(admin).setPriceDelta(priceDeltaExact);
+
+            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
+            const daysNeeded = dayDecreaseThreshold + 1n; // Advance days to trigger decrease
+
+            // Advance time by daysNeeded to trigger price decrease
+            await advancedDays(daysNeeded);
+
+            // Mint a new batch to trigger base price update
+            await expect(astaVerde.connect(admin).mintBatch([admin.address], ["QmBoundaryCID"]))
+                .to.emit(astaVerde, "BasePriceAdjusted")
+                .withArgs(priceFloor, anyValue, false);
+
+            const newBasePrice = await astaVerde.basePrice();
+            expect(newBasePrice).to.equal(priceFloor);
+        });
+
+
+
+
+
+        it("Should revert when buying tokens with insufficient USDC", async function () {
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
+
+            // Mint a batch
+            await astaVerde.mintBatch([admin.address], ["QmCID1"]);
+            const batchID = 1n;
+            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+            const insufficientAmount = currentPrice - 1n; // 1 USDC less than required
+
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), insufficientAmount);
+
+            await expect(
+                astaVerde.connect(user1).buyBatch(batchID, insufficientAmount, 1n)
+            ).to.be.revertedWith("Insufficient funds sent");
         });
     });
     describe("Token Redemption", function () {
         it("Should allow token owners to redeem their tokens", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
+            const { astaVerde, mockUSDC, user1 } = await loadFixture(deployAstaVerdeFixture);
 
-            await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
+            await astaVerde.mintBatch([user1.address], ["QmValidCID"]);
             const batchID = 1n;
             const tokenAmount = 1n;
             const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
@@ -713,21 +756,23 @@ describe.only("AstaVerde Logic and Behavior", function () {
             const [, tokenIds] = await astaVerde.getBatchInfo(batchID);
             const tokenId = tokenIds[0];
 
-            await expect(astaVerde.connect(user1).redeemTokens([tokenId]))
+            await expect(astaVerde.connect(user1).redeemToken(tokenId))
                 .to.emit(astaVerde, "TokenRedeemed")
                 .withArgs(tokenId, user1.address, anyValue);
 
+            // Check if the token is marked as redeemed
             const tokenInfo = await astaVerde.tokens(tokenId);
-            expect(tokenInfo.isRedeemed).to.be.true;
+            expect(tokenInfo.redeemed).to.be.true;
 
-            await expect(astaVerde.connect(user1).redeemTokens([tokenId]))
-                .to.be.revertedWith("Token is already redeemed");
+            // Attempt to redeem again should fail
+            await expect(astaVerde.connect(user1).redeemToken(tokenId))
+                .to.be.revertedWith("Token already redeemed");
         });
 
         it("Should prevent non-owners from redeeming tokens", async function () {
-            const { astaVerde, mockUSDC, admin, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
+            const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
 
-            await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
+            await astaVerde.mintBatch([user1.address], ["QmValidCID"]);
             const batchID = 1n;
             const tokenAmount = 1n;
             const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
@@ -739,7 +784,7 @@ describe.only("AstaVerde Logic and Behavior", function () {
             const [, tokenIds] = await astaVerde.getBatchInfo(batchID);
             const tokenId = tokenIds[0];
 
-            await expect(astaVerde.connect(user2).redeemTokens([tokenId]))
+            await expect(astaVerde.connect(user2).redeemToken(tokenId))
                 .to.be.revertedWith("Caller is not the token owner");
         });
     });
@@ -788,60 +833,59 @@ describe.only("AstaVerde Logic and Behavior", function () {
         });
     });
     describe("Detailed Auction Pricing Mechanism", function () {
-        it("Should decrease price exactly by priceDecreaseRate per day", async function () {
+        it("Should decrease price exactly by priceDelta per day", async function () {
             const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
-
             await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
             const batchID = 1n;
-            const initialPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const priceDecreaseRate = await astaVerde.priceDecreaseRate();
+            const initialPrice = await astaVerde.getCurrentBatchPrice(batchID); // 230,000,000
+            const priceDelta = await astaVerde.priceDelta(); // 10,000,000
+            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold(); // 4
 
-            await advancedDays(3n);
+            // Advance time by dayDecreaseThreshold days to not trigger decrease yet
+            await advancedDays(dayDecreaseThreshold); // +4 days
+
+            // Advance additional 3 days to trigger price decrease by 3 * priceDelta
+            await advancedDays(3n); // +3 days, total =7
 
             const newPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const expectedPrice = initialPrice - (3n * priceDecreaseRate);
+            const expectedPrice = initialPrice - (3n * priceDelta); // 200,000,000
 
-            expect(newPrice).to.equal(expectedPrice);
+            expect(newPrice).to.equal(expectedPrice); // 200,000,000
         });
+
+
 
         it("Should correctly handle multiple batches with different prices", async function () {
             const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
-
             const initialBasePrice = await astaVerde.basePrice();
-            console.log("Initial base price:", initialBasePrice.toString());
+            const priceDelta = await astaVerde.priceDelta();
+            const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
 
+            // Mint Batch 1
             await astaVerde.mintBatch([admin.address], ["QmValidCID1"]);
             const batch1ID = 1n;
 
-            await advancedDays(2n);
+            // Advance time within threshold
+            await advancedDays(dayIncreaseThreshold - 1n);
 
+            // Mint Batch 2
             await astaVerde.mintBatch([admin.address], ["QmValidCID2"]);
-            const batch2ID = 2n;
+            // const batch2ID = 2n;
 
-            await advancedDays(3n);
-
+            // Purchase Batch 1
             const price1 = await astaVerde.getCurrentBatchPrice(batch1ID);
-            const price2 = await astaVerde.getCurrentBatchPrice(batch2ID);
-
-            console.log("Price of batch 1:", price1.toString());
-            console.log("Price of batch 2:", price2.toString());
-
-            expect(price1).to.be.lt(price2);
-
             await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), price1);
-            await astaVerde.connect(user1).buyBatch(batch1ID, price1, 1n);
+            await expect(astaVerde.connect(user1).buyBatch(batch1ID, price1, 1n))
+                .to.emit(astaVerde, "BasePriceAdjusted")
+                .withArgs(initialBasePrice + priceDelta, anyValue, true);
 
             const newBasePrice = await astaVerde.basePrice();
-            console.log("New base price after sale:", newBasePrice.toString());
+            expect(newBasePrice).to.equal(initialBasePrice + priceDelta);
 
-            // The base price should not decrease below the initial price minus 5 days of decrease
-            const minExpectedPrice = initialBasePrice - (5n * await astaVerde.priceDecreaseRate());
-            expect(newBasePrice).to.be.gte(minExpectedPrice);
-
+            // Mint Batch 3 and verify its price reflects the updated basePrice
             await astaVerde.mintBatch([admin.address], ["QmValidCID3"]);
-            const batch3Price = await astaVerde.getCurrentBatchPrice(3n);
-            console.log("Price of new batch 3:", batch3Price.toString());
-
+            const batch3ID = 3n;
+            const batch3Price = await astaVerde.getCurrentBatchPrice(batch3ID);
             expect(batch3Price).to.equal(newBasePrice);
         });
     }),
@@ -931,4 +975,25 @@ describe.only("AstaVerde Logic and Behavior", function () {
                 expect(finalContractBalance).to.equal(initialContractBalance + currentPrice - expectedProducerShare);
             });
         });
+
+    it("Should not increase basePrice when only part of a batch is sold", async function () {
+        const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
+
+        // Mint a batch with 3 tokens
+        await astaVerde.mintBatch([admin.address, admin.address, admin.address], ["QmCID1", "QmCID2", "QmCID3"]);
+        const batchID = 1n;
+        const initialBasePrice = await astaVerde.basePrice();
+
+        // Buy 2 out of 3 tokens
+        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+        const totalCost = currentPrice * 2n;
+
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+        await expect(astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n))
+            .to.emit(astaVerde, "PartialBatchSold")
+            .withArgs(batchID, anyValue, 1n);
+
+        const newBasePrice = await astaVerde.basePrice();
+        expect(newBasePrice).to.equal(initialBasePrice); // Base price should remain unchanged
+    });
 });

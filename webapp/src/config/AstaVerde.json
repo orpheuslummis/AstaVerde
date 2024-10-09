@@ -132,6 +132,28 @@
       "inputs": [
         {
           "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        }
+      ],
+      "name": "NotProducer",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        }
+      ],
+      "name": "NotTokenOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
           "name": "owner",
           "type": "address"
         }
@@ -153,6 +175,17 @@
     {
       "inputs": [],
       "name": "ReentrancyGuardReentrantCall",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "TokenAlreadyRedeemed",
       "type": "error"
     },
     {
@@ -186,7 +219,7 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "newPrice",
+          "name": "newBasePrice",
           "type": "uint256"
         },
         {
@@ -194,9 +227,15 @@
           "internalType": "uint256",
           "name": "timestamp",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "increased",
+          "type": "bool"
         }
       ],
-      "name": "BasePriceDecreased",
+      "name": "BasePriceAdjusted",
       "type": "event"
     },
     {
@@ -228,25 +267,6 @@
         }
       ],
       "name": "BasePriceForNewBatchesAdjusted",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "newPrice",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "BasePriceIncreased",
       "type": "event"
     },
     {
@@ -291,6 +311,32 @@
         }
       ],
       "name": "BatchSold",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "daysSinceLastSale",
+          "type": "uint256"
+        }
+      ],
+      "name": "DaysSinceLastSale",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newMaxBatchSize",
+          "type": "uint256"
+        }
+      ],
+      "name": "MaxBatchSizeSet",
       "type": "event"
     },
     {
@@ -355,6 +401,25 @@
       "inputs": [
         {
           "indexed": false,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "PlatformFundsClaimed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
           "internalType": "uint256",
           "name": "newPrice",
           "type": "uint256"
@@ -388,11 +453,11 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "newPriceDecreaseRate",
+          "name": "newPriceDelta",
           "type": "uint256"
         }
       ],
-      "name": "PriceDecreaseRateSet",
+      "name": "PriceDeltaSet",
       "type": "event"
     },
     {
@@ -627,11 +692,6 @@
         },
         {
           "internalType": "uint256",
-          "name": "price",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
           "name": "remainingTokens",
           "type": "uint256"
         }
@@ -786,19 +846,6 @@
     {
       "inputs": [],
       "name": "lastBatchID",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "lastPriceChangeTime",
       "outputs": [
         {
           "internalType": "uint256",
@@ -992,19 +1039,6 @@
     },
     {
       "inputs": [],
-      "name": "priceDecreaseRate",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
       "name": "priceDelta",
       "outputs": [
         {
@@ -1035,17 +1069,7 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "lastBaseAdjustmentTime",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "lastPlatformSaleTime",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "totalPlatformSalesSinceLastAdjustment",
+          "name": "lastBasePriceAdjustmentTime",
           "type": "uint256"
         }
       ],
@@ -1055,12 +1079,12 @@
     {
       "inputs": [
         {
-          "internalType": "uint256[]",
-          "name": "tokenIds",
-          "type": "uint256[]"
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
         }
       ],
-      "name": "redeemTokens",
+      "name": "redeemToken",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1217,11 +1241,11 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "newPriceDecreaseRate",
+          "name": "newPriceDelta",
           "type": "uint256"
         }
       ],
-      "name": "setPriceDecreaseRate",
+      "name": "setPriceDelta",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -1282,6 +1306,11 @@
       "name": "tokens",
       "outputs": [
         {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
           "internalType": "uint256",
           "name": "tokenId",
           "type": "uint256"
@@ -1298,7 +1327,7 @@
         },
         {
           "internalType": "bool",
-          "name": "isRedeemed",
+          "name": "redeemed",
           "type": "bool"
         }
       ],
@@ -1321,13 +1350,6 @@
     {
       "inputs": [],
       "name": "unpause",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "updateBasePriceOnAction",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
