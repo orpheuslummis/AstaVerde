@@ -4,9 +4,9 @@ import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import { useContractInteraction } from "../hooks/useContractInteraction";
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, getUsdcContractConfig } from "../lib/contracts";
-import { customToast } from "../utils/customToast";
 import type { AppContextType } from "../types";
 import { serializeBigInt } from "../utils/bigIntHelper";
+import { customToast } from "../utils/customToast";
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -123,7 +123,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const buyBatch = useContractInteraction(astaverdeContractConfig, "buyBatch").execute;
     const redeemTokens = useContractInteraction(astaverdeContractConfig, "redeemTokens").execute;
     const mintBatch = useContractInteraction(astaverdeContractConfig, "mintBatch").execute;
-    const setPriceDecreaseRate = useContractInteraction(astaverdeContractConfig, "setPriceDecreaseRate").execute;
+    const setPriceDelta = useContractInteraction(astaverdeContractConfig, "setPriceDelta").execute;
 
     const adminControls = useMemo(
         () => ({
@@ -185,13 +185,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     throw error;
                 }
             },
-            setPriceDecreaseRate: async (rate: string) => {
+            setPriceDelta: async (priceDelta: bigint) => {
                 try {
-                    const txHash = await setPriceDecreaseRate(rate);
-                    console.log("Set price decrease rate transaction hash:", txHash);
+                    const txHash = await setPriceDelta(priceDelta);
+                    console.log("Set Price Delta transaction hash:", txHash);
+                    customToast.success("Price delta updated successfully");
                     return txHash;
                 } catch (error) {
-                    console.error("Error setting price decrease rate:", error);
+                    console.error("Error setting price delta:", error);
+                    customToast.error("Failed to update price delta");
                     throw error;
                 }
             },
@@ -211,7 +213,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             updateBasePrice,
             mintBatch,
             refetchBatches,
-            setPriceDecreaseRate,
+            setPriceDelta,
         ]
     );
 

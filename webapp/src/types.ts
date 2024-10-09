@@ -1,6 +1,6 @@
 import type { Abi } from 'abitype';
-import type { astaverdeContractConfig, getUsdcContractConfig } from "./lib/contracts";
 import type { Batch } from "./lib/batch";
+import type { astaverdeContractConfig, getUsdcContractConfig } from "./lib/contracts";
 
 export type BatchData = [
   bigint,  // batchId
@@ -30,6 +30,7 @@ export interface AppContextType {
   updateBatch: (updatedBatch: Batch) => void;
   updateBatchItemsLeft: (batchId: bigint, newItemsLeft: bigint) => void;
   adminControls: {
+    setPriceDelta: (priceDelta: bigint) => Promise<string>;
     pauseContract: () => Promise<string>;
     unpauseContract: () => Promise<string>;
     setURI: (uri: string) => void;
@@ -41,7 +42,6 @@ export interface AppContextType {
     claimPlatformFunds: (address: string) => void;
     updateBasePrice: () => Promise<string>;
     mintBatch: (producers: string[], cids: string[]) => Promise<string>;
-    setPriceDecreaseRate: (rate: string) => void;
   };
   getCurrentBatchPrice: (batchId: number) => Promise<bigint>;
   buyBatch: (batchId: number, usdcAmount: bigint, tokenAmount: number) => Promise<string>;

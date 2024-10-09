@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
 import { useAccount, useReadContract } from "wagmi";
 import { USDC_DECIMALS } from "../../app.config";
@@ -31,7 +31,7 @@ function AdminControls() {
                 <AuctionTimeThresholdsControl />
                 <PlatformPercentageControl />
                 <MaxBatchSizeControl />
-                <PriceDecreaseRateControl />
+                <PriceDeltaControl />
             </div>
         </Connected>
     );
@@ -397,61 +397,61 @@ function PlatformPercentageControl() {
     );
 }
 
-function PriceDecreaseRateControl() {
+function PriceDeltaControl() {
     const { adminControls } = useAppContext();
-    const [priceDecreaseRate, setPriceDecreaseRate] = useState("");
-    const { data: currentPriceDecreaseRate, refetch: refetchCurrentPriceDecreaseRate } = useReadContract({
+    const [priceDelta, setPriceDelta] = useState("");
+    const { data: currentPriceDeltaWei, refetch: refetchCurrentPriceDelta } = useReadContract({
         ...astaverdeContractConfig,
-        functionName: "priceDecreaseRate",
+        functionName: "priceDelta",
     });
 
-    const handleSetPriceDecreaseRate = async () => {
-        if (priceDecreaseRate) {
+    // Debugging: Log the raw value fetched from the contract
+    useEffect(() => {
+        console.log("Raw currentPriceDeltaWei:", currentPriceDeltaWei);
+    }, [currentPriceDeltaWei]);
+
+    const handleSetPriceDelta = async () => {
+        if (priceDelta) {
             try {
-                const priceDecreaseRateInWei = parseUnits(priceDecreaseRate, USDC_DECIMALS);
-                // Fix the TypeScript error by checking if the method exists
-                if (typeof adminControls.setPriceDecreaseRate === 'function') {
-                    await adminControls.setPriceDecreaseRate(priceDecreaseRateInWei.toString());
-                    customToast.success("Price decrease rate updated successfully");
-                    refetchCurrentPriceDecreaseRate();
-                } else {
-                    throw new Error("setPriceDecreaseRate method not found");
-                }
+                const priceDeltaInWei = parseUnits(priceDelta, USDC_DECIMALS);
+                console.log("Setting priceDeltaInWei:", priceDeltaInWei.toString());
+                await adminControls.setPriceDelta(priceDeltaInWei);
+                customToast.success("Price delta updated successfully");
+                await refetchCurrentPriceDelta();
             } catch (error) {
-                console.error("Error setting price decrease rate:", error);
-                customToast.error("Failed to update price decrease rate");
+                console.error("Error setting price delta:", error);
+                customToast.error("Failed to update price delta");
             }
         }
     };
 
     return (
-        <ControlContainer title="Set Price Decrease Rate">
+        <ControlContainer title="Set Price Delta">
             <div className="flex flex-col gap-4">
                 <input
                     type="number"
-                    value={priceDecreaseRate}
-                    onChange={(e) => setPriceDecreaseRate(e.target.value)}
-                    placeholder="Enter Price Decrease Rate (USDC)"
+                    value={priceDelta}
+                    onChange={(e) => setPriceDelta(e.target.value)}
+                    placeholder="Enter Price Delta (USDC)"
                     className="px-4 py-2 border border-gray-300 rounded text-gray-800 dark:text-white dark:bg-gray-700"
                 />
                 <button
                     type="button"
                     className="btn btn-secondary shadow-md hover:shadow-lg disabled:opacity-50 text-white"
-                    disabled={!priceDecreaseRate}
-                    onClick={handleSetPriceDecreaseRate}
+                    disabled={!priceDelta}
+                    onClick={handleSetPriceDelta}
                 >
-                    Set Price Decrease Rate
+                    Set Price Delta
                 </button>
             </div>
-            {typeof currentPriceDecreaseRate === "bigint" && (
+            {currentPriceDeltaWei !== undefined && (
                 <div className="text-gray-600 dark:text-gray-300 mt-4">
-                    Current Price Decrease Rate: {formatUnits(currentPriceDecreaseRate, USDC_DECIMALS)} USDC
+                    Current Price Delta: {formatUnits(currentPriceDeltaWei as bigint, USDC_DECIMALS)} USDC
                 </div>
             )}
         </ControlContainer>
     );
 }
-
 export default function Page() {
     return <AdminControls />;
 }

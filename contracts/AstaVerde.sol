@@ -22,7 +22,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     uint256 public platformShareAccumulated;
     uint256 public basePrice;
     uint256 public priceFloor;
-    uint256 public priceDelta; // Consolidated variable for price adjustments
+    uint256 public priceDelta;
     uint256 public dayIncreaseThreshold;
     uint256 public dayDecreaseThreshold;
 
@@ -80,7 +80,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         maxBatchSize = 50;
         basePrice = 230 * USDC_PRECISION;
         priceFloor = 40 * USDC_PRECISION;
-        priceDelta = 10 * USDC_PRECISION; // Initial price delta
+        priceDelta = 10 * USDC_PRECISION;
         dayIncreaseThreshold = 2;
         dayDecreaseThreshold = 4;
         lastBatchID = 0;

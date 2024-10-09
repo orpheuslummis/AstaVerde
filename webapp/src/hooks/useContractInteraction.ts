@@ -54,7 +54,7 @@ const WRITE_FUNCTIONS = [
     "setAuctionDayThresholds",
     "setPlatformSharePercentage",
     "mint",
-    "setPriceDecreaseRate",
+    "setPriceDelta",
 ];
 
 type ExecuteFunction = (...args: unknown[]) => Promise<any>;
@@ -100,7 +100,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
                     });
                 } else if (isWriteFunction) {
                     if (!walletClient) throw new Error("Wallet not connected");
-                    
+
                     // Simulate the transaction first
                     const { request } = await publicClient.simulateContract({
                         ...contractConfig,
@@ -108,7 +108,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
                         args,
                         account: walletClient.account,
                     });
-                    
+
                     // If simulation is successful, send the actual transaction
                     const hash = await writeContractAsync(request);
                     result = await publicClient.waitForTransactionReceipt({ hash });
