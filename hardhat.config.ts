@@ -90,6 +90,8 @@ const config: HardhatUserConfig = {
                 },
             },
             timeout: 300000, // 5 minutes
+            gasPrice: "auto",
+            gasMultiplier: 1.2,
         },
     },
     etherscan: {

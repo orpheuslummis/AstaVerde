@@ -35,13 +35,30 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         console.log(`Deploying ${contractName}...`);
 
         try {
+            // Get the latest fee data before each deployment
+            const latestFeeData = await provider.getFeeData();
+            
+            // Calculate a slightly higher maxFeePerGas and maxPriorityFeePerGas
+            const maxFeePerGas = latestFeeData.maxFeePerGas
+                ? latestFeeData.maxFeePerGas * 120n / 100n // 120% of the current maxFeePerGas
+                : ethers.parseUnits("30", "gwei"); // fallback to 30 gwei if maxFeePerGas is null
+            
+            const maxPriorityFeePerGas = latestFeeData.maxPriorityFeePerGas
+                ? latestFeeData.maxPriorityFeePerGas * 120n / 100n // 120% of the current maxPriorityFeePerGas
+                : ethers.parseUnits("2", "gwei"); // fallback to 2 gwei if maxPriorityFeePerGas is null
+
+            console.log(`Deploying ${contractName} with gas settings:`, {
+                maxFeePerGas: ethers.formatUnits(maxFeePerGas, "gwei") + " gwei",
+                maxPriorityFeePerGas: ethers.formatUnits(maxPriorityFeePerGas, "gwei") + " gwei",
+            });
+
             const result = await deploy(contractName, {
                 from: deployer,
                 args: args,
                 log: true,
                 waitConfirmations: 1,
-                maxFeePerGas: ethers.parseUnits("10", "gwei").toString(),
-                maxPriorityFeePerGas: ethers.parseUnits("2", "gwei").toString(),
+                maxFeePerGas: maxFeePerGas.toString(),
+                maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
             });
 
             console.log(`${contractName} deployed at:`, result.address);
