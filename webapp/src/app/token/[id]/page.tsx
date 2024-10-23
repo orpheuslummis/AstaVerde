@@ -91,8 +91,8 @@ export default function Page({ params }: { params: { id: bigint } }) {
     return (
         <div className="container mx-auto px-4 py-4 flex justify-center items-start min-h-[calc(100vh-4rem)]">
             <div className="w-full max-w-2xl">
-                <TokenCard 
-                    tokenId={params.id} 
+                <TokenCard
+                    tokenId={params.id}
                     isCompact={false}
                     isMyTokensPage={false}
                     isRedeemed={tokenData[3]}

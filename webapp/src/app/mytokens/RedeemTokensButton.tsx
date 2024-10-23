@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-import { usePublicClient } from "wagmi";
 import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import { customToast } from "../../utils/customToast";
@@ -20,7 +19,6 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
     const [progress, setProgress] = useState(0);
     const [statusMessage, setStatusMessage] = useState("");
     const { astaverdeContractConfig } = useAppContext();
-    const publicClient = usePublicClient();
     const { redeemTokens } = useContractInteraction(astaverdeContractConfig, "redeemTokens");
 
     /**
@@ -61,7 +59,7 @@ export default function RedeemTokensButton({ selectedTokens, onRedeemComplete, o
      */
     const handleRedeem = useCallback(async () => {
         const unredeemedTokens = selectedTokens.filter(tokenId => !redeemStatus[tokenId.toString()]);
-        
+
         if (unredeemedTokens.length === 0) {
             customToast.warning("No unredeemed tokens selected for redemption");
             return;

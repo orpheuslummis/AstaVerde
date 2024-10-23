@@ -319,6 +319,19 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "newDailyDecay",
+          "type": "uint256"
+        }
+      ],
+      "name": "DailyPriceDecaySet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "daysSinceLastSale",
           "type": "uint256"
         }
@@ -737,6 +750,19 @@
     },
     {
       "inputs": [],
+      "name": "dailyPriceDecay",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "dayDecreaseThreshold",
       "outputs": [
         {
@@ -1039,7 +1065,7 @@
     },
     {
       "inputs": [],
-      "name": "priceDelta",
+      "name": "priceAdjustDelta",
       "outputs": [
         {
           "internalType": "uint256",
@@ -1207,6 +1233,19 @@
         }
       ],
       "name": "setBasePrice",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "newDailyDecay",
+          "type": "uint256"
+        }
+      ],
+      "name": "setDailyPriceDecay",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

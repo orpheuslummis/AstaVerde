@@ -29,20 +29,7 @@ export interface AppContextType {
   refetchBatches: () => void;
   updateBatch: (updatedBatch: Batch) => void;
   updateBatchItemsLeft: (batchId: bigint, newItemsLeft: bigint) => void;
-  adminControls: {
-    setPriceDelta: (priceDelta: bigint) => Promise<string>;
-    pauseContract: () => Promise<string>;
-    unpauseContract: () => Promise<string>;
-    setURI: (uri: string) => void;
-    setPriceFloor: (priceFloor: string) => void;
-    setBasePrice: (basePrice: string) => void;
-    setMaxBatchSize: (maxBatchSize: string) => void;
-    setAuctionDayThresholds: (increase: string, decrease: string) => void;
-    setPlatformSharePercentage: (percentage: string) => void;
-    claimPlatformFunds: (address: string) => void;
-    updateBasePrice: () => Promise<string>;
-    mintBatch: (producers: string[], cids: string[]) => Promise<string>;
-  };
+  adminControls: AdminControls;
   getCurrentBatchPrice: (batchId: number) => Promise<bigint>;
   buyBatch: (batchId: number, usdcAmount: bigint, tokenAmount: number) => Promise<string>;
   redeemTokens: (tokenIds: bigint[]) => Promise<string>;
@@ -93,3 +80,19 @@ export interface RedeemTokensButtonProps {
 export type ExecuteFunction = (...args: unknown[]) => Promise<unknown>;
 
 export type ContractError = Error | null;
+
+export interface AdminControls {
+  setPriceDelta: (amount: bigint) => Promise<string>;
+  setDailyPriceDecay: (amount: bigint) => Promise<string>;
+  pauseContract: () => Promise<string>;
+  unpauseContract: () => Promise<string>;
+  claimPlatformFunds: (recipient: string) => Promise<string>;
+  setPriceFloor: (amount: string) => Promise<void>;
+  setBasePrice: (amount: bigint) => Promise<void>;
+  setMaxBatchSize: (size: bigint) => Promise<void>;
+  setAuctionDayThresholds: (increase: string, decrease: string) => Promise<void>;
+  setPlatformSharePercentage: (percentage: string) => Promise<void>;
+  setURI: (uri: string) => Promise<void>;
+  updateBasePrice: () => Promise<string>;
+  mintBatch: (producers: string[], cids: string[]) => Promise<string>;
+}

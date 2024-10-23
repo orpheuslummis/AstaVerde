@@ -103,13 +103,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.log("Batches state updated:", serializeBigInt(batches));
     }, [batches]);
 
-    const getPauseContract = useCallback(() => {
-        return useContractInteraction(astaverdeContractConfig, "pause").execute;
-    }, []);
-
-    const getUnpauseContract = useCallback(() => {
-        return useContractInteraction(astaverdeContractConfig, "unpause").execute;
-    }, []);
+    const { execute: pauseContract } = useContractInteraction(astaverdeContractConfig, "pause");
+    const { execute: unpauseContract } = useContractInteraction(astaverdeContractConfig, "unpause");
 
     const setURI = useContractInteraction(astaverdeContractConfig, "setURI").execute;
     const setPriceFloor = useContractInteraction(astaverdeContractConfig, "setPriceFloor").execute;
@@ -124,6 +119,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const redeemTokens = useContractInteraction(astaverdeContractConfig, "redeemTokens").execute;
     const mintBatch = useContractInteraction(astaverdeContractConfig, "mintBatch").execute;
     const setPriceDelta = useContractInteraction(astaverdeContractConfig, "setPriceDelta").execute;
+    const setDailyPriceDecay = useContractInteraction(astaverdeContractConfig, "setDailyPriceDecay").execute;
 
     const adminControls = useMemo(
         () => ({
@@ -133,7 +129,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     return;
                 }
                 try {
-                    const pauseContract = getPauseContract();
                     const txHash = await pauseContract();
                     console.log("Pause contract transaction hash:", txHash);
                     return txHash;
@@ -148,7 +143,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     return;
                 }
                 try {
-                    const unpauseContract = getUnpauseContract();
                     const txHash = await unpauseContract();
                     console.log("Unpause contract transaction hash:", txHash);
                     return txHash;
@@ -197,12 +191,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     throw error;
                 }
             },
+            setDailyPriceDecay: async (amount: bigint) => {
+                try {
+                    const txHash = await setDailyPriceDecay(amount);
+                    console.log("Set Daily Price Decay transaction hash:", txHash);
+                    customToast.success("Daily price decay updated successfully");
+                    return txHash;
+                } catch (error) {
+                    console.error("Error setting daily price decay:", error);
+                    customToast.error("Failed to update daily price decay");
+                    throw error;
+                }
+            },
         }),
         [
             isAdmin,
             address,
-            getPauseContract,
-            getUnpauseContract,
+            pauseContract,
+            unpauseContract,
             setURI,
             setPriceFloor,
             setBasePrice,
@@ -214,6 +220,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             mintBatch,
             refetchBatches,
             setPriceDelta,
+            setDailyPriceDecay,
         ]
     );
 

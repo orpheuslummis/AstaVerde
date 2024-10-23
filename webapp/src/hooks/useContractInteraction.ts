@@ -37,6 +37,8 @@ const READ_ONLY_FUNCTIONS = [
     "balanceOf",
     "tokenOfOwnerByIndex",
     "lastTokenID",
+    "dailyPriceDecay",
+    "priceAdjustDelta",
 ];
 
 const WRITE_FUNCTIONS = [
@@ -55,6 +57,7 @@ const WRITE_FUNCTIONS = [
     "setPlatformSharePercentage",
     "mint",
     "setPriceDelta",
+    "setDailyPriceDecay",
 ];
 
 type ExecuteFunction = (...args: unknown[]) => Promise<any>;

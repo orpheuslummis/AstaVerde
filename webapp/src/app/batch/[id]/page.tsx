@@ -18,12 +18,12 @@ export default function Page({ params }: { params: BatchParams }) {
     const { astaverdeContractConfig } = useAppContext();
     const publicClient = usePublicClient();
 
-    const placeholderImage = useMemo(() => 
+    const placeholderImage = useMemo(() =>
         getPlaceholderImageUrl(
             params.id,
             batchData ? batchData[1].length.toString() : "0"
         ),
-    [params.id, batchData]);
+        [params.id, batchData]);
 
     useEffect(() => {
         const fetchBatchData = async () => {
@@ -62,7 +62,7 @@ export default function Page({ params }: { params: BatchParams }) {
     if (error) return <div className="text-center py-8 text-red-500 dark:text-red-400">Error: {error}</div>;
     if (!batchData) return <div className="text-center py-8 dark:text-white">No batch data available.</div>;
 
-    const [batchId, tokenIds, creationTime, price, remainingTokens] = batchData;
+    const [batchId, tokenIds] = batchData;
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -87,8 +87,8 @@ export default function Page({ params }: { params: BatchParams }) {
                 {tokenIds && tokenIds.length > 0 ? (
                     tokenIds.map((tokenId: bigint) => (
                         <Link key={tokenId.toString()} href={`/token/${tokenId.toString()}`}>
-                            <TokenCard 
-                                tokenId={tokenId} 
+                            <TokenCard
+                                tokenId={tokenId}
                                 isCompact={false}
                             />
                         </Link>
