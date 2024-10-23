@@ -22,7 +22,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     uint256 public platformShareAccumulated;
     uint256 public basePrice;
     uint256 public priceFloor;
-    uint256 public priceDelta;
+    uint256 public dailyPriceDecay;
+    uint256 public priceAdjustDelta;
     uint256 public dayIncreaseThreshold;
     uint256 public dayDecreaseThreshold;
 
@@ -69,6 +70,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     event DaysSinceLastSale(uint256 daysSinceLastSale);
     event PlatformFundsClaimed(address to, uint256 amount);
     event MaxBatchSizeSet(uint256 newMaxBatchSize);
+    event DailyPriceDecaySet(uint256 newDailyDecay);
 
     error NotProducer(address caller);
     error NotTokenOwner(address caller);
@@ -80,7 +82,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         maxBatchSize = 50;
         basePrice = 230 * USDC_PRECISION;
         priceFloor = 40 * USDC_PRECISION;
-        priceDelta = 10 * USDC_PRECISION;
+        dailyPriceDecay = 1 * USDC_PRECISION;
+        priceAdjustDelta = 10 * USDC_PRECISION;
         dayIncreaseThreshold = 2;
         dayDecreaseThreshold = 4;
         lastBatchID = 0;
@@ -154,8 +157,14 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
     function setPriceDelta(uint256 newPriceDelta) external onlyOwner {
         require(newPriceDelta > 0, "Price delta must be positive");
-        priceDelta = newPriceDelta;
+        priceAdjustDelta = newPriceDelta;
         emit PriceDeltaSet(newPriceDelta);
+    }
+
+    function setDailyPriceDecay(uint256 newDailyDecay) external onlyOwner {
+        require(newDailyDecay > 0, "Daily decay must be positive");
+        dailyPriceDecay = newDailyDecay;
+        emit DailyPriceDecaySet(newDailyDecay);
     }
 
     function mintBatch(address[] memory producers, string[] memory cids) public onlyOwner whenNotPaused {
@@ -188,7 +197,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         }
 
         uint256 maxPriceDecrease = startingPrice - priceFloor;
-        uint256 maxDays = maxPriceDecrease / priceDelta;
+        uint256 maxDays = maxPriceDecrease / dailyPriceDecay;
 
         uint256 daysSinceCreation = (block.timestamp - startTime) / SECONDS_IN_A_DAY;
 
@@ -196,7 +205,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             daysSinceCreation = maxDays;
         }
 
-        uint256 priceDecrease = daysSinceCreation * priceDelta;
+        uint256 priceDecrease = daysSinceCreation * dailyPriceDecay;
 
         uint256 currentPrice = startingPrice - priceDecrease;
 
@@ -213,12 +222,12 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             return priceFloor;
         }
 
-        if (priceDelta == 0) {
+        if (dailyPriceDecay == 0) {
             return startingPrice;
         }
 
         uint256 maxPriceDecrease = startingPrice - priceFloor;
-        uint256 maxDays = maxPriceDecrease / priceDelta;
+        uint256 maxDays = maxPriceDecrease / dailyPriceDecay;
 
         uint256 daysSinceCreation = (block.timestamp - batch.creationTime) / SECONDS_IN_A_DAY;
 
@@ -232,7 +241,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             daysOverThreshold = maxDays;
         }
 
-        uint256 priceDecrease = daysOverThreshold * priceDelta;
+        uint256 priceDecrease = daysOverThreshold * dailyPriceDecay;
 
         uint256 currentPrice = startingPrice - priceDecrease;
 
@@ -409,15 +418,14 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         }
 
         if (shouldIncrease) {
-            uint256 increaseAmount = batchesSoldOutWithinThreshold * priceDelta;
+            uint256 increaseAmount = batchesSoldOutWithinThreshold * priceAdjustDelta;
             basePrice += increaseAmount;
             pricingInfo.lastBasePriceAdjustmentTime = block.timestamp;
-            // Clear the batchSoldOutTimes array
             delete pricingInfo.batchSoldOutTimes;
             emit BasePriceAdjusted(basePrice, block.timestamp, true);
         } else if (shouldDecrease) {
             uint256 daysToDecrease = daysSinceLastAdjustment - dayDecreaseThreshold;
-            uint256 decreaseAmount = daysToDecrease * priceDelta;
+            uint256 decreaseAmount = daysToDecrease * priceAdjustDelta;
 
             if (decreaseAmount >= (basePrice - priceFloor)) {
                 basePrice = priceFloor;
