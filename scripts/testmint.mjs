@@ -3,8 +3,6 @@ import dotenv from "dotenv";
 import { ethers } from "ethers";
 import fs from "fs/promises";
 import path from "path";
-import fetch from "node-fetch";
-import { formatUnits } from "ethers";
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
