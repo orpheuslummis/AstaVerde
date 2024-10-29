@@ -4,6 +4,7 @@ import { ethers } from "hardhat";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { deployAstaVerdeFixture } from "./AstaVerde.fixture";
 import { USDC_PRECISION, SECONDS_IN_A_DAY } from "./lib";
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 describe.only("AstaVerde Logic and Behavior", function () {
     async function advancedDays(days: bigint) {
@@ -527,7 +528,7 @@ describe.only("AstaVerde Logic and Behavior", function () {
             it("Each batch should have independent pricing based on its creation time", async function () {
                 const { astaVerde } = await loadFixture(deployAstaVerdeFixture);
 
-                // Mint Batch 1 at t = 0 days
+                // Mint Batch 1 at t = 0
                 await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID1"]);
 
                 // Advance time by 2 days
@@ -536,28 +537,14 @@ describe.only("AstaVerde Logic and Behavior", function () {
                 // Mint Batch 2 at t = 2 days
                 await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID2"]);
 
-                const batch1ID = 1n;
-                const batch2ID = 2n;
+                const batch1Price = await astaVerde.getCurrentBatchPrice(1);
+                const batch2Price = await astaVerde.getCurrentBatchPrice(2);
 
-                // Advance time by 3 days to reach t = 5 days
-                await advancedDays(3n);
+                // Batch 1 should have decayed for 2 days: 230 - (2 * 1) = 228 USDC
+                expect(batch1Price).to.equal(ethers.parseUnits("228", 6));
 
-                // Retrieve current prices
-                const batch1Price = await astaVerde.getCurrentBatchPrice(batch1ID); // Expected: 220,000,000
-                const batch2Price = await astaVerde.getCurrentBatchPrice(batch2ID); // Expected: 230,000,000
-
-                const dailyPriceDecay = await astaVerde.dailyPriceDecay(); // 1 USDC per day
-                const initialBasePrice = await astaVerde.basePrice(); // 230 USDC
-                // const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold(); // 4 days
-
-                // Calculate expected prices
-                // For batch1: 5 days - 4 days threshold = 1 day of decay
-                const expectedBatch1Price = initialBasePrice - (1n * dailyPriceDecay); // 229 USDC
-                // For batch2: 3 days since creation, still within threshold
-                const expectedBatch2Price = initialBasePrice; // 230 USDC
-
-                expect(batch1Price).to.equal(expectedBatch1Price);
-                expect(batch2Price).to.equal(expectedBatch2Price);
+                // Batch 2 should be at initial price: 230 USDC
+                expect(batch2Price).to.equal(ethers.parseUnits("230", 6));
             });
         });
 
@@ -831,23 +818,37 @@ describe.only("AstaVerde Logic and Behavior", function () {
     });
     describe("Detailed Auction Pricing Mechanism", function () {
         it("Should decrease price exactly by dailyPriceDecay per day", async function () {
-            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
-            await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
+            const { astaVerde } = await loadFixture(deployAstaVerdeFixture);
+
+            // Get initial timestamp
+            const startTime = await time.latest();
+            console.log("\nInitial timestamp:", startTime);
+
+            // Mint a batch
+            await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID"]);
             const batchID = 1n;
-            const initialPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const dailyPriceDecay = await astaVerde.dailyPriceDecay();
-            const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
 
-            // Advance time by dayDecreaseThreshold days to not trigger decrease yet
-            await advancedDays(dayDecreaseThreshold);
+            // Get batch info after mint
+            const [, , creationTime, initialPrice] = await astaVerde.getBatchInfo(batchID);
+            console.log("Batch creation time:", creationTime);
+            console.log("Initial price:", initialPrice);
 
-            // Advance additional 3 days to trigger price decrease
+            // Advance time by 3 days
             await advancedDays(3n);
+            const currentTime = await time.latest();
 
-            const newPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const expectedPrice = initialPrice - (3n * dailyPriceDecay);
+            console.log("\nAfter advancing 3 days:");
+            console.log("Current timestamp:", currentTime);
+            console.log("Days elapsed:", (currentTime - Number(creationTime)) / 86400);
 
-            expect(newPrice).to.equal(expectedPrice);
+            // Get current price and details
+            const priceAfterThreeDays = await astaVerde.getCurrentBatchPrice(batchID);
+            console.log("\nPrice details:");
+            console.log("Expected price: 227000000 (230 - 3 USDC)");
+            console.log("Actual price:", priceAfterThreeDays.toString());
+            console.log("Price decrease:", (initialPrice - priceAfterThreeDays).toString());
+
+            expect(priceAfterThreeDays).to.equal(ethers.parseUnits("227", 6));
         });
 
 
