@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import path from "path";
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const ABI = JSON.parse(await fs.readFile("./artifacts/contracts/AstaVerde.sol/AstaVerde.json", 'utf8')).abi;
 console.log("ABI loaded:", ABI ? "Success" : "Failed");
