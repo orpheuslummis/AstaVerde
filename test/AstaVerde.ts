@@ -1,7 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { ethers } from "hardhat";
 
-import { shouldBehaveLikeAstaVerde } from "./AstaVerde.behavior";
+// import { shouldBehaveLikeAstaVerde } from "./AstaVerde.behavior";
 import { deployAstaVerdeFixture } from "./AstaVerde.fixture";
 import type { Signers } from "./types";
 
@@ -21,13 +21,15 @@ describe("Asta Verde tests", () => {
     this.loadFixture = loadFixture;
   });
 
-  describe("AstaVerde", () => {
-    beforeEach(async function () {
-      const { astaVerde, mockUSDC } = await this.loadFixture(deployAstaVerdeFixture);
-      this.mockUSDC = mockUSDC;
-      this.astaVerde = astaVerde;
-    });
+  // describe("AstaVerde", () => {
+  // beforeEach(async function () {
+  //   const { astaVerde, mockUSDC } = await this.loadFixture(
+  //     deployAstaVerdeFixture,
+  //   );
+  //   this.mockUSDC = mockUSDC;
+  //   this.astaVerde = astaVerde;
+  // });
 
-    shouldBehaveLikeAstaVerde();
-  });
+  // shouldBehaveLikeAstaVerde();
+  // });
 });

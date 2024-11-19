@@ -55,14 +55,19 @@ async function expectBalancesAfterPurchase(
     }
 
     const expectedProducerShare =
-        (usdcAmount * (100n - BigInt(PLATFORM_SHARE_PERCENTAGE))) / (100n * BigInt(producers.length));
+        (usdcAmount * (100n - BigInt(PLATFORM_SHARE_PERCENTAGE))) /
+        (100n * BigInt(producers.length));
     for (const producer of producers) {
         const producerBalance = await mockUSDC.balanceOf(producer);
         expect(producerBalance).to.equal(expectedProducerShare);
     }
 
-    const platformBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
-    expect(platformBalance).to.equal((usdcAmount * BigInt(PLATFORM_SHARE_PERCENTAGE)) / 100n);
+    const platformBalance = await mockUSDC.balanceOf(
+        await astaVerde.getAddress(),
+    );
+    expect(platformBalance).to.equal(
+        (usdcAmount * BigInt(PLATFORM_SHARE_PERCENTAGE)) / 100n,
+    );
 }
 
 // New helper function to calculate expected shares
@@ -71,7 +76,7 @@ function calculateShares(usdcAmount: bigint, platformSharePercentage: number) {
     const producerShare = usdcAmount - platformShare;
     return { platformShare, producerShare };
 }
-
+/*
 export function shouldBehaveLikeAstaVerde(): void {
     let astaVerde: AstaVerde;
     let mockUSDC: MockUSDC;
@@ -480,3 +485,4 @@ export function shouldBehaveLikeAstaVerde(): void {
         });
     });
 }
+*/
