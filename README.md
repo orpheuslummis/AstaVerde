@@ -1,172 +1,197 @@
 # AstaVerde
 
-AstaVerde is a platform for trading verified carbon offsets as non-fungible tokens (NFTs). Built on Ethereum using the ERC-1155 standard, it employs a Dutch Auction mechanism for pricing carbon credit batches.
+AstaVerde is a platform for trading verified carbon offsets as NFTs on Ethereum
+using the ERC-1155 standard. It employs a Dutch Auction mechanism with dynamic
+pricing based on market demand.
 
-## Auction and Batch Pricing Mechanism
+## Pricing Mechanism
 
-AstaVerde implements a dynamic pricing system for carbon credit tokens, combining elements of a Dutch auction with automatic price adjustments based on market demand.
+AstaVerde uses two complementary mechanisms: Base Price Management and Dutch
+Auction Per Batch.
 
-### Key Features:
+### 1. Base Price Management
 
-1. **Base Price**: The starting point for new batches, adjusted based on market activity.
+The base price only affects newly minted batches and adjusts based on market
+behavior:
 
-2. **Batch Creation**: Each batch starts at the current base price.
+#### Price Increases
 
-3. **Price Decrease**: 
-   - Batch prices decrease over time, starting after a threshold period (`dayDecreaseThreshold`).
-   - The decrease rate is controlled by `priceDelta`.
-   - Prices never fall below the `priceFloor`.
+- +10 USDC for each batch sold completely within 2 days of creation
+- Multiple quick sales accumulate and are applied together
+- Only complete batch sales are considered for price increases
 
-4. **Base Price Adjustments**:
-   - Increases: If multiple batches sell out within `dayIncreaseThreshold`, the base price increases.
-   - Decreases: If no sales occur for an extended period, the base price decreases.
-   - Adjustments are made in increments of `priceDelta`.
+```
+Example:
+Initial: 230 USDC
+Batch A sells in 1 day: +10 USDC
+Batch B sells in 2 days: +10 USDC
+Final: 250 USDC
+```
 
-5. **Independent Batch Pricing**: Each batch's price is calculated independently based on its creation time.
+#### Price Decreases
 
-6. **Price Floor**: A minimum price (`priceFloor`) below which no batch can be sold.
+- After 4 consecutive days without complete batch sales
+- -10 USDC for each completely unsold batch
+- Price adjustments are calculated based on all currently unsold batches
 
-### Key Parameters:
+```
+Example:
+Initial: 230 USDC
+4 days without sales
+3 unsold batches: -30 USDC
+Final: 200 USDC
+```
 
-- `basePrice`: Starting price for new batches
-- `priceFloor`: Minimum allowed price
-- `priceDelta`: Amount of price adjustment (increase or decrease)
-- `dayIncreaseThreshold`: Days within which batch sellouts trigger price increases
-- `dayDecreaseThreshold`: Days of inactivity before price decreases begin
+Note: Partial batch sales do not affect base price adjustments.
 
-This system aims to balance supply and demand by adjusting prices based on market activity while maintaining independent pricing for each batch.
+#### Price Boundaries
+
+- No upper limit
+- Floor: 40 USDC
+
+### 2. Dutch Auction Per Batch
+
+Each batch has its own independent auction:
+
+#### Starting Price
+
+- Equals base price at batch creation
+
+```
+Example: Base price 230 USDC → Batch starts at 230 USDC
+```
+
+#### Daily Price Decay
+
+- -1 USDC every 24 hours
+- Continues until batch is sold or floor reached
+
+```
+Timeline:
+Day 0: 230 USDC
+Day 1: 229 USDC
+Day 2: 228 USDC
+...until sold or 40 USDC reached
+```
+
+#### Independence
+
+Batch prices decay independently of:
+
+- Base price changes
+- Other batch sales
+- Market conditions
+
+### Precision
+
+All prices use USDC's 6 decimal precision standard.
+
+### Configurable Parameters
+
+All pricing mechanism parameters are configurable by the platform owner:
+
+- Platform share percentage
+- Price floor
+- Base price
+- Auction day thresholds
+- Price adjustment delta
+- Daily price decay
 
 ## User Roles
 
--   **Credit Producers**: Generate and verify carbon offsets, listing them as NFTs.
--   **Platform Owner**: Mints new batches of NFTs and manages the auction.
--   **Buyers**: Bid on and purchase batches of NFTs.
+- **Producers**: Generate and verify carbon offsets
+- **Platform Owner**: Mint batches, manage auction
+- **Buyers**: Purchase NFTs through Dutch auction
 
-## Prerequisites
+## Development
 
--   Node.js and npm
--   MetaMask or another Ethereum wallet
--   Docker (for deployment)
+### Prerequisites
 
-## Local Development Setup
+- Node.js and npm
+- Ethereum wallet (MetaMask)
+- Docker (optional)
 
-1. Clone the repository:
+### Quick Start
 
-    ```bash
-    git clone git@github.com:orpheuslummis/AstaVerde.git
-    cd AstaVerde
-    ```
+```bash
+# Clone and setup
+git clone git@github.com:orpheuslummis/AstaVerde.git
+cd AstaVerde
+npm install
 
-2. Install dependencies:
+# Configure environment
+cp .env.local.example .env.local
+cp ./webapp/.env.local.example ./webapp/.env.local
 
-    ```bash
-    npm install
-    ```
+# Deploy locally
+npm run compile
+npm run node
+npm run deploy:local
+npm run webapp:dev
+```
 
-3. Set up environment variables:
+### Deployment
 
-    ```bash
-    cp .env.local.example .env.local
-    cp ./webapp/.env.local.example ./webapp/.env.local
-    ```
+1. Test and compile:
 
-    Edit `.env.local` and `webapp/.env.local` with your specific private values.
+```bash
+npm run test
+npm run compile && npm run postinstall
+```
 
-4. Compile the contracts:
+2. Deploy to testnet:
 
-    ```bash
-    npm run compile
-    ```
+```bash
+npm run deploy:contracts -- --network base-sepolia
+```
 
-5. Start a local Hardhat node:
+3. Configure Vercel environment:
 
-    ```bash
-    npm run node
-    ```
+- CHAIN_SELECTION
+- ALCHEMY_API_KEY
+- WALLET_CONNECT_PROJECT_ID
 
-6. In a new terminal, deploy contracts to the local network:
+### Contract Updates
 
-    ```bash
-    npm run deploy:local
-    ```
+Update contract references in:
 
-7. Start the webapp in development mode:
-
-    ```bash
-    npm run webapp:dev
-    ```
-
-8. (Optional) For automatic recompilation and redeployment on contract changes:
-
-    ```bash
-    npm run watch:dev
-    ```
-
-9. (Optional) For local minting:
-    ```bash
-    npm run task:mintlocal
-    ```
-
-
-With local hardhat node:
-- `OWNER_ADDRESS=xyz p node`
-- `NODE_ENV=development p webapp:dev`
-
-## Deployment
-
-### Deploy for an owner address
-
--   `OWNER_ADDRESS=0x... p deploy:testnet`
-
-### Using Docker
-
-1. Install Docker Desktop from https://docs.docker.com/desktop/install/mac-install/
-2. Clone the repository:
-    ```bash
-    git clone git@github.com:orpheuslummis/AstaVerde.git && cd AstaVerde
-    ```
-3. To deploy: Configure and run `./deploy.sh`
-4. To mint: Configure and run `./mint.sh`
-
-### Manual Deployment
-
-1. Deploy contract on testnet:
-
-    ```bash
-    npm run test
-    npm run compile && npm run postinstall
-    npm run deploy:contracts -- --network base-sepolia
-    ```
-
-2. Set environment variables on Vercel:
-    - CHAIN_SELECTION
-    - ALCHEMY_API_KEY
-    - WALLET_CONNECT_PROJECT_ID
-
-## Minting
-
-1. Prepare a CSV file with token metadata and an image folder.
-2. Update the `.env.local` file with the correct paths.
-3. Run `npm run task:mint`
-
-## Reading Events
-
-1. Update values in `/scripts/events/index.mjs`.
-2. Run `npm run task:events`
-
-## Updating the Contract
-
-When updating the contract, remember to update the contract address and ABI in:
-
--   `webapp/src/lib/contracts.ts`
--   `scripts/events/contracts.mjs`
--   `.env.local` for minting scripts
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- webapp/src/lib/contracts.ts
+- scripts/events/contracts.mjs
+- .env.local
 
 ## Security
 
--   The market can be paused if USDC becomes depegged.
--   Always ensure your `.env.local` and `webapp/.env.local` files are up to date and never committed to the repository.
+- Pausable if USDC depegs
+- Keep environment files private
+
+## Technical Features
+
+### Platform Economics
+
+- Platform commission: Configurable, defaults to 30%
+- Producer share: Remaining percentage (70% by default)
+- Base price adjustments as detailed in Pricing Mechanism section
+
+### Batch Management
+
+- Maximum batch size: Configurable, defaults to 50 tokens
+- Base price: Configurable, defaults to 230 USDC
+- Price floor: Configurable, defaults to 40 USDC
+- Daily price decay: Configurable, defaults to 1 USDC/day
+- Price adjustment delta: Configurable, defaults to 10 USDC
+- Quick sale threshold: Configurable, defaults to 2 days
+- Price decrease threshold: Configurable, defaults to 4 days
+
+### Safety Features
+
+- Contract can be paused in emergency situations (e.g., USDC depeg)
+- Non-reentrant protection against reentrancy attacks
+- Platform funds can be claimed by owner through secure withdrawal
+
+### Token Features
+
+- Each token represents a verified carbon offset
+- Tokens can be redeemed by owners to claim the underlying offset
+- Each token has an associated producer address
+- Token metadata stored on IPFS for decentralization
+- Uses ERC-1155 standard for efficient batch operations
