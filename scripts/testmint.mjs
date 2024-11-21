@@ -200,13 +200,17 @@ async function mintRandomTokens(tokenCount = 50) {
 async function queryMintedTokens(contract, batchId) {
     try {
         const batchInfo = await contract.getBatchInfo(batchId);
-        console.log(`\nBatch ${batchId} Info:`);
-        console.log(`Token IDs: ${batchInfo.tokenIds.map(id => id.toString()).join(', ')}`);
-        console.log(`Creation Time: ${new Date(Number(batchInfo.creationTime) * 1000).toLocaleString()}`);
-        console.log(`Price: ${formatUnits(batchInfo.price, 6)} USDC`);
-        console.log(`Remaining Tokens: ${batchInfo.remainingTokens.toString()}`);
+        console.log('\nBatch Info:');
+        console.log(`- Batch ID: ${batchInfo[0].toString()}`);
+        console.log(`- Token IDs: ${batchInfo[1] ? batchInfo[1].map(id => id.toString()) : []}`);
+        console.log(`- Creation Time: ${batchInfo[2].toString()}`);
+        console.log(`- Current Price: ${batchInfo[3].toString()}`);
+        console.log(`- Remaining Tokens: ${batchInfo[4].toString()}`);
+        
+        return batchInfo;
     } catch (error) {
         console.error(`Error querying batch ${batchId}:`, error);
+        throw error;
     }
 }
 
