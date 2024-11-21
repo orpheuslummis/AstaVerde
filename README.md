@@ -4,15 +4,90 @@ AstaVerde is a platform for trading verified carbon offsets as NFTs on Ethereum
 using the ERC-1155 standard. It employs a Dutch Auction mechanism with dynamic
 pricing based on market demand.
 
+## System Overview
+
+```mermaid
+graph TB
+    subgraph Actors
+        Producer[Carbon Offset Producer]
+        Owner[Platform Owner]
+        Buyer[Token Buyer]
+    end
+
+    subgraph Smart Contracts
+        direction TB
+        Main[AstaVerde Contract]
+        USDC[USDC Contract]
+        ERC1155[ERC-1155 Token]
+    end
+
+    subgraph Pricing System
+        direction TB
+        BasePrice[Base Price Manager]
+        DutchAuction[Dutch Auction]
+        
+        subgraph Base Price Rules
+            QuickSale["+10 USDC if batch<br/>sells within 2 days"]
+            NoSale["-10 USDC per batch<br/>after 4 days no sales"]
+        end
+        
+        subgraph Auction Rules
+            StartPrice["Start = Base Price"]
+            DailyDecay["-1 USDC per day"]
+            Floor["Floor = 40 USDC"]
+        end
+    end
+
+    Producer -->|Verify Offsets| Owner
+    Owner -->|Mint Batch| Main
+    Main -->|Create Token| ERC1155
+    BasePrice -->|Set Initial Price| DutchAuction
+    DutchAuction -->|Current Price| Main
+    Buyer -->|Purchase with USDC| Main
+    Main -->|Transfer| USDC
+    USDC -->|Platform Share| Owner
+    USDC -->|Producer Share| Producer
+
+    QuickSale -->|Affects| BasePrice
+    NoSale -->|Affects| BasePrice
+    StartPrice --> DutchAuction
+    DailyDecay --> DutchAuction
+    Floor --> DutchAuction
+
+    classDef contract fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef actor fill:#bbf,stroke:#333,stroke-width:2px;
+    classDef pricing fill:#bfb,stroke:#333,stroke-width:2px;
+    
+    class Main,USDC,ERC1155 contract;
+    class Producer,Owner,Buyer actor;
+    class BasePrice,DutchAuction,QuickSale,NoSale,StartPrice,DailyDecay,Floor pricing;
+```
+
 ## Pricing Mechanism
 
 AstaVerde uses two complementary mechanisms: Base Price Management and Dutch
 Auction Per Batch.
 
+### Precision and Calculations
+
+The contract uses two precision levels:
+
+- Internal calculations use 18 decimal places for maximum precision
+- External prices (USDC) use 6 decimal places as per the USDC standard
+
 ### 1. Base Price Management
 
 The base price only affects newly minted batches and adjusts based on market
 behavior:
+
+#### Time Window
+
+- Price adjustments only consider batches from the last 90 days
+- This rolling window ensures:
+  - Manageable gas costs as the system scales
+  - Recent market conditions drive price adjustments
+  - Sufficient data points with weekly batch minting
+  - Seasonal patterns can be captured
 
 #### Price Increases
 
@@ -30,19 +105,28 @@ Final: 250 USDC
 
 #### Price Decreases
 
-- After 4 consecutive days without complete batch sales
-- -10 USDC for each completely unsold batch
-- Price adjustments are calculated based on all currently unsold batches
+- Triggered after 4 consecutive days without complete batch sales
+- Price adjustment (-10 USDC per batch) is applied once when the 4-day threshold
+  is reached
+- Each batch can only contribute to a price decrease once in its lifetime
+- Only completely unsold batches are considered (no partial sales)
 
 ```
 Example:
 Initial: 230 USDC
 4 days without sales
-3 unsold batches: -30 USDC
+3 unsold batches (never used for decrease before): -30 USDC
 Final: 200 USDC
+
+Later:
+Another 4 days without sales
+Same 3 batches still unsold (but already used): No effect
+2 new unsold batches (never used before): -20 USDC
+Final: 180 USDC
 ```
 
-Note: Partial batch sales do not affect base price adjustments.
+Note: This one-time counting mechanism prevents market manipulation and ensures
+stable price discovery alongside the Dutch auction mechanism.
 
 #### Price Boundaries
 
@@ -65,6 +149,7 @@ Example: Base price 230 USDC → Batch starts at 230 USDC
 
 - -1 USDC every 24 hours
 - Continues until batch is sold or floor reached
+- Once floor price (40 USDC) is reached, price remains at floor indefinitely
 
 ```
 Timeline:
@@ -73,6 +158,12 @@ Day 1: 229 USDC
 Day 2: 228 USDC
 ...until sold or 40 USDC reached
 ```
+
+#### Partial Sales
+
+- Buyers can purchase any amount of tokens from a batch
+- Remaining tokens continue the same Dutch auction from the current price
+- Partial sales do not affect base price adjustments
 
 #### Independence
 
@@ -181,6 +272,7 @@ Update contract references in:
 - Price adjustment delta: Configurable, defaults to 10 USDC
 - Quick sale threshold: Configurable, defaults to 2 days
 - Price decrease threshold: Configurable, defaults to 4 days
+- Price adjustment window: Fixed at 90 days
 
 ### Safety Features
 

@@ -332,19 +332,6 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "daysSinceLastSale",
-          "type": "uint256"
-        }
-      ],
-      "name": "DaysSinceLastSale",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint256",
           "name": "newMaxBatchSize",
           "type": "uint256"
         }
@@ -471,6 +458,25 @@
         }
       ],
       "name": "PriceDeltaSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "producer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "ProducerPayment",
       "type": "event"
     },
     {
@@ -606,6 +612,19 @@
     },
     {
       "inputs": [],
+      "name": "PRICE_WINDOW",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "SECONDS_IN_A_DAY",
       "outputs": [
         {
@@ -673,6 +692,82 @@
           "internalType": "uint256",
           "name": "",
           "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "batchCreationIndex",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "batchFinalPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "batchSoldTime",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "batchUsedInPriceDecrease",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
         }
       ],
       "stateMutability": "view",
@@ -799,27 +894,27 @@
       "outputs": [
         {
           "internalType": "uint256",
-          "name": "batchId",
+          "name": "",
           "type": "uint256"
         },
         {
           "internalType": "uint256[]",
-          "name": "tokenIds",
+          "name": "",
           "type": "uint256[]"
         },
         {
           "internalType": "uint256",
-          "name": "creationTime",
+          "name": "",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "price",
+          "name": "",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "remainingTokens",
+          "name": "",
           "type": "uint256"
         }
       ],
@@ -872,6 +967,32 @@
     {
       "inputs": [],
       "name": "lastBatchID",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lastCompleteSaleTime",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lastPriceAdjustmentTime",
       "outputs": [
         {
           "internalType": "uint256",
@@ -1083,19 +1204,6 @@
         {
           "internalType": "uint256",
           "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "pricingInfo",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "lastBasePriceAdjustmentTime",
           "type": "uint256"
         }
       ],
