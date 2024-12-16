@@ -1026,8 +1026,8 @@ packages:
   '@solidity-parser/parser@0.18.0':
     resolution: {integrity: sha512-yfORGUIPgLck41qyN7nbwJRAx17/jAIXCTanHOJZhB6PJ1iAk/84b/xlsVKFSyNyLXIj0dhppoE0+CRws7wlzA==}
 
-  '@storacha/one-webcrypto@https://codeload.github.com/web3-storage/one-webcrypto/tar.gz/9e029e2fd477bd95bb80abd3553bbac704ccc7a6':
-    resolution: {tarball: https://codeload.github.com/web3-storage/one-webcrypto/tar.gz/9e029e2fd477bd95bb80abd3553bbac704ccc7a6}
+  '@storacha/one-webcrypto@git+https://git@github.com:web3-storage/one-webcrypto.git#9e029e2fd477bd95bb80abd3553bbac704ccc7a6':
+    resolution: {commit: 9e029e2fd477bd95bb80abd3553bbac704ccc7a6, repo: git@github.com:web3-storage/one-webcrypto.git, type: git}
     version: 1.0.1
 
   '@swc/counter@0.1.3':
@@ -1223,6 +1223,7 @@ packages:
 
   '@web3-storage/w3up-client@11.2.1':
     resolution: {integrity: sha512-04/OfMKUjPoF+l87VjItYFb1wBaljiV8YJbBMlNm9Zf7gazWPDxjfuSWYUMYb8UAPhxQZnV2uGrqUaNqPlUqUg==}
+    deprecated: Version no longer supported. Please upgrade.
 
   abbrev@1.0.9:
     resolution: {integrity: sha512-LEyx4aLEC3x6T0UguF6YILf+ntvmOaWsVfENmIW0E9H09vKlLDGelMjjSm0jkDHALj8A8quZ/HapKNigzwge+Q==}
@@ -2786,8 +2787,8 @@ packages:
     resolution: {integrity: sha512-/sF3ee6zvScXMb1XFJ8gDsSnY+X8PbOyjIuBhtgis10W2Jx4ZjIhikUCIF9c4gpJxVnQIsPAFrSwTCuAjicP6g==}
     engines: {node: '>=8.0.0'}
 
-  nanoid@3.3.7:
-    resolution: {integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==}
+  nanoid@3.3.8:
+    resolution: {integrity: sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
@@ -5311,7 +5312,7 @@ snapshots:
 
   '@solidity-parser/parser@0.18.0': {}
 
-  '@storacha/one-webcrypto@https://codeload.github.com/web3-storage/one-webcrypto/tar.gz/9e029e2fd477bd95bb80abd3553bbac704ccc7a6': {}
+  '@storacha/one-webcrypto@git+https://git@github.com:web3-storage/one-webcrypto.git#9e029e2fd477bd95bb80abd3553bbac704ccc7a6': {}
 
   '@swc/counter@0.1.3': {}
 
@@ -5531,7 +5532,7 @@ snapshots:
       bigint-mod-arith: 3.3.1
       conf: 11.0.2
       multiformats: 12.1.3
-      one-webcrypto: '@storacha/one-webcrypto@https://codeload.github.com/web3-storage/one-webcrypto/tar.gz/9e029e2fd477bd95bb80abd3553bbac704ccc7a6'
+      one-webcrypto: '@storacha/one-webcrypto@git+https://git@github.com:web3-storage/one-webcrypto.git#9e029e2fd477bd95bb80abd3553bbac704ccc7a6'
       p-defer: 4.0.1
       type-fest: 4.21.0
       uint8arrays: 4.0.10
@@ -7052,7 +7053,7 @@ snapshots:
       it-glob: 1.0.2
       it-to-stream: 1.0.0
       merge-options: 3.0.4
-      nanoid: 3.3.7
+      nanoid: 3.3.8
       native-fetch: 3.0.0(node-fetch@2.7.0(encoding@0.1.13))
       node-fetch: 2.7.0(encoding@0.1.13)
       react-native-fetch-api: 3.0.0
@@ -7561,7 +7562,7 @@ snapshots:
 
   murmurhash3js-revisited@3.0.0: {}
 
-  nanoid@3.3.7: {}
+  nanoid@3.3.8: {}
 
   napi-build-utils@1.0.2: {}
 
@@ -7817,7 +7818,7 @@ snapshots:
 
   postcss@8.4.31:
     dependencies:
-      nanoid: 3.3.7
+      nanoid: 3.3.8
       picocolors: 1.0.1
       source-map-js: 1.2.0
 
