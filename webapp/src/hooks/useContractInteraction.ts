@@ -64,7 +64,10 @@ type ExecuteFunction = (...args: unknown[]) => Promise<any>;
 
 type ContractError = Error | null;
 
-export function useContractInteraction(contractConfig: any, functionName: string) {
+export function useContractInteraction(
+    contractConfig: any,
+    functionName: string,
+) {
     const [isSimulating, setIsSimulating] = useState(false);
     const [isPending, setIsPending] = useState(false);
     const [error, setError] = useState<ContractError>(null);
@@ -114,7 +117,9 @@ export function useContractInteraction(contractConfig: any, functionName: string
 
                     // If simulation is successful, send the actual transaction
                     const hash = await writeContractAsync(request);
-                    result = await publicClient.waitForTransactionReceipt({ hash });
+                    result = await publicClient.waitForTransactionReceipt({
+                        hash,
+                    });
                 } else {
                     throw new Error(`Unknown function: ${functionName}`);
                 }
@@ -137,7 +142,12 @@ export function useContractInteraction(contractConfig: any, functionName: string
 
     const mintBatch = useCallback(
         async (producers: string[], cids: string[]) => {
-            console.log("mintBatch called with producers:", producers, "and cids:", cids);
+            console.log(
+                "mintBatch called with producers:",
+                producers,
+                "and cids:",
+                cids,
+            );
             return execute(producers, cids);
         },
         [execute],
@@ -177,13 +187,19 @@ export function useContractInteraction(contractConfig: any, functionName: string
 
                 for (let i = 0; i < batches; i++) {
                     const start = i * batchSize + 1;
-                    const end = Math.min((i + 1) * batchSize, Number(lastTokenID));
+                    const end = Math.min(
+                        (i + 1) * batchSize,
+                        Number(lastTokenID),
+                    );
 
-                    const calls = Array.from({ length: end - start + 1 }, (_, index) => ({
-                        ...contractConfig,
-                        functionName: "balanceOf",
-                        args: [ownerAddress, BigInt(start + index)],
-                    }));
+                    const calls = Array.from(
+                        { length: end - start + 1 },
+                        (_, index) => ({
+                            ...contractConfig,
+                            functionName: "balanceOf",
+                            args: [ownerAddress, BigInt(start + index)],
+                        }),
+                    );
 
                     const results = await multicall(config, {
                         contracts: calls as any[],
@@ -191,7 +207,11 @@ export function useContractInteraction(contractConfig: any, functionName: string
                     });
 
                     results.forEach((result, index) => {
-                        if (result.status === "success" && typeof result.result === "bigint" && result.result > 0n) {
+                        if (
+                            result.status === "success" &&
+                            typeof result.result === "bigint" &&
+                            result.result > 0n
+                        ) {
                             ownedTokens.push(start + index);
                         }
                     });
@@ -273,7 +293,9 @@ export function useContractInteraction(contractConfig: any, functionName: string
                 if (Array.isArray(result) && result.length === 5) {
                     return result;
                 } else {
-                    throw new Error(`Unexpected format for batch ${batchId} info`);
+                    throw new Error(
+                        `Unexpected format for batch ${batchId} info`,
+                    );
                 }
             } catch (error) {
                 console.error(`Error fetching batch ${batchId} info:`, error);
@@ -330,7 +352,9 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
             if (!publicClient) throw new Error("Public client not available");
             setIsLoading(true);
             try {
-                const currentAllowance = allowance ? BigInt(allowance.toString()) : 0n;
+                const currentAllowance = allowance
+                    ? BigInt(allowance.toString())
+                    : 0n;
                 const needsApproval = currentAllowance < usdcAmount;
 
                 if (needsApproval) {
@@ -353,11 +377,16 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                     }
 
                     // Calculate a reasonable approval amount
-                    const pricePerUnit = BigInt(usdcAmount) / BigInt(tokenAmount);
+                    const pricePerUnit = BigInt(usdcAmount) /
+                        BigInt(tokenAmount);
                     const bufferFactor = 100n; // Adjust this as needed
-                    const approvalAmount = maxBatchSizeBigInt * pricePerUnit * bufferFactor;
+                    const approvalAmount = maxBatchSizeBigInt * pricePerUnit *
+                        bufferFactor;
 
-                    console.log("Calculated approval amount:", formatUnits(approvalAmount, USDC_DECIMALS));
+                    console.log(
+                        "Calculated approval amount:",
+                        formatUnits(approvalAmount, USDC_DECIMALS),
+                    );
 
                     const approveTx = await walletClient.writeContract({
                         ...getUsdcContractConfig(),
@@ -393,23 +422,54 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                     functionName: "buyBatch",
                     args: buyBatchArgs,
                     account: walletClient.account.address,
-                    gas: estimatedGas,
+                    gas: (estimatedGas * 150n) / 100n,
                 });
 
                 const buyTx = await walletClient.writeContract(request);
                 customToast.info("Buy transaction submitted");
-                await publicClient.waitForTransactionReceipt({ hash: buyTx });
-                customToast.success("Purchase confirmed");
+
+                // Add timeout and retry logic for transaction confirmation
+                const maxRetries = 3;
+                let retryCount = 0;
+
+                while (retryCount < maxRetries) {
+                    try {
+                        await publicClient.waitForTransactionReceipt({
+                            hash: buyTx,
+                            timeout: 120_000, // 2 minute timeout
+                            confirmations: 2, // Wait for 2 confirmations on mainnet
+                        });
+                        customToast.success("Purchase confirmed");
+                        break;
+                    } catch (error) {
+                        retryCount++;
+                        if (retryCount === maxRetries) {
+                            throw new Error(
+                                "Transaction confirmation timed out after multiple retries. The transaction may still complete - check your wallet history.",
+                            );
+                        }
+                        // Wait 10 seconds before retrying
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, 10000)
+                        );
+                    }
+                }
             } catch (error) {
                 console.error("Error in approve and buy process:", error);
                 if (error instanceof Error) {
                     if (error.message.includes("Insufficient funds sent")) {
-                        customToast.error("Insufficient USDC balance for this purchase.");
+                        customToast.error(
+                            "Insufficient USDC balance for this purchase.",
+                        );
                     } else {
-                        customToast.error("Transaction failed: " + error.message);
+                        customToast.error(
+                            "Transaction failed: " + error.message,
+                        );
                     }
                 } else {
-                    customToast.error("An unknown error occurred during the transaction.");
+                    customToast.error(
+                        "An unknown error occurred during the transaction.",
+                    );
                 }
             } finally {
                 setIsLoading(false);

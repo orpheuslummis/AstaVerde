@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import { USDC_DECIMALS } from "../app.config";
@@ -8,9 +8,14 @@ import { useAppContext } from "../contexts/AppContext";
 import { useBatchOperations } from "../hooks/useContractInteraction";
 import { customToast } from "../utils/customToast";
 import { getPlaceholderImageUrl } from "../utils/placeholderImage";
-import { ChevronRightIcon, ShoppingCartIcon, TagIcon } from "@heroicons/react/24/solid";
+import {
+    ChevronRightIcon,
+    ShoppingCartIcon,
+    TagIcon,
+} from "@heroicons/react/24/solid";
 import TokenCard from "./TokenCard";
 import type { BatchCardProps } from "../types";
+import Loader from "./Loader";
 
 export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     const { isConnected } = useAccount();
@@ -18,11 +23,13 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     const [tokenAmount, setTokenAmount] = useState(1);
 
     useEffect(() => {
-        setTokenAmount(prev => Math.min(prev, Number(batch.itemsLeft)));
+        setTokenAmount((prev) => Math.min(prev, Number(batch.itemsLeft)));
     }, [batch.itemsLeft]);
 
     const handleTokenAmountChange = (newAmount: number) => {
-        setTokenAmount(Math.max(1, Math.min(Number(batch.itemsLeft), newAmount)));
+        setTokenAmount(
+            Math.max(1, Math.min(Number(batch.itemsLeft), newAmount)),
+        );
     };
 
     const formattedPrice = useMemo(() => {
@@ -31,15 +38,21 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     }, [batch.price]);
 
     const placeholderImage = useMemo(() => {
-        return getPlaceholderImageUrl(batch.batchId.toString(), batch.tokenIds.length.toString());
+        return getPlaceholderImageUrl(
+            batch.batchId.toString(),
+            batch.tokenIds.length.toString(),
+        );
     }, [batch.batchId, batch.tokenIds]);
 
     const totalPrice = useMemo(
-        () => (batch.price !== undefined ? batch.price * BigInt(tokenAmount) : 0n),
-        [batch.price, tokenAmount]
+        () => (batch.price !== undefined
+            ? batch.price * BigInt(tokenAmount)
+            : 0n),
+        [batch.price, tokenAmount],
     );
 
-    const { handleApproveAndBuy, isLoading, hasEnoughUSDC } = useBatchOperations(batch.batchId, totalPrice);
+    const { handleApproveAndBuy, isLoading, hasEnoughUSDC } =
+        useBatchOperations(batch.batchId, totalPrice);
 
     const handleBuyClick = async () => {
         if (batch.itemsLeft === 0n || isSoldOut) return;
@@ -54,7 +67,9 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
             if (error instanceof Error) {
                 customToast.error(`Transaction failed: ${error.message}`);
             } else {
-                customToast.error("An unknown error occurred during the transaction");
+                customToast.error(
+                    "An unknown error occurred during the transaction",
+                );
             }
         }
     };
@@ -67,27 +82,50 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
         return "Buy";
     };
 
-    const isButtonDisabled = !isConnected || isLoading || isSoldOut || batch.itemsLeft === 0n || (!isConnected && !hasEnoughUSDC);
+    const isButtonDisabled = !isConnected || isLoading || isSoldOut ||
+        batch.itemsLeft === 0n || (!isConnected && !hasEnoughUSDC);
 
     const buttonContent = (
         <button
-            onClick={isConnected ? handleBuyClick : undefined}
-            disabled={isButtonDisabled}
-            className={`w-full btn mt-2 ${isButtonDisabled ? 'btn-secondary' : 'btn-primary'}`}
-            type="button"
+            onClick={handleBuyClick}
+            disabled={isLoading || !isConnected || batch.itemsLeft === 0n ||
+                isSoldOut}
+            className={`w-full px-4 py-2 rounded-lg ${
+                isLoading
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-primary hover:bg-primary-dark"
+            }`}
         >
-            {getButtonText()}
+            {isLoading
+                ? (
+                    <span className="flex items-center justify-center">
+                        <Loader /> Processing...
+                    </span>
+                )
+                : (
+                    `Buy for ${formattedPrice} USDC`
+                )}
         </button>
     );
 
     const MAX_DISPLAYED_TOKENS = 5;
     const displayedTokens = batch.tokenIds.slice(0, MAX_DISPLAYED_TOKENS);
-    const remainingTokens = Math.max(0, batch.tokenIds.length - MAX_DISPLAYED_TOKENS);
+    const remainingTokens = Math.max(
+        0,
+        batch.tokenIds.length - MAX_DISPLAYED_TOKENS,
+    );
 
     return (
-        <div className={`batch-card hover:shadow-xl ${isSoldOut ? 'opacity-50' : ''} dark:bg-gray-800 dark:border-gray-700`}>
+        <div
+            className={`batch-card hover:shadow-xl ${
+                isSoldOut ? "opacity-50" : ""
+            } dark:bg-gray-800 dark:border-gray-700`}
+        >
             <div className="flex flex-col p-4">
-                <Link href={`/batch/${batch.batchId}`} className="flex items-center mb-4">
+                <Link
+                    href={`/batch/${batch.batchId}`}
+                    className="flex items-center mb-4"
+                >
                     <div className="relative w-24 h-24 mr-4">
                         <Image
                             src={batch.imageUrl || placeholderImage}
@@ -97,14 +135,22 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                         />
                     </div>
                     <div className="flex-grow">
-                        <h2 className="text-xl font-semibold mb-1 dark:text-white">{`Batch ${batch.batchId}`}</h2>
+                        <h2 className="text-xl font-semibold mb-1 dark:text-white">
+                            {`Batch ${batch.batchId}`}
+                        </h2>
                         <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mb-2">
                             <TagIcon className="w-4 h-4 mr-1" />
-                            <span className="font-medium mr-2">{formattedPrice} USDC per unit</span>
+                            <span className="font-medium mr-2">
+                                {formattedPrice} USDC per unit
+                            </span>
                         </div>
                         <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                             <ShoppingCartIcon className="w-4 h-4 mr-1" />
-                            <span>{isSoldOut ? "Sold Out" : `${batch.itemsLeft} left`}</span>
+                            <span>
+                                {isSoldOut
+                                    ? "Sold Out"
+                                    : `${batch.itemsLeft} left`}
+                            </span>
                         </div>
                     </div>
                 </Link>
@@ -112,12 +158,18 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                 {!isSoldOut && (
                     <div className="mt-4">
                         <div className="flex justify-between items-center mb-2">
-                            <label htmlFor={`quantity-${batch.batchId}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label
+                                htmlFor={`quantity-${batch.batchId}`}
+                                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                            >
                                 Quantity:
                             </label>
                             <div className="flex items-center">
                                 <button
-                                    onClick={() => handleTokenAmountChange(tokenAmount - 1)}
+                                    onClick={() =>
+                                        handleTokenAmountChange(
+                                            tokenAmount - 1,
+                                        )}
                                     className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-l"
                                     type="button"
                                 >
@@ -127,7 +179,10 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                                     {tokenAmount}
                                 </span>
                                 <button
-                                    onClick={() => handleTokenAmountChange(tokenAmount + 1)}
+                                    onClick={() =>
+                                        handleTokenAmountChange(
+                                            tokenAmount + 1,
+                                        )}
                                     className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-r"
                                     type="button"
                                 >
@@ -142,7 +197,10 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                             max={batch.itemsLeft.toString()}
                             step="1"
                             value={tokenAmount}
-                            onChange={(e) => handleTokenAmountChange(Number.parseInt(e.target.value, 10))}
+                            onChange={(e) =>
+                                handleTokenAmountChange(
+                                    Number.parseInt(e.target.value, 10),
+                                )}
                             className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
                         />
                         <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -152,27 +210,37 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                         <p className="text-sm font-medium mt-2 dark:text-white">
                             Total: {formatUnits(totalPrice, USDC_DECIMALS)} USDC
                         </p>
-                        {isConnected ? (
-                            buttonContent
-                        ) : (
-                            <div className="tooltip-container">
-                                {buttonContent}
-                                <div className="tooltip-content">
-                                    <p>Please connect your wallet to purchase tokens. Once connected, you'll be able to buy tokens from this batch.</p>
-                                    <div className="tooltip-arrow"></div>
+                        {isConnected
+                            ? buttonContent
+                            : (
+                                <div className="tooltip-container">
+                                    {buttonContent}
+                                    <div className="tooltip-content">
+                                        <p>
+                                            Please connect your wallet to
+                                            purchase tokens. Once connected,
+                                            you'll be able to buy tokens from
+                                            this batch.
+                                        </p>
+                                        <div className="tooltip-arrow"></div>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
                     </div>
                 )}
             </div>
 
             {batch.tokenIds.length > 0 && (
                 <div className="p-4 border-t dark:border-gray-700">
-                    <h3 className="text-sm font-semibold mb-2 dark:text-white">Tokens in this batch</h3>
+                    <h3 className="text-sm font-semibold mb-2 dark:text-white">
+                        Tokens in this batch
+                    </h3>
                     <div className="grid grid-cols-3 gap-2">
                         {displayedTokens.map((tokenId) => (
-                            <div key={tokenId.toString()} className="aspect-square token-card-wrapper">
+                            <div
+                                key={tokenId.toString()}
+                                className="aspect-square token-card-wrapper"
+                            >
                                 <TokenCard
                                     tokenId={tokenId}
                                     isCompact={true}
@@ -187,7 +255,9 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                                 href={`/batch/${batch.batchId}`}
                                 className="flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg aspect-square hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                             >
-                                <span className="text-sm font-semibold mr-1 dark:text-white">+{remainingTokens}</span>
+                                <span className="text-sm font-semibold mr-1 dark:text-white">
+                                    +{remainingTokens}
+                                </span>
                                 <ChevronRightIcon className="h-4 w-4 dark:text-white" />
                             </Link>
                         )}
