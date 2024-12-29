@@ -1,13 +1,16 @@
-import type { Abi } from 'abitype';
+import type { Abi } from "abitype";
 import type { Batch } from "./lib/batch";
-import type { astaverdeContractConfig, getUsdcContractConfig } from "./lib/contracts";
+import type {
+  astaverdeContractConfig,
+  getUsdcContractConfig,
+} from "./lib/contracts";
 
 export type BatchData = [
-  bigint,  // batchId
-  bigint[],  // tokenIds
-  bigint,  // creationTime
-  bigint,  // price
-  bigint   // itemsLeft (or remainingTokens)
+  bigint, // batchId
+  bigint[], // tokenIds
+  bigint, // creationTime
+  bigint, // price
+  bigint, // itemsLeft (or remainingTokens)
 ];
 
 export interface BatchParams {
@@ -31,10 +34,14 @@ export interface AppContextType {
   updateBatchItemsLeft: (batchId: bigint, newItemsLeft: bigint) => void;
   adminControls: AdminControls;
   getCurrentBatchPrice: (batchId: number) => Promise<bigint>;
-  buyBatch: (batchId: number, usdcAmount: bigint, tokenAmount: number) => Promise<string>;
-  redeemTokens: (tokenIds: bigint[]) => Promise<string>;
+  buyBatch: (
+    batchId: number,
+    usdcAmount: bigint,
+    tokenAmount: number,
+  ) => Promise<string>;
+  redeemToken: (tokenId: bigint) => Promise<string>;
   updateBasePrice: () => Promise<string>;
-  getBatchInfo: (batchId: number) => Promise<BatchInfoProps['batchData']>;
+  getBatchInfo: (batchId: number) => Promise<BatchInfoProps["batchData"]>;
   isAdmin: boolean;
 }
 
@@ -90,7 +97,10 @@ export interface AdminControls {
   setPriceFloor: (amount: string) => Promise<void>;
   setBasePrice: (amount: bigint) => Promise<void>;
   setMaxBatchSize: (size: bigint) => Promise<void>;
-  setAuctionDayThresholds: (increase: string, decrease: string) => Promise<void>;
+  setAuctionDayThresholds: (
+    increase: string,
+    decrease: string,
+  ) => Promise<void>;
   setPlatformSharePercentage: (percentage: string) => Promise<void>;
   setURI: (uri: string) => Promise<void>;
   updateBasePrice: () => Promise<string>;

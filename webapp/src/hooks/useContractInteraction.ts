@@ -45,7 +45,7 @@ const WRITE_FUNCTIONS = [
     "updateBasePrice",
     "mintBatch",
     "buyBatch",
-    "redeemTokens",
+    "redeemToken",
     "claimPlatformFunds",
     "pause",
     "unpause",
@@ -260,20 +260,20 @@ export function useContractInteraction(
         }
     };
 
-    const redeemTokens = useCallback(
-        async (tokenIds: number[]) => {
+    const redeemToken = useCallback(
+        async (tokenId: bigint) => {
             try {
                 if (!walletClient) {
                     throw new Error("Wallet not connected");
                 }
-                console.log("Redeeming tokens:", tokenIds);
-                const result = await execute(tokenIds.map((id) => BigInt(id)));
-                console.log("Redeem tokens result:", result);
+                console.log("Redeeming token:", tokenId);
+                const result = await execute(tokenId);
+                console.log("Redeem token result:", result);
                 return result;
             } catch (error: any) {
-                console.error("Error in redeemTokens:", error);
+                console.error("Error in redeemToken:", error);
                 const revertReason = getRevertReason(error);
-                throw new Error(`Failed to redeem tokens: ${revertReason}`);
+                throw new Error(`Failed to redeem token: ${revertReason}`);
             }
         },
         [execute, walletClient],
@@ -316,7 +316,7 @@ export function useContractInteraction(
         refetchSimulation,
         getTokensOfOwner,
         getCurrentBatchPrice,
-        redeemTokens,
+        redeemToken,
         mintBatch,
         buyBatch,
         claimPlatformFunds,

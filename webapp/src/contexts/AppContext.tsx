@@ -1,9 +1,19 @@
 import type React from "react";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 import { useAccount, useReadContract, useReadContracts } from "wagmi";
 import { useContractInteraction } from "../hooks/useContractInteraction";
 import { Batch } from "../lib/batch";
-import { astaverdeContractConfig, getUsdcContractConfig } from "../lib/contracts";
+import {
+    astaverdeContractConfig,
+    getUsdcContractConfig,
+} from "../lib/contracts";
 import type { AppContextType } from "../types";
 import { serializeBigInt } from "../utils/bigIntHelper";
 import { customToast } from "../utils/customToast";
@@ -15,8 +25,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const [batches, setBatches] = useState<Batch[]>([]);
     const [isAdmin, setIsAdmin] = useState(false);
 
-    const { execute: getLastBatchID } = useContractInteraction(astaverdeContractConfig, "lastBatchID");
-    const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
+    const { execute: getLastBatchID } = useContractInteraction(
+        astaverdeContractConfig,
+        "lastBatchID",
+    );
+    const { execute: getBatchInfo } = useContractInteraction(
+        astaverdeContractConfig,
+        "getBatchInfo",
+    );
 
     const { data: lastBatchID } = useReadContract({
         ...astaverdeContractConfig,
@@ -24,14 +40,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }) as { data: bigint | undefined };
 
     useReadContracts({
-        contracts:
-            lastBatchID !== undefined
-                ? Array.from({ length: Number(lastBatchID) }, (_, i) => ({
-                    ...astaverdeContractConfig,
-                    functionName: "getBatchInfo",
-                    args: [serializeBigInt(BigInt(i + 1))],
-                }))
-                : [],
+        contracts: lastBatchID !== undefined
+            ? Array.from({ length: Number(lastBatchID) }, (_, i) => ({
+                ...astaverdeContractConfig,
+                functionName: "getBatchInfo",
+                args: [serializeBigInt(BigInt(i + 1))],
+            }))
+            : [],
     });
 
     const { data: contractOwner } = useReadContract({
@@ -44,7 +59,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (getLastBatchID && getBatchInfo) {
             try {
                 const lastBatchID = await getLastBatchID();
-                console.log("Last Batch ID from contract:", lastBatchID.toString());
+                console.log(
+                    "Last Batch ID from contract:",
+                    lastBatchID.toString(),
+                );
 
                 if (lastBatchID !== undefined && lastBatchID > 0n) {
                     const batchPromises = [];
@@ -56,13 +74,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
                     const processedBatches = batchesInfo.map((batchInfo) => {
                         console.log(`Raw batch info:`, batchInfo);
-                        const [batchId, tokenIds, creationTime, price, remainingTokens] = batchInfo;
+                        const [
+                            batchId,
+                            tokenIds,
+                            creationTime,
+                            price,
+                            remainingTokens,
+                        ] = batchInfo;
                         return new Batch(
                             BigInt(batchId),
                             tokenIds.map(BigInt),
                             BigInt(creationTime),
                             BigInt(price),
-                            BigInt(remainingTokens)
+                            BigInt(remainingTokens),
                         );
                     });
 
@@ -86,40 +110,87 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, [fetchBatches]);
 
     const updateBatch = useCallback((updatedBatch: Batch) => {
-        setBatches((prevBatches) => prevBatches.map((batch) => (batch.batchId === updatedBatch.batchId ? updatedBatch : batch)));
-    }, []);
-
-    const updateBatchItemsLeft = useCallback((batchId: bigint, newItemsLeft: bigint) => {
         setBatches((prevBatches) =>
-            prevBatches.map((batch) =>
-                batch.batchId === batchId
-                    ? new Batch(batch.batchId, batch.tokenIds, batch.creationTime, batch.price, newItemsLeft)
-                    : batch,
-            ),
+            prevBatches.map((
+                batch,
+            ) => (batch.batchId === updatedBatch.batchId
+                ? updatedBatch
+                : batch)
+            )
         );
     }, []);
+
+    const updateBatchItemsLeft = useCallback(
+        (batchId: bigint, newItemsLeft: bigint) => {
+            setBatches((prevBatches) =>
+                prevBatches.map((batch) =>
+                    batch.batchId === batchId
+                        ? new Batch(
+                            batch.batchId,
+                            batch.tokenIds,
+                            batch.creationTime,
+                            batch.price,
+                            newItemsLeft,
+                        )
+                        : batch
+                )
+            );
+        },
+        [],
+    );
 
     useEffect(() => {
         console.log("Batches state updated:", serializeBigInt(batches));
     }, [batches]);
 
-    const { execute: pauseContract } = useContractInteraction(astaverdeContractConfig, "pause");
-    const { execute: unpauseContract } = useContractInteraction(astaverdeContractConfig, "unpause");
+    const { execute: pauseContract } = useContractInteraction(
+        astaverdeContractConfig,
+        "pause",
+    );
+    const { execute: unpauseContract } = useContractInteraction(
+        astaverdeContractConfig,
+        "unpause",
+    );
 
-    const setURI = useContractInteraction(astaverdeContractConfig, "setURI").execute;
-    const setPriceFloor = useContractInteraction(astaverdeContractConfig, "setPriceFloor").execute;
-    const setBasePrice = useContractInteraction(astaverdeContractConfig, "setBasePrice").execute;
-    const setMaxBatchSize = useContractInteraction(astaverdeContractConfig, "setMaxBatchSize").execute;
-    const setAuctionDayThresholds = useContractInteraction(astaverdeContractConfig, "setAuctionDayThresholds").execute;
-    const setPlatformSharePercentage = useContractInteraction(astaverdeContractConfig, "setPlatformSharePercentage").execute;
-    const claimPlatformFunds = useContractInteraction(astaverdeContractConfig, "claimPlatformFunds").execute;
-    const updateBasePrice = useContractInteraction(astaverdeContractConfig, "updateBasePrice").execute;
-    const getCurrentBatchPrice = useContractInteraction(astaverdeContractConfig, "getCurrentBatchPrice").execute;
-    const buyBatch = useContractInteraction(astaverdeContractConfig, "buyBatch").execute;
-    const redeemTokens = useContractInteraction(astaverdeContractConfig, "redeemTokens").execute;
-    const mintBatch = useContractInteraction(astaverdeContractConfig, "mintBatch").execute;
-    const setPriceDelta = useContractInteraction(astaverdeContractConfig, "setPriceDelta").execute;
-    const setDailyPriceDecay = useContractInteraction(astaverdeContractConfig, "setDailyPriceDecay").execute;
+    const setURI =
+        useContractInteraction(astaverdeContractConfig, "setURI").execute;
+    const setPriceFloor =
+        useContractInteraction(astaverdeContractConfig, "setPriceFloor")
+            .execute;
+    const setBasePrice =
+        useContractInteraction(astaverdeContractConfig, "setBasePrice").execute;
+    const setMaxBatchSize =
+        useContractInteraction(astaverdeContractConfig, "setMaxBatchSize")
+            .execute;
+    const setAuctionDayThresholds = useContractInteraction(
+        astaverdeContractConfig,
+        "setAuctionDayThresholds",
+    ).execute;
+    const setPlatformSharePercentage = useContractInteraction(
+        astaverdeContractConfig,
+        "setPlatformSharePercentage",
+    ).execute;
+    const claimPlatformFunds =
+        useContractInteraction(astaverdeContractConfig, "claimPlatformFunds")
+            .execute;
+    const updateBasePrice =
+        useContractInteraction(astaverdeContractConfig, "updateBasePrice")
+            .execute;
+    const getCurrentBatchPrice =
+        useContractInteraction(astaverdeContractConfig, "getCurrentBatchPrice")
+            .execute;
+    const buyBatch =
+        useContractInteraction(astaverdeContractConfig, "buyBatch").execute;
+    const redeemToken =
+        useContractInteraction(astaverdeContractConfig, "redeemToken").execute;
+    const mintBatch =
+        useContractInteraction(astaverdeContractConfig, "mintBatch").execute;
+    const setPriceDelta =
+        useContractInteraction(astaverdeContractConfig, "setPriceDelta")
+            .execute;
+    const setDailyPriceDecay =
+        useContractInteraction(astaverdeContractConfig, "setDailyPriceDecay")
+            .execute;
 
     const adminControls = useMemo(
         () => ({
@@ -194,8 +265,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             setDailyPriceDecay: async (amount: bigint) => {
                 try {
                     const txHash = await setDailyPriceDecay(amount);
-                    console.log("Set Daily Price Decay transaction hash:", txHash);
-                    customToast.success("Daily price decay updated successfully");
+                    console.log(
+                        "Set Daily Price Decay transaction hash:",
+                        txHash,
+                    );
+                    customToast.success(
+                        "Daily price decay updated successfully",
+                    );
                     return txHash;
                 } catch (error) {
                     console.error("Error setting daily price decay:", error);
@@ -221,7 +297,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             refetchBatches,
             setPriceDelta,
             setDailyPriceDecay,
-        ]
+        ],
     );
 
     useEffect(() => {
@@ -232,8 +308,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
     }, [address, contractOwner]);
 
-    const { execute: balanceOf } = useContractInteraction(astaverdeContractConfig, "balanceOf");
-    const { execute: tokenOfOwnerByIndex } = useContractInteraction(astaverdeContractConfig, "tokenOfOwnerByIndex");
+    const { execute: balanceOf } = useContractInteraction(
+        astaverdeContractConfig,
+        "balanceOf",
+    );
+    const { execute: tokenOfOwnerByIndex } = useContractInteraction(
+        astaverdeContractConfig,
+        "tokenOfOwnerByIndex",
+    );
 
     const contextValue = useMemo(
         () => ({
@@ -247,7 +329,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             adminControls,
             getCurrentBatchPrice,
             buyBatch,
-            redeemTokens,
+            redeemToken,
             updateBasePrice: adminControls.updateBasePrice,
             getBatchInfo,
             isAdmin,
@@ -262,15 +344,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             adminControls,
             getCurrentBatchPrice,
             buyBatch,
-            redeemTokens,
+            redeemToken,
             getBatchInfo,
             isAdmin,
             balanceOf,
             tokenOfOwnerByIndex,
-        ]
+        ],
     );
 
-    return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
+    return (
+        <AppContext.Provider value={contextValue}>
+            {children}
+        </AppContext.Provider>
+    );
 }
 
 export function useAppContext() {
