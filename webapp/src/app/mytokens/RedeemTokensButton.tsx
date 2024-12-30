@@ -49,11 +49,9 @@ export default function RedeemTokensButton(
 
         setStatusMessage(`Redeeming batch of ${batch.length} tokens...`);
         try {
-            // Redeem tokens one by one
             for (const tokenId of batch) {
-                const receipt = await redeemToken(tokenId);
-                if (receipt && receipt.status === "success") {
-                    redeemStatus[tokenId.toString()] = true;
+                const result = await redeemToken(tokenId);
+                if (result && result.status === "success") {
                     setProgress((prev) => prev + 1);
                     setStatusMessage(
                         `Token ${tokenId.toString()} redeemed successfully`,
@@ -74,7 +72,7 @@ export default function RedeemTokensButton(
         } catch (error) {
             throw error;
         }
-    }, [redeemToken, redeemStatus, onRedeemComplete]);
+    }, [redeemToken, onRedeemComplete]);
 
     /**
      * Handles the redemption process for selected tokens.

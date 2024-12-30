@@ -76,7 +76,7 @@ export default function MyTokensPage() {
             for (const tokenId of userTokens) {
                 const tokenInfo = await getTokenInfo(tokenId);
                 console.log(`Token ${tokenId} info:`, tokenInfo);
-                status[tokenId.toString()] = tokenInfo[3]; // isRedeemed is the fourth element
+                status[tokenId.toString()] = tokenInfo[4];
             }
             setRedeemStatus(status);
         } catch (error) {
