@@ -1,3 +1,5 @@
+import { IPFS_GATEWAY_URL, FALLBACK_IPFS_GATEWAY_URL } from '../app.config';
+
 export interface TokenMetadata {
     name: string;
     description: string;
@@ -46,4 +48,44 @@ export async function connectToSpace(client: any, email: string, spaceName: stri
         console.error("Error connecting to space:", error);
         throw error;
     }
+}
+
+export async function fetchJsonFromIpfsWithFallback(cidOrUri: string): Promise<{ data: any; gateway: string } | null> {
+    const cid = cidOrUri.replace("ipfs://", "");
+
+    // Try primary gateway
+    try {
+        const response = await fetch(`${IPFS_GATEWAY_URL}${cid}`);
+        if (response.ok) {
+            const data = await response.json();
+            return { data, gateway: IPFS_GATEWAY_URL };
+        }
+        console.warn(`Primary gateway fetch failed for ${cid}: ${response.status}`);
+    } catch (error) {
+        console.warn(`Error fetching from primary gateway for ${cid}:`, error);
+    }
+
+    // Try fallback gateway
+    try {
+        console.log(`Attempting fallback for ${cid} to ${FALLBACK_IPFS_GATEWAY_URL}`)
+        const response = await fetch(`${FALLBACK_IPFS_GATEWAY_URL}${cid}`);
+        if (response.ok) {
+            const data = await response.json();
+            return { data, gateway: FALLBACK_IPFS_GATEWAY_URL };
+        }
+        console.warn(`Fallback gateway fetch failed for ${cid}: ${response.status}`);
+    } catch (error) {
+        console.warn(`Error fetching from fallback gateway for ${cid}:`, error);
+    }
+
+    return null;
+}
+
+export function resolveIpfsUriToUrl(ipfsUri: string | undefined | null, gateway: string): string {
+    if (ipfsUri && ipfsUri.startsWith("ipfs://")) {
+        return ipfsUri.replace("ipfs://", gateway);
+    }
+    // If not starting with ipfs://, assume it might be a full URL or an invalid/empty URI
+    // It might also be a relative path if metadata was malformed, though less common for image URIs
+    return ipfsUri || ""; // Return empty string if ipfsUri is null/undefined to prevent errors in <img> src
 }

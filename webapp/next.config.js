@@ -10,7 +10,13 @@ const nextConfig = {
     return config;
   },
   images: {
-    domains: ['gateway.pinata.cloud'],
+    domains: [
+      'gateway.pinata.cloud', // Keep the old one as a fallback or for existing images
+      // Dynamically add the hostname from the environment variable
+      ...(process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL
+        ? [new URL(process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL).hostname]
+        : []),
+    ],
   },
 };
 
