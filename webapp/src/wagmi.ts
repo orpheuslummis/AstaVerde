@@ -6,7 +6,16 @@ import { ALCHEMY_API_KEY, CHAIN_SELECTION, WALLET_CONNECT_PROJECT_ID } from "./a
 const chains = (() => {
     switch (CHAIN_SELECTION) {
         case "base_mainnet":
-            return [base] as const;
+            return [
+                {
+                    ...base,
+                    rpcUrls: {
+                        default: {
+                            http: [`https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`],
+                        },
+                    },
+                },
+            ] as const;
         case "base_sepolia":
             return [
                 {
