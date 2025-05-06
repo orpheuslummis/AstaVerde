@@ -8,11 +8,22 @@ import Loader from "../../../components/Loader";
 import { fetchJsonFromIpfsWithFallback, resolveIpfsUriToUrl } from "../../../utils/ipfsHelper";
 import { IPFS_GATEWAY_URL } from "../../../app.config";
 
-interface ContractTokenData {
-    0: bigint; // Token ID (matches params.id)
-    1: string; // Producer address
-    2: string; // Token metadata CID (ipfs://...)
-    3: boolean; // Is redeemed
+// Helper to stringify BigInt values for logging
+function bigIntReplacer(key: any, value: any) {
+    if (typeof value === 'bigint') {
+        return value.toString() + 'n'; // Suffix with 'n' to denote BigInt in logs
+    }
+    return value;
+}
+
+// This interface now correctly reflects the tuple returned by the public `tokens` getter
+// Order: owner, tokenId, producer, cid, redeemed
+interface ContractTokenDataTuple extends Array<unknown> {
+    0: string;  // owner
+    1: bigint;  // tokenId
+    2: string;  // producer
+    3: string;  // cid (this is just the hash, not the full ipfs:// URI)
+    4: boolean; // redeemed
 }
 
 interface TokenDisplayData {
@@ -43,21 +54,42 @@ export default function Page({ params }: { params: { id: bigint } }) {
         }
 
         try {
-            // 1. Fetch basic token data from the contract
+            console.log(`Fetching token data for ID: ${params.id} using contract: ${astaverdeContractConfig.address}`);
             const contractData = (await publicClient.readContract({
                 ...astaverdeContractConfig,
                 functionName: "tokens",
                 args: [params.id],
-            })) as ContractTokenData;
+            })) as ContractTokenDataTuple; // Use the updated interface
 
-            if (!contractData || contractData[1] === "0x0000000000000000000000000000000000000000") {
-                throw new Error("Token does not exist or has no owner.");
+            console.log("Raw tokenContractData from contract:", JSON.stringify(contractData, bigIntReplacer));
+
+            // Check based on producer address, as tokenId might be 0 if not minted but owner is set
+            if (!contractData || contractData[2] === "0x0000000000000000000000000000000000000000") {
+                // Assuming producer address (index 2) being zero address means token doesn't exist or is invalid.
+                // contractData[0] is owner, contractData[1] is tokenId.
+                // For a non-existent token, the getter usually returns default zero values for all fields.
+                // If tokenId (contractData[1]) is 0, it indicates it's not a valid/minted token.
+                // Or if owner (contractData[0]) is zero address.
+                // A more robust check might involve checking if tokenId is 0 (contractData[1] === 0n)
+                throw new Error("Token does not exist or has no valid producer.");
             }
 
-            const metadataCidUri = contractData[2];
-            if (!metadataCidUri || !metadataCidUri.startsWith("ipfs://")) {
-                throw new Error("Invalid or non-IPFS metadata CID URI from contract.");
+            const rawCid = contractData[3]; // CID is at index 3
+            console.log("Extracted rawCid:", rawCid);
+            console.log("Type of rawCid:", typeof rawCid);
+
+            if (!rawCid || typeof rawCid !== 'string' || rawCid.trim() === "") {
+                console.error("Detailed check failed. rawCid is invalid:", rawCid, "Type:", typeof rawCid);
+                throw new Error(
+                    "Invalid or empty CID string from contract.",
+                );
             }
+
+            const metadataCidUri = `ipfs://${rawCid}`; // Prepend ipfs://
+            console.log("Constructed metadataCidUri:", metadataCidUri);
+
+            // The check for startsWith "ipfs://" is now implicitly handled by the construction above.
+            // We rely on fetchJsonFromIpfsWithFallback to handle it.
 
             // 2. Fetch metadata from IPFS with fallback
             const metadataResult = await fetchJsonFromIpfsWithFallback(metadataCidUri);
@@ -74,10 +106,10 @@ export default function Page({ params }: { params: { id: bigint } }) {
             }
 
             setTokenDisplay({
-                id: params.id,
-                producerAddress: contractData[1],
-                metadataCid: metadataCidUri,
-                isRedeemed: contractData[3],
+                id: params.id, // or contractData[1] which should be the same
+                producerAddress: contractData[2], // Producer is at index 2
+                metadataCid: metadataCidUri, // Use the full URI
+                isRedeemed: contractData[4], // Redeemed is at index 4
                 name: metadata.name,
                 description: metadata.description,
                 imageUrl: resolvedImageUrl,

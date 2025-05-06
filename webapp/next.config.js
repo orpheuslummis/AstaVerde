@@ -10,13 +10,34 @@ const nextConfig = {
     return config;
   },
   images: {
-    domains: [
-      'gateway.pinata.cloud', // Keep the old one as a fallback or for existing images
-      // Dynamically add the hostname from the environment variable
-      ...(process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL
-        ? [new URL(process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL).hostname]
-        : []),
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'gateway.pinata.cloud',
+      },
+      {
+        protocol: 'https',
+        hostname: process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL
+          ? new URL(process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL).hostname
+          : 'n/a', // Required, but won't match if env var is not set
+      },
+      {
+        protocol: 'https',
+        hostname: '*.ipfs.w3s.link', // Added for web3.storage gateway
+      },
+      {
+        protocol: 'https',
+        hostname: 'dweb.link', // Added for dweb.link fallback
+      },
     ],
+    // domains: [
+    //   'gateway.pinata.cloud',
+    //   ...(process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL
+    //     ? [new URL(process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL).hostname]
+    //     : []),
+    //   '*.ipfs.w3s.link', // Added for web3.storage gateway
+    //   'dweb.link', // Added for dweb.link fallback
+    // ],
   },
 };
 

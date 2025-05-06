@@ -8,7 +8,12 @@ export const IPFS_GATEWAY_URL = rawIpfsGatewayUrl
     ? rawIpfsGatewayUrl.endsWith('/') ? rawIpfsGatewayUrl : `${rawIpfsGatewayUrl}/`
     : "https://ipfs.io/ipfs/";
 
-export const FALLBACK_IPFS_GATEWAY_URL = "https://gateway.pinata.cloud/ipfs/";
+// Specific gateway for web3.storage if needed as a targeted fallback
+export const WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION = true; // Flag to indicate special construction
+export const WEB3_STORAGE_GATEWAY_PREFIX = "https://";
+export const WEB3_STORAGE_GATEWAY_SUFFIX = ".ipfs.w3s.link/";
+
+export const FALLBACK_IPFS_GATEWAY_URL = "https://dweb.link/ipfs/"; // General public fallback (third attempt)
 
 export const ASTAVERDE_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS || "";
 export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS || "";
