@@ -156,26 +156,28 @@ export default function TokenCard({
         dark:bg-gray-800
     `;
 
-    const cardElement = (
-        <div
-            className={cardClasses}
-            onClick={isMyTokensPage ? handleSelect : undefined}
-        >
-            {cardContent}
-        </div>
-    );
+    const wrapperClassName = isCompact ? "w-full h-full" : "";
 
     if (linkTo) {
         return (
-            <Link href={linkTo} className={isCompact ? "w-full h-full" : ""}>
-                {cardElement}
-            </Link>
+            <div ref={ref} className={wrapperClassName}>
+                <Link href={linkTo} className="block w-full h-full">
+                    <div className={cardClasses}>
+                        {cardContent}
+                    </div>
+                </Link>
+            </div>
         );
     }
 
     return (
-        <div ref={ref} className={isCompact ? "w-full h-full" : ""}>
-            {isMyTokensPage ? cardElement : cardElement}
+        <div ref={ref} className={wrapperClassName}>
+            <div
+                className={cardClasses}
+                onClick={isMyTokensPage ? handleSelect : undefined}
+            >
+                {cardContent}
+            </div>
         </div>
     );
 }
