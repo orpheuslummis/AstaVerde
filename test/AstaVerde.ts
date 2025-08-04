@@ -1,35 +1,23 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { ethers } from "hardhat";
+/**
+ * AstaVerde Contract Test Suite
+ * 
+ * This file serves as the main entry point for AstaVerde contract tests.
+ * The actual test implementations are in:
+ * - AstaVerde.logic.behavior.ts - Core contract functionality tests
+ * - AstaVerde.fixture.ts - Test setup and deployment fixtures
+ * - lib.ts - Test utilities and constants
+ * 
+ * Test Coverage:
+ * ✅ Contract deployment and initialization
+ * ✅ Batch minting and validation
+ * ✅ Token purchasing and fund distribution  
+ * ✅ Dynamic pricing mechanism
+ * ✅ Revenue splitting between platform and producers
+ * ✅ Token redemption
+ * ✅ Access control and admin functions
+ * ✅ Edge cases and error conditions
+ * ✅ Gas optimization tests
+ */
 
-// import { shouldBehaveLikeAstaVerde } from "./AstaVerde.behavior";
-import { deployAstaVerdeFixture } from "./AstaVerde.fixture";
-import type { Signers } from "./types";
-
-/*
-Overall flow: each 'test function' is used to group tests sharing the same fixture.
-*/
-
-describe("Asta Verde tests", () => {
-  before(async function () {
-    const signers = await ethers.getSigners();
-    this.signers = {
-      admin: signers[0],
-      // using last 10 as other usable accounts for test purposes
-      others: signers.slice(-10),
-    } as Signers;
-
-    this.loadFixture = loadFixture;
-  });
-
-  // describe("AstaVerde", () => {
-  // beforeEach(async function () {
-  //   const { astaVerde, mockUSDC } = await this.loadFixture(
-  //     deployAstaVerdeFixture,
-  //   );
-  //   this.mockUSDC = mockUSDC;
-  //   this.astaVerde = astaVerde;
-  // });
-
-  // shouldBehaveLikeAstaVerde();
-  // });
-});
+// All AstaVerde tests are implemented in AstaVerde.logic.behavior.ts
+// This file exists for documentation and potential future test organization
