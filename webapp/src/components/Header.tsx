@@ -6,8 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
-import { USDC_DECIMALS } from "../app.config";
-import { getUsdcContractConfig } from "../lib/contracts";
+import { USDC_DECIMALS, SCC_CONTRACT_ADDRESS } from "../app.config";
+import { getUsdcContractConfig, getSccContractConfig } from "../lib/contracts";
 
 interface HeaderProps {
     links: { name: string; url: string }[];
@@ -23,6 +23,16 @@ export function Header({ links }: HeaderProps) {
         token: usdcConfig.address,
         query: {
             enabled: isConnected && !!address,
+        },
+    });
+
+    // SCC Balance (only if vault is available)
+    const sccConfig = SCC_CONTRACT_ADDRESS ? getSccContractConfig() : null;
+    const { data: sccBalance } = useBalance({
+        address,
+        token: sccConfig?.address,
+        query: {
+            enabled: isConnected && !!address && !!sccConfig,
         },
     });
 
@@ -46,6 +56,11 @@ export function Header({ links }: HeaderProps) {
         if (!usdcBalance) return "0";
         return formatUnits(usdcBalance.value, USDC_DECIMALS);
     }, [usdcBalance]);
+
+    const sccBalanceFormatted = useMemo(() => {
+        if (!sccBalance) return "0";
+        return formatUnits(sccBalance.value, 18); // SCC has 18 decimals
+    }, [sccBalance]);
 
     return (
         <header className="w-full flex flex-wrap items-center justify-between bg-primary dark:bg-gray-800 p-4 shadow-md">
@@ -103,12 +118,22 @@ export function Header({ links }: HeaderProps) {
                         </li>
                     ))}
                     {isConnected && (
-                        <li className="mr-4">
-                            <div className="bg-white/10 dark:bg-gray-700 text-white dark:text-gray-200 rounded-lg px-3 py-2">
-                                <span className="text-sm font-medium">USDC Balance: </span>
-                                <span className="text-sm font-bold">{Number.parseFloat(usdcBalanceFormatted).toFixed(2)}</span>
-                            </div>
-                        </li>
+                        <>
+                            <li className="mr-4">
+                                <div className="bg-white/10 dark:bg-gray-700 text-white dark:text-gray-200 rounded-lg px-3 py-2">
+                                    <span className="text-sm font-medium">USDC: </span>
+                                    <span className="text-sm font-bold">{Number.parseFloat(usdcBalanceFormatted).toFixed(2)}</span>
+                                </div>
+                            </li>
+                            {sccConfig && (
+                                <li className="mr-4">
+                                    <div className="bg-emerald-500/20 dark:bg-emerald-700 text-white dark:text-gray-200 rounded-lg px-3 py-2">
+                                        <span className="text-sm font-medium">🏦 SCC: </span>
+                                        <span className="text-sm font-bold">{Number.parseFloat(sccBalanceFormatted).toFixed(2)}</span>
+                                    </div>
+                                </li>
+                            )}
+                        </>
                     )}
                     <li>
                         <ConnectKitButton />

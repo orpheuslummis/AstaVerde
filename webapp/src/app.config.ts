@@ -17,6 +17,8 @@ export const FALLBACK_IPFS_GATEWAY_URL = "https://dweb.link/ipfs/"; // General p
 
 export const ASTAVERDE_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS || "";
 export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS || "";
+export const ECOSTABILIZER_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ECOSTABILIZER_ADDRESS || "";
+export const SCC_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_SCC_ADDRESS || "";
 export const CHAIN_SELECTION = (process.env.NEXT_PUBLIC_CHAIN_SELECTION || "base_sepolia") as ChainSelection;
 export const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 export const WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "";
@@ -42,6 +44,8 @@ function validateConfig(): void {
     if (!IPFS_GATEWAY_URL) {
         throw new Error("IPFS_GATEWAY_URL must be set");
     }
+    // Note: EcoStabilizer and SCC addresses are optional for backward compatibility
+    // They will be checked when vault features are used
 }
 
 validateConfig();
@@ -51,11 +55,15 @@ function logAppConfig() {
         CHAIN_SELECTION,
         ASTAVERDE_CONTRACT_ADDRESS,
         USDC_ADDRESS,
+        ECOSTABILIZER_CONTRACT_ADDRESS,
+        SCC_CONTRACT_ADDRESS,
         IPFS_GATEWAY_URL,
         NODE_ENV: process.env.NODE_ENV,
         NEXT_PUBLIC_CHAIN_SELECTION: process.env.NEXT_PUBLIC_CHAIN_SELECTION,
         NEXT_PUBLIC_ASTAVERDE_CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS,
         NEXT_PUBLIC_USDC_ADDRESS: process.env.NEXT_PUBLIC_USDC_ADDRESS,
+        NEXT_PUBLIC_ECOSTABILIZER_ADDRESS: process.env.NEXT_PUBLIC_ECOSTABILIZER_ADDRESS,
+        NEXT_PUBLIC_SCC_ADDRESS: process.env.NEXT_PUBLIC_SCC_ADDRESS,
     });
 }
 
