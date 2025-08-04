@@ -7,6 +7,7 @@ import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import RedeemTokensButton from "./RedeemTokensButton";
 import Loader from "../../components/Loader";
+import VaultCard from "../../components/VaultCard";
 
 const TOKENS_PER_PAGE = 12;
 
@@ -158,6 +159,14 @@ export default function MyTokensPage() {
                                         ]}
                                         isSelected={selectedTokens.has(tokenId)}
                                     />
+                                    
+                                    {/* Vault functionality */}
+                                    <VaultCard
+                                        tokenId={tokenId}
+                                        isRedeemed={redeemStatus[tokenId.toString()]}
+                                        onActionComplete={fetchTokens}
+                                    />
+                                    
                                     {!redeemStatus[tokenId.toString()] && (
                                         <label className="flex items-center mt-2 cursor-pointer">
                                             <input
