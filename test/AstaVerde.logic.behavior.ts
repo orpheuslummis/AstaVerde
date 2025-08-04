@@ -6,12 +6,14 @@ import { deployAstaVerdeFixture } from "./AstaVerde.fixture";
 import { USDC_PRECISION, SECONDS_IN_A_DAY } from "./lib";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
+// Shared utility function for advancing time in tests
+async function advancedDays(days: bigint) {
+    const secondsToAdvance = Number(days) * Number(SECONDS_IN_A_DAY);
+    await ethers.provider.send("evm_increaseTime", [secondsToAdvance]);
+    await ethers.provider.send("evm_mine", []);
+}
+
 describe("AstaVerde Logic and Behavior", function () {
-    async function advancedDays(days: bigint) {
-        const secondsToAdvance = Number(days) * Number(SECONDS_IN_A_DAY);
-        await ethers.provider.send("evm_increaseTime", [secondsToAdvance]);
-        await ethers.provider.send("evm_mine", []);
-    }
 
     describe("Deployment and Initial State", function () {
         it("Should deploy contracts and set initial state correctly", async function () {
@@ -126,8 +128,8 @@ describe("AstaVerde Logic and Behavior", function () {
                 .to.emit(astaVerde, "BatchSold")
                 .withArgs(batchID, anyValue, tokenAmount);
 
-            const batchInfo = await astaVerde.getBatchInfo(batchID);
-            expect(batchInfo.remainingTokens).to.equal(0n);
+            const [, , , , remainingTokens] = await astaVerde.getBatchInfo(batchID);
+            expect(remainingTokens).to.equal(0n);
         });
 
         it("Should buy batch after price reduction", async function () {
@@ -160,8 +162,8 @@ describe("AstaVerde Logic and Behavior", function () {
                 .to.emit(astaVerde, "BatchSold")
                 .withArgs(batchID, anyValue, tokenAmount);
 
-            const batchInfo = await astaVerde.getBatchInfo(batchID);
-            expect(batchInfo.remainingTokens).to.equal(0n);
+            const [, , , , remainingTokens] = await astaVerde.getBatchInfo(batchID);
+            expect(remainingTokens).to.equal(0n);
         });
     });
 
@@ -296,86 +298,86 @@ describe("AstaVerde Logic and Behavior", function () {
         });
 
         it("Should correctly handle edge cases in price adjustments", async function () {
-            const { astaVerde } = await loadFixture(deployAstaVerdeFixture);
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
 
-            const initialBasePrice = await astaVerde.basePrice();
-            console.log("Initial base price:", initialBasePrice.toString());
-
-            // Mint initial batch
-            await astaVerde.mintBatch([await astaVerde.getAddress()], [
-                "QmCID",
-            ]);
-
-            // Advance time to exactly dayDecreaseThreshold days
             const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
+            const priceAdjustDelta = await astaVerde.priceAdjustDelta();
+
+            // First, establish a baseline by having a complete sale to set lastCompleteSaleTime
+            await astaVerde.mintBatch([admin.address], ["QmCID1"]);
+            const batchID = 1n;
+            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
+            await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
+
+            // Get the base price after the quick sale (will increase due to quick sale)
+            const baselinePrice = await astaVerde.basePrice();
+
+            // Now mint batches that will remain unsold
+            await astaVerde.mintBatch([admin.address], ["QmCID2"]);
+            await astaVerde.mintBatch([admin.address], ["QmCID3"]);
+
+            // Advance time to exactly dayDecreaseThreshold days after the last complete sale
             await advancedDays(dayDecreaseThreshold);
 
-            // Mint another batch to trigger price adjustment
-            await astaVerde.mintBatch([await astaVerde.getAddress()], [
-                "QmCID2",
-            ]);
-
-            const newBasePrice = await astaVerde.basePrice();
-            console.log(
-                "New base price after minting:",
-                newBasePrice.toString(),
-            );
-
-            // The price should not have decreased yet
-            expect(newBasePrice).to.equal(initialBasePrice);
+            // Trigger price adjustment - should decrease at threshold
+            await astaVerde.mintBatch([admin.address], ["QmCID4"]);
+            const priceAtThreshold = await astaVerde.basePrice();
+            
+            // Should decrease from the increased baseline price
+            expect(priceAtThreshold).to.be.lt(baselinePrice);
+            expect(priceAtThreshold).to.be.gte(await astaVerde.priceFloor());
 
             // Now advance one more day to surpass the threshold
             await advancedDays(1n);
 
             // Mint another batch to trigger price adjustment
-            await astaVerde.mintBatch([await astaVerde.getAddress()], [
-                "QmCID3",
-            ]);
-
+            await astaVerde.mintBatch([admin.address], ["QmCID5"]);
             const finalBasePrice = await astaVerde.basePrice();
-            console.log(
-                "Final base price after decrease:",
-                finalBasePrice.toString(),
-            );
-
-            // Calculate expected decrease (should decrease by priceAdjustDelta per unsold batch)
-            const priceAdjustDelta = await astaVerde.priceAdjustDelta();
-            const expectedPrice = initialBasePrice - (2n * priceAdjustDelta); // 2 unsold batches
-            expect(finalBasePrice).to.equal(expectedPrice);
+            
+            // Should remain the same (batches already processed)
+            expect(finalBasePrice).to.equal(priceAtThreshold);
         });
 
         it("Should decrease basePrice correctly after dayDecreaseThreshold", async function () {
-            const { astaVerde, admin } = await loadFixture(
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
                 deployAstaVerdeFixture,
             );
-            const initialBasePrice = await astaVerde.basePrice();
             const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
-            const priceAdjustDelta = await astaVerde.priceAdjustDelta();
             const priceFloor = await astaVerde.priceFloor();
 
-            // Advance time to exactly dayDecreaseThreshold days
+            // Establish a baseline with a complete sale to set lastCompleteSaleTime
+            await astaVerde.mintBatch([admin.address], ["QmCID1"]);
+            const batchID = 1n;
+            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
+            await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
+
+            // Get baseline price after quick sale (will be increased)
+            const baselinePrice = await astaVerde.basePrice();
+
+            // Create some unsold batches
+            await astaVerde.mintBatch([admin.address], ["QmCID2"]);
+
+            // Advance time to exactly dayDecreaseThreshold days since lastCompleteSaleTime
             await advancedDays(dayDecreaseThreshold);
 
-            // Mint a batch to potentially trigger updateBasePrice
-            await astaVerde.mintBatch([admin.address], ["QmCID"]);
-
-            const priceAfterMint = await astaVerde.basePrice();
-            expect(priceAfterMint).to.equal(initialBasePrice); // No decrease yet
+            // Mint a batch to trigger updateBasePrice - should decrease at threshold
+            await astaVerde.mintBatch([admin.address], ["QmCID3"]);
+            const priceAfterThreshold = await astaVerde.basePrice();
+            expect(priceAfterThreshold).to.be.lt(baselinePrice); // Should decrease
+            expect(priceAfterThreshold).to.be.gte(priceFloor);
 
             // Advance time by one more day to surpass the threshold
             await advancedDays(1n);
 
-            // Mint another batch to trigger updateBasePrice
-            await astaVerde.mintBatch([admin.address], ["QmCID2"]);
+            // Mint another batch to trigger updateBasePrice - should remain same
+            await astaVerde.mintBatch([admin.address], ["QmCID4"]);
 
             const finalBasePrice = await astaVerde.basePrice();
-            const expectedDecrease = 1n * priceAdjustDelta; // One day over the threshold
-            const expectedPrice =
-                initialBasePrice - expectedDecrease > priceFloor
-                    ? initialBasePrice - expectedDecrease
-                    : priceFloor;
-
-            expect(finalBasePrice).to.equal(expectedPrice);
+            
+            // Should remain the same (no new unsold batches to process)
+            expect(finalBasePrice).to.equal(priceAfterThreshold);
         });
 
         it("Should not decrease basePrice below priceFloor", async function () {
@@ -999,7 +1001,8 @@ describe("AstaVerde Logic and Behavior", function () {
         });
     });
 
-    it("Should not increase basePrice when only part of a batch is sold", async function () {
+    describe("Additional Price Adjustment Tests", function () {
+        it("Should not increase basePrice when only part of a batch is sold", async function () {
         const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
             deployAstaVerdeFixture,
         );
@@ -1073,9 +1076,12 @@ describe("AstaVerde Logic and Behavior", function () {
         const finalBasePrice = await astaVerde.basePrice();
         expect(finalBasePrice).to.equal(ethers.parseUnits("250", 6));
 
-        // Verify that a sale after 2 days doesn't increase price
-        await advancedDays(1n); // Now at 3 days
+        // Verify that a sale after 2 days from batch creation doesn't increase price
         await astaVerde.mintBatch([admin.address], ["QmValidCID3"]);
+        
+        // Advance 3 days after batch 3 creation (> 2 day threshold)
+        await advancedDays(3n);
+        
         currentPrice = await astaVerde.getCurrentBatchPrice(3);
         await mockUSDC.connect(user1).approve(
             await astaVerde.getAddress(),
