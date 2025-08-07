@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { parseEther, formatEther } from "viem";
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { getEcoStabilizerContractConfig, getSccContractConfig, astaverdeContractConfig } from "../lib/contracts";
