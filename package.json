@@ -80,7 +80,9 @@
         "webapp:build": "cd webapp && npm run build",
         "webapp:install": "cd webapp && npm install",
         "watch": "nodemon --watch ./contracts --exec 'npm run compile && npm run test'",
-        "watch:dev": "nodemon --watch ./contracts --ext sol --exec 'npm run compile && npm run deploy:local'"
+        "watch:dev": "nodemon --watch ./contracts --ext sol --exec 'npm run compile && npm run deploy:local'",
+        "build:all": "npm run compile && npm run test && npm run webapp:build",
+        "verify:deploy": "npm run build:all && echo 'All builds successful - safe to deploy'"
     },
     "dependencies": {
         "@openzeppelin/contracts": "^5.0.0",
