@@ -5,7 +5,9 @@ export const USDC_DECIMALS = Number(process.env.NEXT_PUBLIC_USDC_DECIMALS) || 6;
 
 const rawIpfsGatewayUrl = process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL;
 export const IPFS_GATEWAY_URL = rawIpfsGatewayUrl
-    ? rawIpfsGatewayUrl.endsWith('/') ? rawIpfsGatewayUrl : `${rawIpfsGatewayUrl}/`
+    ? rawIpfsGatewayUrl.endsWith("/")
+        ? rawIpfsGatewayUrl
+        : `${rawIpfsGatewayUrl}/`
     : "https://ipfs.io/ipfs/";
 
 // Specific gateway for web3.storage if needed as a targeted fallback

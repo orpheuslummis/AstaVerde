@@ -11,7 +11,7 @@ export class Batch {
     imageUrl?: string;
 
     constructor(batchId?: bigint, tokenIds?: bigint[], creationTime?: bigint, price?: bigint, itemsLeft = 0n) {
-        this.id = batchId ?? 0n; 
+        this.id = batchId ?? 0n;
         this.batchId = batchId ?? 0n;
         this.tokenIds = tokenIds ?? [];
         this.creationTime = creationTime ?? 0n;
@@ -29,12 +29,6 @@ export class Batch {
     }
 
     updateItemsLeft(newItemsLeft: bigint): Batch {
-        return new Batch(
-            this.batchId,
-            this.tokenIds,
-            this.creationTime,
-            this.price,
-            newItemsLeft
-        );
+        return new Batch(this.batchId, this.tokenIds, this.creationTime, this.price, newItemsLeft);
     }
 }

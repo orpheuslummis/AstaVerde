@@ -96,12 +96,19 @@ function generateShape(type: number, size: number, rotation: number): string {
         case 3: // Star
             return generateStar(centerX, centerY, 5, size / 2, size / 4, rotation);
         default:
-            return '';
+            return "";
     }
 }
 
-function generateStar(cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number, rotation: number): string {
-    let points = '';
+function generateStar(
+    cx: number,
+    cy: number,
+    spikes: number,
+    outerRadius: number,
+    innerRadius: number,
+    rotation: number,
+): string {
+    let points = "";
     for (let i = 0; i < spikes * 2; i++) {
         const radius = i % 2 === 0 ? outerRadius : innerRadius;
         const angle = (i * Math.PI) / spikes - Math.PI / 2;
@@ -111,11 +118,11 @@ function generateStar(cx: number, cy: number, spikes: number, outerRadius: numbe
 }
 
 function generateElements(count: number, seed: number): string {
-    let elements = '';
+    let elements = "";
     for (let i = 0; i < count; i++) {
-        const x = 20 + (seed * (i + 1) * 17) % 260;
-        const y = 20 + (seed * (i + 1) * 23) % 160;
-        const size = 10 + (seed * (i + 1)) % 20;
+        const x = 20 + ((seed * (i + 1) * 17) % 260);
+        const y = 20 + ((seed * (i + 1) * 23) % 160);
+        const size = 10 + ((seed * (i + 1)) % 20);
         const hue = (seed * (i + 1) * 47) % 360;
         elements += `<circle cx="${x}" cy="${y}" r="${size}" fill="hsla(${hue}, 70%, 60%, 0.5)" />`;
     }
