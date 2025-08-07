@@ -1,4 +1,10 @@
-import { IPFS_GATEWAY_URL, FALLBACK_IPFS_GATEWAY_URL, WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION, WEB3_STORAGE_GATEWAY_PREFIX, WEB3_STORAGE_GATEWAY_SUFFIX } from '../app.config';
+import {
+    IPFS_GATEWAY_URL,
+    FALLBACK_IPFS_GATEWAY_URL,
+    WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION,
+    WEB3_STORAGE_GATEWAY_PREFIX,
+    WEB3_STORAGE_GATEWAY_SUFFIX,
+} from "../app.config";
 
 export interface TokenMetadata {
     name: string;
@@ -70,7 +76,7 @@ export async function fetchJsonFromIpfsWithFallback(cidOrUri: string): Promise<{
     if (WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION) {
         const web3StorageGatewayUrl = `${WEB3_STORAGE_GATEWAY_PREFIX}${cid}${WEB3_STORAGE_GATEWAY_SUFFIX}`;
         try {
-            console.log(`Attempting web3.storage gateway for ${cid} to ${web3StorageGatewayUrl}`)
+            console.log(`Attempting web3.storage gateway for ${cid} to ${web3StorageGatewayUrl}`);
             const response = await fetch(web3StorageGatewayUrl);
             if (response.ok) {
                 const data = await response.json();
@@ -84,7 +90,9 @@ export async function fetchJsonFromIpfsWithFallback(cidOrUri: string): Promise<{
                 // This is a simplification; ideally, resolveIpfsUriToUrl would handle subdomain gateways.
                 return { data, gateway: `https://${new URL(web3StorageGatewayUrl).hostname}/` };
             }
-            console.warn(`web3.storage gateway fetch failed for ${cid} using ${web3StorageGatewayUrl}: ${response.status}`);
+            console.warn(
+                `web3.storage gateway fetch failed for ${cid} using ${web3StorageGatewayUrl}: ${response.status}`,
+            );
         } catch (error) {
             console.warn(`Error fetching from web3.storage gateway ${web3StorageGatewayUrl} for ${cid}:`, error);
         }
@@ -92,7 +100,7 @@ export async function fetchJsonFromIpfsWithFallback(cidOrUri: string): Promise<{
 
     // Try fallback gateway (third attempt)
     try {
-        console.log(`Attempting fallback for ${cid} to ${FALLBACK_IPFS_GATEWAY_URL}`)
+        console.log(`Attempting fallback for ${cid} to ${FALLBACK_IPFS_GATEWAY_URL}`);
         const response = await fetch(`${FALLBACK_IPFS_GATEWAY_URL}${cid}`);
         if (response.ok) {
             const data = await response.json();
@@ -112,7 +120,8 @@ export function resolveIpfsUriToUrl(ipfsUri: string | undefined | null, gateway:
         const cid = ipfsUri.replace("ipfs://", "");
         // Handle subdomain gateway structure if the provided gateway is a base for it (e.g., "https://*.ipfs.w3s.link/")
         // This is a simplified check. A more robust solution might involve checking specific hostnames.
-        if (gateway.includes('.w3s.link')) { // Check if it's the w3s.link special gateway
+        if (gateway.includes(".w3s.link")) {
+            // Check if it's the w3s.link special gateway
             return `${WEB3_STORAGE_GATEWAY_PREFIX}${cid}${WEB3_STORAGE_GATEWAY_SUFFIX}`;
         } else {
             return `${gateway}${cid}`;

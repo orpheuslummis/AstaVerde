@@ -64,10 +64,7 @@ type ExecuteFunction = (...args: unknown[]) => Promise<any>;
 
 type ContractError = Error | null;
 
-export function useContractInteraction(
-    contractConfig: any,
-    functionName: string,
-) {
+export function useContractInteraction(contractConfig: any, functionName: string) {
     const [isSimulating, setIsSimulating] = useState(false);
     const [isPending, setIsPending] = useState(false);
     const [error, setError] = useState<ContractError>(null);
@@ -142,12 +139,7 @@ export function useContractInteraction(
 
     const mintBatch = useCallback(
         async (producers: string[], cids: string[]) => {
-            console.log(
-                "mintBatch called with producers:",
-                producers,
-                "and cids:",
-                cids,
-            );
+            console.log("mintBatch called with producers:", producers, "and cids:", cids);
             return execute(producers, cids);
         },
         [execute],
@@ -187,19 +179,13 @@ export function useContractInteraction(
 
                 for (let i = 0; i < batches; i++) {
                     const start = i * batchSize + 1;
-                    const end = Math.min(
-                        (i + 1) * batchSize,
-                        Number(lastTokenID),
-                    );
+                    const end = Math.min((i + 1) * batchSize, Number(lastTokenID));
 
-                    const calls = Array.from(
-                        { length: end - start + 1 },
-                        (_, index) => ({
-                            ...contractConfig,
-                            functionName: "balanceOf",
-                            args: [ownerAddress, BigInt(start + index)],
-                        }),
-                    );
+                    const calls = Array.from({ length: end - start + 1 }, (_, index) => ({
+                        ...contractConfig,
+                        functionName: "balanceOf",
+                        args: [ownerAddress, BigInt(start + index)],
+                    }));
 
                     const results = await multicall(config, {
                         contracts: calls as any[],
@@ -207,11 +193,7 @@ export function useContractInteraction(
                     });
 
                     results.forEach((result, index) => {
-                        if (
-                            result.status === "success" &&
-                            typeof result.result === "bigint" &&
-                            result.result > 0n
-                        ) {
+                        if (result.status === "success" && typeof result.result === "bigint" && result.result > 0n) {
                             ownedTokens.push(start + index);
                         }
                     });
@@ -293,9 +275,7 @@ export function useContractInteraction(
                 if (Array.isArray(result) && result.length === 5) {
                     return result;
                 } else {
-                    throw new Error(
-                        `Unexpected format for batch ${batchId} info`,
-                    );
+                    throw new Error(`Unexpected format for batch ${batchId} info`);
                 }
             } catch (error) {
                 console.error(`Error fetching batch ${batchId} info:`, error);
@@ -352,9 +332,7 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
             if (!publicClient) throw new Error("Public client not available");
             setIsLoading(true);
             try {
-                const currentAllowance = allowance
-                    ? BigInt(allowance.toString())
-                    : 0n;
+                const currentAllowance = allowance ? BigInt(allowance.toString()) : 0n;
                 const needsApproval = currentAllowance < usdcAmount;
 
                 if (needsApproval) {
@@ -377,16 +355,11 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                     }
 
                     // Calculate a reasonable approval amount
-                    const pricePerUnit = BigInt(usdcAmount) /
-                        BigInt(tokenAmount);
+                    const pricePerUnit = BigInt(usdcAmount) / BigInt(tokenAmount);
                     const bufferFactor = 100n; // Adjust this as needed
-                    const approvalAmount = maxBatchSizeBigInt * pricePerUnit *
-                        bufferFactor;
+                    const approvalAmount = maxBatchSizeBigInt * pricePerUnit * bufferFactor;
 
-                    console.log(
-                        "Calculated approval amount:",
-                        formatUnits(approvalAmount, USDC_DECIMALS),
-                    );
+                    console.log("Calculated approval amount:", formatUnits(approvalAmount, USDC_DECIMALS));
 
                     const approveTx = await walletClient.writeContract({
                         ...getUsdcContractConfig(),
@@ -449,27 +422,19 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                             );
                         }
                         // Wait 10 seconds before retrying
-                        await new Promise((resolve) =>
-                            setTimeout(resolve, 10000)
-                        );
+                        await new Promise((resolve) => setTimeout(resolve, 10000));
                     }
                 }
             } catch (error) {
                 console.error("Error in approve and buy process:", error);
                 if (error instanceof Error) {
                     if (error.message.includes("Insufficient funds sent")) {
-                        customToast.error(
-                            "Insufficient USDC balance for this purchase.",
-                        );
+                        customToast.error("Insufficient USDC balance for this purchase.");
                     } else {
-                        customToast.error(
-                            "Transaction failed: " + error.message,
-                        );
+                        customToast.error("Transaction failed: " + error.message);
                     }
                 } else {
-                    customToast.error(
-                        "An unknown error occurred during the transaction.",
-                    );
+                    customToast.error("An unknown error occurred during the transaction.");
                 }
             } finally {
                 setIsLoading(false);
