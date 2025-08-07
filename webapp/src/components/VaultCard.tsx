@@ -24,6 +24,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete }: Vau
     approveSCC,
     getSccBalance,
     getSccAllowance,
+    getIsNftApproved,
     isVaultAvailable,
     isLoading: vaultLoading,
     error: vaultError
@@ -32,6 +33,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete }: Vau
   const [sccBalance, setSccBalance] = useState<bigint>(0n);
   const [sccAllowance, setSccAllowance] = useState<bigint>(0n);
   const [isApproved, setIsApproved] = useState(false);
+  const [isNftApproved, setIsNftApproved] = useState(false);
   
   // Check loan status for this specific token
   const { data: loanData } = useReadContract({
@@ -48,36 +50,44 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete }: Vau
   const isCurrentUserBorrower = borrower === address;
 
   // Load balances and allowances
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const balance = await getSccBalance();
-        const allowance = await getSccAllowance();
-        setSccBalance(balance);
-        setSccAllowance(allowance);
-        setIsApproved(allowance >= parseEther("20"));
-      } catch (error) {
-        console.error("Error loading vault data:", error);
-      }
-    };
+  const loadData = useCallback(async () => {
+    try {
+      const balance = await getSccBalance();
+      const allowance = await getSccAllowance();
+      const nftApproved = await getIsNftApproved();
+      setSccBalance(balance);
+      setSccAllowance(allowance);
+      setIsApproved(allowance >= parseEther("20"));
+      setIsNftApproved(nftApproved);
+    } catch (error) {
+      console.error("Error loading vault data:", error);
+    }
+  }, [getSccBalance, getSccAllowance, getIsNftApproved]);
 
+  useEffect(() => {
     if (address && isVaultAvailable) {
       loadData();
     }
-  }, [address, isVaultAvailable, getSccBalance, getSccAllowance]);
+  }, [address, isVaultAvailable, loadData]);
 
   const handleDeposit = useCallback(async () => {
     try {
-      // First check if NFT needs approval
-      // This would require checking isApprovedForAll - for now we'll just try to approve
-      await approveNFT();
+      // Check if NFT approval is needed
+      if (!isNftApproved) {
+        await approveNFT();
+        // Refresh approval status after approval
+        const nftApproved = await getIsNftApproved();
+        setIsNftApproved(nftApproved);
+      }
       await deposit(tokenId);
+      // Refresh local data after successful operation
+      await loadData();
       onActionComplete?.();
     } catch (err) {
       console.error("Deposit failed:", err);
       // Error is already handled in useVault hook
     }
-  }, [tokenId, deposit, approveNFT, onActionComplete]);
+  }, [tokenId, deposit, approveNFT, onActionComplete, isNftApproved, getIsNftApproved, loadData]);
 
   const handleWithdraw = useCallback(async () => {
     try {
@@ -86,12 +96,14 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete }: Vau
         await approveSCC();
       }
       await withdraw(tokenId);
+      // Refresh local data after successful operation
+      await loadData();
       onActionComplete?.();
     } catch (err) {
       console.error("Withdraw failed:", err);
       // Error is already handled in useVault hook
     }
-  }, [tokenId, withdraw, approveSCC, sccAllowance, onActionComplete]);
+  }, [tokenId, withdraw, approveSCC, sccAllowance, onActionComplete, loadData]);
 
   const handleRepayAndWithdraw = useCallback(async () => {
     try {
@@ -100,12 +112,14 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete }: Vau
         await approveSCC();
       }
       await repayAndWithdraw(tokenId);
+      // Refresh local data after successful operation
+      await loadData();
       onActionComplete?.();
     } catch (err) {
       console.error("Repay and withdraw failed:", err);
       // Error is already handled in useVault hook
     }
-  }, [tokenId, repayAndWithdraw, approveSCC, sccAllowance, onActionComplete]);
+  }, [tokenId, repayAndWithdraw, approveSCC, sccAllowance, onActionComplete, loadData]);
 
   // Don't show vault options for redeemed tokens
   if (isRedeemed) {
