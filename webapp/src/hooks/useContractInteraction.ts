@@ -332,8 +332,18 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
             if (!publicClient) throw new Error("Public client not available");
             setIsLoading(true);
             try {
+                // Always fetch the up-to-date unit price at the moment of purchase
+                const currentUnitPrice = await publicClient.readContract({
+                    ...astaverdeContractConfig,
+                    functionName: "getCurrentBatchPrice",
+                    args: [batchId],
+                });
+
+                // Compute the exact total cost based on the fresh price
+                const exactTotalCost = (currentUnitPrice as bigint) * tokenAmount;
+
                 const currentAllowance = allowance ? BigInt(allowance.toString()) : 0n;
-                const needsApproval = currentAllowance < usdcAmount;
+                const needsApproval = currentAllowance < exactTotalCost;
 
                 if (needsApproval) {
                     // Fetch the current max batch size from the contract
@@ -355,7 +365,7 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                     }
 
                     // Calculate a reasonable approval amount
-                    const pricePerUnit = BigInt(usdcAmount) / BigInt(tokenAmount);
+                    const pricePerUnit = (currentUnitPrice as bigint);
                     const bufferFactor = 100n; // Adjust this as needed
                     const approvalAmount = maxBatchSizeBigInt * pricePerUnit * bufferFactor;
 
@@ -375,7 +385,7 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                 }
 
                 // Prepare the arguments for the buyBatch function
-                const buyBatchArgs = [batchId, usdcAmount, tokenAmount];
+                const buyBatchArgs = [batchId, exactTotalCost, tokenAmount];
 
                 // Estimate gas for the buy transaction
                 const gasEstimate = await publicClient.estimateContractGas({
