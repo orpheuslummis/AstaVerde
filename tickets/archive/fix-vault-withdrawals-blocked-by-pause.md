@@ -1,16 +1,16 @@
 # Fix Vault Withdrawals Blocked by Pause (Vault + AstaVerde)
 
 ## Priority: HIGH (Operational Risk)
-- **Status: OPEN - NOT FIXED**
+- **Status: ✅ FIXED**
 - **Last Checked: 2025-08-13**
 
-## ⚠️ CURRENT STATUS
+## ✅ FIXED STATUS
 
-**STILL VULNERABLE**: AstaVerde inherits from ERC1155Pausable without vault allowlist:
-- Line 12: `contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, ReentrancyGuard`
-- Line 120: `_update` overrides both ERC1155 and ERC1155Pausable
-- No `trustedVault` allowlist implemented
-- **Impact**: When AstaVerde is paused, ALL vault withdrawals are blocked, trapping user collateral
+**VULNERABILITY RESOLVED**: AstaVerde now has vault allowlist:
+- Line 36: `address public trustedVault` state variable added
+- Line 130: `setTrustedVault` function to configure vault address
+- Lines 140-143: `_update` allows transfers from/to trustedVault even when paused
+- **Fix Applied**: Vault operations continue working during pause, preventing collateral lockup
 
 ## Issue
 

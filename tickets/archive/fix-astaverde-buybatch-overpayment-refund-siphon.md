@@ -3,16 +3,16 @@
 - Component: `contracts/AstaVerde.sol`
 - Severity: Critical
 - Type: Logic/Security Bug
-- **Status: OPEN - CRITICAL VULNERABILITY**
+- **Status: ✅ FIXED**
 - **Last Checked: 2025-08-13**
 
-## ⚠️ CURRENT STATUS
+## ✅ FIXED STATUS
 
-**STILL VULNERABLE**: Despite frontend mitigation (commit e9e4dee), the contract remains exploitable:
-- Line 267: Contract pulls only `totalCost` via `transferFrom`
-- Line 241: Calculates `refundAmount = usdcAmount - totalCost`
-- Line 269-270: Refunds from contract's existing balance
-- **Attack Vector**: Attacker can drain contract by passing high `usdcAmount` while only approving `totalCost`
+**VULNERABILITY RESOLVED**: The contract now properly handles overpayments:
+- Line 295: Contract pulls FULL `usdcAmount` via `safeTransferFrom`
+- Line 277: Calculates `refundAmount = usdcAmount > totalCost ? usdcAmount - totalCost : 0`
+- Line 304: Refunds from pulled funds, not contract balance
+- **Fix Applied**: Full amount pulled first, then excess refunded - prevents siphon attack
 
 ## Background / Justification
 
