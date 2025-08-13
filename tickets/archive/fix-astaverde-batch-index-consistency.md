@@ -3,6 +3,7 @@
 - Component: `contracts/AstaVerde.sol`
 - Severity: Low
 - Type: Code Quality/Potential Bug
+- **Status: OPEN** - Pattern still exists (line 234: `batches[batchID - 1]`)
 
 ## Background / Justification
 
