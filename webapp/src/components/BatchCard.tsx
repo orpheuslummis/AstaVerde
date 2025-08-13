@@ -58,14 +58,19 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
         if (batch.itemsLeft === 0n || isSoldOut) return;
         try {
             await handleApproveAndBuy(BigInt(tokenAmount), totalPrice);
+            // Immediately refresh the batches after successful purchase
+            await refetchBatches();
             if (updateCard) {
                 updateCard();
             }
-            refetchBatches();
         } catch (error) {
             console.error("Error in approve and buy process:", error);
             if (error instanceof Error) {
-                customToast.error(`Transaction failed: ${error.message}`);
+                // Don't show error toast if it's already been shown by the hook
+                if (!error.message.includes("Transaction cancelled by user") && 
+                    !error.message.includes("Transaction confirmation timed out")) {
+                    customToast.error(`Transaction failed: ${error.message}`);
+                }
             } else {
                 customToast.error(
                     "An unknown error occurred during the transaction",
@@ -87,6 +92,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
 
     const buttonContent = (
         <button
+            data-testid="buy-button"
             onClick={handleBuyClick}
             disabled={isLoading || !isConnected || batch.itemsLeft === 0n ||
                 isSoldOut}
@@ -117,6 +123,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
 
     return (
         <div
+            data-testid="batch-card"
             className={`batch-card hover:shadow-xl ${
                 isSoldOut ? "opacity-50" : ""
             } dark:bg-gray-800 dark:border-gray-700`}
@@ -191,6 +198,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                             </div>
                         </div>
                         <input
+                            data-testid="quantity-slider"
                             type="range"
                             id={`quantity-${batch.batchId}`}
                             min="1"

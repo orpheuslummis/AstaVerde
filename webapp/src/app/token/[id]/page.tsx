@@ -152,36 +152,105 @@ export default function Page({ params }: { params: { id: bigint } }) {
     // or you could pass all resolved data if you prefer TokenCard to be purely presentational here.
     // For simplicity and to reuse TokenCard's internal fetching for its own display purposes:
     return (
-        <div className="container mx-auto px-4 py-4 flex flex-col items-center min-h-[calc(100vh-4rem)]">
-            <h1 className="text-3xl font-bold mb-6 dark:text-white">Token Details</h1>
-            {/* Option 1: Let TokenCard do its own full fetching for its display parts */}
-            <div className="w-full max-w-md mb-8">
-                <TokenCard tokenId={tokenDisplay.id} isRedeemed={tokenDisplay.isRedeemed} isCompact={false} />
-            </div>
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+            <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                Token Details
+            </h1>
+            
+            {/* Display resolved token details */}
+            <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl overflow-hidden">
+                {/* Image Section */}
+                <div className="relative bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 p-8">
+                    {tokenDisplay.imageUrl ? (
+                        <img
+                            src={tokenDisplay.imageUrl}
+                            alt={tokenDisplay.name || `Image for token ${tokenDisplay.id}`}
+                            className="w-full h-auto object-contain max-h-96 rounded-xl shadow-lg mx-auto"
+                        />
+                    ) : (
+                        <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-purple-400 to-blue-400 rounded-xl shadow-lg">
+                            <div className="text-white text-center">
+                                <svg className="w-24 h-24 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <p className="text-lg font-medium">No Image Available</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
-            {/* Option 2: Display some already resolved details from this page's fetch */}
-            {/* You can choose to show more details here directly from tokenDisplay if needed */}
-            <div className="w-full max-w-md bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
-                <h2 className="text-2xl font-semibold mb-2 dark:text-gray-100">{tokenDisplay.name || `Token ID: ${tokenDisplay.id}`}</h2>
-                {tokenDisplay.imageUrl && (
-                    <img
-                        src={tokenDisplay.imageUrl}
-                        alt={tokenDisplay.name || `Image for token ${tokenDisplay.id}`}
-                        className="w-full h-auto object-contain rounded-md mb-4 max-h-96"
-                    />
-                )}
-                <p className="text-gray-700 dark:text-gray-300 mb-1">
-                    <span className="font-semibold">Description:</span> {tokenDisplay.description || "No description available."}
-                </p>
-                <p className="text-gray-700 dark:text-gray-300 mb-1 break-all">
-                    <span className="font-semibold">Producer:</span> {tokenDisplay.producerAddress}
-                </p>
-                <p className="text-gray-700 dark:text-gray-300 mb-1 break-all">
-                    <span className="font-semibold">Metadata CID:</span> {tokenDisplay.metadataCid}
-                </p>
-                <p className={`text-lg font-semibold ${tokenDisplay.isRedeemed ? 'text-red-500' : 'text-emerald-500'}`}>
-                    {tokenDisplay.isRedeemed ? "Status: Redeemed" : "Status: Not Redeemed"}
-                </p>
+                {/* Content Section */}
+                <div className="p-8">
+                    {/* Title and Status Badge */}
+                    <div className="flex items-start justify-between mb-6">
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                            {tokenDisplay.name || `Carbon Offset #${tokenDisplay.id}`}
+                        </h2>
+                        <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                            tokenDisplay.isRedeemed 
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
+                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        }`}>
+                            {tokenDisplay.isRedeemed ? '✓ Redeemed' : '● Active'}
+                        </span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                        {tokenDisplay.description || "Test carbon offset NFT for local development. This represents verified carbon credits from renewable energy projects."}
+                    </p>
+
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Producer Card */}
+                        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                            <div className="flex items-center mb-2">
+                                <svg className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Producer
+                                </h3>
+                            </div>
+                            <p className="text-sm text-gray-900 dark:text-gray-200 font-mono break-all">
+                                {tokenDisplay.producerAddress}
+                            </p>
+                        </div>
+
+                        {/* Metadata Card */}
+                        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                            <div className="flex items-center mb-2">
+                                <svg className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Metadata CID
+                                </h3>
+                            </div>
+                            <p className="text-sm text-gray-900 dark:text-gray-200 font-mono break-all">
+                                {tokenDisplay.metadataCid}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="mt-8 flex gap-4">
+                        <button
+                            onClick={() => window.history.back()}
+                            className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold rounded-xl transition-colors duration-200"
+                        >
+                            ← Back
+                        </button>
+                        <a
+                            href={`https://ipfs.io/ipfs/${tokenDisplay.metadataCid.replace('ipfs://', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold rounded-xl transition-all duration-200 text-center shadow-lg hover:shadow-xl"
+                        >
+                            View on IPFS →
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     );

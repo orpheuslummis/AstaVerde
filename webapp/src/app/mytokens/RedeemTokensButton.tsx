@@ -101,18 +101,32 @@ export default function RedeemTokensButton(
         } catch (error: unknown) {
             console.error("Error redeeming tokens:", error);
             if (error instanceof Error) {
-                const errorMessage =
-                    error.message.includes("Redemption transaction failed")
-                        ? "Transaction failed. Please check your wallet for details."
-                        : error.message;
-                customToast.error(`Failed to redeem tokens: ${errorMessage}`);
-                setStatusMessage(`Error: ${errorMessage}`);
+                let errorMessage = error.message;
+                
+                // Provide user-friendly error messages
+                if (error.message.includes("Transaction cancelled by user")) {
+                    errorMessage = "Transaction was cancelled";
+                    customToast.info(errorMessage);
+                } else if (error.message.includes("Insufficient funds")) {
+                    errorMessage = "Insufficient funds to complete the transaction";
+                    customToast.error(errorMessage);
+                } else if (error.message.includes("Token already redeemed")) {
+                    errorMessage = "This token has already been redeemed";
+                    customToast.warning(errorMessage);
+                } else if (error.message.includes("Wallet not connected")) {
+                    errorMessage = "Please connect your wallet first";
+                    customToast.error(errorMessage);
+                } else {
+                    customToast.error(`Transaction failed: ${errorMessage}`);
+                }
+                
+                setStatusMessage(errorMessage);
             } else {
                 customToast.error(
-                    "An unknown error occurred while redeeming tokens",
+                    "An unexpected error occurred. Please try again.",
                 );
                 setStatusMessage(
-                    "An unknown error occurred during redemption.",
+                    "An unexpected error occurred. Please try again.",
                 );
             }
         } finally {
