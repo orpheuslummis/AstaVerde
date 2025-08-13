@@ -4,14 +4,14 @@ import "hardhat-deploy";
 import type { HardhatUserConfig } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
-import "./tasks/fund-account";
-import "./tasks/query";
+// import "./tasks/fund-account";
+// import "./tasks/query";
 
 // Load public environment variables
-dotenvConfig({ path: resolve(__dirname, ".env") });
+dotenvConfig({ path: resolve(process.cwd(), ".env") });
 
 // Load private environment variables
-dotenvConfig({ path: resolve(__dirname, ".env.local") });
+dotenvConfig({ path: resolve(process.cwd(), ".env.local") });
 
 const mnemonic: string | undefined = process.env.MNEMONIC;
 const privateKey: string | undefined = process.env.PRIVATE_KEY;
@@ -73,7 +73,7 @@ const config: HardhatUserConfig = {
         },
         "base-mainnet": {
             ...getChainConfig("base-mainnet"),
-            accounts: [privateKey as string],
+            accounts: privateKey ? [privateKey] : [],
             verify: {
                 etherscan: {
                     apiKey: process.env.BASE_MAINNET_EXPLORER_API_KEY,
@@ -83,7 +83,7 @@ const config: HardhatUserConfig = {
         },
         "base-sepolia": {
             ...getChainConfig("base-sepolia"),
-            accounts: [privateKey as string],
+            accounts: privateKey ? [privateKey] : [],
             verify: {
                 etherscan: {
                     apiKey: process.env.BASE_SEPOLIA_EXPLORER_API_KEY,
@@ -119,6 +119,7 @@ const config: HardhatUserConfig = {
     solidity: {
         version: "0.8.27",
         settings: {
+            viaIR: true,
             metadata: {
                 bytecodeHash: "none",
             },
