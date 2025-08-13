@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstaVerde Dev Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .address {
+            font-size: 0.75rem;
+            word-break: break-all;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+            font-weight: 600;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status.connected {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status.disconnected {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .balance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .balance-item {
+            background: #f7f7f7;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .balance-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .balance-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        #console {
+            background: #1a1a1a;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 AstaVerde Dev Dashboard</h1>
+        
+        <div class="grid">
+            <!-- Network Status -->
+            <div class="card">
+                <h2>⛓️ Network Status</h2>
+                <div class="info-row">
+                    <span class="label">Status:</span>
+                    <span class="value">
+                        <span id="network-status" class="status disconnected">Disconnected</span>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Chain ID:</span>
+                    <span class="value">31337</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">RPC URL:</span>
+                    <span class="value">http://localhost:8545</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Block Number:</span>
+                    <span class="value" id="block-number">-</span>
+                </div>
+            </div>
+            
+            <!-- Contract Addresses -->
+            <div class="card">
+                <h2>📝 Contract Addresses</h2>
+                <div class="info-row">
+                    <span class="label">AstaVerde:</span>
+                    <span class="value address">0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">USDC:</span>
+                    <span class="value address">0x5FbDB2315678afecb367f032d93F642f64180aa3</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">EcoStabilizer:</span>
+                    <span class="value address">0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">SCC:</span>
+                    <span class="value address">0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0</span>
+                </div>
+            </div>
+            
+            <!-- Test Accounts -->
+            <div class="card">
+                <h2>👥 Test Accounts</h2>
+                <div class="info-row">
+                    <span class="label">Deployer:</span>
+                    <span class="value address">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266</span>
+                </div>
+                <div class="balance-grid">
+                    <div class="balance-item">
+                        <div class="balance-value" id="deployer-eth">-</div>
+                        <div class="balance-label">ETH</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-value" id="deployer-usdc">-</div>
+                        <div class="balance-label">USDC</div>
+                    </div>
+                </div>
+                <button onclick="copyAddress('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')">
+                    📋 Copy Private Key
+                </button>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="card">
+                <h2>⚡ Quick Actions</h2>
+                <div class="button-group">
+                    <button onclick="mintBatch()">🎨 Mint Batch (3 NFTs)</button>
+                    <button onclick="checkBalances()">💰 Check All Balances</button>
+                    <button onclick="runTestFlow()">🔄 Run Test Flow</button>
+                    <button onclick="openWebapp()">🌐 Open Webapp</button>
+                </div>
+            </div>
+            
+            <!-- Batch Info -->
+            <div class="card">
+                <h2>📦 Batch Info</h2>
+                <div class="info-row">
+                    <span class="label">Last Batch ID:</span>
+                    <span class="value" id="last-batch-id">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Last Token ID:</span>
+                    <span class="value" id="last-token-id">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Current Price:</span>
+                    <span class="value" id="current-price">-</span>
+                </div>
+                <button onclick="updateBatchInfo()">🔄 Refresh</button>
+            </div>
+            
+            <!-- Console Output -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>📟 Console</h2>
+                <div id="console">Ready for commands...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <script>
+        let provider;
+        let connected = false;
+        
+        // Contract ABIs (minimal)
+        const ABI = {
+            astaverde: [
+                "function lastBatchID() view returns (uint256)",
+                "function lastTokenID() view returns (uint256)",
+                "function getCurrentBatchPrice(uint256) view returns (uint256)",
+                "function mintBatch(address[], string[])"
+            ],
+            usdc: [
+                "function balanceOf(address) view returns (uint256)"
+            ]
+        };
+        
+        // Contracts
+        const CONTRACTS = {
+            astaverde: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+            usdc: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+        };
+        
+        // Console logging
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const time = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : '💬';
+            console.innerHTML += `\n[${time}] ${prefix} ${message}`;
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        // Connect to provider
+        async function connect() {
+            try {
+                provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
+                await provider.getNetwork();
+                connected = true;
+                document.getElementById('network-status').className = 'status connected';
+                document.getElementById('network-status').textContent = 'Connected';
+                log('Connected to local node', 'success');
+                
+                // Start monitoring
+                setInterval(updateBlockNumber, 2000);
+                updateBatchInfo();
+                updateBalances();
+            } catch (error) {
+                connected = false;
+                document.getElementById('network-status').className = 'status disconnected';
+                document.getElementById('network-status').textContent = 'Disconnected';
+                log('Failed to connect to local node', 'error');
+            }
+        }
+        
+        // Update block number
+        async function updateBlockNumber() {
+            if (!connected) return;
+            try {
+                const blockNumber = await provider.getBlockNumber();
+                document.getElementById('block-number').textContent = blockNumber;
+            } catch (error) {
+                // Silent fail
+            }
+        }
+        
+        // Update batch info
+        async function updateBatchInfo() {
+            if (!connected) return;
+            try {
+                const contract = new ethers.Contract(CONTRACTS.astaverde, ABI.astaverde, provider);
+                const lastBatchId = await contract.lastBatchID();
+                const lastTokenId = await contract.lastTokenID();
+                
+                document.getElementById('last-batch-id').textContent = lastBatchId.toString();
+                document.getElementById('last-token-id').textContent = lastTokenId.toString();
+                
+                if (lastBatchId > 0) {
+                    const price = await contract.getCurrentBatchPrice(lastBatchId);
+                    document.getElementById('current-price').textContent = 
+                        ethers.utils.formatUnits(price, 6) + ' USDC';
+                }
+                
+                log('Batch info updated');
+            } catch (error) {
+                log('Failed to update batch info: ' + error.message, 'error');
+            }
+        }
+        
+        // Update balances
+        async function updateBalances() {
+            if (!connected) return;
+            try {
+                const deployer = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+                
+                // ETH balance
+                const ethBalance = await provider.getBalance(deployer);
+                document.getElementById('deployer-eth').textContent = 
+                    parseFloat(ethers.utils.formatEther(ethBalance)).toFixed(2);
+                
+                // USDC balance
+                const usdcContract = new ethers.Contract(CONTRACTS.usdc, ABI.usdc, provider);
+                const usdcBalance = await usdcContract.balanceOf(deployer);
+                document.getElementById('deployer-usdc').textContent = 
+                    parseFloat(ethers.utils.formatUnits(usdcBalance, 6)).toFixed(2);
+            } catch (error) {
+                log('Failed to update balances: ' + error.message, 'error');
+            }
+        }
+        
+        // Quick Actions
+        function mintBatch() {
+            log('Minting new batch...');
+            const { exec } = require('child_process');
+            exec('node scripts/mint-local-batch.js 3', (error, stdout, stderr) => {
+                if (error) {
+                    log('Mint failed: ' + error.message, 'error');
+                } else {
+                    log('Batch minted successfully!', 'success');
+                    updateBatchInfo();
+                }
+            });
+        }
+        
+        function checkBalances() {
+            log('Checking all balances...');
+            window.open('http://localhost:8545', '_blank');
+            log('Opening balance checker in new window');
+        }
+        
+        function runTestFlow() {
+            log('Running automated test flow...');
+            log('Check terminal for detailed output');
+        }
+        
+        function openWebapp() {
+            window.open('http://localhost:3000', '_blank');
+            log('Opening webapp in new window');
+        }
+        
+        function copyAddress(text) {
+            navigator.clipboard.writeText(text);
+            log('Copied to clipboard');
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            connect();
+        });
+    </script>
+</body>
+</html>

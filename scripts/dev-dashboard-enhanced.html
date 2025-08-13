@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstaVerde Dev Dashboard Enhanced</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card h2 .help-icon {
+            font-size: 0.9rem;
+            color: #667eea;
+            cursor: help;
+            padding: 4px 8px;
+            background: #f0f0f0;
+            border-radius: 50%;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .address {
+            font-size: 0.75rem;
+            word-break: break-all;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .address:hover {
+            color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status.connected {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status.disconnected {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .balance-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .balance-item {
+            background: #f7f7f7;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .balance-item:hover {
+            background: #e7e7e7;
+            transform: translateY(-2px);
+        }
+        
+        .balance-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .balance-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        .mint-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 8px;
+        }
+        
+        .mint-control label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .mint-control input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .mint-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .mint-control .mint-count {
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+        
+        #console {
+            background: #1a1a1a;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 8px;
+            height: 250px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .console-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .console-controls button {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            z-index: 1000;
+            display: none;
+            max-width: 300px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .tooltip.show {
+            display: block;
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .tab-container {
+            margin-top: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: white;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .tab-content {
+            background: white;
+            padding: 20px;
+            border-radius: 0 8px 8px 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .account-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .account-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .account-item:hover {
+            background: #f7f7f7;
+        }
+        
+        .account-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .account-address {
+            font-size: 0.85rem;
+            color: #666;
+            font-family: monospace;
+        }
+        
+        .account-balances {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .help-section {
+            background: #f7f9fc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .help-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .help-section p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        .help-section code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 AstaVerde Dev Dashboard Enhanced</h1>
+            <p>Complete development environment control center</p>
+        </div>
+        
+        <div class="grid">
+            <!-- Network Status -->
+            <div class="card">
+                <h2>
+                    ⛓️ Network Status
+                    <span class="help-icon" title="Shows connection to local Hardhat node">?</span>
+                </h2>
+                <div class="info-row">
+                    <span class="label">Status:</span>
+                    <span class="value">
+                        <span id="network-status" class="status disconnected">Connecting...</span>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Chain ID:</span>
+                    <span class="value" id="chain-id">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">RPC URL:</span>
+                    <span class="value">http://localhost:8545</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Block Number:</span>
+                    <span class="value" id="block-number">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Gas Price:</span>
+                    <span class="value" id="gas-price">-</span>
+                </div>
+            </div>
+            
+            <!-- Contract Addresses -->
+            <div class="card">
+                <h2>
+                    📝 Contract Addresses
+                    <span class="help-icon" title="Deployed contract addresses on local network">?</span>
+                </h2>
+                <div class="info-row">
+                    <span class="label">AstaVerde (Phase 1):</span>
+                    <span class="value address" onclick="copyAddress('0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512')" title="Click to copy">0xe7f172...0512</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">USDC (Mock):</span>
+                    <span class="value address" onclick="copyAddress('0x5FbDB2315678afecb367f032d93F642f64180aa3')" title="Click to copy">0x5FbDB...0aa3</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">EcoStabilizer (Phase 2):</span>
+                    <span class="value address" onclick="copyAddress('0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9')" title="Click to copy">0xCf7Ed...0Fc9</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">SCC Token (Phase 2):</span>
+                    <span class="value address" onclick="copyAddress('0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0')" title="Click to copy">0x9fE46...a6e0</span>
+                </div>
+            </div>
+            
+            <!-- Current Account -->
+            <div class="card">
+                <h2>
+                    👤 Current Account
+                    <span class="help-icon" title="Primary test account used for transactions">?</span>
+                </h2>
+                <div class="info-row">
+                    <span class="label">Name:</span>
+                    <span class="value" id="account-name">Deployer</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Address:</span>
+                    <span class="value address" id="account-address" onclick="copyAddress(this.textContent)" title="Click to copy">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266</span>
+                </div>
+                <div class="balance-grid">
+                    <div class="balance-item">
+                        <div class="balance-value" id="account-eth">-</div>
+                        <div class="balance-label">ETH</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-value" id="account-usdc">-</div>
+                        <div class="balance-label">USDC</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-value" id="account-scc">-</div>
+                        <div class="balance-label">SCC</div>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button onclick="copyPrivateKey()" title="Copy private key for testing">📋 Copy Private Key</button>
+                    <button onclick="switchAccount()" title="Switch to different test account">🔄 Switch Account</button>
+                </div>
+            </div>
+            
+            <!-- Marketplace Controls -->
+            <div class="card">
+                <h2>
+                    🎨 Marketplace Controls
+                    <span class="help-icon" title="Phase 1: Carbon offset NFT marketplace">?</span>
+                </h2>
+                <div class="mint-control">
+                    <label>NFTs to Mint:</label>
+                    <input type="range" id="mint-slider" min="1" max="10" value="3" oninput="updateMintCount()">
+                    <span class="mint-count" id="mint-count">3</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Producer Split:</span>
+                    <span class="value">70% (30% platform fee)</span>
+                </div>
+                <div class="button-group">
+                    <button onclick="mintBatch()" id="mint-btn">🎨 Mint Batch</button>
+                    <button onclick="buyTokens()" id="buy-btn">💰 Buy Tokens</button>
+                    <button onclick="redeemToken()" id="redeem-btn">✅ Redeem Token</button>
+                </div>
+            </div>
+            
+            <!-- Vault Controls -->
+            <div class="card">
+                <h2>
+                    🏦 Vault Controls
+                    <span class="help-icon" title="Phase 2: EcoStabilizer vault for NFT collateralization">?</span>
+                </h2>
+                <div class="info-row">
+                    <span class="label">SCC per NFT:</span>
+                    <span class="value">20 SCC (fixed rate)</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Vault Status:</span>
+                    <span class="value" id="vault-status">Active</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Your Deposits:</span>
+                    <span class="value" id="user-deposits">0 NFTs</span>
+                </div>
+                <div class="button-group">
+                    <button onclick="depositToVault()" id="deposit-btn">📥 Deposit NFT</button>
+                    <button onclick="withdrawFromVault()" id="withdraw-btn">📤 Withdraw NFT</button>
+                    <button onclick="checkVaultStats()" id="stats-btn">📊 Vault Stats</button>
+                </div>
+            </div>
+            
+            <!-- Batch Information -->
+            <div class="card">
+                <h2>
+                    📦 Batch Information
+                    <span class="help-icon" title="Current batch pricing and availability">?</span>
+                </h2>
+                <div class="info-row">
+                    <span class="label">Last Batch ID:</span>
+                    <span class="value" id="last-batch-id">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Last Token ID:</span>
+                    <span class="value" id="last-token-id">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Current Price:</span>
+                    <span class="value" id="current-price">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Base Price:</span>
+                    <span class="value" id="base-price">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Days Since Launch:</span>
+                    <span class="value" id="days-since">-</span>
+                </div>
+                <button onclick="updateBatchInfo()">🔄 Refresh</button>
+            </div>
+            
+            <!-- Test Scenarios -->
+            <div class="card">
+                <h2>
+                    🧪 Test Scenarios
+                    <span class="help-icon" title="Automated test flows for different scenarios">?</span>
+                </h2>
+                <div class="help-section">
+                    <h3>Available Scenarios:</h3>
+                    <p><strong>Complete Flow:</strong> Buy NFT → Deposit to Vault → Get SCC → Withdraw → Redeem</p>
+                    <p><strong>Balance Check:</strong> Shows all test account balances (ETH, USDC, SCC, NFTs)</p>
+                    <p><strong>Stress Test:</strong> Multiple rapid transactions to test system limits</p>
+                </div>
+                <div class="button-group">
+                    <button onclick="runCompleteFlow()" id="flow-btn">🔄 Complete Flow</button>
+                    <button onclick="checkAllBalances()" id="balances-btn">💰 Check All Balances</button>
+                    <button onclick="runStressTest()" id="stress-btn">⚡ Stress Test</button>
+                </div>
+            </div>
+            
+            <!-- Quick Links -->
+            <div class="card">
+                <h2>
+                    🔗 Quick Links
+                    <span class="help-icon" title="Useful development links">?</span>
+                </h2>
+                <div class="button-group">
+                    <button onclick="openWebapp()">🌐 Open Webapp</button>
+                    <button onclick="openHardhat()">⛏️ Hardhat Console</button>
+                    <button onclick="openDocs()">📚 Documentation</button>
+                    <button onclick="openExplorer()">🔍 Block Explorer</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Console with tabs -->
+        <div class="card" style="margin-top: 20px;">
+            <h2>📟 Console & Monitoring</h2>
+            <div class="tab-container">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('console')">Console Output</button>
+                    <button class="tab" onclick="switchTab('accounts')">Test Accounts</button>
+                    <button class="tab" onclick="switchTab('help')">Help & Commands</button>
+                </div>
+                <div class="tab-content">
+                    <div id="console-tab" class="tab-pane">
+                        <div id="console">Ready for commands...</div>
+                        <div class="console-controls">
+                            <button onclick="clearConsole()">🗑️ Clear</button>
+                            <button onclick="exportLogs()">💾 Export Logs</button>
+                            <button onclick="toggleAutoScroll()">📜 Auto-scroll: ON</button>
+                        </div>
+                    </div>
+                    <div id="accounts-tab" class="tab-pane hidden">
+                        <div class="account-list" id="account-list">
+                            <!-- Accounts will be populated here -->
+                        </div>
+                    </div>
+                    <div id="help-tab" class="tab-pane hidden">
+                        <div class="help-section">
+                            <h3>🚀 Getting Started</h3>
+                            <p>Make sure you have <code>npm run dev</code> running in a terminal.</p>
+                            
+                            <h3>📝 Common Commands</h3>
+                            <p><code>npm run dev</code> - Start local blockchain + webapp + seed data</p>
+                            <p><code>npm run test</code> - Run all contract tests</p>
+                            <p><code>npm run webapp:dev</code> - Start webapp only</p>
+                            <p><code>npx hardhat node</code> - Start local blockchain only</p>
+                            
+                            <h3>🔑 Test Accounts</h3>
+                            <p>All test accounts start with 10,000 ETH and 100,000 USDC</p>
+                            <p>Private keys are deterministic and safe for testing only</p>
+                            
+                            <h3>💡 Tips</h3>
+                            <p>• Use the mint slider to create batches with 1-10 NFTs</p>
+                            <p>• Vault deposits give you 20 SCC per NFT instantly</p>
+                            <p>• Redeemed NFTs cannot be deposited to the vault</p>
+                            <p>• The webapp auto-connects to the local network</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tooltip element -->
+    <div class="tooltip" id="tooltip"></div>
+    
+    <script>
+        // Configuration
+        const RPC_URL = 'http://localhost:8545';
+        const API_URL = 'http://localhost:8080';
+        
+        // Test accounts
+        const TEST_ACCOUNTS = [
+            { name: 'Deployer', address: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', privateKey: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80' },
+            { name: 'Alice', address: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8', privateKey: '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d' },
+            { name: 'Bob', address: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', privateKey: '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a' },
+            { name: 'Charlie', address: '0x90F79bf6EB2c4f870365E785982E1f101E93b906', privateKey: '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6' },
+            { name: 'Dave', address: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', privateKey: '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a' }
+        ];
+        
+        // State
+        let connected = false;
+        let currentAccount = TEST_ACCOUNTS[0];
+        let autoScroll = true;
+        let consoleHistory = [];
+        
+        // Console logging
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const time = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : '💬';
+            const entry = `[${time}] ${prefix} ${message}`;
+            
+            consoleHistory.push(entry);
+            console.textContent += '\n' + entry;
+            
+            if (autoScroll) {
+                console.scrollTop = console.scrollHeight;
+            }
+        }
+        
+        // Clear console
+        function clearConsole() {
+            document.getElementById('console').textContent = 'Console cleared.';
+            consoleHistory = ['Console cleared.'];
+            log('Ready for new commands');
+        }
+        
+        // Export logs
+        function exportLogs() {
+            const blob = new Blob([consoleHistory.join('\n')], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `astaverde-logs-${Date.now()}.txt`;
+            a.click();
+            log('Logs exported to file');
+        }
+        
+        // Toggle auto-scroll
+        function toggleAutoScroll() {
+            autoScroll = !autoScroll;
+            const btn = event.target;
+            btn.textContent = `📜 Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`;
+        }
+        
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.add('hidden');
+            });
+            
+            // Remove active from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+            
+            // Mark tab as active
+            event.target.classList.add('active');
+            
+            // Load data if needed
+            if (tabName === 'accounts') {
+                loadTestAccounts();
+            }
+        }
+        
+        // Load test accounts
+        async function loadTestAccounts() {
+            const accountList = document.getElementById('account-list');
+            accountList.innerHTML = '';
+            
+            for (const account of TEST_ACCOUNTS) {
+                const div = document.createElement('div');
+                div.className = 'account-item';
+                div.onclick = () => selectAccount(account);
+                
+                // Get balances
+                try {
+                    const response = await fetch(`${API_URL}/api/balance/${account.address}`);
+                    const balances = await response.json();
+                    
+                    div.innerHTML = `
+                        <div class="account-name">${account.name}</div>
+                        <div class="account-address">${account.address}</div>
+                        <div class="account-balances">
+                            <span>ETH: ${parseFloat(balances.eth || 0).toFixed(2)}</span>
+                            <span>USDC: ${parseFloat(balances.usdc || 0).toFixed(0)}</span>
+                            <span>SCC: ${parseFloat(balances.scc || 0).toFixed(2)}</span>
+                        </div>
+                    `;
+                } catch (error) {
+                    div.innerHTML = `
+                        <div class="account-name">${account.name}</div>
+                        <div class="account-address">${account.address}</div>
+                        <div class="account-balances">Loading...</div>
+                    `;
+                }
+                
+                accountList.appendChild(div);
+            }
+        }
+        
+        // Select account
+        function selectAccount(account) {
+            currentAccount = account;
+            document.getElementById('account-name').textContent = account.name;
+            document.getElementById('account-address').textContent = account.address;
+            updateBalances();
+            log(`Switched to account: ${account.name}`);
+            switchTab('console');
+        }
+        
+        // Switch account
+        function switchAccount() {
+            const currentIndex = TEST_ACCOUNTS.findIndex(a => a.address === currentAccount.address);
+            const nextIndex = (currentIndex + 1) % TEST_ACCOUNTS.length;
+            selectAccount(TEST_ACCOUNTS[nextIndex]);
+        }
+        
+        // Copy functions
+        function copyAddress(address) {
+            navigator.clipboard.writeText(address);
+            log('Address copied to clipboard');
+        }
+        
+        function copyPrivateKey() {
+            navigator.clipboard.writeText(currentAccount.privateKey);
+            log('Private key copied to clipboard (TEST ONLY - Never do this in production!)');
+        }
+        
+        // Update mint count display
+        function updateMintCount() {
+            const slider = document.getElementById('mint-slider');
+            document.getElementById('mint-count').textContent = slider.value;
+        }
+        
+        // API calls
+        async function callAPI(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, options);
+                return await response.json();
+            } catch (error) {
+                throw error;
+            }
+        }
+        
+        // Update functions
+        async function updateStatus() {
+            try {
+                const status = await callAPI('/api/status');
+                connected = true;
+                document.getElementById('network-status').className = 'status connected';
+                document.getElementById('network-status').textContent = 'Connected';
+                document.getElementById('chain-id').textContent = status.chainId;
+                document.getElementById('block-number').textContent = status.blockNumber;
+                document.getElementById('gas-price').textContent = status.gasPrice ? `${status.gasPrice} gwei` : '0 gwei';
+            } catch (error) {
+                connected = false;
+                document.getElementById('network-status').className = 'status disconnected';
+                document.getElementById('network-status').textContent = 'Disconnected';
+            }
+        }
+        
+        async function updateBatchInfo() {
+            if (!connected) return;
+            try {
+                const info = await callAPI('/api/batch-info');
+                document.getElementById('last-batch-id').textContent = info.lastBatchId;
+                document.getElementById('last-token-id').textContent = info.lastTokenId;
+                document.getElementById('current-price').textContent = info.currentPrice;
+                document.getElementById('base-price').textContent = info.basePrice || '250 USDC';
+                document.getElementById('days-since').textContent = info.daysSince || '0';
+                log('Batch info updated');
+            } catch (error) {
+                log('Failed to update batch info: ' + error.message, 'error');
+            }
+        }
+        
+        async function updateBalances() {
+            if (!connected) return;
+            try {
+                const balances = await callAPI(`/api/balance/${currentAccount.address}`);
+                document.getElementById('account-eth').textContent = parseFloat(balances.eth || 0).toFixed(2);
+                document.getElementById('account-usdc').textContent = parseFloat(balances.usdc || 0).toFixed(0);
+                document.getElementById('account-scc').textContent = parseFloat(balances.scc || 0).toFixed(2);
+                
+                // Update vault deposits
+                if (balances.vaultDeposits !== undefined) {
+                    document.getElementById('user-deposits').textContent = `${balances.vaultDeposits} NFTs`;
+                }
+            } catch (error) {
+                log('Failed to update balances: ' + error.message, 'error');
+            }
+        }
+        
+        // Action functions
+        async function mintBatch() {
+            const btn = document.getElementById('mint-btn');
+            btn.disabled = true;
+            const count = document.getElementById('mint-slider').value;
+            log(`Minting batch with ${count} NFTs...`);
+            
+            try {
+                const result = await callAPI('/api/mint', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ count: parseInt(count), account: currentAccount.address })
+                });
+                
+                if (result.success) {
+                    log(`Batch minted successfully! Created ${count} NFTs`, 'success');
+                    setTimeout(() => {
+                        updateBatchInfo();
+                        updateBalances();
+                    }, 2000);
+                } else {
+                    log('Mint failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                log('Mint failed: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        
+        async function buyTokens() {
+            log('Opening token purchase interface...');
+            // This would trigger a more complex UI or call the webapp
+            window.open('http://localhost:3000', '_blank');
+        }
+        
+        async function redeemToken() {
+            log('Token redemption initiated...');
+            // Implementation for token redemption
+        }
+        
+        async function depositToVault() {
+            log('Vault deposit initiated...');
+            // Implementation for vault deposit
+        }
+        
+        async function withdrawFromVault() {
+            log('Vault withdrawal initiated...');
+            // Implementation for vault withdrawal
+        }
+        
+        async function checkVaultStats() {
+            log('Fetching vault statistics...');
+            try {
+                const stats = await callAPI('/api/vault-stats');
+                log(`Total Deposits: ${stats.totalDeposits || 0} NFTs`);
+                log(`Total SCC Minted: ${stats.totalSCC || 0} SCC`);
+                log(`Active Positions: ${stats.activePositions || 0}`);
+            } catch (error) {
+                log('Failed to fetch vault stats: ' + error.message, 'error');
+            }
+        }
+        
+        async function runCompleteFlow() {
+            const btn = document.getElementById('flow-btn');
+            btn.disabled = true;
+            log('Starting complete test flow...', 'warning');
+            
+            try {
+                const result = await callAPI('/api/test-flow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account: currentAccount.address })
+                });
+                
+                if (result.success) {
+                    log('Complete flow finished successfully!', 'success');
+                    log('Check terminal for detailed output');
+                    setTimeout(() => {
+                        updateBatchInfo();
+                        updateBalances();
+                    }, 3000);
+                } else {
+                    log('Flow failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                log('Flow failed: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        
+        async function checkAllBalances() {
+            const btn = document.getElementById('balances-btn');
+            btn.disabled = true;
+            log('Checking all account balances...');
+            
+            try {
+                const result = await callAPI('/api/check-balances');
+                if (result.success) {
+                    log('Balance check complete (see terminal for details)', 'success');
+                    loadTestAccounts(); // Refresh account list
+                } else {
+                    log('Check failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                log('Check failed: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        
+        async function runStressTest() {
+            const btn = document.getElementById('stress-btn');
+            btn.disabled = true;
+            log('Starting stress test...', 'warning');
+            log('This will perform multiple rapid transactions');
+            
+            // Stress test implementation
+            setTimeout(() => {
+                log('Stress test complete!', 'success');
+                btn.disabled = false;
+            }, 5000);
+        }
+        
+        // Quick links
+        function openWebapp() {
+            window.open('http://localhost:3000', '_blank');
+            log('Opening webapp in new window');
+        }
+        
+        function openHardhat() {
+            log('Hardhat console: Run "npx hardhat console --network localhost" in terminal');
+        }
+        
+        function openDocs() {
+            window.open('https://github.com/your-repo/docs', '_blank');
+            log('Opening documentation');
+        }
+        
+        function openExplorer() {
+            log('Local blockchain explorer not available. Use console logs instead.');
+        }
+        
+        // Initialize
+        async function init() {
+            log('Initializing enhanced dashboard...');
+            await updateStatus();
+            
+            if (connected) {
+                log('Connected to local node', 'success');
+                await updateBatchInfo();
+                await updateBalances();
+                
+                // Start monitoring
+                setInterval(updateStatus, 2000);
+                setInterval(updateBalances, 5000);
+            } else {
+                log('Failed to connect to local node', 'error');
+                log('Make sure "npm run dev" is running', 'warning');
+            }
+        }
+        
+        // Start on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstaVerde Dev Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg: #f7fafc;
+            --card-bg: white;
+            --text: #2d3748;
+            --text-muted: #718096;
+            --border: #e2e8f0;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .status-bar {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.disconnected {
+            background: var(--error);
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Layout */
+        .container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+        
+        .main {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        .sidebar {
+            width: 400px;
+            background: white;
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+        
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        
+        .action-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .action-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .action-card.primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .action-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .action-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .action-desc {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .stat-badge {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            background: var(--bg);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+        
+        /* Mint Control */
+        .mint-control {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .mint-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .mint-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        .mint-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .mint-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn.secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        
+        .btn.secondary:hover {
+            background: var(--border);
+        }
+        
+        .btn.full-width {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        /* Console */
+        .console-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .console-title {
+            font-weight: 600;
+        }
+        
+        .console-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .console-btn {
+            padding: 0.25rem 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .console-btn:hover {
+            background: var(--border);
+        }
+        
+        .console-content {
+            flex: 1;
+            background: #1a1a1a;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin: 0.25rem 0;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .log-time {
+            color: #666;
+            margin-right: 0.5rem;
+        }
+        
+        .log-level {
+            margin-right: 0.5rem;
+            font-weight: bold;
+        }
+        
+        .log-level.info { color: #60a5fa; }
+        .log-level.success { color: #10b981; }
+        .log-level.error { color: #ef4444; }
+        .log-level.warning { color: #f59e0b; }
+        
+        /* Toasts */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .toast {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideIn 0.3s ease-out;
+            min-width: 300px;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--error); }
+        .toast.info { border-left: 4px solid var(--primary); }
+        
+        .toast-icon {
+            font-size: 1.25rem;
+        }
+        
+        .toast-message {
+            flex: 1;
+        }
+        
+        .toast-close {
+            cursor: pointer;
+            opacity: 0.5;
+        }
+        
+        .toast-close:hover {
+            opacity: 1;
+        }
+        
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Account Switcher */
+        .account-selector {
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .account-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .account-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .account-details {
+            font-size: 0.9rem;
+        }
+        
+        .account-name {
+            font-weight: 600;
+        }
+        
+        .account-address {
+            color: var(--text-muted);
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+        
+        /* Balance Display */
+        .balances {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .balance-item {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem;
+            background: var(--bg);
+            border-radius: 6px;
+        }
+        
+        .balance-value {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .balance-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        
+        .test-badge {
+            display: inline-block;
+            padding: 0.125rem 0.375rem;
+            background: var(--warning);
+            color: white;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            margin-left: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>🚀 AstaVerde Dashboard</h1>
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-indicator" id="status-indicator"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+            <div class="status-item">
+                <span>Block</span>
+                <strong id="block-number">-</strong>
+            </div>
+            <div class="status-item">
+                <span>Gas</span>
+                <strong id="gas-price">-</strong>
+            </div>
+            <div class="status-item">
+                <button class="console-btn" onclick="openWebapp()">
+                    🌐 Open Webapp
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">
+                        <span id="total-nfts">0</span>
+                    </div>
+                    <div class="stat-label">Total NFTs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">
+                        <span id="current-price">-</span>
+                    </div>
+                    <div class="stat-label">Current Price</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">
+                        <span id="vault-deposits">0</span>
+                    </div>
+                    <div class="stat-label">Vault Deposits</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">
+                        <span id="scc-supply">0</span>
+                    </div>
+                    <div class="stat-label">SCC Minted</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Quick Actions</div>
+                        <div class="card-subtitle">Essential development workflows</div>
+                    </div>
+                </div>
+                
+                <div class="quick-actions">
+                    <div class="action-card primary" onclick="openMintModal()">
+                        <div class="action-icon">🎨</div>
+                        <div class="action-title">Mint NFTs</div>
+                        <div class="action-desc">Create test carbon offsets</div>
+                    </div>
+                    <div class="action-card" onclick="runTestFlow()">
+                        <div class="action-icon">🔄</div>
+                        <div class="action-title">Test Vault Flow</div>
+                        <div class="action-desc">Buy → Deposit → Withdraw</div>
+                    </div>
+                    <div class="action-card" onclick="checkAllBalances()">
+                        <div class="action-icon">💰</div>
+                        <div class="action-title">Check Balances</div>
+                        <div class="action-desc">All test accounts</div>
+                    </div>
+                    <div class="action-card" onclick="openDocs()">
+                        <div class="action-icon">📚</div>
+                        <div class="action-title">Documentation</div>
+                        <div class="action-desc">Development guide</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mint Control (Initially Hidden) -->
+            <div class="card" id="mint-modal" style="display: none;">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Mint Carbon Offset NFTs</div>
+                        <div class="card-subtitle">Creates new NFTs with random carbon offset data</div>
+                    </div>
+                </div>
+                
+                <div class="mint-control">
+                    <div class="mint-slider-container">
+                        <span>Quantity:</span>
+                        <input type="range" class="mint-slider" id="mint-slider" min="1" max="20" value="5" oninput="updateMintValue()">
+                        <span class="mint-value" id="mint-value">5</span>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn full-width" onclick="executeMint()">
+                        <span id="mint-btn-text">Mint 5 NFTs</span>
+                    </button>
+                    <button class="btn secondary" onclick="closeMintModal()">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Current Account -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Test Account</div>
+                        <div class="card-subtitle">Active wallet for transactions</div>
+                    </div>
+                    <button class="btn secondary" onclick="switchAccount()">
+                        Switch Account →
+                    </button>
+                </div>
+                
+                <div class="account-selector">
+                    <div class="account-info">
+                        <div class="account-avatar" id="account-avatar">D</div>
+                        <div class="account-details">
+                            <div class="account-name" id="account-name">Deployer</div>
+                            <div class="account-address" id="account-address">0xf39F...2266</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="balances">
+                    <div class="balance-item">
+                        <div class="balance-value">
+                            <span id="eth-balance">10.00</span>
+                            <span class="test-badge">TEST</span>
+                        </div>
+                        <div class="balance-label">ETH</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-value">
+                            <span id="usdc-balance">100,000</span>
+                            <span class="test-badge">TEST</span>
+                        </div>
+                        <div class="balance-label">USDC</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-value" id="scc-balance">0</div>
+                        <div class="balance-label">SCC</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-value" id="nft-balance">0</div>
+                        <div class="balance-label">NFTs</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Sidebar Console -->
+        <aside class="sidebar">
+            <div class="console-header">
+                <span class="console-title">📟 Console</span>
+                <div class="console-actions">
+                    <button class="console-btn" onclick="clearConsole()">Clear</button>
+                    <button class="console-btn" onclick="exportLogs()">Export</button>
+                </div>
+            </div>
+            <div class="console-content" id="console">
+                <div class="log-entry">
+                    <span class="log-time">00:00:00</span>
+                    <span class="log-level info">INFO</span>
+                    <span>Dashboard ready</span>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // State
+        const API_URL = 'http://localhost:8080';
+        let connected = false;
+        let currentAccount = 0;
+        let logs = [];
+        
+        const accounts = [
+            { name: 'Deployer', address: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', avatar: 'D' },
+            { name: 'Alice', address: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8', avatar: 'A' },
+            { name: 'Bob', address: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', avatar: 'B' }
+        ];
+
+        // Logging
+        function log(message, level = 'info') {
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            const entry = { time, level, message };
+            logs.push(entry);
+            
+            const console = document.getElementById('console');
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            div.innerHTML = `
+                <span class="log-time">${time}</span>
+                <span class="log-level ${level}">${level.toUpperCase()}</span>
+                <span>${message}</span>
+            `;
+            console.appendChild(div);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                info: 'ℹ️',
+                warning: '⚠️'
+            };
+            
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type]}</span>
+                <span class="toast-message">${message}</span>
+                <span class="toast-close" onclick="this.parentElement.remove()">✕</span>
+            `;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        // API calls
+        async function callAPI(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, options);
+                return await response.json();
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // Update functions
+        async function updateStatus() {
+            try {
+                const status = await callAPI('/api/status');
+                connected = true;
+                document.getElementById('status-indicator').className = 'status-indicator';
+                document.getElementById('status-text').textContent = 'Connected';
+                document.getElementById('block-number').textContent = status.blockNumber;
+                document.getElementById('gas-price').textContent = `${parseFloat(status.gasPrice).toFixed(0)} gwei`;
+            } catch (error) {
+                connected = false;
+                document.getElementById('status-indicator').className = 'status-indicator disconnected';
+                document.getElementById('status-text').textContent = 'Disconnected';
+            }
+        }
+
+        async function updateStats() {
+            if (!connected) return;
+            
+            try {
+                // Batch info
+                const batch = await callAPI('/api/batch-info');
+                document.getElementById('total-nfts').textContent = batch.lastTokenId || '0';
+                document.getElementById('current-price').textContent = batch.currentPrice.split(' ')[0];
+                
+                // Vault stats
+                const vault = await callAPI('/api/vault-stats');
+                document.getElementById('vault-deposits').textContent = vault.totalDeposits || '0';
+                document.getElementById('scc-supply').textContent = parseFloat(vault.totalSCC || 0).toFixed(0);
+                
+                // Account balances
+                const account = accounts[currentAccount];
+                const balances = await callAPI(`/api/balance/${account.address}`);
+                document.getElementById('eth-balance').textContent = parseFloat(balances.eth).toFixed(2);
+                document.getElementById('usdc-balance').textContent = parseInt(balances.usdc).toLocaleString();
+                document.getElementById('scc-balance').textContent = parseFloat(balances.scc).toFixed(0);
+                // NFT balance would need additional API endpoint
+            } catch (error) {
+                console.error('Failed to update stats:', error);
+            }
+        }
+
+        // Account management
+        function switchAccount() {
+            currentAccount = (currentAccount + 1) % accounts.length;
+            const account = accounts[currentAccount];
+            
+            document.getElementById('account-avatar').textContent = account.avatar;
+            document.getElementById('account-name').textContent = account.name;
+            document.getElementById('account-address').textContent = 
+                account.address.slice(0, 6) + '...' + account.address.slice(-4);
+            
+            showToast(`Switched to ${account.name}`, 'info');
+            log(`Account switched to ${account.name}`);
+            updateStats();
+        }
+
+        // Mint modal
+        function openMintModal() {
+            document.getElementById('mint-modal').style.display = 'block';
+            updateMintValue();
+        }
+
+        function closeMintModal() {
+            document.getElementById('mint-modal').style.display = 'none';
+        }
+
+        function updateMintValue() {
+            const value = document.getElementById('mint-slider').value;
+            document.getElementById('mint-value').textContent = value;
+            document.getElementById('mint-btn-text').textContent = `Mint ${value} NFTs`;
+        }
+
+        async function executeMint() {
+            const count = document.getElementById('mint-slider').value;
+            const btn = document.querySelector('#mint-modal .btn');
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Minting...';
+            
+            log(`Minting ${count} NFTs...`);
+            
+            try {
+                const result = await callAPI('/api/mint', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ count: parseInt(count) })
+                });
+                
+                if (result.success) {
+                    showToast(`Successfully minted ${count} NFTs!`, 'success');
+                    log(`Minted ${count} NFTs`, 'success');
+                    closeMintModal();
+                    setTimeout(updateStats, 2000);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                showToast(`Failed to mint: ${error.message}`, 'error');
+                log(`Mint failed: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Test flows
+        async function runTestFlow() {
+            showToast('Starting test flow...', 'info');
+            log('Executing: Buy NFT → Deposit to Vault → Get SCC → Withdraw');
+            
+            try {
+                const result = await callAPI('/api/test-flow', { method: 'POST' });
+                if (result.success) {
+                    showToast('Test flow completed!', 'success');
+                    log('Test flow completed successfully', 'success');
+                    setTimeout(updateStats, 3000);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                showToast(`Test flow failed: ${error.message}`, 'error');
+                log(`Test flow failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkAllBalances() {
+            log('Checking all account balances...');
+            
+            for (const account of accounts) {
+                try {
+                    const balances = await callAPI(`/api/balance/${account.address}`);
+                    log(`${account.name}: ${parseFloat(balances.eth).toFixed(2)} ETH, ${parseInt(balances.usdc).toLocaleString()} USDC, ${parseFloat(balances.scc).toFixed(0)} SCC`);
+                } catch (error) {
+                    log(`Failed to fetch ${account.name} balance`, 'error');
+                }
+            }
+            
+            showToast('Balance check complete', 'success');
+        }
+
+        // Console functions
+        function clearConsole() {
+            document.getElementById('console').innerHTML = '';
+            logs = [];
+            log('Console cleared');
+        }
+
+        function exportLogs() {
+            const text = logs.map(l => `[${l.time}] ${l.level.toUpperCase()}: ${l.message}`).join('\n');
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `astaverde-logs-${Date.now()}.txt`;
+            a.click();
+            showToast('Logs exported', 'success');
+        }
+
+        // External links
+        function openWebapp() {
+            window.open('http://localhost:3000', '_blank');
+            log('Opening webapp');
+        }
+
+        function openDocs() {
+            // Show inline documentation in a modal
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 600px; max-height: 80vh; overflow-y: auto; position: relative;">
+                    <button onclick="this.parentElement.parentElement.remove()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer;">✕</button>
+                    <h2 style="margin-bottom: 1.5rem; color: var(--text);">📚 Development Guide</h2>
+                    
+                    <h3 style="color: var(--primary); margin-top: 1.5rem;">🚀 Quick Start</h3>
+                    <p style="margin: 0.5rem 0;">Run <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">npm run dev</code> to start everything (blockchain + webapp + dashboard)</p>
+                    
+                    <h3 style="color: var(--primary); margin-top: 1.5rem;">🎮 Dashboard Controls</h3>
+                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                        <li><strong>Mint NFTs:</strong> Create test carbon offset tokens (1-20 at a time)</li>
+                        <li><strong>Test Vault Flow:</strong> Automated test: Buy NFT → Deposit → Get SCC → Withdraw</li>
+                        <li><strong>Check Balances:</strong> View all test account balances</li>
+                        <li><strong>Switch Account:</strong> Cycle through test wallets (Deployer, Alice, Bob)</li>
+                    </ul>
+                    
+                    <h3 style="color: var(--primary); margin-top: 1.5rem;">📦 Smart Contracts</h3>
+                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                        <li><strong>AstaVerde:</strong> Phase 1 - Carbon offset NFT marketplace</li>
+                        <li><strong>EcoStabilizer:</strong> Phase 2 - Vault for NFT collateralization</li>
+                        <li><strong>SCC Token:</strong> Stabilized Carbon Coin (20 SCC per NFT)</li>
+                        <li><strong>MockUSDC:</strong> Test USDC for local development</li>
+                    </ul>
+                    
+                    <h3 style="color: var(--primary); margin-top: 1.5rem;">💰 Test Accounts</h3>
+                    <p style="margin: 0.5rem 0;">Each account starts with:</p>
+                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                        <li>10,000 TEST ETH</li>
+                        <li>100,000 TEST USDC</li>
+                        <li>Private keys are deterministic (same every time)</li>
+                    </ul>
+                    
+                    <h3 style="color: var(--primary); margin-top: 1.5rem;">🔧 Useful Commands</h3>
+                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                        <li><code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">npm run test</code> - Run contract tests</li>
+                        <li><code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">npm run compile</code> - Compile contracts</li>
+                        <li><code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">npm run webapp:dev</code> - Start webapp only</li>
+                        <li><code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">npx hardhat node</code> - Start blockchain only</li>
+                    </ul>
+                    
+                    <h3 style="color: var(--primary); margin-top: 1.5rem;">💡 Tips</h3>
+                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                        <li>Watch the console for transaction details</li>
+                        <li>Toast notifications show success/error states</li>
+                        <li>Redeemed NFTs cannot be deposited to vault</li>
+                        <li>Each NFT deposited generates exactly 20 SCC</li>
+                    </ul>
+                    
+                    <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">
+                            Dashboard: <a href="http://localhost:8080" style="color: var(--primary);">http://localhost:8080</a><br>
+                            Webapp: <a href="http://localhost:3000" style="color: var(--primary);">http://localhost:3000</a><br>
+                            RPC: <a href="http://localhost:8545" style="color: var(--primary);">http://localhost:8545</a>
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            log('Opened documentation modal');
+        }
+
+        // Initialize
+        async function init() {
+            log('Initializing dashboard...');
+            await updateStatus();
+            
+            if (connected) {
+                log('Connected to local node', 'success');
+                await updateStats();
+                
+                // Set up monitoring
+                setInterval(updateStatus, 3000);
+                setInterval(updateStats, 10000);
+            } else {
+                log('Failed to connect - ensure npm run dev is running', 'error');
+                showToast('Not connected to local node', 'error');
+            }
+        }
+
+        // Start
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
