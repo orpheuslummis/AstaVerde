@@ -3,6 +3,7 @@
 - Component: `contracts/AstaVerde.sol`
 - Severity: High
 - Type: Logic/Safety Bug
+- **Status: ✅ FIXED** - Underflow prevention added (lines 243-246)
 
 ## Background / Justification
 

@@ -2,15 +2,17 @@
 
 **Generated**: 2025-08-13
 **Total Tickets**: 26 (excluding status directory)
+**Naming Convention**: `[number]-[status]-[component]-[description].md`
 
 ## Status Overview
 
-### ✅ FIXED (5 tickets)
-- `fix-astaverde-buybatch-overpayment-refund-siphon.md` - Refund siphon vulnerability fixed
-- `fix-astaverde-price-decrease-loop-dos.md` - DoS via loop fixed with MAX_PRICE_UPDATE_ITERATIONS
-- `fix-astaverde-redeemed-nft-resale.md` - Redeemed NFT check added
-- `fix-vault-withdrawals-blocked-by-pause.md` - trustedVault mechanism implemented
-- `fix-astaverde-event-ordering.md` - Events now emitted after transfers (lines 328-338)
+### ✅ FIXED (6 tickets)
+- `001-fixed-astaverde-refund-siphon.md` - Refund siphon vulnerability fixed
+- `002-fixed-astaverde-redeemed-resale.md` - Redeemed NFT check added  
+- `003-fixed-astaverde-vault-pause.md` - trustedVault mechanism implemented
+- `004-fixed-astaverde-price-dos.md` - DoS via loop fixed with MAX_PRICE_UPDATE_ITERATIONS
+- `005-fixed-astaverde-event-order.md` - Events now emitted after transfers
+- `006-fixed-astaverde-price-underflow.md` - Underflow prevention added
 
 ### 📝 OPEN (9 tickets requiring action)
 - `fix-astaverde-batch-index-consistency.md` - 1-based/0-based indexing pattern still exists

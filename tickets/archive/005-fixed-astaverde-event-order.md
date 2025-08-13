@@ -3,6 +3,7 @@
 - Component: `contracts/AstaVerde.sol`
 - Severity: Low
 - Type: Code Style/Best Practice
+- **Status: ✅ FIXED** - Events now emitted after transfers (lines 328-338)
 
 ## Background / Justification
 
