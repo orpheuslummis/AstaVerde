@@ -21,3 +21,23 @@ coverage.json
 yarn.lock
 .vercel
 webapp/tsconfig.tsbuildinfo
+
+# Backup files
+*.backup
+*.bak
+
+# Disabled test files
+*.disabled
+
+# Cache directories
+.cache-synpress/
+*/.cache-synpress/
+
+# Archive directories (local reference)
+/archive/
+
+# Duplicate webapp directory
+webapp/webapp/
+
+# Temporary test files
+webapp/test-wallet-flow.js
