@@ -14,11 +14,14 @@ The `buyBatch` function is vulnerable to front-running attacks where MEV bots ca
 function buyBatch(uint256 batchID, uint256 usdcAmount, uint256 tokenAmount) external
 ```
 - No protection against price changes
-- MEV bots can front-run to trigger price increases
+- No deadline protection for transactions in mempool
+- MEV bots can front-run to trigger price increases  
 - Users may pay significantly more than expected
+- Transactions sitting in mempool for days execute at stale prices
+- Poor UX during network congestion
 
 ## Proposed Solution
-Add a `maxPricePerToken` parameter that acts as slippage protection.
+Add both `maxPricePerToken` and `deadline` parameters for comprehensive protection.
 
 ### Implementation
 
@@ -27,8 +30,10 @@ function buyBatch(
     uint256 batchID, 
     uint256 usdcAmount, 
     uint256 tokenAmount,
-    uint256 maxPricePerToken  // New parameter
+    uint256 maxPricePerToken,  // Price protection
+    uint256 deadline           // Time protection
 ) external whenNotPaused nonReentrant {
+    require(block.timestamp <= deadline, "Transaction expired");
     require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
     Batch storage batch = batches[batchID - 1];
     require(batch.creationTime > 0, "Batch not initialized");
@@ -75,11 +80,22 @@ function buyBatch(
 ## Testing Requirements
 - [ ] Test normal purchases within slippage
 - [ ] Test rejection when price exceeds maximum
+- [ ] Test transaction expiry after deadline
+- [ ] Test edge case where price equals maxPrice exactly
 - [ ] Test with various slippage tolerances
 - [ ] Gas cost comparison
 
 ## Acceptance Criteria
-- [ ] Slippage protection parameter added
+- [ ] Slippage protection parameter added (maxPrice)
+- [ ] Deadline protection parameter added
+- [ ] Transactions revert if executed after deadline
+- [ ] Transactions revert if current price exceeds maxPrice
 - [ ] Existing tests updated
+- [ ] Frontend provides sensible defaults (e.g., deadline = current + 30 minutes)
 - [ ] Frontend integration completed
 - [ ] Documentation updated
+
+## Affected Files
+- `contracts/AstaVerde.sol`
+- `test/AstaVerde.logic.behavior.ts`
+- `webapp/src/hooks/useContractInteraction.ts`
