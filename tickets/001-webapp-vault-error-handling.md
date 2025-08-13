@@ -1,10 +1,9 @@
-# TICKET-002: Webapp VaultCard Error Handling
+# Webapp Vault Error Handling
 
-## Priority: P1 - HIGH
-## Component: Webapp Frontend
-## Assigned: Unassigned  
-## Status: Open
-## Created: 2025-08-13
+**Priority**: HIGH  
+**Type**: Enhancement  
+**Component**: Webapp Frontend  
+**Status**: Open
 
 ---
 

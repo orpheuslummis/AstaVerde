@@ -1,4 +1,4 @@
-# TICKET-004: Implement Timelock for Admin Functions
+# Security: Admin Function Timelock
 
 **Priority**: HIGH  
 **Type**: Security Enhancement  

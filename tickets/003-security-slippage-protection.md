@@ -1,4 +1,4 @@
-# TICKET-005: Add Slippage Protection to buyBatch
+# Security: Slippage Protection for buyBatch
 
 **Priority**: HIGH  
 **Type**: Security Enhancement  

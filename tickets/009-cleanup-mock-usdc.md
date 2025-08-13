@@ -1,4 +1,4 @@
-# TICKET-011: Clean Up MockUSDC Constructor Parameter
+# Cleanup: MockUSDC Constructor
 
 **Priority**: LOW  
 **Type**: Code Quality  

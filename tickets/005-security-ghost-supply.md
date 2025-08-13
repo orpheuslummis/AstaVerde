@@ -1,4 +1,4 @@
-# TICKET-007: Ghost Supply Recovery Mechanism for Vault
+# Security: Ghost Supply Recovery for Vault
 
 **Priority**: MEDIUM  
 **Type**: Feature Enhancement  

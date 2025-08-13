@@ -1,4 +1,4 @@
-# TICKET-008: Implement Batch Purchase Cooldown
+# Security: Batch Purchase Cooldown
 
 **Priority**: MEDIUM  
 **Type**: Security Enhancement  
