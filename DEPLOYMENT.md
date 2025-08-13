@@ -5,6 +5,7 @@ This guide covers the complete deployment process for the EcoStabilizer vault sy
 ## 🎯 Deployment Overview
 
 ### System Architecture
+
 ```
 Phase 1 (Live): AstaVerde Marketplace on Base Mainnet
                      ↓
@@ -14,6 +15,7 @@ Phase 2 (New):  EcoStabilizer Vault System
 ```
 
 ### Deployment Strategy
+
 - **Non-intrusive**: Phase 2 deploys alongside existing Phase 1 without modifications
 - **Immutable**: Contracts are non-upgradeable for maximum security
 - **Role-based**: Automatic role renunciation ensures decentralization
@@ -22,11 +24,11 @@ Phase 2 (New):  EcoStabilizer Vault System
 
 ### Target Networks
 
-| Network | Chain ID | RPC Endpoint | Explorer |
-|---------|----------|--------------|----------|
-| **Base Mainnet** | 8453 | `https://base-mainnet.g.alchemy.com/v2/{API_KEY}` | https://basescan.org |
-| Base Sepolia | 84532 | `https://base-sepolia.g.alchemy.com/v2/{API_KEY}` | https://sepolia.basescan.org |
-| Local Development | 31337 | `http://localhost:8545` | N/A |
+| Network           | Chain ID | RPC Endpoint                                      | Explorer                     |
+| ----------------- | -------- | ------------------------------------------------- | ---------------------------- |
+| **Base Mainnet**  | 8453     | `https://base-mainnet.g.alchemy.com/v2/{API_KEY}` | https://basescan.org         |
+| Base Sepolia      | 84532    | `https://base-sepolia.g.alchemy.com/v2/{API_KEY}` | https://sepolia.basescan.org |
+| Local Development | 31337    | `http://localhost:8545`                           | N/A                          |
 
 ### Required Environment Variables
 
@@ -48,13 +50,14 @@ OWNER_ADDRESS="0x..." # Override owner address if needed
 ## 📋 Pre-Deployment Checklist
 
 ### Code Verification
-- [ ] All 109 tests pass: `npm run test`
-- [ ] Coverage requirements met: `npm run coverage`
+
+- [ ] All tests pass: `npm run test`
 - [ ] Code quality checks: `npm run lint`
 - [ ] Gas targets verified: Deposit <165k, Withdraw <120k
 - [ ] Integration tests validate Phase 1↔2 compatibility
 
 ### Environment Setup
+
 - [ ] Base mainnet RPC access configured
 - [ ] Deployer wallet funded with sufficient ETH for gas
 - [ ] AstaVerde contract address verified on Base mainnet
@@ -62,6 +65,7 @@ OWNER_ADDRESS="0x..." # Override owner address if needed
 - [ ] Environment variables configured in `.env.local`
 
 ### Security Validation
+
 - [ ] Private keys stored securely (never in code)
 - [ ] Deployment script includes role renunciation
 - [ ] Multi-signature or hardware wallet for production deployment
@@ -72,6 +76,7 @@ OWNER_ADDRESS="0x..." # Override owner address if needed
 ### Step 1: Environment Configuration
 
 Create `.env.local` file:
+
 ```bash
 # Required for Base Mainnet Deployment
 AV_ADDR=0x... # Replace with actual AstaVerde address on Base
@@ -108,26 +113,26 @@ npx hardhat run deploy/deploy_ecostabilizer.ts --network base-mainnet
 
 ### Step 4: Post-Deployment Verification
 
-The deployment script automatically:
+The deployment script:
+
 1. ✅ Deploys StabilizedCarbonCoin
 2. ✅ Deploys EcoStabilizer vault
 3. ✅ Grants MINTER_ROLE to vault
 4. ✅ Renounces deployer admin roles
-5. ✅ Verifies contracts on BaseScan
-6. ✅ Saves deployment info to `deployments/ecostabilizer-8453.json`
+5. ✅ Saves deployment info to `deployments/ecostabilizer-<chainId>.json`
 
 ## 📊 Deployment Script Breakdown
 
-### deploy/deploy_ecostabilizer.ts
+### deploy/deploy_ecostabilizer.ts (excerpt)
 
 ```typescript
 // 1. Deploy StabilizedCarbonCoin (SCC)
-const scc = await SCCFactory.deploy();
+const scc = await SCCFactory.deploy(ethers.ZeroAddress);
 
-// 2. Deploy EcoStabilizer vault  
+// 2. Deploy EcoStabilizer vault
 const ecoStabilizer = await EcoStabilizerFactory.deploy(
-  astaVerdeAddress,  // Existing contract
-  scc.target         // New SCC contract
+    astaVerdeAddress, // Existing contract
+    scc.target, // New SCC contract
 );
 
 // 3. Configure roles
@@ -137,7 +142,7 @@ await scc.grantRole(MINTER_ROLE, ecoStabilizer.target);
 await scc.renounceRole(DEFAULT_ADMIN_ROLE, deployer.address);
 
 // 5. Verification checks
-assert(!await scc.hasRole(DEFAULT_ADMIN_ROLE, deployer.address));
+assert(!(await scc.hasRole(DEFAULT_ADMIN_ROLE, deployer.address)));
 assert(await scc.hasRole(MINTER_ROLE, ecoStabilizer.target));
 ```
 
@@ -185,7 +190,7 @@ deployments/
 
 webapp/src/config/
 ├── AstaVerde.json              # Updated ABI (if needed)
-├── EcoStabilizer.json          # New vault contract ABI  
+├── EcoStabilizer.json          # New vault contract ABI
 └── StabilizedCarbonCoin.json   # New SCC contract ABI
 ```
 
@@ -193,22 +198,22 @@ webapp/src/config/
 
 ```json
 {
-  "network": { "chainId": 8453, "name": "base" },
-  "timestamp": "2025-08-05T12:00:00.000Z",
-  "deployer": "0x...",
-  "contracts": {
-    "AstaVerde": "0x...",
-    "StabilizedCarbonCoin": "0x...",
-    "EcoStabilizer": "0x..."
-  },
-  "constants": {
-    "SCC_PER_ASSET": "20.0",
-    "SCC_DECIMALS": "18"
-  },
-  "verification": {
-    "vaultHasMinterRole": true,
-    "securityState": "deployer roles renounced"
-  }
+    "network": { "chainId": 8453, "name": "base" },
+    "timestamp": "2025-08-05T12:00:00.000Z",
+    "deployer": "0x...",
+    "contracts": {
+        "AstaVerde": "0x...",
+        "StabilizedCarbonCoin": "0x...",
+        "EcoStabilizer": "0x..."
+    },
+    "constants": {
+        "SCC_PER_ASSET": "20.0",
+        "SCC_DECIMALS": "18"
+    },
+    "verification": {
+        "vaultHasMinterRole": true,
+        "securityState": "deployer roles renounced"
+    }
 }
 ```
 
@@ -220,7 +225,7 @@ webapp/src/config/
 # Smoke test - basic functionality
 node scripts/smoke_test_vault.mjs --network base-mainnet
 
-# Integration test - Phase 1↔2 compatibility  
+# Integration test - Phase 1↔2 compatibility
 npm run test test/IntegrationPhase1Phase2.ts -- --network base-mainnet
 
 # Gas analysis
@@ -277,21 +282,21 @@ await ecoStabilizer.adminSweepNFT(tokenId, rescueAddress);
 
 ### Deployment Costs (Base Mainnet)
 
-| Contract | Estimated Gas | Estimated Cost (0.001 ETH/gas) |
-|----------|---------------|--------------------------------|
-| StabilizedCarbonCoin | ~1.2M gas | ~0.0012 ETH |
-| EcoStabilizer | ~2.8M gas | ~0.0028 ETH |
-| Role Configuration | ~200k gas | ~0.0002 ETH |
-| **Total Deployment** | **~4.2M gas** | **~0.0042 ETH** |
+| Contract             | Estimated Gas | Estimated Cost (0.001 ETH/gas) |
+| -------------------- | ------------- | ------------------------------ |
+| StabilizedCarbonCoin | ~1.2M gas     | ~0.0012 ETH                    |
+| EcoStabilizer        | ~2.8M gas     | ~0.0028 ETH                    |
+| Role Configuration   | ~200k gas     | ~0.0002 ETH                    |
+| **Total Deployment** | **~4.2M gas** | **~0.0042 ETH**                |
 
 ### Runtime Operations
 
-| Operation | Gas Used | Target | Status |
-|-----------|----------|---------|---------|
-| Deposit NFT | ~152k | <165k | ✅ |
-| Withdraw NFT | ~75k | <120k | ✅ |
-| SCC Approval | ~46k | N/A | ✅ |
-| NFT Approval | ~24k | N/A | ✅ |
+| Operation    | Gas Used | Target | Status |
+| ------------ | -------- | ------ | ------ |
+| Deposit NFT  | ~152k    | <165k  | ✅     |
+| Withdraw NFT | ~75k     | <120k  | ✅     |
+| SCC Approval | ~46k     | N/A    | ✅     |
+| NFT Approval | ~24k     | N/A    | ✅     |
 
 ## 🔗 Integration Points
 

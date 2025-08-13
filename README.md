@@ -7,16 +7,18 @@ AstaVerde is a comprehensive platform for trading verified carbon offsets as NFT
 **NEW**: NFT liquidity solution now available! Deposit your EcoAsset NFTs to get instant 20 SCC loans while keeping ownership rights.
 
 ### Key Features
+
 - **Fixed-Rate Loans**: 1 NFT = 20 SCC (no liquidations)
 - **Non-Fungible CDPs**: Each NFT is unique collateral
 - **Instant Liquidity**: Get loans without selling your NFTs
 - **Full Integration**: Works seamlessly with existing marketplace
 
 ### 📊 System Status
+
 - **Phase 1**: ✅ Live on Base Mainnet - Dutch auction marketplace
-- **Phase 2**: 🚀 Production Ready - EcoStabilizer vault system
-- **Test Coverage**: 109 tests, 91.01% statement coverage
-- **Gas Optimized**: Deposit <165k, Withdraw <120k gas
+- **Phase 2**: 🚀 Contracts Production Ready; frontend integration in progress
+- **Testing**: Comprehensive unit, integration, and invariant tests passing
+- **Gas Targets**: Deposit <165k, Withdraw <120k (enforced in tests)
 
 ## System Overview
 
@@ -39,12 +41,12 @@ graph TB
         direction TB
         BasePrice[Base Price Manager]
         DutchAuction[Dutch Auction]
-        
+
         subgraph Base Price Rules
             QuickSale["+10 USDC if batch<br/>sells within 2 days"]
             NoSale["-10 USDC per batch<br/>after 4 days no sales"]
         end
-        
+
         subgraph Auction Rules
             StartPrice["Start = Base Price"]
             DailyDecay["-1 USDC per day"]
@@ -71,11 +73,48 @@ graph TB
     classDef contract fill:#f9f,stroke:#333,stroke-width:2px;
     classDef actor fill:#bbf,stroke:#333,stroke-width:2px;
     classDef pricing fill:#bfb,stroke:#333,stroke-width:2px;
-    
+
     class Main,USDC,ERC1155 contract;
     class Producer,Owner,Buyer actor;
     class BasePrice,DutchAuction,QuickSale,NoSale,StartPrice,DailyDecay,Floor pricing;
 ```
+
+## Phase 2: EcoStabilizer — Consolidated Overview
+
+- **What it is**: A non-liquidating NFT-collateral vault. Deposit an un-redeemed EcoAsset NFT → mint 20 SCC. To withdraw the exact same NFT, approve and burn 20 SCC.
+- **Key guarantees**:
+    - 1 NFT → 20 SCC (fixed), no interest, no liquidations
+    - Exact-NFT withdrawal by the borrower only
+    - Redeemed NFTs are ineligible as collateral
+    - SCC minting restricted to the vault; SCC has MAX_SUPPLY = 1B
+    - Safety features: CEI ordering, ReentrancyGuard, Pausable, Ownable
+- **Gas targets**: Deposit <165k; Withdraw <120k (enforced in tests). Typical ranges shown in tests/console logs.
+- **Economic note**: SCC price is soft-pegged via arbitrage to AstaVerde’s primary price ceiling ~= price(new EcoAsset)/20. No oracles.
+
+### Deployment (Base)
+
+1. Deploy `StabilizedCarbonCoin` (optionally with vault address to grant MINTER in constructor)
+2. Deploy `EcoStabilizer(astaVerde, scc)`
+3. Grant `MINTER_ROLE` to vault; renounce `DEFAULT_ADMIN_ROLE` on SCC
+4. Verify contracts; update webapp env with addresses; smoke test deposit/withdraw round-trip
+
+### Frontend Integration (webapp)
+
+- Contracts and ABIs configured under `webapp/src/config/`
+- Hooks/components: `webapp/src/hooks/useVault.ts`, `webapp/src/components/VaultCard.tsx`
+- Versions: ethers v6, wagmi v2, viem v2 (see `webapp/package.json`)
+- UX flows: deposit (approve ERC-1155 → deposit → receive 20 SCC), withdraw (approve 20 SCC → withdraw → burn SCC)
+
+### Monitoring
+
+- Active loans (vaulted NFTs); SCC total supply vs 20 × active loans
+- SCC price vs ceiling (primary_price/20)
+- Redeemed-asset rejections (should revert on deposit)
+
+### Docs Index (single source of truth)
+
+- This README is the canonical reference for architecture and guarantees
+- Phase 2 consolidated spec & plan: see `SSC_PLAN.md`
 
 ## Pricing Mechanism
 
@@ -98,10 +137,10 @@ behavior:
 
 - Price adjustments only consider batches from the last 90 days
 - This rolling window ensures:
-  - Manageable gas costs as the system scales
-  - Recent market conditions drive price adjustments
-  - Sufficient data points with weekly batch minting
-  - Seasonal patterns can be captured
+    - Manageable gas costs as the system scales
+    - Recent market conditions drive price adjustments
+    - Sufficient data points with weekly batch minting
+    - Seasonal patterns can be captured
 
 #### Price Increases
 
@@ -235,6 +274,61 @@ npm run deploy:local
 npm run webapp:dev
 ```
 
+### Local QA setup (complete integrated system)
+
+Use these scripts to spin up a full local environment (blockchain + contracts + seeded data + webapp) for manual QA.
+
+#### One command (starts everything)
+
+```bash
+npm run dev
+```
+
+What it does:
+
+- Starts a local Hardhat node (Chain ID 31337)
+- Deploys `MockUSDC`, `AstaVerde`, `StabilizedCarbonCoin`, `EcoStabilizer`
+- Seeds realistic marketplace/vault data
+- Generates `webapp/.env.local` with local contract addresses
+- Launches the webapp at http://localhost:3000
+
+#### Two-terminal flow (recommended if you want to keep the node running)
+
+- Terminal 1: start the node without auto-deploy
+
+```bash
+npx hardhat node --no-deploy
+```
+
+- Terminal 2: deploy, seed, and start the webapp (complete scenario)
+
+```bash
+npm run dev:complete
+```
+
+Variants:
+
+- Different seed scenario: `npm run dev:basic` | `dev:marketplace` | `dev:vault`
+- Seed only (skip starting the webapp):
+
+```bash
+SCENARIO=complete NO_WEBAPP=1 npx hardhat run --network localhost scripts/dev-environment.js
+```
+
+MetaMask setup:
+
+- Network: HTTP RPC http://localhost:8545, Chain ID 31337
+- Import any test private key (for example):
+    - Alice: `0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d`
+    - Bob: `0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a`
+    - Charlie: `0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6`
+
+Troubleshooting:
+
+- EADDRINUSE 8545: a node is already running. Skip starting another and run only `npm run dev:complete` in a new terminal, or free the port (`lsof -i :8545` then `kill -9 <PID>`).
+- "Unrecognized positional argument": use the `SCENARIO` env var (e.g., `SCENARIO=complete ...`) instead of positional args.
+- npm peer-deps conflict (chai): use `npm ci --legacy-peer-deps`.
+
 ### Deployment
 
 1. Test and compile:
@@ -267,21 +361,22 @@ Update contract references in:
 ## 📚 Documentation
 
 ### Comprehensive Guides
+
 - **[Smart Contracts Documentation](contracts/README.md)** - Detailed contract specifications and API reference
-- **[Deployment Guide](DEPLOYMENT.md)** - Complete deployment process for Base mainnet
-- **[Testing Guide](test/TESTING_GUIDE.md)** - Test architecture and coverage analysis
+- **[Testing Guide](test/TESTING_GUIDE.md)** - Test architecture overview
 - **[Development Guide](CLAUDE.md)** - Development commands and architecture overview
 
 ### Technical Specifications
+
 - **[SSC_PLAN.md](SSC_PLAN.md)** - Phase 2 EcoStabilizer implementation specification
 - **[Integration Testing](test/INTEGRATION_TESTING.md)** - Phase 1↔2 integration analysis
-- **[Webapp Integration](webapp/VAULT_INTEGRATION.md)** - Frontend integration guide
 
 ### Quick References
-- **109 comprehensive tests** with 91.01% statement coverage
+
+- **Comprehensive tests** covering critical paths
 - **Gas optimized**: Vault operations under production targets
-- **Production ready**: Full Base mainnet deployment support
-- **Security focused**: Comprehensive access control and validation
+- **Production ready (contracts)**: Full Base mainnet deployment support
+- **Security focused**: Access control, CEI, pausability, redeemed-asset checks
 
 ## Security
 
@@ -289,7 +384,7 @@ Update contract references in:
 - **Role-based access control**: Automated role renunciation after deployment
 - **Redeemed asset protection**: Prevents worthless NFTs as collateral
 - **Emergency controls**: Pause/unpause and admin rescue functions
-- **Comprehensive testing**: 109 tests covering all critical paths
+- **Comprehensive testing**: 171+ tests covering unit, integration, and invariant suites
 
 ## Technical Features
 

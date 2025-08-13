@@ -4,14 +4,14 @@ This directory contains all smart contracts for the AstaVerde ecosystem, includi
 
 ## 📁 Contract Overview
 
-| Contract | Type | Phase | Status | Purpose |
-|----------|------|-------|--------|---------|
-| **AstaVerde.sol** | ERC-1155 | Phase 1 | 🟢 Live | Carbon offset NFT marketplace with Dutch auctions |
-| **StabilizedCarbonCoin.sol** | ERC-20 | Phase 2 | 🚀 New | Debt token for vault system |
-| **EcoStabilizer.sol** | Vault | Phase 2 | 🚀 New | NFT collateralization vault |
-| **IAstaVerde.sol** | Interface | Phase 2 | 🚀 New | Interface for vault-marketplace integration |
-| MockUSDC.sol | Mock | Testing | 🧪 Test | USDC mock for development |
-| AnotherERC20.sol | Mock | Testing | 🧪 Test | Additional ERC-20 for testing |
+| Contract                     | Type      | Phase   | Status  | Purpose                                           |
+| ---------------------------- | --------- | ------- | ------- | ------------------------------------------------- |
+| **AstaVerde.sol**            | ERC-1155  | Phase 1 | 🟢 Live | Carbon offset NFT marketplace with Dutch auctions |
+| **StabilizedCarbonCoin.sol** | ERC-20    | Phase 2 | 🚀 New  | Debt token for vault system                       |
+| **EcoStabilizer.sol**        | Vault     | Phase 2 | 🚀 New  | NFT collateralization vault                       |
+| **IAstaVerde.sol**           | Interface | Phase 2 | 🚀 New  | Interface for vault-marketplace integration       |
+| MockUSDC.sol                 | Mock      | Testing | 🧪 Test | USDC mock for development                         |
+| AnotherERC20.sol             | Mock      | Testing | 🧪 Test | Additional ERC-20 for testing                     |
 
 ## 🏪 Phase 1: AstaVerde Marketplace
 
@@ -20,6 +20,7 @@ This directory contains all smart contracts for the AstaVerde ecosystem, includi
 **Purpose**: Carbon offset NFT marketplace with dynamic Dutch auction pricing.
 
 #### Key Features
+
 - **ERC-1155 Multi-Token Standard**: Efficient batch operations
 - **Dutch Auction Mechanism**: Price decreases 1 USDC daily from base to floor
 - **Dynamic Base Price**: Adjusts ±10 USDC based on market demand
@@ -35,7 +36,7 @@ function mintBatch(
     string[] calldata cids
 ) external onlyOwner
 
-// Purchase tokens at current auction price  
+// Purchase tokens at current auction price
 function buyBatch(
     uint256 batchID,
     uint256 maxPrice,
@@ -54,7 +55,7 @@ function getCurrentBatchPrice(uint256 batchID) external view returns (uint256)
 ```solidity
 // Pricing constants
 uint256 public basePrice = 230 * 1e6;        // 230 USDC starting price
-uint256 public priceFloor = 40 * 1e6;        // 40 USDC minimum price  
+uint256 public priceFloor = 40 * 1e6;        // 40 USDC minimum price
 uint256 public dailyPriceDecay = 1 * 1e6;    // 1 USDC daily reduction
 uint256 public priceDelta = 10 * 1e6;        // ±10 USDC base price adjustments
 
@@ -89,6 +90,7 @@ struct Batch {
 **Purpose**: ERC-20 debt token exclusively minted by the vault system.
 
 #### Key Features
+
 - **Role-Based Access**: Only vault can mint, anyone can burn
 - **18 Decimal Precision**: Standard ERC-20 implementation
 - **Immutable Supply Control**: No admin minting after deployment
@@ -106,15 +108,19 @@ function burn(uint256 amount) external
 function burnFrom(address account, uint256 amount) external
 ```
 
-#### Access Control
+#### Access Control & Supply
 
 ```solidity
 bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-constructor() ERC20("Stabilized Carbon Coin", "SCC") {
+uint256 public constant MAX_SUPPLY = 1_000_000_000 * 1e18; // 1B cap
+
+constructor(address vault) ERC20("Stabilized Carbon Coin", "SCC") {
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    // MINTER_ROLE granted to vault after deployment
-    // DEFAULT_ADMIN_ROLE renounced after setup
+    // Optional: grant MINTER_ROLE to known vault in constructor to avoid race
+    if (vault != address(0)) {
+        _grantRole(MINTER_ROLE, vault);
+    }
 }
 ```
 
@@ -123,6 +129,7 @@ constructor() ERC20("Stabilized Carbon Coin", "SCC") {
 **Purpose**: Non-fungible Collateralized Debt Position (CDP) system for NFT liquidity.
 
 #### Key Features
+
 - **Fixed-Rate Loans**: 1 NFT = 20 SCC (no oracles needed)
 - **Non-Fungible CDPs**: Each NFT is unique collateral for specific loan
 - **No Liquidations**: Users always get their exact NFT back
@@ -134,7 +141,7 @@ constructor() ERC20("Stabilized Carbon Coin", "SCC") {
 uint256 public constant SCC_PER_ASSET = 20 * 1e18; // 20 SCC per NFT loan
 
 // Core vault mechanism:
-// Deposit: NFT → Vault, Mint 20 SCC → User  
+// Deposit: NFT → Vault, Mint 20 SCC → User
 // Withdraw: 20 SCC → Burn, NFT → User (exact same NFT)
 ```
 
@@ -144,14 +151,14 @@ uint256 public constant SCC_PER_ASSET = 20 * 1e18; // 20 SCC per NFT loan
 // Deposit NFT as collateral, mint SCC loan
 function deposit(uint256 tokenId) external nonReentrant whenNotPaused {
     require(!loans[tokenId].active, "loan active");
-    
+
     // CRITICAL: Check if NFT is redeemed (worthless)
     (, , , , bool redeemed) = ecoAsset.tokens(tokenId);
     require(!redeemed, "redeemed asset");
-    
+
     // Transfer NFT to vault
     ecoAsset.safeTransferFrom(msg.sender, address(this), tokenId, 1, "");
-    
+
     // Record loan and mint SCC
     loans[tokenId] = Loan(msg.sender, true);
     scc.mint(msg.sender, SCC_PER_ASSET);
@@ -161,10 +168,10 @@ function deposit(uint256 tokenId) external nonReentrant whenNotPaused {
 function withdraw(uint256 tokenId) external nonReentrant whenNotPaused {
     Loan memory loan = loans[tokenId];
     require(loan.active && loan.borrower == msg.sender, "not borrower");
-    
+
     // Burn SCC to repay loan
     scc.burnFrom(msg.sender, SCC_PER_ASSET);
-    
+
     // Return exact NFT
     ecoAsset.safeTransferFrom(address(this), msg.sender, tokenId, 1, "");
     loans[tokenId].active = false;
@@ -206,6 +213,7 @@ mapping(uint256 => Loan) public loans; // tokenId → Loan details
 **Purpose**: Interface enabling vault to interact with AstaVerde marketplace.
 
 #### Key Features
+
 - **ERC-1155 Inheritance**: Full transfer capability
 - **State Reading**: Access to token metadata and redemption status
 - **Future-Proof**: Extensible for additional marketplace features
@@ -220,7 +228,7 @@ interface IAstaVerde is IERC1155 {
         string  memory cid,
         bool    redeemed    // CRITICAL: Used by vault for security
     );
-    
+
     // Dynamic range for view functions
     function lastTokenID() external view returns (uint256);
 }
@@ -249,7 +257,7 @@ modifier whenNotPaused() { ... }
 // Prevent deposit of worthless redeemed NFTs
 require(!redeemed, "redeemed asset");
 
-// Ensure only borrower can withdraw their NFT  
+// Ensure only borrower can withdraw their NFT
 require(loan.active && loan.borrower == msg.sender, "not borrower");
 
 // Prevent admin sweep of active collateral
@@ -262,7 +270,7 @@ require(!loans[tokenId].active, "loan active");
 
 ```solidity
 // Packed structs for gas efficiency
-struct Loan { 
+struct Loan {
     address borrower; // 20 bytes
     bool active;      // 1 byte
     // Total: 21 bytes (fits in single storage slot)
@@ -274,12 +282,12 @@ function mintBatch(address[] calldata producers, string[] calldata cids)
 
 ### Target Gas Costs (Achieved)
 
-| Operation | Target | Actual | Status |
-|-----------|--------|--------|---------|
-| Vault Deposit | <165k | ~152k | ✅ |
-| Vault Withdraw | <120k | ~75k | ✅ |
-| NFT Purchase | Variable | ~233k | ✅ |
-| SCC Transfer | Standard | ~46k | ✅ |
+| Operation      | Target   | Actual | Status |
+| -------------- | -------- | ------ | ------ |
+| Vault Deposit  | <165k    | ~152k  | ✅     |
+| Vault Withdraw | <120k    | ~75k   | ✅     |
+| NFT Purchase   | Variable | ~233k  | ✅     |
+| SCC Transfer   | Standard | ~46k   | ✅     |
 
 ## 🧪 Testing Integration
 
@@ -293,7 +301,7 @@ function mintBatch(address[] calldata producers, string[] calldata cids)
 ```bash
 # Contract-specific coverage
 AstaVerde.sol:         89.84% statements, 62.32% branches
-EcoStabilizer.sol:     100% statements, 86.11% branches  
+EcoStabilizer.sol:     100% statements, 86.11% branches
 StabilizedCarbonCoin.sol: 100% statements, 100% branches
 IAstaVerde.sol:        100% (interface)
 ```
@@ -306,7 +314,7 @@ IAstaVerde.sol:        100% (interface)
 // Vault reads marketplace state
 (, , , , bool redeemed) = ecoAsset.tokens(tokenId);
 
-// Marketplace operates independently  
+// Marketplace operates independently
 // Vault adds liquidity without modifying core marketplace
 ```
 
@@ -316,19 +324,21 @@ IAstaVerde.sol:        100% (interface)
 Price Ceiling: If 20 SCC > New EcoAsset Price
 → Buy EcoAsset → Deposit → Sell SCC (profit)
 
-Price Floor: If 20 SCC < Vaulted NFT Value  
+Price Floor: If 20 SCC < Vaulted NFT Value
 → Buy SCC → Withdraw valuable NFT (profit)
 ```
 
 ## 📊 Economic Parameters
 
 ### AstaVerde Marketplace
+
 - **Base Price**: 230 USDC (adjustable)
 - **Price Floor**: 40 USDC (adjustable)
 - **Daily Decay**: 1 USDC/day (adjustable)
 - **Platform Fee**: 30% (adjustable)
 
 ### EcoStabilizer Vault
+
 - **Loan Rate**: 20 SCC per NFT (immutable)
 - **Collateral Ratio**: 100% (1 NFT = 1 loan)
 - **Interest Rate**: 0% (no time-based interest)
@@ -340,7 +350,7 @@ Price Floor: If 20 SCC < Vaulted NFT Value
 
 ```
 1. Deploy AstaVerde (Phase 1) ✅ Already deployed on Base
-2. Deploy StabilizedCarbonCoin 
+2. Deploy StabilizedCarbonCoin
 3. Deploy EcoStabilizer(astaVerde.address, scc.address)
 4. Grant MINTER_ROLE(ecoStabilizer) on SCC
 5. Renounce DEFAULT_ADMIN_ROLE on SCC (decentralization)
@@ -348,11 +358,11 @@ Price Floor: If 20 SCC < Vaulted NFT Value
 
 ### Network Deployment Status
 
-| Network | AstaVerde | StabilizedCarbonCoin | EcoStabilizer | Status |
-|---------|-----------|---------------------|---------------|---------|
-| Base Mainnet | ✅ Live | 🚀 Ready | 🚀 Ready | Production Ready |
-| Base Sepolia | ✅ Test | 🧪 Testing | 🧪 Testing | Testing Available |
-| Local Dev | ✅ Dev | ✅ Dev | ✅ Dev | Development Ready |
+| Network      | AstaVerde | StabilizedCarbonCoin | EcoStabilizer | Status            |
+| ------------ | --------- | -------------------- | ------------- | ----------------- |
+| Base Mainnet | ✅ Live   | 🚀 Ready             | 🚀 Ready      | Production Ready  |
+| Base Sepolia | ✅ Test   | 🧪 Testing           | 🧪 Testing    | Testing Available |
+| Local Dev    | ✅ Dev    | ✅ Dev               | ✅ Dev        | Development Ready |
 
 ## 📈 Monitoring & Analytics
 
@@ -363,7 +373,7 @@ Price Floor: If 20 SCC < Vaulted NFT Value
 uint256 totalActiveLoans = ecoStabilizer.getTotalActiveLoans();
 uint256 totalSccSupply = scc.totalSupply();
 
-// Marketplace metrics  
+// Marketplace metrics
 uint256 totalNFTs = astaVerde.lastTokenID();
 uint256 redeemedCount = /* Count redeemed tokens */;
 
@@ -384,12 +394,14 @@ event BatchSold(uint256 batchId, uint256 batchSoldTime, uint256 tokensSold);
 ## 🔮 Future Considerations
 
 ### Potential Enhancements (Post-MVP)
+
 - **Batch Vault Operations**: Multi-NFT deposits/withdrawals
 - **Yield Mechanisms**: SCC staking or liquidity mining
 - **Treasury Integration**: Protocol-owned liquidity for peg stability
 - **Advanced Analytics**: On-chain metrics and dashboards
 
 ### Upgrade Path
+
 - Current contracts are **immutable by design**
 - Future versions require **new deployments + migration tools**
 - Maintains **security-first approach** over convenience

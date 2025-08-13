@@ -7,11 +7,13 @@ This test suite provides comprehensive coverage for both Phase 1 (AstaVerde NFT 
 ## Test Architecture
 
 ### Phase 1 Tests (Live System)
+
 - **AstaVerde.ts** - Core marketplace functionality tests
 - **AstaVerde.logic.behavior.ts** - Enhanced price adjustment logic and behavior tests
 - **AstaVerde.fixture.ts** - Shared test fixtures and utilities
 
 ### Phase 2 Tests (Vault System)
+
 - **EcoStabilizer.ts** - Core vault functionality (44 tests)
 - **StabilizedCarbonCoin.ts** - ERC-20 debt token tests (25 tests)
 - **VaultRedeemed.ts** - Redeemed asset protection (4 tests)
@@ -19,6 +21,7 @@ This test suite provides comprehensive coverage for both Phase 1 (AstaVerde NFT 
 - **VaultCoverageGapsFixed.ts** - Edge cases and integration (17 tests)
 
 ### Supporting Files
+
 - **lib.ts** - Shared test utilities and helper functions
 - **types.ts** - TypeScript type definitions for tests
 - **HelperTest.ts** - Additional test helpers
@@ -26,6 +29,7 @@ This test suite provides comprehensive coverage for both Phase 1 (AstaVerde NFT 
 ## Integration Testing Strategy
 
 ### Full Stack Integration
+
 Every Phase 2 test follows this comprehensive integration pattern:
 
 ```typescript
@@ -51,6 +55,7 @@ await ecoStabilizer.connect(user1).deposit(1); // Real NFT from marketplace
 ## Critical Integration Points Tested
 
 ### 1. Redeemed Asset Protection ✅
+
 **File**: `VaultRedeemed.ts`
 
 Tests the critical security feature preventing redeemed (worthless) NFTs from being used as vault collateral:
@@ -65,11 +70,11 @@ Tests the critical security feature preventing redeemed (worthless) NFTs from be
 await astaVerde.connect(user1).redeemToken(1);
 
 // Phase 2 vault correctly rejects redeemed NFT
-await expect(ecoStabilizer.connect(user1).deposit(1))
-  .to.be.revertedWith("redeemed asset");
+await expect(ecoStabilizer.connect(user1).deposit(1)).to.be.revertedWith("redeemed asset");
 ```
 
 ### 2. Cross-Contract State Reading ✅
+
 **Files**: All Phase 2 tests
 
 Verifies vault properly reads AstaVerde contract state:
@@ -80,6 +85,7 @@ Verifies vault properly reads AstaVerde contract state:
 - **Real-time Validation**: State checked before every vault operation
 
 ### 3. NFT Custody Chain ✅
+
 **Files**: `EcoStabilizer.ts`, `VaultCoverageGapsFixed.ts`
 
 Tests complete NFT custody flow across contracts:
@@ -98,6 +104,7 @@ expect(await astaVerde.balanceOf(user1.address, 1)).to.equal(1);
 ```
 
 ### 4. Multi-User Integration ✅
+
 **File**: `VaultCoverageGapsFixed.ts`
 
 Tests complex scenarios with multiple users and NFTs:
@@ -108,6 +115,7 @@ Tests complex scenarios with multiple users and NFTs:
 - **Gas Optimization**: Efficient operations even with multiple active loans
 
 ### 5. Edge Case Integration ✅
+
 **File**: `VaultDirectTransfer.ts`
 
 Tests unexpected interactions between contracts:
@@ -120,6 +128,7 @@ Tests unexpected interactions between contracts:
 ## Gas Performance Testing
 
 ### Target Validation ✅
+
 **File**: `EcoStabilizer.ts`
 
 Real-world gas cost validation for all operations:
@@ -130,30 +139,34 @@ const depositTx = await ecoStabilizer.connect(user1).deposit(1);
 const depositReceipt = await depositTx.wait();
 expect(depositReceipt!.gasUsed).to.be.lessThan(155000); // Target: <150k
 
-const withdrawTx = await ecoStabilizer.connect(user1).withdraw(1);  
+const withdrawTx = await ecoStabilizer.connect(user1).withdraw(1);
 const withdrawReceipt = await withdrawTx.wait();
 expect(withdrawReceipt!.gasUsed).to.be.lessThan(125000); // Target: <120k
 ```
 
 **Current Performance**:
+
 - **Deposit**: ~152k gas (slightly over target but acceptable)
 - **Withdraw**: ~75k gas (excellent performance)
 
 ## Security Test Coverage
 
 ### Access Control ✅
+
 - **MINTER_ROLE**: Only vault can mint SCC tokens
 - **Borrower Verification**: Only loan creator can withdraw their NFT
 - **Admin Functions**: Proper owner-only restrictions
 - **Role Renunciation**: Deployment script renounces admin roles
 
 ### Economic Security ✅
+
 - **Fixed Rate**: 20 SCC per NFT (no oracle manipulation risk)
 - **No Liquidations**: Users always get their exact NFT back
 - **Isolated Positions**: One NFT = one unique loan (no pooling risks)
 - **Redeemed Protection**: Worthless NFTs cannot be used as collateral
 
 ### Smart Contract Security ✅
+
 - **Reentrancy Protection**: ReentrancyGuard on all external functions
 - **Input Validation**: Proper parameter checking and error messages
 - **State Consistency**: Loan tracking and NFT custody properly maintained
@@ -162,6 +175,7 @@ expect(withdrawReceipt!.gasUsed).to.be.lessThan(125000); // Target: <120k
 ## Test Organization
 
 ### Test Count Summary
+
 ```
 Phase 1 Tests:        ~30 tests  (AstaVerde marketplace)
 Phase 2 Core:         44 tests   (EcoStabilizer vault)
@@ -173,8 +187,9 @@ Total:               ~100 tests
 ```
 
 ### Coverage Areas
+
 - ✅ **Unit Testing**: Individual contract function testing
-- ✅ **Integration Testing**: Cross-contract interaction testing  
+- ✅ **Integration Testing**: Cross-contract interaction testing
 - ✅ **Security Testing**: Access controls and edge cases
 - ✅ **Performance Testing**: Gas cost validation
 - ✅ **End-to-End Testing**: Complete user journey flows
@@ -182,12 +197,14 @@ Total:               ~100 tests
 ## Running Tests
 
 ### Prerequisites
+
 ```bash
 npm install
 npx hardhat compile
 ```
 
 ### Execute Test Suite
+
 ```bash
 # Run all tests
 npx hardhat test
@@ -205,6 +222,7 @@ npx hardhat coverage
 ```
 
 ### Test Environment
+
 - **Network**: Hardhat local network
 - **Accounts**: 5 test accounts (owner, producer, user1, user2, nonMinter)
 - **Tokens**: MockUSDC for testing (real USDC interface)
@@ -213,37 +231,36 @@ npx hardhat coverage
 ## Key Test Patterns
 
 ### Standard Integration Test Structure
+
 ```typescript
 describe("Feature", function () {
-  async function deployFixture() {
-    // 1. Deploy complete contract stack
-    // 2. Configure proper roles and permissions  
-    // 3. Set up test users with tokens
-    // 4. Execute Phase 1 operations (mint, buy)
-    // 5. Return configured contracts and users
-  }
+    async function deployFixture() {
+        // 1. Deploy complete contract stack
+        // 2. Configure proper roles and permissions
+        // 3. Set up test users with tokens
+        // 4. Execute Phase 1 operations (mint, buy)
+        // 5. Return configured contracts and users
+    }
 
-  it("should test integration scenario", async function () {
-    const { contracts, users } = await loadFixture(deployFixture);
-    
-    // 6. Execute Phase 2 operations
-    // 7. Verify cross-contract state changes
-    // 8. Test security boundaries
-    // 9. Validate gas costs
-  });
+    it("should test integration scenario", async function () {
+        const { contracts, users } = await loadFixture(deployFixture);
+
+        // 6. Execute Phase 2 operations
+        // 7. Verify cross-contract state changes
+        // 8. Test security boundaries
+        // 9. Validate gas costs
+    });
 });
 ```
 
 ### Security Test Pattern
+
 ```typescript
 // Positive case - authorized operation
-await expect(contract.connect(authorizedUser).function(params))
-  .to.emit(contract, "Event")
-  .withArgs(expectedValues);
+await expect(contract.connect(authorizedUser).function(params)).to.emit(contract, "Event").withArgs(expectedValues);
 
-// Negative case - unauthorized operation  
-await expect(contract.connect(unauthorizedUser).function(params))
-  .to.be.revertedWith("Expected error message");
+// Negative case - unauthorized operation
+await expect(contract.connect(unauthorizedUser).function(params)).to.be.revertedWith("Expected error message");
 
 // State verification
 expect(await contract.getState()).to.equal(expectedState);
@@ -252,6 +269,7 @@ expect(await contract.getState()).to.equal(expectedState);
 ## Coverage Validation
 
 ### Automated Coverage Reports
+
 Generate detailed coverage reports to ensure comprehensive testing:
 
 ```bash
@@ -259,8 +277,9 @@ npx hardhat coverage
 ```
 
 ### Manual Integration Checklist
+
 - [ ] Phase 1 marketplace functions work independently
-- [ ] Phase 2 vault functions work independently  
+- [ ] Phase 2 vault functions work independently
 - [ ] Phase 1 → Phase 2 integration flows work correctly
 - [ ] Phase 2 → Phase 1 state reading works correctly
 - [ ] Security boundaries maintained across phases

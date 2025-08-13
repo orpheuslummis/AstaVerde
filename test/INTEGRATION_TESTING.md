@@ -49,8 +49,7 @@ const tokenInfo = await astaVerde.tokens(1);
 console.log("Redeemed status:", tokenInfo.redeemed); // true
 
 // Phase 2: Vault correctly rejects redeemed NFT
-await expect(ecoStabilizer.connect(user1).deposit(1))
-  .to.be.revertedWith("redeemed asset");
+await expect(ecoStabilizer.connect(user1).deposit(1)).to.be.revertedWith("redeemed asset");
 ```
 
 **Security Impact**: Critical protection against using worthless NFTs as loan collateral.
@@ -65,7 +64,7 @@ await expect(ecoStabilizer.connect(user1).deposit(1))
 interface IAstaVerde is IERC1155 {
     function tokens(uint256) external view returns (
         address owner,
-        uint256 tokenId, 
+        uint256 tokenId,
         address producer,
         string memory cid,
         bool redeemed  // ← Critical state read by vault
@@ -97,7 +96,7 @@ await ecoStabilizer.connect(user1).deposit(1);
 expect(await astaVerde.balanceOf(user1.address, 1)).to.equal(0);
 expect(await astaVerde.balanceOf(ecoStabilizer.target, 1)).to.equal(1);
 
-// Withdraw: NFT transfers from vault back to user  
+// Withdraw: NFT transfers from vault back to user
 await ecoStabilizer.connect(user1).withdraw(1);
 expect(await astaVerde.balanceOf(user1.address, 1)).to.equal(1);
 expect(await astaVerde.balanceOf(ecoStabilizer.target, 1)).to.equal(0);
@@ -124,8 +123,7 @@ await ecoStabilizer.connect(user2).deposit(2); // user2's NFT
 
 // Security: Users can only withdraw their own NFTs
 await ecoStabilizer.connect(user1).withdraw(1); // ✅ Success
-await expect(ecoStabilizer.connect(user1).withdraw(2))
-  .to.be.revertedWith("not borrower"); // ✅ Properly rejected
+await expect(ecoStabilizer.connect(user1).withdraw(2)).to.be.revertedWith("not borrower"); // ✅ Properly rejected
 ```
 
 ## Test Execution Patterns
@@ -137,27 +135,27 @@ describe("Integration Feature", function () {
   async function deployIntegrationFixture() {
     // 1. Deploy Phase 1 contracts (AstaVerde + MockUSDC)
     const astaVerde = await AstaVerdeFactory.deploy(owner, mockUSDC.target);
-    
+
     // 2. Deploy Phase 2 contracts referencing Phase 1
     const ecoStabilizer = await EcoStabilizerFactory.deploy(
       astaVerde.target, // ← Integration reference
       scc.target
     );
-    
+
     // 3. Configure cross-contract permissions
     await scc.grantRole(MINTER_ROLE, ecoStabilizer.target);
-    
+
     // 4. Execute Phase 1 operations (real marketplace flow)
     await astaVerde.mintBatch([producer.address], ["QmTestCID"]);
     await mockUSDC.connect(user1).approve(astaVerde.target, batchPrice);
     await astaVerde.connect(user1).buyBatch(1, batchPrice, 1);
-    
+
     return { astaVerde, ecoStabilizer, scc, mockUSDC, users... };
   }
 
   it("should handle integration scenario", async function () {
     const { contracts, users } = await loadFixture(deployIntegrationFixture);
-    
+
     // 5. Execute Phase 2 operations on Phase 1 NFTs
     // 6. Verify cross-contract state consistency
     // 7. Test security boundaries
@@ -179,21 +177,20 @@ await astaVerde.connect(user).redeemToken(tokenId); // Phase 1 state change
 const redeemedData = await astaVerde.tokens(tokenId);
 expect(redeemedData.redeemed).to.equal(true); // Phase 1 state updated
 
-await expect(ecoStabilizer.connect(user).deposit(tokenId))
-  .to.be.revertedWith("redeemed asset"); // Phase 2 reads new state
+await expect(ecoStabilizer.connect(user).deposit(tokenId)).to.be.revertedWith("redeemed asset"); // Phase 2 reads new state
 ```
 
 ## Integration Test Coverage Matrix
 
-| **Phase 1 Function** | **Phase 2 Integration** | **Test File** | **Status** |
-|---|---|---|---|
-| `mintBatch()` | Setup for vault testing | All Phase 2 tests | ✅ |
-| `buyBatch()` | Real NFT acquisition flow | All Phase 2 tests | ✅ |
-| `tokens()` getter | Redeemed status checking | `VaultRedeemed.ts` | ✅ |
-| `redeemToken()` | Protection trigger | `VaultRedeemed.ts` | ✅ |
-| `balanceOf()` | NFT ownership verification | All Phase 2 tests | ✅ |
-| `safeTransferFrom()` | NFT custody transfers | `EcoStabilizer.ts` | ✅ |
-| `setApprovalForAll()` | Vault transfer permissions | All Phase 2 tests | ✅ |
+| **Phase 1 Function**  | **Phase 2 Integration**    | **Test File**      | **Status** |
+| --------------------- | -------------------------- | ------------------ | ---------- |
+| `mintBatch()`         | Setup for vault testing    | All Phase 2 tests  | ✅         |
+| `buyBatch()`          | Real NFT acquisition flow  | All Phase 2 tests  | ✅         |
+| `tokens()` getter     | Redeemed status checking   | `VaultRedeemed.ts` | ✅         |
+| `redeemToken()`       | Protection trigger         | `VaultRedeemed.ts` | ✅         |
+| `balanceOf()`         | NFT ownership verification | All Phase 2 tests  | ✅         |
+| `safeTransferFrom()`  | NFT custody transfers      | `EcoStabilizer.ts` | ✅         |
+| `setApprovalForAll()` | Vault transfer permissions | All Phase 2 tests  | ✅         |
 
 ## Integration Deployment Testing
 
@@ -226,21 +223,25 @@ await vault.deposit(existingTokenId); // Should work with real Phase 1 NFT
 ## Common Integration Issues & Solutions
 
 ### Issue: Interface Mismatch
+
 **Problem**: IAstaVerde interface doesn't match deployed AstaVerde contract  
 **Solution**: Generate interface from deployed contract ABI  
 **Test**: Compilation and deployment tests catch this
 
 ### Issue: Gas Costs Too High
+
 **Problem**: Integration operations exceed gas limits  
 **Solution**: Optimize cross-contract calls and state reads  
 **Test**: Gas measurement tests validate targets
 
 ### Issue: State Reading Failures
+
 **Problem**: Vault can't read AstaVerde state correctly  
 **Solution**: Proper interface inheritance and function signatures  
 **Test**: All Phase 2 tests verify state reading
 
 ### Issue: NFT Transfer Failures
+
 **Problem**: ERC-1155 transfers fail between contracts  
 **Solution**: Proper approval mechanisms and safe transfer usage  
 **Test**: Transfer integration tests catch issues
@@ -257,7 +258,7 @@ const receipt = await depositTx.wait();
 console.log("Deposit gas (with Phase 1 integration):", receipt.gasUsed);
 // Target: <150k gas including cross-contract calls
 
-const withdrawTx = await ecoStabilizer.connect(user1).withdraw(1);  
+const withdrawTx = await ecoStabilizer.connect(user1).withdraw(1);
 const withdrawReceipt = await withdrawTx.wait();
 
 console.log("Withdraw gas (with Phase 1 integration):", withdrawReceipt.gasUsed);
