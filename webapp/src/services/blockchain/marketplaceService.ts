@@ -1,0 +1,230 @@
+import { multicall } from "@wagmi/core";
+import type { Config } from "wagmi";
+import type { PublicClient, WalletClient } from "viem";
+import { formatUnits } from "viem";
+import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
+import {
+    BATCH_SIZE_FOR_TOKEN_QUERY,
+    APPROVAL_BUFFER_FACTOR,
+    TX_CONFIRMATION_TIMEOUT,
+    TX_RETRY_COUNT,
+    TX_RETRY_DELAY,
+} from "../../config/constants";
+import { ENV } from "../../config/environment";
+import type { BatchData, TokenData } from "../../features/marketplace/types";
+
+export class MarketplaceService {
+    constructor(
+        private publicClient: PublicClient,
+        private walletClient: WalletClient | undefined,
+        private wagmiConfig: Config,
+    ) {}
+
+    // Batch operations
+    async getCurrentBatchPrice(batchId: number): Promise<bigint> {
+        const contract = getAstaVerdeContract();
+        return this.publicClient.readContract({
+            ...contract,
+            functionName: "getCurrentBatchPrice",
+            args: [BigInt(batchId)],
+        }) as Promise<bigint>;
+    }
+
+    async getBatchInfo(batchId: number): Promise<BatchData> {
+        const contract = getAstaVerdeContract();
+        const result = await this.publicClient.readContract({
+            ...contract,
+            functionName: "getBatchInfo",
+            args: [BigInt(batchId)],
+        });
+
+        if (!Array.isArray(result) || result.length !== 5) {
+            throw new Error(`Invalid batch info format for batch ${batchId}`);
+        }
+
+        const [batchIdResult, tokenIds, creationTime, price, itemsLeft] = result;
+
+        return {
+            batchId: BigInt(batchIdResult),
+            tokenIds: (tokenIds as bigint[]).map(BigInt),
+            creationTime: BigInt(creationTime),
+            price: BigInt(price),
+            itemsLeft: BigInt(itemsLeft),
+        };
+    }
+
+    async buyBatch(batchId: number, tokenAmount: number): Promise<`0x${string}`> {
+        if (!this.walletClient) {
+            throw new Error("Wallet not connected");
+        }
+
+        // Get fresh price at time of purchase
+        const currentUnitPrice = await this.getCurrentBatchPrice(batchId);
+        const exactTotalCost = currentUnitPrice * BigInt(tokenAmount);
+
+        // Check and handle USDC approval
+        await this.ensureUsdcApproval(exactTotalCost);
+
+        // Execute purchase
+        const contract = getAstaVerdeContract();
+        const { request } = await this.publicClient.simulateContract({
+            ...contract,
+            functionName: "buyBatch",
+            args: [BigInt(batchId), exactTotalCost, BigInt(tokenAmount)],
+            account: this.walletClient.account,
+        });
+
+        const hash = await this.walletClient.writeContract(request);
+
+        // Wait for confirmation with retry logic
+        await this.waitForTransactionWithRetry(hash);
+
+        return hash;
+    }
+
+    // Token operations
+    async getTokensOfOwner(ownerAddress: string): Promise<number[]> {
+        const contract = getAstaVerdeContract();
+
+        // Get last token ID
+        const lastTokenID = (await this.publicClient.readContract({
+            ...contract,
+            functionName: "lastTokenID",
+        })) as bigint;
+
+        const ownedTokens: number[] = [];
+        const batches = Math.ceil(Number(lastTokenID) / BATCH_SIZE_FOR_TOKEN_QUERY);
+
+        for (let i = 0; i < batches; i++) {
+            const start = i * BATCH_SIZE_FOR_TOKEN_QUERY + 1;
+            const end = Math.min((i + 1) * BATCH_SIZE_FOR_TOKEN_QUERY, Number(lastTokenID));
+
+            const calls = Array.from({ length: end - start + 1 }, (_, index) => ({
+                ...contract,
+                functionName: "balanceOf",
+                args: [ownerAddress, BigInt(start + index)],
+            }));
+
+            const results = await multicall(this.wagmiConfig, {
+                contracts: calls as any[],
+                allowFailure: true,
+            });
+
+            results.forEach((result, index) => {
+                if (result.status === "success" && typeof result.result === "bigint" && result.result > 0n) {
+                    ownedTokens.push(start + index);
+                }
+            });
+        }
+
+        return ownedTokens;
+    }
+
+    async redeemToken(tokenId: bigint): Promise<`0x${string}`> {
+        if (!this.walletClient) {
+            throw new Error("Wallet not connected");
+        }
+
+        const contract = getAstaVerdeContract();
+        const { request } = await this.publicClient.simulateContract({
+            ...contract,
+            functionName: "redeemToken",
+            args: [tokenId],
+            account: this.walletClient.account,
+        });
+
+        return this.walletClient.writeContract(request);
+    }
+
+    async getTokenInfo(tokenId: bigint): Promise<TokenData> {
+        const contract = getAstaVerdeContract();
+        const result = await this.publicClient.readContract({
+            ...contract,
+            functionName: "tokens",
+            args: [tokenId],
+        });
+
+        if (!Array.isArray(result) || result.length !== 4) {
+            throw new Error(`Invalid token data format for token ${tokenId}`);
+        }
+
+        return result as unknown as TokenData;
+    }
+
+    // Helper methods
+    private async ensureUsdcApproval(amount: bigint): Promise<void> {
+        if (!this.walletClient) return;
+
+        const usdcContract = getUsdcContract();
+        const astaverdeContract = getAstaVerdeContract();
+
+        // Check current allowance
+        const allowance = (await this.publicClient.readContract({
+            ...usdcContract,
+            functionName: "allowance",
+            args: [this.walletClient!.account.address, astaverdeContract.address],
+        })) as bigint;
+
+        if (allowance < amount) {
+            // Get max batch size for approval calculation
+            const maxBatchSize = (await this.publicClient.readContract({
+                ...astaverdeContract,
+                functionName: "maxBatchSize",
+            })) as bigint;
+
+            // Calculate approval amount with buffer
+            const pricePerUnit = amount / BigInt(1); // Adjust based on token amount
+            const approvalAmount = maxBatchSize * pricePerUnit * APPROVAL_BUFFER_FACTOR;
+
+            // Execute approval
+            const { request } = await this.publicClient.simulateContract({
+                ...usdcContract,
+                functionName: "approve",
+                args: [astaverdeContract.address, approvalAmount],
+                account: this.walletClient!.account,
+            });
+
+            const approveTx = await this.walletClient.writeContract(request);
+            await this.publicClient.waitForTransactionReceipt({ hash: approveTx });
+        }
+    }
+
+    private async waitForTransactionWithRetry(hash: `0x${string}`): Promise<void> {
+        let retryCount = 0;
+
+        while (retryCount < TX_RETRY_COUNT) {
+            try {
+                const receipt = await this.publicClient.waitForTransactionReceipt({
+                    hash,
+                    timeout: TX_CONFIRMATION_TIMEOUT,
+                    confirmations: 1,
+                });
+
+                if (receipt.status === "success") {
+                    return;
+                } else {
+                    throw new Error("Transaction failed");
+                }
+            } catch (error: any) {
+                retryCount++;
+
+                if (retryCount === TX_RETRY_COUNT) {
+                    // Final check
+                    try {
+                        const receipt = await this.publicClient.getTransactionReceipt({ hash });
+                        if (receipt && receipt.status === "success") {
+                            return;
+                        }
+                    } catch {
+                        // Ignore and throw timeout error
+                    }
+
+                    throw new Error("Transaction confirmation timed out. Please refresh to check status.");
+                }
+
+                // Wait before retry
+                await new Promise((resolve) => setTimeout(resolve, TX_RETRY_DELAY));
+            }
+        }
+    }
+}
