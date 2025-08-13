@@ -1,43 +1,5 @@
-import { getDefaultConfig } from "connectkit";
-import { createConfig } from "wagmi";
-import { base, baseSepolia, hardhat } from "wagmi/chains";
-import { ALCHEMY_API_KEY, CHAIN_SELECTION, WALLET_CONNECT_PROJECT_ID } from "./app.config";
+// Re-export the new wagmi config from the reorganized structure
+export { wagmiConfig as config } from "./config/wagmi";
 
-const chains = (() => {
-    switch (CHAIN_SELECTION) {
-        case "base_mainnet":
-            return [
-                {
-                    ...base,
-                    rpcUrls: {
-                        default: {
-                            http: [`https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`],
-                        },
-                    },
-                },
-            ] as const;
-        case "base_sepolia":
-            return [
-                {
-                    ...baseSepolia,
-                    rpcUrls: {
-                        default: {
-                            http: [`https://base-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`],
-                        },
-                    },
-                },
-            ] as const;
-        case "local":
-            return [hardhat] as const;
-        default:
-            throw new Error(`Unsupported chain selection: ${CHAIN_SELECTION}`);
-    }
-})();
-
-export const config = createConfig(
-    getDefaultConfig({
-        appName: "Asta Verde",
-        walletConnectProjectId: WALLET_CONNECT_PROJECT_ID,
-        chains,
-    }),
-);
+// This file is kept for backward compatibility
+// All new imports should use the config/wagmi module directly

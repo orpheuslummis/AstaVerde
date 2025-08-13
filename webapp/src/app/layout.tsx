@@ -6,6 +6,12 @@ import { Header } from "../components/Header";
 import { OnboardingModal } from "../components/OnboardingModal";
 import { Providers } from "../components/Providers";
 
+export const metadata = {
+  title: 'AstaVerde - Carbon Offset Marketplace',
+  description: 'Trade tokenized carbon offsets on the Base blockchain',
+  keywords: 'carbon offsets, NFT, blockchain, Base, environmental'
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">

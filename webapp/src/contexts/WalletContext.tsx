@@ -56,6 +56,21 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         return false;
     }, [connect, connectors, isConnected, address]);
 
+    // E2E test helper: Listen for e2e-connect event to trigger wallet connection
+    useEffect(() => {
+        const handler = () => {
+            void connectWallet();
+        };
+        if (typeof window !== 'undefined') {
+            window.addEventListener('e2e-connect', handler);
+        }
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('e2e-connect', handler);
+            }
+        };
+    }, [connectWallet]);
+
     return (
         <WalletContext.Provider value={{
             isConnected,

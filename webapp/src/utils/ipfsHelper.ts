@@ -4,6 +4,7 @@ import {
     WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION,
     WEB3_STORAGE_GATEWAY_PREFIX,
     WEB3_STORAGE_GATEWAY_SUFFIX,
+    CHAIN_SELECTION,
 } from "../app.config";
 
 export interface TokenMetadata {
@@ -58,6 +59,109 @@ export async function connectToSpace(client: any, email: string, spaceName: stri
 
 export async function fetchJsonFromIpfsWithFallback(cidOrUri: string): Promise<{ data: any; gateway: string } | null> {
     const cid = cidOrUri.replace("ipfs://", "");
+
+    // For local development, return mock metadata instead of trying external gateways
+    if (CHAIN_SELECTION === "local") {
+        console.log(`Local development mode: returning mock metadata for ${cid}`);
+
+        // Generate different mock data based on the CID to simulate variety
+        const mockNumber = cid.includes("Vault")
+            ? "V"
+            : cid.includes("Test3")
+              ? "3"
+              : cid.includes("Test2")
+                ? "2"
+                : cid.includes("Test1")
+                  ? "1"
+                  : cid.includes("Batch3")
+                    ? "3"
+                    : cid.includes("Batch2")
+                      ? "2"
+                      : "1";
+
+        // Create different visual patterns for variety
+        const patterns = {
+            "1": {
+                gradient: ["#667eea", "#764ba2"], // Purple gradient
+                pattern: "circles",
+            },
+            "2": {
+                gradient: ["#f093fb", "#f5576c"], // Pink gradient
+                pattern: "waves",
+            },
+            "3": {
+                gradient: ["#4facfe", "#00f2fe"], // Blue gradient
+                pattern: "triangles",
+            },
+            V: {
+                gradient: ["#fa709a", "#fee140"], // Sunset gradient
+                pattern: "hexagon",
+            },
+        };
+
+        const style = patterns[mockNumber] || patterns["1"];
+
+        // Generate a more interesting SVG with patterns and gradients
+        const svgString = `
+            <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:${style.gradient[0]};stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:${style.gradient[1]};stop-opacity:1" />
+                    </linearGradient>
+                    <pattern id="pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                        ${
+                            style.pattern === "circles"
+                                ? `
+                            <circle cx="20" cy="20" r="3" fill="white" opacity="0.3"/>
+                            <circle cx="0" cy="0" r="3" fill="white" opacity="0.3"/>
+                            <circle cx="40" cy="0" r="3" fill="white" opacity="0.3"/>
+                            <circle cx="0" cy="40" r="3" fill="white" opacity="0.3"/>
+                            <circle cx="40" cy="40" r="3" fill="white" opacity="0.3"/>
+                        `
+                                : style.pattern === "waves"
+                                  ? `
+                            <path d="M0,20 Q10,10 20,20 T40,20" stroke="white" stroke-width="2" fill="none" opacity="0.3"/>
+                            <path d="M0,30 Q10,20 20,30 T40,30" stroke="white" stroke-width="2" fill="none" opacity="0.3"/>
+                        `
+                                  : style.pattern === "triangles"
+                                    ? `
+                            <polygon points="20,5 30,25 10,25" fill="white" opacity="0.2"/>
+                            <polygon points="0,25 10,5 -10,5" fill="white" opacity="0.2"/>
+                            <polygon points="40,25 50,5 30,5" fill="white" opacity="0.2"/>
+                        `
+                                    : `
+                            <polygon points="20,5 35,15 35,35 20,45 5,35 5,15" fill="none" stroke="white" stroke-width="1" opacity="0.3"/>
+                        `
+                        }
+                    </pattern>
+                </defs>
+                <rect width="400" height="400" fill="url(#grad)"/>
+                <rect width="400" height="400" fill="url(#pattern)"/>
+                <circle cx="200" cy="200" r="80" fill="white" opacity="0.2"/>
+                <text x="50%" y="45%" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle" opacity="0.9">CO2</text>
+                <text x="50%" y="58%" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="white" text-anchor="middle" dominant-baseline="middle" opacity="0.8">OFFSET</text>
+                <text x="50%" y="70%" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">#${mockNumber}</text>
+            </svg>
+        `;
+        // Properly encode the SVG string to handle UTF-8 characters
+        const svgImage = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
+
+        const mockData = {
+            name: `Carbon Offset #${mockNumber}`,
+            description: `Test carbon offset NFT for local development. This represents verified carbon credits from renewable energy projects.`,
+            image: svgImage,
+            producer_address: "0x1234567890123456789012345678901234567890",
+            external_url: `https://example.com/token/${cid}`,
+            attributes: [
+                { trait_type: "Type", value: "Carbon Offset" },
+                { trait_type: "Batch", value: mockNumber },
+                { trait_type: "Status", value: "Active" },
+            ],
+        };
+
+        return { data: mockData, gateway: "local-mock" };
+    }
 
     // Try primary gateway
     try {
@@ -116,6 +220,11 @@ export async function fetchJsonFromIpfsWithFallback(cidOrUri: string): Promise<{
 }
 
 export function resolveIpfsUriToUrl(ipfsUri: string | undefined | null, gateway: string): string {
+    // For local mock data or data URLs, return as-is
+    if (gateway === "local-mock" || (ipfsUri && ipfsUri.startsWith("data:"))) {
+        return ipfsUri || "";
+    }
+
     if (ipfsUri && ipfsUri.startsWith("ipfs://")) {
         const cid = ipfsUri.replace("ipfs://", "");
         // Handle subdomain gateway structure if the provided gateway is a base for it (e.g., "https://*.ipfs.w3s.link/")
