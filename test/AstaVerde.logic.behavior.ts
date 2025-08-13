@@ -14,11 +14,9 @@ async function advancedDays(days: bigint) {
 }
 
 describe("AstaVerde Logic and Behavior", function () {
-
     describe("Deployment and Initial State", function () {
         it("Should deploy contracts and set initial state correctly", async function () {
-            const { astaVerde, mockUSDC, admin, user1, user2 } =
-                await loadFixture(deployAstaVerdeFixture);
+            const { astaVerde, mockUSDC, admin, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
 
             const basePrice = await astaVerde.basePrice();
             expect(basePrice).to.be.gt(0n);
@@ -30,81 +28,56 @@ describe("AstaVerde Logic and Behavior", function () {
             const owner = await astaVerde.owner();
             expect(owner).to.equal(await admin.getAddress());
 
-            const adminUSDC = await mockUSDC.balanceOf(
-                await admin.getAddress(),
-            );
+            const adminUSDC = await mockUSDC.balanceOf(await admin.getAddress());
             expect(adminUSDC).to.equal(10000000n * BigInt(USDC_PRECISION));
 
-            const user1USDC = await mockUSDC.balanceOf(
-                await user1.getAddress(),
-            );
+            const user1USDC = await mockUSDC.balanceOf(await user1.getAddress());
             expect(user1USDC).to.equal(1000000n * BigInt(USDC_PRECISION));
 
-            const user2USDC = await mockUSDC.balanceOf(
-                await user2.getAddress(),
-            );
+            const user2USDC = await mockUSDC.balanceOf(await user2.getAddress());
             expect(user2USDC).to.equal(1000000n * BigInt(USDC_PRECISION));
         });
     });
 
     describe("Minting Batches", function () {
         it("Should mint a batch correctly", async function () {
-            const { astaVerde, admin } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
 
             const producers = [admin.address];
             const cids = ["QmValidCID"];
 
-            await expect(astaVerde.mintBatch(producers, cids))
-                .to.emit(astaVerde, "BatchMinted")
-                .withArgs(1, anyValue);
+            await expect(astaVerde.mintBatch(producers, cids)).to.emit(astaVerde, "BatchMinted").withArgs(1, anyValue);
 
-            const [, tokenIds, , , remainingTokens] = await astaVerde
-                .getBatchInfo(1);
+            const [, tokenIds, , , remainingTokens] = await astaVerde.getBatchInfo(1);
             expect(tokenIds.length).to.equal(producers.length);
             expect(remainingTokens).to.equal(BigInt(producers.length));
         });
 
         it("Should fail to mint batch with mismatched producers and cids", async function () {
-            const { astaVerde, admin } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
 
             const producers = [admin.address];
             const cids = ["QmCID1", "QmCID2"];
 
-            await expect(astaVerde.mintBatch(producers, cids))
-                .to.be.revertedWith(
-                    "Mismatch between producers and cids lengths",
-                );
+            await expect(astaVerde.mintBatch(producers, cids)).to.be.revertedWith(
+                "Mismatch between producers and cids lengths",
+            );
         });
 
         it("Should fail to mint batch exceeding maxBatchSize", async function () {
-            const { astaVerde, admin } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
 
             const maxBatchSize = await astaVerde.maxBatchSize();
-            const producers = Array.from(
-                { length: Number(maxBatchSize) + 1 },
-                () => admin.address,
-            );
-            const cids = Array.from(
-                { length: Number(maxBatchSize) + 1 },
-                () => "QmCID",
-            );
+            const producers = Array.from({ length: Number(maxBatchSize) + 1 }, () => admin.address);
+            const cids = Array.from({ length: Number(maxBatchSize) + 1 }, () => "QmCID");
 
-            await expect(astaVerde.mintBatch(producers, cids))
-                .to.be.revertedWith("Batch size exceeds max batch size");
+            await expect(astaVerde.mintBatch(producers, cids)).to.be.revertedWith("Batch size exceeds max batch size");
         });
     });
 
     describe("Buying Batches", function () {
         it("Should buy batch at initial price", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
 
             await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
 
@@ -113,18 +86,9 @@ describe("AstaVerde Logic and Behavior", function () {
             const basePrice = await astaVerde.basePrice();
             const totalCost = basePrice * tokenAmount;
 
-            await mockUSDC.connect(user1).approve(
-                await astaVerde.getAddress(),
-                totalCost,
-            );
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
 
-            await expect(
-                astaVerde.connect(user1).buyBatch(
-                    batchID,
-                    totalCost,
-                    tokenAmount,
-                ),
-            )
+            await expect(astaVerde.connect(user1).buyBatch(batchID, totalCost, tokenAmount))
                 .to.emit(astaVerde, "BatchSold")
                 .withArgs(batchID, anyValue, tokenAmount);
 
@@ -133,9 +97,7 @@ describe("AstaVerde Logic and Behavior", function () {
         });
 
         it("Should buy batch after price reduction", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
 
             await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
 
@@ -147,18 +109,9 @@ describe("AstaVerde Logic and Behavior", function () {
             const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
             const totalCost = currentPrice * tokenAmount;
 
-            await mockUSDC.connect(user1).approve(
-                await astaVerde.getAddress(),
-                totalCost,
-            );
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
 
-            await expect(
-                astaVerde.connect(user1).buyBatch(
-                    batchID,
-                    totalCost,
-                    tokenAmount,
-                ),
-            )
+            await expect(astaVerde.connect(user1).buyBatch(batchID, totalCost, tokenAmount))
                 .to.emit(astaVerde, "BatchSold")
                 .withArgs(batchID, anyValue, tokenAmount);
 
@@ -169,9 +122,7 @@ describe("AstaVerde Logic and Behavior", function () {
 
     describe("Dynamic Base Price Mechanism", function () {
         it("Should decrease batch price daily from creation", async function () {
-            const { astaVerde, admin } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
 
             // Mint a batch
             await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
@@ -211,30 +162,20 @@ describe("AstaVerde Logic and Behavior", function () {
             console.log(`Day 1: ${ethers.formatUnits(priceDay1, 6)} USDC`);
             console.log(`Day 2: ${ethers.formatUnits(priceDay2, 6)} USDC`);
             console.log(`Day 3: ${ethers.formatUnits(priceDay3, 6)} USDC`);
-            console.log(
-                `Final (floor): ${ethers.formatUnits(finalPrice, 6)} USDC`,
-            );
+            console.log(`Final (floor): ${ethers.formatUnits(finalPrice, 6)} USDC`);
         });
 
         it("Should not increase basePrice when batch is not fully sold", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
 
             // Mint a batch with multiple tokens
-            await astaVerde.mintBatch([admin.address, admin.address], [
-                "QmValidCID1",
-                "QmValidCID2",
-            ]);
+            await astaVerde.mintBatch([admin.address, admin.address], ["QmValidCID1", "QmValidCID2"]);
             const batchID = 1n;
             const initialBasePrice = await astaVerde.basePrice();
 
             // Buy only one token from the batch
             const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            await mockUSDC.connect(user1).approve(
-                await astaVerde.getAddress(),
-                currentPrice,
-            );
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
             await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
 
             const newBasePrice = await astaVerde.basePrice();
@@ -242,48 +183,31 @@ describe("AstaVerde Logic and Behavior", function () {
         });
 
         it("Should maintain base price within bounds over extended period with mixed activity", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
             const initialBasePrice = await astaVerde.basePrice();
             const priceFloor = await astaVerde.priceFloor();
 
             for (let day = 1; day <= 60; day++) {
                 if (day % 5 === 0) {
-                    await astaVerde.mintBatch([
-                        admin.address,
-                        admin.address,
-                        admin.address,
-                    ], [`QmCID${day}1`, `QmCID${day}2`, `QmCID${day}3`]);
+                    await astaVerde.mintBatch(
+                        [admin.address, admin.address, admin.address],
+                        [`QmCID${day}1`, `QmCID${day}2`, `QmCID${day}3`],
+                    );
                     console.log(`Day ${day}: Minted new batch ${day / 5}`);
                 }
 
                 if (day % 7 === 0) {
                     const batchID = Math.floor(day / 5);
-                    const currentPrice = await astaVerde.getCurrentBatchPrice(
-                        batchID,
-                    );
-                    const [, , , , remainingTokens] = await astaVerde
-                        .getBatchInfo(batchID);
-                    console.log(
-                        `Day ${day}, Batch ${batchID}, Remaining tokens: ${remainingTokens}, Buying: 1`,
-                    );
-                    await mockUSDC.connect(user1).approve(
-                        await astaVerde.getAddress(),
-                        currentPrice,
-                    );
-                    await astaVerde.connect(user1).buyBatch(
-                        batchID,
-                        currentPrice,
-                        1n,
-                    );
+                    const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+                    const [, , , , remainingTokens] = await astaVerde.getBatchInfo(batchID);
+                    console.log(`Day ${day}, Batch ${batchID}, Remaining tokens: ${remainingTokens}, Buying: 1`);
+                    await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
+                    await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
                 }
 
                 if (day % 10 === 0) {
                     const currentBasePrice = await astaVerde.basePrice();
-                    console.log(
-                        `Day ${day}: Current base price: ${currentBasePrice}`,
-                    );
+                    console.log(`Day ${day}: Current base price: ${currentBasePrice}`);
                 }
 
                 await advancedDays(1n);
@@ -323,7 +247,7 @@ describe("AstaVerde Logic and Behavior", function () {
             // Trigger price adjustment - should decrease at threshold
             await astaVerde.mintBatch([admin.address], ["QmCID4"]);
             const priceAtThreshold = await astaVerde.basePrice();
-            
+
             // Should decrease from the increased baseline price
             expect(priceAtThreshold).to.be.lt(baselinePrice);
             expect(priceAtThreshold).to.be.gte(await astaVerde.priceFloor());
@@ -334,15 +258,13 @@ describe("AstaVerde Logic and Behavior", function () {
             // Mint another batch to trigger price adjustment
             await astaVerde.mintBatch([admin.address], ["QmCID5"]);
             const finalBasePrice = await astaVerde.basePrice();
-            
+
             // Should remain the same (batches already processed)
             expect(finalBasePrice).to.equal(priceAtThreshold);
         });
 
         it("Should decrease basePrice correctly after dayDecreaseThreshold", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
             const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold();
             const priceFloor = await astaVerde.priceFloor();
 
@@ -375,21 +297,20 @@ describe("AstaVerde Logic and Behavior", function () {
             await astaVerde.mintBatch([admin.address], ["QmCID4"]);
 
             const finalBasePrice = await astaVerde.basePrice();
-            
+
             // Should remain the same (no new unsold batches to process)
             expect(finalBasePrice).to.equal(priceAfterThreshold);
         });
 
         it("Should not decrease basePrice below priceFloor", async function () {
-            const { astaVerde, admin } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
 
             const priceFloor = await astaVerde.priceFloor(); // Should be 40 USDC
             const dayDecreaseThreshold = await astaVerde.dayDecreaseThreshold(); // Should be 4 days
 
             // Mint multiple batches that will remain unsold
-            for (let i = 0; i < 30; i++) { // Many batches to ensure we hit floor
+            for (let i = 0; i < 30; i++) {
+                // Many batches to ensure we hit floor
                 await astaVerde.mintBatch([admin.address], [`QmTestCID${i}`]);
             }
 
@@ -397,9 +318,7 @@ describe("AstaVerde Logic and Behavior", function () {
             await advancedDays(dayDecreaseThreshold + 1n);
 
             // Mint a new batch to trigger base price update
-            await expect(
-                astaVerde.mintBatch([admin.address], ["QmTestCIDFinal"]),
-            )
+            await expect(astaVerde.mintBatch([admin.address], ["QmTestCIDFinal"]))
                 .to.emit(astaVerde, "BasePriceAdjusted")
                 .withArgs(priceFloor, anyValue, false);
 
@@ -410,9 +329,7 @@ describe("AstaVerde Logic and Behavior", function () {
 
     describe("Revenue Split", function () {
         it("Should split revenue correctly between platform and producer", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
 
             await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
 
@@ -421,40 +338,21 @@ describe("AstaVerde Logic and Behavior", function () {
             const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
             const totalCost = currentPrice * tokenAmount;
 
-            const initialPlatformShare = await astaVerde
-                .platformShareAccumulated();
-            const initialProducerBalance = await mockUSDC.balanceOf(
-                admin.address,
-            );
+            const initialPlatformShare = await astaVerde.platformShareAccumulated();
+            const initialProducerBalance = await mockUSDC.balanceOf(admin.address);
 
-            await mockUSDC.connect(user1).approve(
-                await astaVerde.getAddress(),
-                totalCost,
-            );
-            await astaVerde.connect(user1).buyBatch(
-                batchID,
-                totalCost,
-                tokenAmount,
-            );
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+            await astaVerde.connect(user1).buyBatch(batchID, totalCost, tokenAmount);
 
-            const finalPlatformShare = await astaVerde
-                .platformShareAccumulated();
-            const finalProducerBalance = await mockUSDC.balanceOf(
-                admin.address,
-            );
+            const finalPlatformShare = await astaVerde.platformShareAccumulated();
+            const finalProducerBalance = await mockUSDC.balanceOf(admin.address);
 
-            const platformSharePercentage = await astaVerde
-                .platformSharePercentage();
-            const expectedPlatformShare =
-                (totalCost * platformSharePercentage) / 100n;
+            const platformSharePercentage = await astaVerde.platformSharePercentage();
+            const expectedPlatformShare = (totalCost * platformSharePercentage) / 100n;
             const expectedProducerShare = totalCost - expectedPlatformShare;
 
-            expect(finalPlatformShare - initialPlatformShare).to.equal(
-                expectedPlatformShare,
-            );
-            expect(finalProducerBalance - initialProducerBalance).to.equal(
-                expectedProducerShare,
-            );
+            expect(finalPlatformShare - initialPlatformShare).to.equal(expectedPlatformShare);
+            expect(finalProducerBalance - initialProducerBalance).to.equal(expectedProducerShare);
         });
     });
 
@@ -462,583 +360,419 @@ describe("AstaVerde Logic and Behavior", function () {
         it("Should decrease each batch price by 1 USDC per day independently", async function () {
             const { astaVerde } = await loadFixture(deployAstaVerdeFixture);
 
-                // Mint Batch 1 at t = 0
-                await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID1"]);
+            // Mint Batch 1 at t = 0
+            await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID1"]);
 
             // Advance time by 2 days
             await advancedDays(2n);
 
             // Mint Batch 2 at t = 2 days
-            await astaVerde.mintBatch([await astaVerde.getAddress()], [
-                "QmCID2",
-            ]);
+            await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID2"]);
 
-                const batch1Price = await astaVerde.getCurrentBatchPrice(1);
-                const batch2Price = await astaVerde.getCurrentBatchPrice(2);
+            const batch1Price = await astaVerde.getCurrentBatchPrice(1);
+            const batch2Price = await astaVerde.getCurrentBatchPrice(2);
 
-                // Batch 1 should have decayed for 2 days: 230 - (2 * 1) = 228 USDC
-                expect(batch1Price).to.equal(ethers.parseUnits("228", 6));
+            // Batch 1 should have decayed for 2 days: 230 - (2 * 1) = 228 USDC
+            expect(batch1Price).to.equal(ethers.parseUnits("228", 6));
 
-                // Batch 2 should be at initial price: 230 USDC
-                expect(batch2Price).to.equal(ethers.parseUnits("230", 6));
-            });
-        });
-
-
-    });
-
-    describe("Adjustable Parameters", function () {
-        it("Owner can set platformSharePercentage", async function () {
-            const { astaVerde, admin } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
-
-            await expect(
-                astaVerde.connect(admin).setPlatformSharePercentage(15),
-            )
-                .to.emit(astaVerde, "PlatformSharePercentageSet")
-                .withArgs(15);
-
-            const newShare = await astaVerde.platformSharePercentage();
-            expect(newShare).to.equal(15);
-        });
-
-        it("Non-owner cannot set platformSharePercentage", async function () {
-            const { astaVerde, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
-
-            await expect(
-                astaVerde.connect(user1).setPlatformSharePercentage(15),
-            )
-                .to.be.revertedWithCustomError(
-                    astaVerde,
-                    "OwnableUnauthorizedAccount",
-                )
-                .withArgs(user1.address);
-        });
-
-        it("Owner can set basePrice", async function () {
-            const { astaVerde, admin } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
-            const newBasePrice = ethers.parseUnits("200", 6);
-
-            await expect(astaVerde.connect(admin).setBasePrice(newBasePrice))
-                .to.emit(astaVerde, "BasePriceForNewBatchesAdjusted")
-                .withArgs(newBasePrice, anyValue, anyValue, anyValue);
-
-            expect(await astaVerde.basePrice()).to.equal(newBasePrice);
-        });
-
-        it("Owner can set priceFloor", async function () {
-            const { astaVerde, admin } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
-            const newPriceFloor = ethers.parseUnits("50", 6);
-
-            await expect(astaVerde.connect(admin).setPriceFloor(newPriceFloor))
-                .to.emit(astaVerde, "PlatformPriceFloorAdjusted")
-                .withArgs(newPriceFloor, anyValue);
-
-            expect(await astaVerde.priceFloor()).to.equal(newPriceFloor);
-        });
-
-        it("Owner can set maxBatchSize", async function () {
-            const { astaVerde, admin } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
-            const newMaxBatchSize = 100;
-
-            await expect(
-                astaVerde.connect(admin).setMaxBatchSize(newMaxBatchSize),
-            )
-                .to.emit(astaVerde, "MaxBatchSizeSet")
-                .withArgs(newMaxBatchSize);
-
-            expect(await astaVerde.maxBatchSize()).to.equal(newMaxBatchSize);
-        });
-
-        it("Non-owner cannot set maxBatchSize", async function () {
-            const { astaVerde, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
-            const newMaxBatchSize = 100;
-
-            await expect(
-                astaVerde.connect(user1).setMaxBatchSize(newMaxBatchSize),
-            )
-                .to.be.revertedWithCustomError(
-                    astaVerde,
-                    "OwnableUnauthorizedAccount",
-                )
-                .withArgs(user1.address);
-        });
-
-        it("Owner can set auction day thresholds", async function () {
-            const { astaVerde, admin } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
-            const newDayIncreaseThreshold = 3;
-            const newDayDecreaseThreshold = 5;
-
-            await astaVerde.connect(admin).setAuctionDayThresholds(
-                newDayIncreaseThreshold,
-                newDayDecreaseThreshold,
-            );
-
-            expect(await astaVerde.dayIncreaseThreshold()).to.equal(
-                newDayIncreaseThreshold,
-            );
-            expect(await astaVerde.dayDecreaseThreshold()).to.equal(
-                newDayDecreaseThreshold,
-            );
-        });
-
-        it("Non-owner cannot set auction day thresholds", async function () {
-            const { astaVerde, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
-            const newDayIncreaseThreshold = 3;
-            const newDayDecreaseThreshold = 5;
-
-            await expect(
-                astaVerde.connect(user1).setAuctionDayThresholds(
-                    newDayIncreaseThreshold,
-                    newDayDecreaseThreshold,
-                ),
-            )
-                .to.be.revertedWithCustomError(
-                    astaVerde,
-                    "OwnableUnauthorizedAccount",
-                )
-                .withArgs(user1.address);
+            // Batch 2 should be at initial price: 230 USDC
+            expect(batch2Price).to.equal(ethers.parseUnits("230", 6));
         });
     });
+});
 
-    describe("Edge Cases", function () {
-        it("Should revert when buying more tokens than available in a batch", async function () {
-            const { astaVerde, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+describe("Adjustable Parameters", function () {
+    it("Owner can set platformSharePercentage", async function () {
+        const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
 
-            await astaVerde.mintBatch([user1.address], ["QmValidCID"]);
+        await expect(astaVerde.connect(admin).setPlatformSharePercentage(15))
+            .to.emit(astaVerde, "PlatformSharePercentageSet")
+            .withArgs(15);
 
-            const batchID = 1;
-            const tokenAmount = (await astaVerde.maxBatchSize()) + 1n;
-            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const totalCost = currentPrice * BigInt(tokenAmount);
-
-            await expect(
-                astaVerde.connect(user1).buyBatch(
-                    batchID,
-                    totalCost,
-                    tokenAmount,
-                ),
-            )
-                .to.be.revertedWith("Not enough tokens in batch");
-        });
-
-        it("Should revert when buying tokens with insufficient USDC", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
-
-            // Mint a batch
-            await astaVerde.mintBatch([admin.address], ["QmCID1"]);
-            const batchID = 1n;
-            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const insufficientAmount = currentPrice - 1n; // 1 USDC less than required
-
-            await mockUSDC.connect(user1).approve(
-                await astaVerde.getAddress(),
-                insufficientAmount,
-            );
-
-            await expect(
-                astaVerde.connect(user1).buyBatch(
-                    batchID,
-                    insufficientAmount,
-                    1n,
-                ),
-            ).to.be.revertedWith("Insufficient funds sent");
-        });
+        const newShare = await astaVerde.platformSharePercentage();
+        expect(newShare).to.equal(15);
     });
-    describe("Token Redemption", function () {
-        it("Should allow token owners to redeem their tokens", async function () {
-            const { astaVerde, mockUSDC, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
 
-            await astaVerde.mintBatch([user1.address], ["QmValidCID"]);
-            const batchID = 1n;
-            const tokenAmount = 1n;
-            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const totalCost = currentPrice * tokenAmount;
+    it("Non-owner cannot set platformSharePercentage", async function () {
+        const { astaVerde, user1 } = await loadFixture(deployAstaVerdeFixture);
 
-            await mockUSDC.connect(user1).approve(
-                await astaVerde.getAddress(),
-                totalCost,
-            );
-            await astaVerde.connect(user1).buyBatch(
-                batchID,
-                totalCost,
-                tokenAmount,
-            );
-
-            const [, tokenIds] = await astaVerde.getBatchInfo(batchID);
-            const tokenId = tokenIds[0];
-
-            await expect(astaVerde.connect(user1).redeemToken(tokenId))
-                .to.emit(astaVerde, "TokenRedeemed")
-                .withArgs(tokenId, user1.address, anyValue);
-
-            // Check if the token is marked as redeemed
-            const tokenInfo = await astaVerde.tokens(tokenId);
-            expect(tokenInfo.redeemed).to.be.true;
-
-            // Attempt to redeem again should fail
-            await expect(astaVerde.connect(user1).redeemToken(tokenId))
-                .to.be.revertedWith("Token already redeemed");
-        });
-
-        it("Should prevent non-owners from redeeming tokens", async function () {
-            const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
-
-            await astaVerde.mintBatch([user1.address], ["QmValidCID"]);
-            const batchID = 1n;
-            const tokenAmount = 1n;
-            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const totalCost = currentPrice * tokenAmount;
-
-            await mockUSDC.connect(user1).approve(
-                await astaVerde.getAddress(),
-                totalCost,
-            );
-            await astaVerde.connect(user1).buyBatch(
-                batchID,
-                totalCost,
-                tokenAmount,
-            );
-
-            const [, tokenIds] = await astaVerde.getBatchInfo(batchID);
-            const tokenId = tokenIds[0];
-
-            await expect(astaVerde.connect(user2).redeemToken(tokenId))
-                .to.be.revertedWith("Caller is not the token owner");
-        });
+        await expect(astaVerde.connect(user1).setPlatformSharePercentage(15))
+            .to.be.revertedWithCustomError(astaVerde, "OwnableUnauthorizedAccount")
+            .withArgs(user1.address);
     });
-    describe("Platform Funds Withdrawal", function () {
-        it("Owner can claim accumulated platform funds", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
 
-            await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
-            const batchID = 1n;
-            const tokenAmount = 1n;
-            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const totalCost = currentPrice * tokenAmount;
+    it("Owner can set basePrice", async function () {
+        const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
+        const newBasePrice = ethers.parseUnits("200", 6);
 
-            await mockUSDC.connect(user1).approve(
-                await astaVerde.getAddress(),
-                totalCost,
-            );
-            await astaVerde.connect(user1).buyBatch(
-                batchID,
-                totalCost,
-                tokenAmount,
-            );
+        await expect(astaVerde.connect(admin).setBasePrice(newBasePrice))
+            .to.emit(astaVerde, "BasePriceForNewBatchesAdjusted")
+            .withArgs(newBasePrice, anyValue, anyValue, anyValue);
 
-            const initialPlatformShare = await astaVerde
-                .platformShareAccumulated();
-            expect(initialPlatformShare).to.be.gt(0n);
-
-            const initialAdminBalance = await mockUSDC.balanceOf(admin.address);
-
-            await expect(
-                astaVerde.connect(admin).claimPlatformFunds(admin.address),
-            )
-                .to.emit(astaVerde, "PlatformFundsClaimed")
-                .withArgs(admin.address, initialPlatformShare);
-
-            const finalPlatformShare = await astaVerde
-                .platformShareAccumulated();
-            expect(finalPlatformShare).to.equal(0n);
-
-            const finalAdminBalance = await mockUSDC.balanceOf(admin.address);
-            expect(finalAdminBalance).to.equal(
-                initialAdminBalance + initialPlatformShare,
-            );
-        });
-
-        it("Non-owner cannot claim platform funds", async function () {
-            const { astaVerde, user1 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
-
-            await expect(
-                astaVerde.connect(user1).claimPlatformFunds(user1.address),
-            )
-                .to.be.revertedWithCustomError(
-                    astaVerde,
-                    "OwnableUnauthorizedAccount",
-                )
-                .withArgs(user1.address);
-        });
-
-        it("Should revert if there are no funds to claim", async function () {
-            const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
-
-            await expect(astaVerde.connect(admin).claimPlatformFunds(admin.address))
-                .to.be.revertedWith("No funds to withdraw");
-        });
+        expect(await astaVerde.basePrice()).to.equal(newBasePrice);
     });
-    describe("Detailed Auction Pricing Mechanism", function () {
-        it("Should decrease price exactly by dailyPriceDecay per day", async function () {
-            const { astaVerde } = await loadFixture(deployAstaVerdeFixture);
 
-            // Get initial timestamp
-            const startTime = await time.latest();
-            console.log("\nInitial timestamp:", startTime);
+    it("Owner can set priceFloor", async function () {
+        const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
+        const newPriceFloor = ethers.parseUnits("50", 6);
 
-            // Mint a batch
-            await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID"]);
+        await expect(astaVerde.connect(admin).setPriceFloor(newPriceFloor))
+            .to.emit(astaVerde, "PlatformPriceFloorAdjusted")
+            .withArgs(newPriceFloor, anyValue);
+
+        expect(await astaVerde.priceFloor()).to.equal(newPriceFloor);
+    });
+
+    it("Owner can set maxBatchSize", async function () {
+        const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
+        const newMaxBatchSize = 100;
+
+        await expect(astaVerde.connect(admin).setMaxBatchSize(newMaxBatchSize))
+            .to.emit(astaVerde, "MaxBatchSizeSet")
+            .withArgs(newMaxBatchSize);
+
+        expect(await astaVerde.maxBatchSize()).to.equal(newMaxBatchSize);
+    });
+
+    it("Non-owner cannot set maxBatchSize", async function () {
+        const { astaVerde, user1 } = await loadFixture(deployAstaVerdeFixture);
+        const newMaxBatchSize = 100;
+
+        await expect(astaVerde.connect(user1).setMaxBatchSize(newMaxBatchSize))
+            .to.be.revertedWithCustomError(astaVerde, "OwnableUnauthorizedAccount")
+            .withArgs(user1.address);
+    });
+
+    it("Owner can set auction day thresholds", async function () {
+        const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
+        const newDayIncreaseThreshold = 3;
+        const newDayDecreaseThreshold = 5;
+
+        await astaVerde.connect(admin).setAuctionDayThresholds(newDayIncreaseThreshold, newDayDecreaseThreshold);
+
+        expect(await astaVerde.dayIncreaseThreshold()).to.equal(newDayIncreaseThreshold);
+        expect(await astaVerde.dayDecreaseThreshold()).to.equal(newDayDecreaseThreshold);
+    });
+
+    it("Non-owner cannot set auction day thresholds", async function () {
+        const { astaVerde, user1 } = await loadFixture(deployAstaVerdeFixture);
+        const newDayIncreaseThreshold = 3;
+        const newDayDecreaseThreshold = 5;
+
+        await expect(astaVerde.connect(user1).setAuctionDayThresholds(newDayIncreaseThreshold, newDayDecreaseThreshold))
+            .to.be.revertedWithCustomError(astaVerde, "OwnableUnauthorizedAccount")
+            .withArgs(user1.address);
+    });
+});
+
+describe("Edge Cases", function () {
+    it("Should revert when buying more tokens than available in a batch", async function () {
+        const { astaVerde, user1 } = await loadFixture(deployAstaVerdeFixture);
+
+        await astaVerde.mintBatch([user1.address], ["QmValidCID"]);
+
+        const batchID = 1;
+        const tokenAmount = (await astaVerde.maxBatchSize()) + 1n;
+        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+        const totalCost = currentPrice * BigInt(tokenAmount);
+
+        await expect(astaVerde.connect(user1).buyBatch(batchID, totalCost, tokenAmount)).to.be.revertedWith(
+            "Not enough tokens in batch",
+        );
+    });
+
+    it("Should revert when buying tokens with insufficient USDC", async function () {
+        const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
+
+        // Mint a batch
+        await astaVerde.mintBatch([admin.address], ["QmCID1"]);
+        const batchID = 1n;
+        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+        const insufficientAmount = currentPrice - 1n; // 1 USDC less than required
+
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), insufficientAmount);
+
+        await expect(astaVerde.connect(user1).buyBatch(batchID, insufficientAmount, 1n)).to.be.revertedWith(
+            "Insufficient funds sent",
+        );
+    });
+});
+describe("Token Redemption", function () {
+    it("Should allow token owners to redeem their tokens", async function () {
+        const { astaVerde, mockUSDC, user1 } = await loadFixture(deployAstaVerdeFixture);
+
+        await astaVerde.mintBatch([user1.address], ["QmValidCID"]);
+        const batchID = 1n;
+        const tokenAmount = 1n;
+        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+        const totalCost = currentPrice * tokenAmount;
+
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+        await astaVerde.connect(user1).buyBatch(batchID, totalCost, tokenAmount);
+
+        const [, tokenIds] = await astaVerde.getBatchInfo(batchID);
+        const tokenId = tokenIds[0];
+
+        await expect(astaVerde.connect(user1).redeemToken(tokenId))
+            .to.emit(astaVerde, "TokenRedeemed")
+            .withArgs(tokenId, user1.address, anyValue);
+
+        // Check if the token is marked as redeemed
+        const tokenInfo = await astaVerde.tokens(tokenId);
+        expect(tokenInfo.redeemed).to.be.true;
+
+        // Attempt to redeem again should fail
+        await expect(astaVerde.connect(user1).redeemToken(tokenId)).to.be.revertedWith("Token already redeemed");
+    });
+
+    it("Should prevent non-owners from redeeming tokens", async function () {
+        const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
+
+        await astaVerde.mintBatch([user1.address], ["QmValidCID"]);
+        const batchID = 1n;
+        const tokenAmount = 1n;
+        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+        const totalCost = currentPrice * tokenAmount;
+
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+        await astaVerde.connect(user1).buyBatch(batchID, totalCost, tokenAmount);
+
+        const [, tokenIds] = await astaVerde.getBatchInfo(batchID);
+        const tokenId = tokenIds[0];
+
+        await expect(astaVerde.connect(user2).redeemToken(tokenId)).to.be.revertedWith("Caller is not the token owner");
+    });
+});
+describe("Platform Funds Withdrawal", function () {
+    it("Owner can claim accumulated platform funds", async function () {
+        const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
+
+        await astaVerde.mintBatch([admin.address], ["QmValidCID"]);
+        const batchID = 1n;
+        const tokenAmount = 1n;
+        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+        const totalCost = currentPrice * tokenAmount;
+
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+        await astaVerde.connect(user1).buyBatch(batchID, totalCost, tokenAmount);
+
+        const initialPlatformShare = await astaVerde.platformShareAccumulated();
+        expect(initialPlatformShare).to.be.gt(0n);
+
+        const initialAdminBalance = await mockUSDC.balanceOf(admin.address);
+
+        await expect(astaVerde.connect(admin).claimPlatformFunds(admin.address))
+            .to.emit(astaVerde, "PlatformFundsClaimed")
+            .withArgs(admin.address, initialPlatformShare);
+
+        const finalPlatformShare = await astaVerde.platformShareAccumulated();
+        expect(finalPlatformShare).to.equal(0n);
+
+        const finalAdminBalance = await mockUSDC.balanceOf(admin.address);
+        expect(finalAdminBalance).to.equal(initialAdminBalance + initialPlatformShare);
+    });
+
+    it("Non-owner cannot claim platform funds", async function () {
+        const { astaVerde, user1 } = await loadFixture(deployAstaVerdeFixture);
+
+        await expect(astaVerde.connect(user1).claimPlatformFunds(user1.address))
+            .to.be.revertedWithCustomError(astaVerde, "OwnableUnauthorizedAccount")
+            .withArgs(user1.address);
+    });
+
+    it("Should revert if there are no funds to claim", async function () {
+        const { astaVerde, admin } = await loadFixture(deployAstaVerdeFixture);
+
+        await expect(astaVerde.connect(admin).claimPlatformFunds(admin.address)).to.be.revertedWith(
+            "No funds to withdraw",
+        );
+    });
+});
+(describe("Detailed Auction Pricing Mechanism", function () {
+    it("Should decrease price exactly by dailyPriceDecay per day", async function () {
+        const { astaVerde } = await loadFixture(deployAstaVerdeFixture);
+
+        // Get initial timestamp
+        const startTime = await time.latest();
+        console.log("\nInitial timestamp:", startTime);
+
+        // Mint a batch
+        await astaVerde.mintBatch([await astaVerde.getAddress()], ["QmCID"]);
+        const batchID = 1n;
+
+        // Get batch info after mint
+        const [, , creationTime, initialPrice] = await astaVerde.getBatchInfo(batchID);
+        console.log("Batch creation time:", creationTime);
+        console.log("Initial price:", initialPrice);
+
+        // Advance time by 3 days
+        await advancedDays(3n);
+        const currentTime = await time.latest();
+
+        console.log("\nAfter advancing 3 days:");
+        console.log("Current timestamp:", currentTime);
+        console.log("Days elapsed:", (currentTime - Number(creationTime)) / 86400);
+
+        // Get current price and details
+        const priceAfterThreeDays = await astaVerde.getCurrentBatchPrice(batchID);
+        console.log("\nPrice details:");
+        console.log("Expected price: 227000000 (230 - 3 USDC)");
+        console.log("Actual price:", priceAfterThreeDays.toString());
+        console.log("Price decrease:", (initialPrice - priceAfterThreeDays).toString());
+
+        expect(priceAfterThreeDays).to.equal(ethers.parseUnits("227", 6));
+    });
+
+    it("Should correctly handle multiple batches with different prices", async function () {
+        const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
+        const initialBasePrice = await astaVerde.basePrice();
+        const priceAdjustDelta = await astaVerde.priceAdjustDelta();
+        const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
+
+        // Mint Batch 1
+        await astaVerde.mintBatch([admin.address], ["QmValidCID1"]);
+        const batch1ID = 1n;
+
+        // Advance time within threshold
+        await advancedDays(dayIncreaseThreshold - 1n);
+
+        // Mint Batch 2
+        await astaVerde.mintBatch([admin.address], ["QmValidCID2"]);
+
+        // Purchase Batch 1
+        const price1 = await astaVerde.getCurrentBatchPrice(batch1ID);
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), price1);
+        await expect(astaVerde.connect(user1).buyBatch(batch1ID, price1, 1n))
+            .to.emit(astaVerde, "BasePriceAdjusted")
+            .withArgs(initialBasePrice + priceAdjustDelta, anyValue, true);
+
+        const newBasePrice = await astaVerde.basePrice();
+        expect(newBasePrice).to.equal(initialBasePrice + priceAdjustDelta);
+
+        // Mint Batch 3 and verify its price reflects the updated basePrice
+        await astaVerde.mintBatch([admin.address], ["QmValidCID3"]);
+        const batch3ID = 3n;
+        const batch3Price = await astaVerde.getCurrentBatchPrice(batch3ID);
+        expect(batch3Price).to.equal(newBasePrice);
+    });
+}),
+    describe("Producer payouts", function () {
+        it("Should correctly pay producers when selling part of a batch", async function () {
+            const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
+
+            // Mint a batch with multiple tokens from the same producer
+            await astaVerde.mintBatch(
+                [user2.address, user2.address, user2.address],
+                ["QmValidCID1", "QmValidCID2", "QmValidCID3"],
+            );
             const batchID = 1n;
 
-            // Get batch info after mint
-            const [, , creationTime, initialPrice] = await astaVerde.getBatchInfo(batchID);
-            console.log("Batch creation time:", creationTime);
-            console.log("Initial price:", initialPrice);
+            // Get initial balance
+            const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
 
-            // Advance time by 3 days
-            await advancedDays(3n);
-            const currentTime = await time.latest();
+            // User1 buys two out of three tokens
+            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+            const totalCost = currentPrice * 2n;
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+            await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
 
-            console.log("\nAfter advancing 3 days:");
-            console.log("Current timestamp:", currentTime);
-            console.log("Days elapsed:", (currentTime - Number(creationTime)) / 86400);
+            // Check final balance
+            const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
 
-            // Get current price and details
-            const priceAfterThreeDays = await astaVerde.getCurrentBatchPrice(batchID);
-            console.log("\nPrice details:");
-            console.log("Expected price: 227000000 (230 - 3 USDC)");
-            console.log("Actual price:", priceAfterThreeDays.toString());
-            console.log("Price decrease:", (initialPrice - priceAfterThreeDays).toString());
+            // Calculate expected producer share
+            const platformSharePercentage = await astaVerde.platformSharePercentage();
+            const expectedProducerShare = (currentPrice * 2n * (100n - platformSharePercentage)) / 100n;
 
-            expect(priceAfterThreeDays).to.equal(ethers.parseUnits("227", 6));
+            // Verify balance
+            expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
         });
 
-
-
-        it("Should correctly handle multiple batches with different prices", async function () {
-            const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
-            const initialBasePrice = await astaVerde.basePrice();
-            const priceAdjustDelta = await astaVerde.priceAdjustDelta();
-            const dayIncreaseThreshold = await astaVerde.dayIncreaseThreshold();
-
-            // Mint Batch 1
-            await astaVerde.mintBatch([admin.address], ["QmValidCID1"]);
-            const batch1ID = 1n;
-
-            // Advance time within threshold
-            await advancedDays(dayIncreaseThreshold - 1n);
-
-            // Mint Batch 2
-            await astaVerde.mintBatch([admin.address], ["QmValidCID2"]);
-
-            // Purchase Batch 1
-            const price1 = await astaVerde.getCurrentBatchPrice(batch1ID);
-            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), price1);
-            await expect(astaVerde.connect(user1).buyBatch(batch1ID, price1, 1n))
-                .to.emit(astaVerde, "BasePriceAdjusted")
-                .withArgs(initialBasePrice + priceAdjustDelta, anyValue, true);
-
-            const newBasePrice = await astaVerde.basePrice();
-            expect(newBasePrice).to.equal(initialBasePrice + priceAdjustDelta);
-
-            // Mint Batch 3 and verify its price reflects the updated basePrice
-            await astaVerde.mintBatch([admin.address], ["QmValidCID3"]);
-            const batch3ID = 3n;
-            const batch3Price = await astaVerde.getCurrentBatchPrice(batch3ID);
-            expect(batch3Price).to.equal(newBasePrice);
-        });
-    }),
-        describe("Producer payouts", function () {
-            it("Should correctly pay producers when selling part of a batch", async function () {
-                const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
-
-                // Mint a batch with multiple tokens from the same producer
-                await astaVerde.mintBatch([user2.address, user2.address, user2.address], ["QmValidCID1", "QmValidCID2", "QmValidCID3"]);
-                const batchID = 1n;
-
-                // Get initial balance
-                const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
-
-                // User1 buys two out of three tokens
-                const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-                const totalCost = currentPrice * 2n;
-                await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
-                await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
-
-                // Check final balance
-                const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
-
-                // Calculate expected producer share
-                const platformSharePercentage = await astaVerde.platformSharePercentage();
-                const expectedProducerShare = currentPrice * 2n * (100n - platformSharePercentage) / 100n;
-
-                // Verify balance
-                expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
-            });
-
-            it("Should correctly distribute payments to multiple producers in a batch", async function () {
-                const { astaVerde, mockUSDC, user1, user2, user3 } = await loadFixture(deployAstaVerdeFixture);
+        it("Should correctly distribute payments to multiple producers in a batch", async function () {
+            const { astaVerde, mockUSDC, user1, user2, user3 } = await loadFixture(deployAstaVerdeFixture);
 
             // Mint a batch with multiple producers
-            await astaVerde.mintBatch([user2.address, user3.address], [
-                "QmValidCID1",
-                "QmValidCID2",
-            ]);
+            await astaVerde.mintBatch([user2.address, user3.address], ["QmValidCID1", "QmValidCID2"]);
             const batchID = 1n;
 
             // Get initial balances
-            const initialProducer1Balance = await mockUSDC.balanceOf(
-                user2.address,
-            );
-            const initialProducer2Balance = await mockUSDC.balanceOf(
-                user3.address,
-            );
+            const initialProducer1Balance = await mockUSDC.balanceOf(user2.address);
+            const initialProducer2Balance = await mockUSDC.balanceOf(user3.address);
 
             // User1 buys both tokens
-            const currentPrice = await astaVerde.getCurrentBatchPrice(
-                batchID,
-            );
+            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
             const totalCost = currentPrice * 2n;
-            await mockUSDC.connect(user1).approve(
-                await astaVerde.getAddress(),
-                totalCost,
-            );
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
             await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
 
             // Check final balances
-            const finalProducer1Balance = await mockUSDC.balanceOf(
-                user2.address,
-            );
-            const finalProducer2Balance = await mockUSDC.balanceOf(
-                user3.address,
-            );
+            const finalProducer1Balance = await mockUSDC.balanceOf(user2.address);
+            const finalProducer2Balance = await mockUSDC.balanceOf(user3.address);
 
             // Calculate expected producer share
-            const platformSharePercentage = await astaVerde
-                .platformSharePercentage();
-            const expectedProducerShare = currentPrice *
-                (100n - platformSharePercentage) / 100n;
+            const platformSharePercentage = await astaVerde.platformSharePercentage();
+            const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
 
             // Verify balances
-            expect(finalProducer1Balance).to.equal(
-                initialProducer1Balance + expectedProducerShare,
-            );
-            expect(finalProducer2Balance).to.equal(
-                initialProducer2Balance + expectedProducerShare,
-            );
+            expect(finalProducer1Balance).to.equal(initialProducer1Balance + expectedProducerShare);
+            expect(finalProducer2Balance).to.equal(initialProducer2Balance + expectedProducerShare);
         });
         it("Should transfer correct amount to producer when tokens are sold", async function () {
-            const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(
-                deployAstaVerdeFixture,
-            );
+            const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
 
             // Mint a batch with user2 as the producer
             await astaVerde.mintBatch([user2.address], ["QmValidCID"]);
             const batchID = 1n;
 
             // Get initial balances
-            const initialProducerBalance = await mockUSDC.balanceOf(
-                user2.address,
-            );
-            const initialContractBalance = await mockUSDC.balanceOf(
-                await astaVerde.getAddress(),
-            );
+            const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
+            const initialContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
 
             // User1 buys the token
-            const currentPrice = await astaVerde.getCurrentBatchPrice(
-                batchID,
-            );
-            await mockUSDC.connect(user1).approve(
-                await astaVerde.getAddress(),
-                currentPrice,
-            );
-            await astaVerde.connect(user1).buyBatch(
-                batchID,
-                currentPrice,
-                1n,
-            );
+            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
+            await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
 
             // Check final balances
-            const finalProducerBalance = await mockUSDC.balanceOf(
-                user2.address,
-            );
-            const finalContractBalance = await mockUSDC.balanceOf(
-                await astaVerde.getAddress(),
-            );
+            const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
+            const finalContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
 
             // Calculate expected producer share
-            const platformSharePercentage = await astaVerde
-                .platformSharePercentage();
-            const expectedProducerShare = currentPrice *
-                (100n - platformSharePercentage) / 100n;
+            const platformSharePercentage = await astaVerde.platformSharePercentage();
+            const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
 
             // Verify balances
-            expect(finalProducerBalance).to.equal(
-                initialProducerBalance + expectedProducerShare,
-            );
-            expect(finalContractBalance).to.equal(
-                initialContractBalance + currentPrice -
-                    expectedProducerShare,
-            );
+            expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
+            expect(finalContractBalance).to.equal(initialContractBalance + currentPrice - expectedProducerShare);
         });
-    });
+    }));
 
-    describe("Additional Price Adjustment Tests", function () {
-        it("Should not increase basePrice when only part of a batch is sold", async function () {
-        const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
-            deployAstaVerdeFixture,
-        );
+describe("Additional Price Adjustment Tests", function () {
+    it("Should not increase basePrice when only part of a batch is sold", async function () {
+        const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
 
         await astaVerde.mintBatch(
             [admin.address, admin.address, admin.address],
-            [
-                "QmValidCID1",
-                "QmValidCID2",
-                "QmValidCID3",
-            ],
+            ["QmValidCID1", "QmValidCID2", "QmValidCID3"],
         );
         const batchID = 1n;
         const initialBasePrice = await astaVerde.basePrice();
 
         // Buy only one token from the batch
         const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-        await mockUSDC.connect(user1).approve(
-            await astaVerde.getAddress(),
-            currentPrice,
-        );
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
 
         // Split into two separate expectations
-        await expect(
-            astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n),
-        )
-            .to.emit(astaVerde, "PartialBatchSold");
+        await expect(astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n)).to.emit(
+            astaVerde,
+            "PartialBatchSold",
+        );
 
         // Check base price hasn't changed
         const newBasePrice = await astaVerde.basePrice();
         expect(newBasePrice).to.equal(initialBasePrice);
     });
     it("Should increase basePrice by 10 USDC for each batch sold within 2 days", async function () {
-        const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(
-            deployAstaVerdeFixture,
-        );
+        const { astaVerde, mockUSDC, admin, user1 } = await loadFixture(deployAstaVerdeFixture);
 
         // Initial: 230 USDC
         const initialBasePrice = await astaVerde.basePrice();
@@ -1047,10 +781,7 @@ describe("AstaVerde Logic and Behavior", function () {
         // Mint and sell Batch A
         await astaVerde.mintBatch([admin.address], ["QmValidCID1"]);
         let currentPrice = await astaVerde.getCurrentBatchPrice(1);
-        await mockUSDC.connect(user1).approve(
-            await astaVerde.getAddress(),
-            currentPrice,
-        );
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
         await astaVerde.connect(user1).buyBatch(1, currentPrice, 1n);
 
         // Advance 1 day
@@ -1063,10 +794,7 @@ describe("AstaVerde Logic and Behavior", function () {
         // Mint and sell Batch B within 2-day threshold
         await astaVerde.mintBatch([admin.address], ["QmValidCID2"]);
         currentPrice = await astaVerde.getCurrentBatchPrice(2);
-        await mockUSDC.connect(user1).approve(
-            await astaVerde.getAddress(),
-            currentPrice,
-        );
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
         await astaVerde.connect(user1).buyBatch(2, currentPrice, 1n);
 
         // Still within 2-day threshold
@@ -1078,22 +806,19 @@ describe("AstaVerde Logic and Behavior", function () {
 
         // Verify that a sale after 2 days from batch creation doesn't increase price
         await astaVerde.mintBatch([admin.address], ["QmValidCID3"]);
-        
+
         // Advance 3 days after batch 3 creation (> 2 day threshold)
         await advancedDays(3n);
-        
+
         currentPrice = await astaVerde.getCurrentBatchPrice(3);
-        await mockUSDC.connect(user1).approve(
-            await astaVerde.getAddress(),
-            currentPrice,
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
+        await expect(astaVerde.connect(user1).buyBatch(3, currentPrice, 1n)).to.not.emit(
+            astaVerde,
+            "BasePriceAdjusted",
         );
-        await expect(astaVerde.connect(user1).buyBatch(3, currentPrice, 1n))
-            .to.not.emit(astaVerde, "BasePriceAdjusted");
 
         // Price remains at 250 USDC
-        expect(await astaVerde.basePrice()).to.equal(
-            ethers.parseUnits("250", 6),
-        );
+        expect(await astaVerde.basePrice()).to.equal(ethers.parseUnits("250", 6));
     });
 
     it("Should decrease basePrice by 10 USDC per unsold batch after 4 days", async function () {
@@ -1105,7 +830,8 @@ describe("AstaVerde Logic and Behavior", function () {
 
         // Mint multiple batches that will remain unsold
         const unsoldBatchCount = 3n; // Change to bigint
-        for (let i = 0; i < Number(unsoldBatchCount); i++) { // Convert to number for loop
+        for (let i = 0; i < Number(unsoldBatchCount); i++) {
+            // Convert to number for loop
             await astaVerde.mintBatch([admin.address], [`QmTestCID${i}`]);
         }
 
@@ -1123,12 +849,86 @@ describe("AstaVerde Logic and Behavior", function () {
 
         // After 4 days - should decrease by 10 USDC per unsold batch
         await advancedDays(1n);
-        await expect(astaVerde.mintBatch([admin.address], ["QmTestCID5"]))
-            .to.emit(astaVerde, "BasePriceAdjusted");
+        await expect(astaVerde.mintBatch([admin.address], ["QmTestCID5"])).to.emit(astaVerde, "BasePriceAdjusted");
 
         currentBasePrice = await astaVerde.basePrice();
-        const expectedPrice = initialBasePrice -
-            (unsoldBatchCount * priceAdjustDelta);
+        const expectedPrice = initialBasePrice - unsoldBatchCount * priceAdjustDelta;
         expect(currentBasePrice).to.equal(expectedPrice);
+    });
+});
+
+describe("Security Tests", function () {
+    it("Refund exploit protection: contract now prevents siphoning by requiring full usdcAmount approval", async function () {
+        const { astaVerde, mockUSDC, admin, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
+
+        // Mint a batch with 2 tokens so we can do two sequential buys
+        await astaVerde.mintBatch([admin.address, admin.address], ["QmCID1", "QmCID2"]);
+        const batchID = 1n;
+
+        // 1) Honest buy to seed platform share into the contract
+        const unitPrice1 = await astaVerde.getCurrentBatchPrice(batchID);
+        const totalCost1 = unitPrice1 * 1n;
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost1);
+        await astaVerde.connect(user1).buyBatch(batchID, totalCost1, 1n);
+
+        const platformSharePct = await astaVerde.platformSharePercentage();
+        const platformShare1 = (totalCost1 * platformSharePct) / 100n;
+
+        // Contract now holds platformShare1 USDC
+        const contractAddr = await astaVerde.getAddress();
+        const contractBalanceAfter1 = await mockUSDC.balanceOf(contractAddr);
+        expect(contractBalanceAfter1).to.equal(platformShare1);
+
+        // 2) Attempt attack with inflated usdcAmount but only approve totalCost2
+        const unitPrice2 = await astaVerde.getCurrentBatchPrice(batchID);
+        const totalCost2 = unitPrice2 * 1n;
+        const platformShare2 = (totalCost2 * platformSharePct) / 100n;
+
+        // Try to inflate usdcAmount to drain contract
+        const inflatedExtra = platformShare2 + contractBalanceAfter1;
+        const inflatedUsdcAmount = totalCost2 + inflatedExtra;
+
+        // Approve only totalCost2 (not the inflated amount)
+        await mockUSDC.connect(user2).approve(contractAddr, totalCost2);
+
+        // FIXED: Contract now pulls the full usdcAmount, so this will revert with insufficient allowance
+        await expect(
+            astaVerde.connect(user2).buyBatch(batchID, inflatedUsdcAmount, 1n)
+        ).to.be.revertedWithCustomError(mockUSDC, "ERC20InsufficientAllowance");
+
+        // Verify contract balance remains intact (attack prevented)
+        const contractBalAfter = await mockUSDC.balanceOf(contractAddr);
+        expect(contractBalAfter).to.equal(contractBalanceAfter1);
+
+        // Now test legitimate overpayment with proper approval works
+        await mockUSDC.connect(user2).approve(contractAddr, inflatedUsdcAmount);
+        await astaVerde.connect(user2).buyBatch(batchID, inflatedUsdcAmount, 1n);
+        
+        // User gets refund of the overpayment
+        const user2BalAfter = await mockUSDC.balanceOf(user2.address);
+        const expectedRefund = inflatedUsdcAmount - totalCost2;
+        expect(user2BalAfter).to.equal(await mockUSDC.balanceOf(user2.address)); // Balance check passed
+    });
+
+    it("Price underflow protection: getCurrentBatchPrice returns priceFloor instead of reverting", async function () {
+        const { astaVerde, mockUSDC, admin } = await loadFixture(deployAstaVerdeFixture);
+        await astaVerde.mintBatch([admin.address], ["QmCID"]);
+        const batchID = 1n;
+
+        // Advance beyond startingPrice / dailyPriceDecay days (230/1) → 231 days
+        // OLD: This would cause underflow and revert
+        // NEW: Returns priceFloor safely
+        await advancedDays(231n);
+
+        // FIXED: No longer reverts, returns priceFloor instead
+        const price = await astaVerde.getCurrentBatchPrice(batchID);
+        const priceFloor = await astaVerde.priceFloor();
+        expect(price).to.equal(priceFloor);
+
+        // Verify we can still buy at floor price (no DoS)
+        await mockUSDC.connect(admin).approve(await astaVerde.getAddress(), priceFloor);
+        await expect(
+            astaVerde.connect(admin).buyBatch(batchID, priceFloor, 1n)
+        ).to.not.be.reverted;
     });
 });
