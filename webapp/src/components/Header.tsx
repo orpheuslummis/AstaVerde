@@ -63,8 +63,8 @@ export function Header({ links }: HeaderProps) {
     }, [sccBalance]);
 
     return (
-        <header className="w-full flex flex-wrap items-center justify-between bg-primary dark:bg-gray-800 p-4 shadow-md">
-            <div className="flex items-center">
+        <header className="w-full flex items-center justify-between bg-primary dark:bg-gray-800 p-4 shadow-md">
+            <div className="flex items-center flex-shrink-0">
                 <button
                     className="lg:hidden text-white dark:text-gray-200 text-2xl px-4 py-2"
                     onClick={toggleMenu}
@@ -78,8 +78,8 @@ export function Header({ links }: HeaderProps) {
                 </Link>
             </div>
 
-            <nav className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center`}>
-                <ul className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
+            <nav className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center flex-grow`}>
+                <ul className="flex flex-col lg:flex-row lg:space-x-2 space-y-2 lg:space-y-0 items-center lg:justify-center flex-grow">
                     {links.map((link) => (
                         <li key={link.url} className="lg:mr-4">
                             <span
@@ -119,27 +119,28 @@ export function Header({ links }: HeaderProps) {
                     ))}
                     {isConnected && (
                         <>
-                            <li className="mr-4">
-                                <div className="bg-white/10 dark:bg-gray-700 text-white dark:text-gray-200 rounded-lg px-3 py-2">
-                                    <span className="text-sm font-medium">USDC: </span>
-                                    <span className="text-sm font-bold">{Number.parseFloat(usdcBalanceFormatted).toFixed(2)}</span>
+                            <li className="lg:ml-auto">
+                                <div className="bg-white/10 dark:bg-gray-700 text-white dark:text-gray-200 rounded-lg px-2 py-1 text-xs" data-testid="usdc-balance">
+                                    <span className="font-medium">USDC: </span>
+                                    <span className="font-bold">{Number.parseFloat(usdcBalanceFormatted).toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
                                 </div>
                             </li>
                             {sccConfig && (
-                                <li className="mr-4">
-                                    <div className="bg-emerald-500/20 dark:bg-emerald-700 text-white dark:text-gray-200 rounded-lg px-3 py-2">
-                                        <span className="text-sm font-medium">🏦 SCC: </span>
-                                        <span className="text-sm font-bold">{Number.parseFloat(sccBalanceFormatted).toFixed(2)}</span>
+                                <li className="ml-2">
+                                    <div className="bg-emerald-500/20 dark:bg-emerald-700 text-white dark:text-gray-200 rounded-lg px-2 py-1 text-xs" data-testid="scc-balance">
+                                        <span className="font-medium">🏦 SCC: </span>
+                                        <span className="font-bold">{Number.parseFloat(sccBalanceFormatted).toFixed(2)}</span>
                                     </div>
                                 </li>
                             )}
                         </>
                     )}
-                    <li>
-                        <ConnectKitButton />
-                    </li>
                 </ul>
             </nav>
+            
+            <div className="flex-shrink-0 ml-4" data-testid="connect-wallet">
+                <ConnectKitButton />
+            </div>
         </header>
     );
 }

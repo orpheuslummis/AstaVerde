@@ -12,9 +12,10 @@ interface VaultCardProps {
   tokenId: bigint;
   isRedeemed: boolean;
   onActionComplete?: () => void;
+  isCompact?: boolean;
 }
 
-export default function VaultCard({ tokenId, isRedeemed, onActionComplete }: VaultCardProps) {
+export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCompact = true }: VaultCardProps) {
   const { address } = useAccount();
   const {
     deposit,
@@ -30,201 +31,284 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete }: Vau
     error: vaultError
   } = useVault();
 
+  const [isDepositLoading, setIsDepositLoading] = useState(false);
+  const [isWithdrawLoading, setIsWithdrawLoading] = useState(false);
   const [sccBalance, setSccBalance] = useState<bigint>(0n);
   const [sccAllowance, setSccAllowance] = useState<bigint>(0n);
   const [isApproved, setIsApproved] = useState(false);
   const [isNftApproved, setIsNftApproved] = useState(false);
   
-  // Check loan status for this specific token
-  const { data: loanData } = useReadContract({
-    ...(isVaultAvailable ? getEcoStabilizerContractConfig() : { address: undefined, abi: [] }),
-    functionName: "loans",
-    args: [tokenId],
-    query: { enabled: isVaultAvailable && !!tokenId }
-  });
+  const tokenIdStr = tokenId.toString();
+  
+  const [loanData, setLoanData] = useState<[string, boolean] | undefined>(undefined);
+  const [isLoadingLoan, setIsLoadingLoan] = useState(false);
+  
+  useEffect(() => {
+    if (!isVaultAvailable || !tokenIdStr) return;
+    
+    const fetchLoanData = async () => {
+      setIsLoadingLoan(true);
+      try {
+        const { readContract } = await import('wagmi/actions');
+        const { config } = await import('../wagmi');
+        const contractConfig = getEcoStabilizerContractConfig();
+        
+        const data = await readContract(config, {
+          ...contractConfig,
+          functionName: "loans",
+          args: [BigInt(tokenIdStr)],
+        });
+        
+        setLoanData(data as [string, boolean]);
+      } catch (error) {
+        console.error("Error fetching loan data:", error);
+      } finally {
+        setIsLoadingLoan(false);
+      }
+    };
+    
+    fetchLoanData();
+  }, [tokenIdStr, isVaultAvailable]);
 
-  const isInVault = loanData ? (loanData as any[])[1] : false; // active boolean is at index 1
-  const borrower = loanData ? (loanData as any[])[0] : null; // borrower address is at index 0
-
-  // Check if current user is the borrower (for security)
-  const isCurrentUserBorrower = borrower === address;
-
-  // Load balances and allowances
-  const loadData = useCallback(async () => {
-    try {
-      const balance = await getSccBalance();
-      const allowance = await getSccAllowance();
-      const nftApproved = await getIsNftApproved();
-      setSccBalance(balance);
-      setSccAllowance(allowance);
-      setIsApproved(allowance >= parseEther("20"));
-      setIsNftApproved(nftApproved);
-    } catch (error) {
-      console.error("Error loading vault data:", error);
-    }
-  }, [getSccBalance, getSccAllowance, getIsNftApproved]);
+  const loanInfo = loanData;
+  const isInVault = loanInfo ? loanInfo[1] : false;
+  const borrower = loanInfo ? loanInfo[0] : null;
+  const isCurrentUserBorrower = borrower && address && 
+    borrower.toLowerCase() === address.toLowerCase();
 
   useEffect(() => {
-    if (address && isVaultAvailable) {
-      loadData();
-    }
-  }, [address, isVaultAvailable, loadData]);
+    const fetchBalances = async () => {
+      if (!address || !isVaultAvailable) return;
+      
+      try {
+        const balance = await getSccBalance(address);
+        setSccBalance(balance);
+        
+        const allowance = await getSccAllowance(address);
+        setSccAllowance(allowance);
+        setIsApproved(allowance >= parseEther("20"));
+      } catch (error) {
+        console.error("Error fetching SCC balance/allowance:", error);
+      }
+    };
+    
+    fetchBalances();
+  }, [address, isVaultAvailable, getSccBalance, getSccAllowance, isInVault]);
+
+  useEffect(() => {
+    const checkNftApproval = async () => {
+      if (!address || !isVaultAvailable || !tokenId) return;
+      
+      try {
+        const approved = await getIsNftApproved(address);
+        setIsNftApproved(approved);
+      } catch (error) {
+        console.error("Error checking NFT approval:", error);
+      }
+    };
+    
+    checkNftApproval();
+  }, [address, isVaultAvailable, tokenId, getIsNftApproved]);
 
   const handleDeposit = useCallback(async () => {
-    try {
-      // Check if NFT approval is needed
-      if (!isNftApproved) {
-        await approveNFT();
-        // Refresh approval status after approval
-        const nftApproved = await getIsNftApproved();
-        setIsNftApproved(nftApproved);
-      }
-      await deposit(tokenId);
-      // Refresh local data after successful operation
-      await loadData();
-      onActionComplete?.();
-    } catch (err) {
-      console.error("Deposit failed:", err);
-      // Error is already handled in useVault hook
+    if (!tokenId || isRedeemed) {
+      customToast.error(isRedeemed ? "Cannot deposit redeemed tokens" : "Invalid token");
+      return;
     }
-  }, [tokenId, deposit, approveNFT, onActionComplete, isNftApproved, getIsNftApproved, loadData]);
+    
+    setIsDepositLoading(true);
+    try {
+      if (!isNftApproved) {
+        customToast.info("Approving NFT for vault...");
+        await approveNFT();
+        setIsNftApproved(true);
+      }
+      
+      customToast.info("Depositing NFT to vault...");
+      await deposit(tokenId);
+      customToast.success("NFT deposited successfully! You received 20 SCC.");
+      
+      if (address) {
+        const newBalance = await getSccBalance(address);
+        setSccBalance(newBalance);
+      }
+      
+      if (onActionComplete) {
+        onActionComplete();
+      }
+    } catch (error: any) {
+      console.error("Deposit error:", error);
+      customToast.error(error?.message || "Failed to deposit NFT");
+    } finally {
+      setIsDepositLoading(false);
+    }
+  }, [tokenId, isRedeemed, isNftApproved, approveNFT, deposit, address, getSccBalance, onActionComplete]);
 
   const handleWithdraw = useCallback(async () => {
-    try {
-      // Check if SCC allowance is sufficient
-      if (sccAllowance < parseEther("20")) {
-        await approveSCC();
-      }
-      await withdraw(tokenId);
-      // Refresh local data after successful operation
-      await loadData();
-      onActionComplete?.();
-    } catch (err) {
-      console.error("Withdraw failed:", err);
-      // Error is already handled in useVault hook
+    if (!tokenId || !isInVault || !isCurrentUserBorrower) {
+      customToast.error("Cannot withdraw this token");
+      return;
     }
-  }, [tokenId, withdraw, approveSCC, sccAllowance, onActionComplete, loadData]);
-
-  const handleRepayAndWithdraw = useCallback(async () => {
+    
+    setIsWithdrawLoading(true);
     try {
-      // Check if SCC allowance is sufficient
-      if (sccAllowance < parseEther("20")) {
-        await approveSCC();
+      const requiredScc = parseEther("20");
+      
+      if (sccBalance < requiredScc) {
+        customToast.error("Insufficient SCC balance. You need 20 SCC to withdraw.");
+        return;
       }
+      
+      if (!isApproved || sccAllowance < requiredScc) {
+        customToast.info("Approving SCC for repayment...");
+        await approveSCC(requiredScc);
+        setIsApproved(true);
+        setSccAllowance(requiredScc);
+      }
+      
+      customToast.info("Repaying loan and withdrawing NFT...");
       await repayAndWithdraw(tokenId);
-      // Refresh local data after successful operation
-      await loadData();
-      onActionComplete?.();
-    } catch (err) {
-      console.error("Repay and withdraw failed:", err);
-      // Error is already handled in useVault hook
+      customToast.success("NFT withdrawn successfully!");
+      
+      if (address) {
+        const newBalance = await getSccBalance(address);
+        setSccBalance(newBalance);
+      }
+      
+      if (onActionComplete) {
+        onActionComplete();
+      }
+    } catch (error: any) {
+      console.error("Withdraw error:", error);
+      customToast.error(error?.message || "Failed to withdraw NFT");
+    } finally {
+      setIsWithdrawLoading(false);
     }
-  }, [tokenId, repayAndWithdraw, approveSCC, sccAllowance, onActionComplete, loadData]);
+  }, [tokenId, isInVault, isCurrentUserBorrower, sccBalance, isApproved, sccAllowance, 
+      approveSCC, repayAndWithdraw, address, getSccBalance, onActionComplete]);
 
-  // Don't show vault options for redeemed tokens
-  if (isRedeemed) {
-    return (
-      <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          ⚠️ Redeemed tokens cannot be used as collateral
-        </p>
-      </div>
-    );
-  }
-
-  // Don't show if vault is not available
   if (!isVaultAvailable) {
+    return null;
+  }
+
+  if (vaultLoading || isLoadingLoan) {
     return (
-      <div className="mt-4 p-4 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-        <p className="text-sm text-yellow-800 dark:text-yellow-200">
-          💡 Vault functionality coming soon! Configure ECOSTABILIZER_ADDRESS and SCC_ADDRESS environment variables.
-        </p>
-      </div>
+      <div className="animate-pulse h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
     );
   }
 
+  if (vaultError) {
+    return null;
+  }
+
+  // Compact mode for list view
+  if (isCompact) {
+    if (isRedeemed) {
+      return <span className="text-xs text-gray-500">Redeemed</span>;
+    }
+
+    if (isInVault) {
+      if (!isCurrentUserBorrower) {
+        return <span className="text-xs text-gray-500">In Vault (not yours)</span>;
+      }
+      
+      return (
+        <button
+          onClick={handleWithdraw}
+          disabled={isWithdrawLoading || sccBalance < parseEther("20")}
+          className="px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 
+                   text-white text-xs rounded-md transition-colors"
+        >
+          {isWithdrawLoading ? "..." : sccBalance < parseEther("20") ? "Need 20 SCC" : "Withdraw"}
+        </button>
+      );
+    }
+
+    return (
+      <button
+        onClick={handleDeposit}
+        disabled={isDepositLoading}
+        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 
+                 text-white text-xs rounded-md transition-colors"
+      >
+        {isDepositLoading ? "..." : "Deposit"}
+      </button>
+    );
+  }
+
+  // Full card mode (existing implementation)
   return (
-    <div className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-semibold text-emerald-800 dark:text-emerald-200">
-          🏦 Vault Options
+    <div data-testid="vault-card" className="flex flex-col gap-3 p-4 border rounded-lg bg-white dark:bg-gray-800">
+      <div className="flex justify-between items-center">
+        <h3 className="font-semibold text-gray-900 dark:text-white">
+          Vault Operations
         </h3>
-        <span className="text-sm font-mono text-emerald-600 dark:text-emerald-400">
-          SCC: {formatEther(sccBalance)}
-        </span>
+        {isInVault && (
+          <span className="px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 
+                         dark:bg-emerald-900 dark:text-emerald-200 rounded-full">
+            In Vault
+          </span>
+        )}
       </div>
 
-      {vaultError && (
-        <div className="mb-3 p-2 bg-red-100 dark:bg-red-900 rounded text-red-800 dark:text-red-200 text-sm">
-          {vaultError}
+      {isRedeemed ? (
+        <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Redeemed tokens cannot be deposited to the vault
+          </p>
         </div>
-      )}
-
-      {!isInVault ? (
+      ) : isInVault ? (
         <div className="space-y-3">
-          <div className="text-sm text-emerald-700 dark:text-emerald-300">
-            💰 Get instant liquidity! Deposit this NFT to receive <strong>20 SCC</strong> tokens.
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              This NFT is deposited in the vault. You need 20 SCC to withdraw it.
+            </p>
+            <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+              Your SCC Balance: {formatEther(sccBalance)} SCC
+            </p>
           </div>
           
-          <button
-            onClick={handleDeposit}
-            disabled={vaultLoading}
-            className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
-          >
-            {vaultLoading ? "Processing..." : "🏦 Deposit & Get 20 SCC"}
-          </button>
-          
-          <div className="text-xs text-emerald-600 dark:text-emerald-400">
-            ✓ No liquidation risk • ✓ Get your exact NFT back • ✓ Fixed 20 SCC loan
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-3">
           {isCurrentUserBorrower ? (
-            <>
-              <div className="text-sm text-emerald-700 dark:text-emerald-300">
-                🔒 This NFT is deposited in the vault. You have a 20 SCC loan against it.
-              </div>
-              
-              <div className="grid grid-cols-1 gap-2">
-                <button
-                  onClick={handleWithdraw}
-                  disabled={vaultLoading || sccBalance < parseEther("20")}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
-                >
-                  {vaultLoading ? "Processing..." : "💰 Withdraw NFT (Burn 20 SCC)"}
-                </button>
-                
-                <button
-                  onClick={handleRepayAndWithdraw}
-                  disabled={vaultLoading || sccBalance < parseEther("20")}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors text-sm"
-                >
-                  {vaultLoading ? "Processing..." : "🔄 Repay & Withdraw"}
-                </button>
-              </div>
-              
-              {sccBalance < parseEther("20") && (
-                <div className="text-xs text-red-600 dark:text-red-400">
-                  ⚠️ You need 20 SCC to withdraw your NFT
-                </div>
-              )}
-            </>
+            <button
+              data-testid="withdraw-button"
+              onClick={handleWithdraw}
+              disabled={isWithdrawLoading || sccBalance < parseEther("20")}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg 
+                       hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed
+                       transition-colors duration-200"
+            >
+              {isWithdrawLoading ? "Processing..." : 
+               sccBalance < parseEther("20") ? "Insufficient SCC" : 
+               "Repay 20 SCC & Withdraw"}
+            </button>
           ) : (
-            <div className="text-sm text-amber-700 dark:text-amber-300">
-              🔒 This NFT is deposited in the vault by another user.
+            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                Only the original depositor can withdraw this NFT
+              </p>
             </div>
           )}
         </div>
-      )}
-      
-      <div className="mt-3 pt-3 border-t border-emerald-200 dark:border-emerald-800">
-        <div className="text-xs text-emerald-600 dark:text-emerald-400 space-y-1">
-          <div>• Your NFT is safe - only you can withdraw it</div>
-          <div>• No interest or fees on the loan</div>
-          <div>• Trade SCC on DEXs for other tokens</div>
+      ) : (
+        <div className="space-y-3">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded">
+            <p className="text-sm text-emerald-800 dark:text-emerald-200">
+              Deposit this NFT to receive 20 SCC tokens
+            </p>
+          </div>
+          
+          <button
+            data-testid="deposit-button"
+            onClick={handleDeposit}
+            disabled={isDepositLoading}
+            className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg 
+                     hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed
+                     transition-colors duration-200"
+          >
+            {isDepositLoading ? "Processing..." : "Deposit to Vault"}
+          </button>
         </div>
-      </div>
+      )}
     </div>
   );
-} 
+}

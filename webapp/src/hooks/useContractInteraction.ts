@@ -81,13 +81,16 @@ export function useContractInteraction(contractConfig: any, functionName: string
         enabled: false, // Disable automatic simulation
     });
 
+    const isReadOnlyFunction = READ_ONLY_FUNCTIONS.includes(functionName);
+    const isWriteFunction = WRITE_FUNCTIONS.includes(functionName);
+
     const { data: readData, refetch: refetchReadData } = useReadContract({
         ...contractConfig,
         functionName,
+        query: {
+            enabled: isReadOnlyFunction, // Only query if it's a read function
+        },
     });
-
-    const isReadOnlyFunction = READ_ONLY_FUNCTIONS.includes(functionName);
-    const isWriteFunction = WRITE_FUNCTIONS.includes(functionName);
 
     const execute: ExecuteFunction = useCallback(
         async (...args: unknown[]) => {
@@ -254,6 +257,17 @@ export function useContractInteraction(contractConfig: any, functionName: string
                 return result;
             } catch (error: any) {
                 console.error("Error in redeemToken:", error);
+
+                // Check if user rejected the transaction
+                if (
+                    error.message?.includes("User rejected") ||
+                    error.message?.includes("User denied") ||
+                    error.code === 4001 ||
+                    error.cause?.code === 4001
+                ) {
+                    throw new Error("Transaction cancelled by user");
+                }
+
                 const revertReason = getRevertReason(error);
                 throw new Error(`Failed to redeem token: ${revertReason}`);
             }
@@ -365,16 +379,32 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                     }
 
                     // Calculate a reasonable approval amount
-                    const pricePerUnit = (currentUnitPrice as bigint);
-                    const bufferFactor = 100n; // Adjust this as needed
-                    const approvalAmount = maxBatchSizeBigInt * pricePerUnit * bufferFactor;
+                    // Approve for 10 tokens worth to avoid multiple approvals
+                    const pricePerUnit = currentUnitPrice as bigint;
+                    const approvalForMultiplePurchases = 10n; // Approve for up to 10 tokens
+                    const approvalAmount = pricePerUnit * approvalForMultiplePurchases;
 
                     console.log("Calculated approval amount:", formatUnits(approvalAmount, USDC_DECIMALS));
+                    console.log("Approval details:", {
+                        spender: astaverdeContractConfig.address,
+                        amount: approvalAmount.toString(),
+                        usdcAddress: getUsdcContractConfig().address,
+                    });
+
+                    console.log("Attempting approve with:", {
+                        contract: getUsdcContractConfig().address,
+                        spender: astaverdeContractConfig.address,
+                        amount: approvalAmount.toString(),
+                        account: walletClient.account.address,
+                        chainId: walletClient.chain?.id,
+                    });
 
                     const approveTx = await walletClient.writeContract({
                         ...getUsdcContractConfig(),
                         functionName: "approve",
-                        args: [astaverdeContractConfig.address, approvalAmount],
+                        args: [astaverdeContractConfig.address as `0x${string}`, approvalAmount],
+                        account: walletClient.account,
+                        chain: walletClient.chain,
                     });
                     customToast.info("Approval transaction submitted");
                     await publicClient.waitForTransactionReceipt({
@@ -414,25 +444,50 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                 // Add timeout and retry logic for transaction confirmation
                 const maxRetries = 3;
                 let retryCount = 0;
+                let receiptConfirmed = false;
 
-                while (retryCount < maxRetries) {
+                while (retryCount < maxRetries && !receiptConfirmed) {
                     try {
-                        await publicClient.waitForTransactionReceipt({
+                        const receipt = await publicClient.waitForTransactionReceipt({
                             hash: buyTx,
-                            timeout: 120_000, // 2 minute timeout
-                            confirmations: 2, // Wait for 2 confirmations on mainnet
+                            timeout: 30_000, // 30 second timeout per attempt
+                            confirmations: 1, // Wait for 1 confirmation (faster for local dev)
                         });
-                        customToast.success("Purchase confirmed");
-                        break;
-                    } catch (error) {
-                        retryCount++;
-                        if (retryCount === maxRetries) {
-                            throw new Error(
-                                "Transaction confirmation timed out after multiple retries. The transaction may still complete - check your wallet history.",
-                            );
+
+                        if (receipt.status === "success") {
+                            customToast.success("Purchase confirmed");
+                            receiptConfirmed = true;
+                        } else {
+                            throw new Error("Transaction failed");
                         }
-                        // Wait 10 seconds before retrying
-                        await new Promise((resolve) => setTimeout(resolve, 10000));
+                        break;
+                    } catch (error: any) {
+                        retryCount++;
+                        console.log(`Transaction confirmation attempt ${retryCount} failed:`, error.message);
+
+                        if (retryCount === maxRetries) {
+                            // Check one more time if the transaction was actually successful
+                            try {
+                                const receipt = await publicClient.getTransactionReceipt({
+                                    hash: buyTx,
+                                });
+                                if (receipt && receipt.status === "success") {
+                                    customToast.success("Purchase confirmed");
+                                    receiptConfirmed = true;
+                                } else {
+                                    throw new Error(
+                                        "Transaction confirmation timed out. Please refresh the page to see if your purchase completed.",
+                                    );
+                                }
+                            } catch {
+                                throw new Error(
+                                    "Transaction confirmation timed out. Please refresh the page to see if your purchase completed.",
+                                );
+                            }
+                        } else {
+                            // Wait 5 seconds before retrying
+                            await new Promise((resolve) => setTimeout(resolve, 5000));
+                        }
                     }
                 }
             } catch (error) {

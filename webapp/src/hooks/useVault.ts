@@ -43,9 +43,13 @@ export function useVault(): VaultHook {
     const [error, setError] = useState<string | null>(null);
 
     const { writeContract, data: hash, isPending: isTransactionPending } = useWriteContract();
-    const { isLoading: isConfirming, isSuccess: isConfirmed, error: txError } = useWaitForTransactionReceipt({ 
+    const {
+        isLoading: isConfirming,
+        isSuccess: isConfirmed,
+        error: txError,
+    } = useWaitForTransactionReceipt({
         hash,
-        query: { enabled: !!hash }
+        query: { enabled: !!hash },
     });
 
     // Check if vault contracts are available
@@ -110,12 +114,7 @@ export function useVault(): VaultHook {
     // Refresh all contract data
     const refreshContractData = useCallback(async () => {
         if (isVaultAvailable && address) {
-            await Promise.all([
-                refetchSccBalance(),
-                refetchSccAllowance(), 
-                refetchUserLoans(),
-                refetchNftApproval(),
-            ]);
+            await Promise.all([refetchSccBalance(), refetchSccAllowance(), refetchUserLoans(), refetchNftApproval()]);
         }
     }, [isVaultAvailable, address, refetchSccBalance, refetchSccAllowance, refetchUserLoans, refetchNftApproval]);
 
@@ -157,14 +156,13 @@ export function useVault(): VaultHook {
                     args: [tokenId],
                 });
 
-                customToast.success(`Successfully deposited NFT #${tokenId} and received 20 SCC!`);
+                // Success toast will be shown in useEffect when transaction is confirmed
             } catch (err: any) {
                 const errorMessage = err?.message || "Failed to deposit NFT";
                 setError(errorMessage);
                 customToast.error(errorMessage);
-                throw err;
-            } finally {
                 setIsLoading(false);
+                throw err;
             }
         },
         [address, isVaultAvailable, getVaultConfig, writeContract],
@@ -190,14 +188,13 @@ export function useVault(): VaultHook {
                     args: [tokenId],
                 });
 
-                customToast.success(`Successfully withdrew NFT #${tokenId}!`);
+                // Success toast will be shown in useEffect when transaction is confirmed
             } catch (err: any) {
                 const errorMessage = err?.message || "Failed to withdraw NFT";
                 setError(errorMessage);
                 customToast.error(errorMessage);
-                throw err;
-            } finally {
                 setIsLoading(false);
+                throw err;
             }
         },
         [address, isVaultAvailable, getVaultConfig, writeContract],
@@ -223,14 +220,13 @@ export function useVault(): VaultHook {
                     args: [tokenId],
                 });
 
-                customToast.success(`Successfully repaid loan and withdrew NFT #${tokenId}!`);
+                // Success toast will be shown in useEffect when transaction is confirmed
             } catch (err: any) {
                 const errorMessage = err?.message || "Failed to repay and withdraw NFT";
                 setError(errorMessage);
                 customToast.error(errorMessage);
-                throw err;
-            } finally {
                 setIsLoading(false);
+                throw err;
             }
         },
         [address, isVaultAvailable, getVaultConfig, writeContract],
@@ -259,9 +255,8 @@ export function useVault(): VaultHook {
             const errorMessage = err?.message || "Failed to approve NFT transfers";
             setError(errorMessage);
             customToast.error(errorMessage);
-            throw err;
-        } finally {
             setIsLoading(false);
+            throw err;
         }
     }, [address, isVaultAvailable, writeContract]);
 
@@ -290,9 +285,8 @@ export function useVault(): VaultHook {
                 const errorMessage = err?.message || "Failed to approve SCC";
                 setError(errorMessage);
                 customToast.error(errorMessage);
-                throw err;
-            } finally {
                 setIsLoading(false);
+                throw err;
             }
         },
         [address, isVaultAvailable, getSccConfig, writeContract],
@@ -365,12 +359,19 @@ export function useVault(): VaultHook {
 
 // Helper hook for checking individual loan status
 export function useLoanStatus(tokenId: bigint) {
-    const { data: loanData } = useReadContract({
-        ...(ECOSTABILIZER_CONTRACT_ADDRESS ? getEcoStabilizerContractConfig() : { address: undefined, abi: [] }),
-        functionName: "loans",
-        args: [tokenId],
-        query: { enabled: !!ECOSTABILIZER_CONTRACT_ADDRESS && !!tokenId },
-    });
+    const { data: loanData } = useReadContract(
+        ECOSTABILIZER_CONTRACT_ADDRESS && tokenId !== undefined
+            ? {
+                  ...getEcoStabilizerContractConfig(),
+                  functionName: "loans",
+                  args: [tokenId],
+              }
+            : {
+                  address: undefined as any,
+                  abi: [],
+                  functionName: "loans",
+              },
+    );
 
     const loan: VaultLoan | null = loanData
         ? {
