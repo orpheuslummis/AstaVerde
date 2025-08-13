@@ -1,3 +1,12 @@
 {
-    "printWidth": 120
+    "printWidth": 120,
+    "overrides": [
+        {
+            "files": "*.sol",
+            "options": {
+                "parser": "solidity-parse",
+                "plugins": ["prettier-plugin-solidity"]
+            }
+        }
+    ]
 }

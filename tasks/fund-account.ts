@@ -6,10 +6,7 @@ task("fund-account", "Funds an account with 100 ETH")
     .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
         const amount = hre.ethers.parseEther("100");
 
-        await hre.network.provider.send("hardhat_setBalance", [
-            taskArgs.account,
-            hre.ethers.toQuantity(amount),
-        ]);
+        await hre.network.provider.send("hardhat_setBalance", [taskArgs.account, hre.ethers.toQuantity(amount)]);
 
         console.log(`Funded ${taskArgs.account} with 100 ETH`);
     });
