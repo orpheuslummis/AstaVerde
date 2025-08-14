@@ -55,16 +55,16 @@ Tests use Playwright with these patterns:
 await page.locator('[data-testid="batch-card"]').click();
 
 // Wait for data to load
-await page.waitForLoadState('networkidle');
+await page.waitForLoadState("networkidle");
 
 // Handle dynamic content
-await expect(page.locator('.batch-card')).toBeVisible({ timeout: 10000 });
+await expect(page.locator(".batch-card")).toBeVisible({ timeout: 10000 });
 ```
 
 ## Key Components with Test IDs
 
 - `data-testid="batch-card"` - Marketplace batch cards
-- `data-testid="buy-button"` - Purchase buttons  
+- `data-testid="buy-button"` - Purchase buttons
 - `data-testid="quantity-slider"` - Quantity selectors
 - `data-testid="vault-card"` - Vault operations
 - `data-testid="deposit-button"` - Vault deposit
@@ -73,18 +73,22 @@ await expect(page.locator('.batch-card')).toBeVisible({ timeout: 10000 });
 ## Troubleshooting
 
 **Tests fail with "Connection refused"**
+
 - Ensure local blockchain is running: `npx hardhat node`
 - Check webapp is on port 3000: `lsof -i:3000`
 
 **"No batches available" in tests**
+
 - Run seed script: `npx hardhat run scripts/test-seed.js --network localhost`
 - Check deployment: `npx hardhat deploy --network localhost`
 
 **Tests timeout**
+
 - Increase timeout in `playwright.config.ts`
 - Check network tab in headed mode: `./e2e-test.sh --headed`
 
 **Flaky tests**
+
 - Tests retry once automatically
 - Use `waitForLoadState('networkidle')` after navigation
 - Add explicit waits for dynamic content
@@ -92,6 +96,7 @@ await expect(page.locator('.batch-card')).toBeVisible({ timeout: 10000 });
 ## CI/CD
 
 Tests run automatically on:
+
 - Push to main/develop branches
 - Pull requests
 - Manual workflow dispatch

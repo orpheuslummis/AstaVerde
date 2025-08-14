@@ -7,6 +7,7 @@ This guide explains how to run wallet tests for the AstaVerde platform using Syn
 ## Architecture
 
 We use a **hybrid testing approach**:
+
 - **Playwright**: For all non-wallet tests (fast, parallel execution)
 - **Synpress v3 (Cypress)**: For wallet-specific tests (stable MetaMask integration)
 
@@ -63,9 +64,10 @@ npm run test:all
 ### Manual Testing
 
 1. Open Cypress UI:
-   ```bash
-   npm run test:wallet:open
-   ```
+
+    ```bash
+    npm run test:wallet:open
+    ```
 
 2. Select a test file to run
 3. Watch tests execute in real-time
@@ -97,6 +99,7 @@ e2e/
 ### Modal Bypass
 
 The onboarding modal is automatically bypassed in test environments:
+
 - Sets `localStorage.skipOnboarding = 'true'`
 - Modal component checks for this flag
 - No manual dismissal needed
@@ -104,6 +107,7 @@ The onboarding modal is automatically bypassed in test environments:
 ### Test Wallet
 
 Uses Hardhat's default test wallet:
+
 - Seed: `test test test test test test test test test test test junk`
 - Address: `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
 - Pre-funded with ETH and USDC
@@ -120,27 +124,28 @@ Uses Hardhat's default test wallet:
 ### Common Issues
 
 1. **"MetaMask not found"**
-   - Ensure Cypress is running with Synpress plugins
-   - Check `cypress.config.js` includes synpress setup
+    - Ensure Cypress is running with Synpress plugins
+    - Check `cypress.config.js` includes synpress setup
 
 2. **"Transaction failed"**
-   - Verify Hardhat node is running
-   - Check test wallet has sufficient USDC
-   - Ensure contracts are deployed
+    - Verify Hardhat node is running
+    - Check test wallet has sufficient USDC
+    - Ensure contracts are deployed
 
 3. **"Modal blocking clicks"**
-   - Verify `OnboardingModal.tsx` has test bypass
-   - Check localStorage is set correctly
-   - Try manual dismissal as fallback
+    - Verify `OnboardingModal.tsx` has test bypass
+    - Check localStorage is set correctly
+    - Try manual dismissal as fallback
 
 4. **"Tests timeout"**
-   - Increase timeouts in `cypress.config.js`
-   - Check network connection to local node
-   - Verify webapp is running
+    - Increase timeouts in `cypress.config.js`
+    - Check network connection to local node
+    - Verify webapp is running
 
 ### Debug Mode
 
 Enable debug output:
+
 ```bash
 # Set debug environment variable
 DEBUG=synpress:* npm run test:wallet
@@ -152,6 +157,7 @@ npm run test:wallet:open
 ### Clean State
 
 Reset test environment:
+
 ```bash
 # Stop all processes
 pkill -f hardhat
@@ -176,31 +182,31 @@ name: E2E Tests
 on: [push, pull_request]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Install browsers
-        run: npx playwright install chromium
-        
-      - name: Run Playwright tests
-        run: npm run test:e2e
-        
-      - name: Run wallet tests (optional)
-        if: github.ref == 'refs/heads/main'
-        run: |
-          npm run dev &
-          sleep 10
-          npm run test:wallet
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Setup Node
+              uses: actions/setup-node@v3
+              with:
+                  node-version: "18"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Install browsers
+              run: npx playwright install chromium
+
+            - name: Run Playwright tests
+              run: npm run test:e2e
+
+            - name: Run wallet tests (optional)
+              if: github.ref == 'refs/heads/main'
+              run: |
+                  npm run dev &
+                  sleep 10
+                  npm run test:wallet
 ```
 
 ## Best Practices
@@ -216,11 +222,13 @@ jobs:
 ### From Synpress v4 to v3
 
 We migrated from v4 (alpha) to v3 (stable) because:
+
 - v4 cache building was hanging
 - MetaMask extension wasn't loading properly
 - v3 is production-tested and reliable
 
 Key differences:
+
 - v3 uses Cypress (not Playwright)
 - Different command syntax
 - No cache mechanism (simpler setup)
@@ -228,6 +236,7 @@ Key differences:
 ### Future: Back to v4
 
 When Synpress v4 becomes stable:
+
 1. Update dependency to v4
 2. Migrate test syntax
 3. Implement cache mechanism
@@ -236,6 +245,7 @@ When Synpress v4 becomes stable:
 ## Support
 
 For issues or questions:
+
 - Check the [Synpress documentation](https://github.com/Synthetixio/synpress)
 - Review test examples in `e2e/synpress/specs/`
 - Run tests with debug output for more details
