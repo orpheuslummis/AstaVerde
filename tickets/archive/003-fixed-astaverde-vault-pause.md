@@ -1,12 +1,14 @@
 # Fix Vault Withdrawals Blocked by Pause (Vault + AstaVerde)
 
 ## Priority: HIGH (Operational Risk)
+
 - **Status: ✅ FIXED**
 - **Last Checked: 2025-08-13**
 
 ## ✅ FIXED STATUS
 
 **VULNERABILITY RESOLVED**: AstaVerde now has vault allowlist:
+
 - Line 36: `address public trustedVault` state variable added
 - Line 130: `setTrustedVault` function to configure vault address
 - Lines 140-143: `_update` allows transfers from/to trustedVault even when paused

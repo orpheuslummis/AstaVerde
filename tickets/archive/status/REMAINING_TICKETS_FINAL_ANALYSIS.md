@@ -14,6 +14,7 @@ All critical security vulnerabilities and performance DoS issues have been resol
 ### 🟢 Quick Fixes (< 30 min each) - 3 tickets
 
 #### 1. **Ghost Token Redemption** (`fix-astaverde-ghost-token-redemption.md`)
+
 - **Issue**: Can redeem non-existent tokens (edge case)
 - **Fix**: Add `require(tokenId <= lastTokenID)` check
 - **Impact**: LOW - Prevents marking ghost tokens as redeemed
@@ -21,6 +22,7 @@ All critical security vulnerabilities and performance DoS issues have been resol
 - **Risk**: Minimal - Simple validation
 
 #### 2. **Batch Index Consistency** (`fix-astaverde-batch-index-consistency.md`)
+
 - **Issue**: Mixed 0-based and 1-based indexing is confusing
 - **Fix**: Add documentation and helper functions
 - **Impact**: LOW - Code clarity improvement
@@ -28,6 +30,7 @@ All critical security vulnerabilities and performance DoS issues have been resol
 - **Risk**: None - Documentation only
 
 #### 3. **Partial Batch Ordering** (`fix-astaverde-partial-batch-ordering.md`)
+
 - **Issue**: Users get non-contiguous token IDs in partial sales
 - **Fix**: Document the behavior clearly
 - **Impact**: LOW - UX expectation management
@@ -37,6 +40,7 @@ All critical security vulnerabilities and performance DoS issues have been resol
 ### 🟡 Medium Complexity (1-2 hours) - 2 tickets
 
 #### 4. **Frontrunning Protection** (`fix-astaverde-frontrunning-price-updates.md`)
+
 - **Issue**: MEV bots could frontrun price updates
 - **Fix**: Call updateBasePrice() earlier in buyBatch flow
 - **Impact**: LOW-MEDIUM - Fairness improvement
@@ -44,6 +48,7 @@ All critical security vulnerabilities and performance DoS issues have been resol
 - **Risk**: Medium - Requires careful testing
 
 #### 5. **Security Regression Tests** (`tests-astaverde-security-regressions.md`)
+
 - **Issue**: Need tests for all security fixes
 - **Fix**: Add comprehensive test suite
 - **Impact**: HIGH - Prevents future regressions
@@ -53,6 +58,7 @@ All critical security vulnerabilities and performance DoS issues have been resol
 ### 🔴 Complex Features (2+ hours) - 2 tickets
 
 #### 6. **EIP-2612 Permit** (`feature-scc-add-eip2612-permit.md`)
+
 - **Issue**: No gasless approvals for SCC
 - **Fix**: Implement ERC20Permit extension
 - **Impact**: LOW - Nice-to-have UX feature
@@ -60,6 +66,7 @@ All critical security vulnerabilities and performance DoS issues have been resol
 - **Risk**: Medium - New functionality
 
 #### 7. **E2E Wallet Testing** (`e2e-wallet-testing-status.md`)
+
 - **Issue**: Wallet integration tests partially working
 - **Fix**: Complex - needs provider architecture work
 - **Impact**: MEDIUM - Testing coverage
@@ -68,34 +75,36 @@ All critical security vulnerabilities and performance DoS issues have been resol
 
 ## Risk Assessment
 
-| Ticket | Fund Loss Risk | DoS Risk | UX Impact | Code Quality |
-|--------|---------------|----------|-----------|--------------|
-| Ghost Token | None | None | Minimal | Good |
-| Batch Index | None | None | None | Better |
-| Partial Order | None | None | Minor | Better |
-| Frontrunning | None | None | Minor | Better |
-| Regression Tests | None | None | None | Critical |
-| EIP-2612 | None | None | Positive | Good |
-| E2E Testing | None | None | None | Critical |
+| Ticket           | Fund Loss Risk | DoS Risk | UX Impact | Code Quality |
+| ---------------- | -------------- | -------- | --------- | ------------ |
+| Ghost Token      | None           | None     | Minimal   | Good         |
+| Batch Index      | None           | None     | None      | Better       |
+| Partial Order    | None           | None     | Minor     | Better       |
+| Frontrunning     | None           | None     | Minor     | Better       |
+| Regression Tests | None           | None     | None      | Critical     |
+| EIP-2612         | None           | None     | Positive  | Good         |
+| E2E Testing      | None           | None     | None      | Critical     |
 
 ## Recommended Action Plan
 
 ### Batch 1: Quick Wins (50 minutes total)
+
 **Do these first - minimal risk, clear value**
+
 1. Ghost token validation - 15 min
 2. Batch index documentation - 20 min
 3. Partial batch documentation - 15 min
 
 ### Batch 2: Important Testing (1.5 hours)
-**Critical for maintaining security**
-4. Security regression tests - 1.5 hours
+
+**Critical for maintaining security** 4. Security regression tests - 1.5 hours
 
 ### Batch 3: Nice-to-Have (3+ hours)
-**Lower priority, do if time permits**
-5. Frontrunning mitigation - 1 hour
-6. EIP-2612 permit - 2-3 hours
+
+**Lower priority, do if time permits** 5. Frontrunning mitigation - 1 hour 6. EIP-2612 permit - 2-3 hours
 
 ### Deprioritize
+
 7. E2E wallet testing - Complex ongoing effort, frontend team responsibility
 
 ## Implementation Priority
@@ -127,15 +136,18 @@ LOW PRIORITY (Ongoing):
 ## Completion Metrics
 
 ### Current Status
+
 - **Total Tickets**: ~27 identified
 - **Completed**: 20 (74%)
 - **Remaining**: 7 (26%)
 
 ### After Quick Wins (Batch 1)
+
 - **Completed**: 23 (85%)
 - **Remaining**: 4 (15%)
 
 ### After Testing (Batch 2)
+
 - **Completed**: 24 (89%)
 - **Remaining**: 3 (11%)
 
@@ -144,6 +156,7 @@ LOW PRIORITY (Ongoing):
 **Focus on Batch 1 + Regression Tests (2.5 hours total)**
 
 This will:
+
 - Complete 4 more tickets
 - Reach 89% completion
 - Add critical test coverage

@@ -39,6 +39,7 @@ The update only affects future batches (not the current purchase), so this is a 
 - Tests cover ordering and ensure price used for the current call is the pre-update value.
 
 Implementation notes:
+
 - `contracts/AstaVerde.sol`: Added an ordering comment and ensured `updateBasePrice()` is invoked immediately after locking `currentPrice` and recording sale state, and before any external transfers.
 - `test/SecurityRegressions.ts`: Added a test "Price Adjustment Front-Running Prevention" validating that the buyer is charged the pre-update price and that the `basePrice` increases for subsequent batches.
 

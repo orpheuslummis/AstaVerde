@@ -71,23 +71,25 @@ The view functions `getUserLoans`, `getTotalActiveLoans`, and `getUserLoanCount`
 ### Changes Made (2025-08-13)
 
 1. **Added constants** (lines 14-16):
-   ```solidity
-   uint256 public constant MAX_SCAN_CEILING = 50000;
-   uint256 public constant MAX_PAGE_SIZE = 2000;
-   ```
+
+    ```solidity
+    uint256 public constant MAX_SCAN_CEILING = 50000;
+    uint256 public constant MAX_PAGE_SIZE = 2000;
+    ```
 
 2. **Updated setMaxScanRange** (line 102):
-   - Now enforces upper bound of 50,000
-   - Prevents misconfiguration DoS
+    - Now enforces upper bound of 50,000
+    - Prevents misconfiguration DoS
 
 3. **Added paginated functions** (lines 173-287):
-   - `getUserLoansPaginated(user, startId, limit)`
-   - `getTotalActiveLoansPaginated(startId, limit)`
-   - `getUserLoanCountPaginated(user, startId, limit)`
+    - `getUserLoansPaginated(user, startId, limit)`
+    - `getTotalActiveLoansPaginated(startId, limit)`
+    - `getUserLoanCountPaginated(user, startId, limit)`
 
 ### Test Coverage
 
 Created comprehensive test suite in `test/VaultViewDoSFix.ts`:
+
 - ✅ MaxScanRange bounds enforcement
 - ✅ Pagination limit enforcement
 - ✅ Correct pagination behavior
@@ -104,6 +106,7 @@ Created comprehensive test suite in `test/VaultViewDoSFix.ts`:
 - Complete DoS protection achieved
 
 ### Files Modified
+
 - `contracts/EcoStabilizer.sol` - Added bounds and pagination
 - `test/VaultViewDoSFix.ts` - Comprehensive test suite
 

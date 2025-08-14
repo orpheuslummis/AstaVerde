@@ -4,13 +4,16 @@
 **Type**: Security Enhancement  
 **Status**: Open  
 **Component**: AstaVerde.sol  
-**Security Impact**: Medium - Prevents price manipulation  
+**Security Impact**: Medium - Prevents price manipulation
 
 ## Summary
+
 A malicious actor could manipulate the base price by rapidly purchasing multiple batches to trigger price increases. Adding a cooldown period between purchases would prevent this manipulation.
 
 ## Current Issue
+
 The `updateBasePrice()` function increases base price by 10 USDC for each batch sold within 2 days:
+
 ```solidity
 if (saleDurationInDays < dayIncreaseThreshold) {
     quickSaleCount++;
@@ -19,12 +22,14 @@ if (saleDurationInDays < dayIncreaseThreshold) {
 ```
 
 Attack scenario:
+
 1. Attacker buys 5 small batches quickly
 2. Base price increases by 50 USDC
 3. Legitimate users pay inflated prices
 4. Attacker may profit from arbitrage
 
 ## Proposed Solution
+
 Implement a per-address cooldown period between batch purchases.
 
 ### Implementation
@@ -34,7 +39,7 @@ contract AstaVerde {
     // New state variable
     mapping(address => uint256) public lastPurchaseTime;
     uint256 public constant PURCHASE_COOLDOWN = 1 hours;
-    
+
     function buyBatch(
         uint256 batchID,
         uint256 usdcAmount,
@@ -45,15 +50,15 @@ contract AstaVerde {
             block.timestamp >= lastPurchaseTime[msg.sender] + PURCHASE_COOLDOWN,
             "Purchase cooldown active"
         );
-        
+
         // ... existing validation ...
-        
+
         // Update last purchase time
         lastPurchaseTime[msg.sender] = block.timestamp;
-        
+
         // ... rest of function ...
     }
-    
+
     // Optional: Allow owner to adjust cooldown
     function setPurchaseCooldown(uint256 newCooldown) external onlyOwner {
         require(newCooldown <= 24 hours, "Cooldown too long");
@@ -64,6 +69,7 @@ contract AstaVerde {
 ```
 
 ### Alternative: Limit Quick Sales Per Address
+
 ```solidity
 mapping(address => uint256) public recentQuickSales;
 mapping(address => uint256) public quickSaleResetTime;
@@ -76,7 +82,7 @@ function buyBatch(...) external {
         recentQuickSales[msg.sender] = 0;
         quickSaleResetTime[msg.sender] = block.timestamp + QUICK_SALE_WINDOW;
     }
-    
+
     // Check if this would be a quick sale
     uint256 saleDuration = block.timestamp - batch.creationTime;
     if (saleDuration < dayIncreaseThreshold * SECONDS_IN_A_DAY) {
@@ -86,29 +92,34 @@ function buyBatch(...) external {
         );
         recentQuickSales[msg.sender]++;
     }
-    
+
     // ... rest of function ...
 }
 ```
 
 ## Benefits
+
 - Prevents single actor from manipulating prices
 - Maintains organic price discovery
 - Reduces MEV opportunities
 - Protects legitimate users
 
 ## Drawbacks
+
 - May slow down legitimate bulk purchases
 - Adds complexity to buyer experience
 - Could be circumvented with multiple addresses
 
 ## Mitigation for Multiple Addresses
+
 Consider additional measures:
+
 - Require minimum USDC balance
 - KYC for large purchases
 - Gradual price increases instead of immediate
 
 ## Testing Requirements
+
 - [ ] Test cooldown enforcement
 - [ ] Test with multiple addresses
 - [ ] Test cooldown reset
@@ -116,6 +127,7 @@ Consider additional measures:
 - [ ] Gas cost impact
 
 ## Acceptance Criteria
+
 - [ ] Cooldown mechanism implemented
 - [ ] Cannot bypass with same address
 - [ ] Clear error messages

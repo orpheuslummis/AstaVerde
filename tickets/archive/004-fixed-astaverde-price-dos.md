@@ -69,24 +69,27 @@ Current code iterates: `for (uint256 i = batches.length; i > 0 && batches[i - 1]
 ### Changes Made (2025-08-13)
 
 1. **Added constant** (line 21):
-   ```solidity
-   uint256 public constant MAX_PRICE_UPDATE_ITERATIONS = 100;
-   ```
+
+    ```solidity
+    uint256 public constant MAX_PRICE_UPDATE_ITERATIONS = 100;
+    ```
 
 2. **Added monitoring event** (line 81):
-   ```solidity
-   event PriceUpdateIterationLimitReached(uint256 batchesProcessed, uint256 totalBatches);
-   ```
+
+    ```solidity
+    event PriceUpdateIterationLimitReached(uint256 batchesProcessed, uint256 totalBatches);
+    ```
 
 3. **Updated price decrease loop** (lines 482-505):
-   - Added iteration counter
-   - Check limit before processing each batch
-   - Emit event when limit reached
-   - Early exit for batches outside window
+    - Added iteration counter
+    - Check limit before processing each batch
+    - Emit event when limit reached
+    - Early exit for batches outside window
 
 ### Test Coverage
 
 Created comprehensive test suite in `test/PriceLoopDoSFix.ts`:
+
 - ✅ Iteration limit enforcement
 - ✅ Event emission when limit reached
 - ✅ DoS prevention with 500 batches
@@ -103,6 +106,7 @@ Created comprehensive test suite in `test/PriceLoopDoSFix.ts`:
 - Complete DoS protection achieved
 
 ### Files Modified
+
 - `contracts/AstaVerde.sol` - Added limit and event
 - `test/PriceLoopDoSFix.ts` - Comprehensive test suite
 

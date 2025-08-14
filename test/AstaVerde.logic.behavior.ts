@@ -892,9 +892,10 @@ describe("Security Tests", function () {
         await mockUSDC.connect(user2).approve(contractAddr, totalCost2);
 
         // FIXED: Contract now pulls the full usdcAmount, so this will revert with insufficient allowance
-        await expect(
-            astaVerde.connect(user2).buyBatch(batchID, inflatedUsdcAmount, 1n)
-        ).to.be.revertedWithCustomError(mockUSDC, "ERC20InsufficientAllowance");
+        await expect(astaVerde.connect(user2).buyBatch(batchID, inflatedUsdcAmount, 1n)).to.be.revertedWithCustomError(
+            mockUSDC,
+            "ERC20InsufficientAllowance",
+        );
 
         // Verify contract balance remains intact (attack prevented)
         const contractBalAfter = await mockUSDC.balanceOf(contractAddr);
@@ -903,7 +904,7 @@ describe("Security Tests", function () {
         // Now test legitimate overpayment with proper approval works
         await mockUSDC.connect(user2).approve(contractAddr, inflatedUsdcAmount);
         await astaVerde.connect(user2).buyBatch(batchID, inflatedUsdcAmount, 1n);
-        
+
         // User gets refund of the overpayment
         const user2BalAfter = await mockUSDC.balanceOf(user2.address);
         const expectedRefund = inflatedUsdcAmount - totalCost2;
@@ -927,8 +928,6 @@ describe("Security Tests", function () {
 
         // Verify we can still buy at floor price (no DoS)
         await mockUSDC.connect(admin).approve(await astaVerde.getAddress(), priceFloor);
-        await expect(
-            astaVerde.connect(admin).buyBatch(batchID, priceFloor, 1n)
-        ).to.not.be.reverted;
+        await expect(astaVerde.connect(admin).buyBatch(batchID, priceFloor, 1n)).to.not.be.reverted;
     });
 });

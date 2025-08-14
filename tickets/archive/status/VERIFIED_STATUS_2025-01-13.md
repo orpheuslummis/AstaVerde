@@ -7,54 +7,57 @@ After reviewing the ticket directory and codebase, here's the accurate status:
 ## ✅ CONFIRMED COMPLETED (Archived)
 
 1. **Price Loop DoS** (`fix-astaverde-price-decrease-loop-dos.md`) - ✅ FIXED & ARCHIVED
-   - Added MAX_PRICE_UPDATE_ITERATIONS = 100
-   - Comprehensive tests in PriceLoopDoSFix.ts
-   - Documentation in PRICE_LOOP_DOS_FIX_COMPLETE.md
+    - Added MAX_PRICE_UPDATE_ITERATIONS = 100
+    - Comprehensive tests in PriceLoopDoSFix.ts
+    - Documentation in PRICE_LOOP_DOS_FIX_COMPLETE.md
 
 2. **Overpayment Refund Siphon** (`fix-astaverde-buybatch-overpayment-refund-siphon.md`) - ✅ ARCHIVED
-   - Removed usdcAmount parameter from buyBatch
+    - Removed usdcAmount parameter from buyBatch
 
 3. **Small Tickets Batch 1** (10 tickets) - ✅ ARCHIVED
-   - Various validation and safety improvements
+    - Various validation and safety improvements
 
 4. **Small Tickets Batch 2** (Additional tickets) - ✅ ARCHIVED
-   - Per SECOND_BATCH_TICKETS_COMPLETED.md
+    - Per SECOND_BATCH_TICKETS_COMPLETED.md
 
 ## ⚠️ CLAIMED FIXED BUT NOT ARCHIVED (Need Verification)
 
 These tickets were marked as fixed in the code but remain in the main tickets folder:
 
 1. **Redeemed NFT Resale** (`fix-astaverde-redeemed-nft-resale.md`)
-   - Code shows fix in getPartialIds() line 412: `&& !tokens[tokenId].redeemed`
-   - Status: IMPLEMENTED but NOT ARCHIVED
+    - Code shows fix in getPartialIds() line 412: `&& !tokens[tokenId].redeemed`
+    - Status: IMPLEMENTED but NOT ARCHIVED
 
 2. **Vault Withdrawals During Pause** (`fix-vault-withdrawals-blocked-by-pause.md`)
-   - Code shows trustedVault implementation in AstaVerde.sol
-   - Status: IMPLEMENTED but NOT ARCHIVED
+    - Code shows trustedVault implementation in AstaVerde.sol
+    - Status: IMPLEMENTED but NOT ARCHIVED
 
 3. **SafeERC20 Migration** (`enhance-astaverde-safeerc20.md`)
-   - Code shows `using SafeERC20 for IERC20` implemented
-   - Status: IMPLEMENTED but NOT ARCHIVED
+    - Code shows `using SafeERC20 for IERC20` implemented
+    - Status: IMPLEMENTED but NOT ARCHIVED
 
 4. **Producer Payout Rounding** (`enhance-astaverde-producer-payout-rounding.md`)
-   - Code shows remainder distribution logic implemented
-   - Status: IMPLEMENTED but NOT ARCHIVED
+    - Code shows remainder distribution logic implemented
+    - Status: IMPLEMENTED but NOT ARCHIVED
 
 5. **Slippage Protection** (`fix-astaverde-slippage-protection.md`)
-   - Code shows maxPrice and deadline parameters added
-   - Status: IMPLEMENTED but NOT ARCHIVED
+    - Code shows maxPrice and deadline parameters added
+    - Status: IMPLEMENTED but NOT ARCHIVED
 
 ## 📋 REMAINING OPEN TICKETS
 
 ### High Priority
+
 1. **View Function DoS** (`enhance-ecostabilizer-view-scan-dos-hardening.md`) - OPEN
 
-### Medium Priority  
+### Medium Priority
+
 2. **Ghost Token Redemption** (`fix-astaverde-ghost-token-redemption.md`) - OPEN
 3. **Batch Index Consistency** (`fix-astaverde-batch-index-consistency.md`) - OPEN
 4. **Partial Batch Ordering** (`fix-astaverde-partial-batch-ordering.md`) - OPEN
 
 ### Low Priority
+
 5. **Frontrunning Protection** (`fix-astaverde-frontrunning-price-updates.md`) - OPEN
 6. **EIP-2612 Permit** (`feature-scc-add-eip2612-permit.md`) - OPEN
 7. **Security Regression Tests** (`tests-astaverde-security-regressions.md`) - OPEN
@@ -63,7 +66,7 @@ These tickets were marked as fixed in the code but remain in the main tickets fo
 ## 📊 Actual Progress
 
 - **Archived & Complete**: 14 tickets
-- **Implemented but Not Archived**: 5 tickets  
+- **Implemented but Not Archived**: 5 tickets
 - **Still Open**: 8 tickets
 - **Total**: 27 tickets
 

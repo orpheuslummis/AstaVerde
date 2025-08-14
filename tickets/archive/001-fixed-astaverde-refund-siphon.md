@@ -9,6 +9,7 @@
 ## ✅ FIXED STATUS
 
 **VULNERABILITY RESOLVED**: The contract now properly handles overpayments:
+
 - Line 295: Contract pulls FULL `usdcAmount` via `safeTransferFrom`
 - Line 277: Calculates `refundAmount = usdcAmount > totalCost ? usdcAmount - totalCost : 0`
 - Line 304: Refunds from pulled funds, not contract balance

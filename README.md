@@ -4,7 +4,7 @@ Carbon offset NFT marketplace with Dutch auction pricing and collateralized lend
 
 ## System Status
 
-- **Phase 1**: ✅ Live on Base Mainnet - Dutch auction marketplace  
+- **Phase 1**: ✅ Live on Base Mainnet - Dutch auction marketplace
 - **Phase 2**: ✅ Implementation Complete - EcoStabilizer vault (173 tests passing)
 - **Deployment**: Ready for Base mainnet
 - **Gas Efficiency**: Deposit <150k, Withdraw <120k
@@ -12,17 +12,18 @@ Carbon offset NFT marketplace with Dutch auction pricing and collateralized lend
 ## Architecture
 
 ### Phase 1: Dutch Auction Marketplace (Live)
+
 - ERC-1155 NFTs representing verified carbon offsets
 - Dynamic pricing: Base price adjusts with market demand
 - Dutch auction: Daily 1 USDC decrease to 40 USDC floor
 - 30% platform commission, 70% to producers
 
 ### Phase 2: EcoStabilizer Vault (Complete)
+
 - Deposit NFTs to mint 20 SCC stablecoins
 - No liquidations - withdraw your exact NFT by repaying loan
 - Redeemed NFTs cannot be used as collateral
 - Access control with automated admin renunciation
-
 
 ## Quick Start
 
@@ -52,7 +53,6 @@ npm run deploy:mainnet    # Deploy to Base mainnet
 ```
 
 See [CLAUDE.md](CLAUDE.md) for complete command reference.
-
 
 ## Documentation
 

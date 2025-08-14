@@ -20,11 +20,13 @@ npm run dev
 ## ⚠️ Important Notes
 
 **The local environment must be restarted each time you want to use it.** This is because:
+
 - Hardhat node doesn't persist state between restarts
 - Contract addresses change with each deployment
 - Test data needs to be re-seeded
 
 **MetaMask will cache old data**, so after restarting:
+
 1. Switch to a different network and back to Localhost 8545
 2. Or go to Settings → Advanced → Clear activity tab data
 

@@ -1,12 +1,14 @@
 # Fix AstaVerde Redeemed NFT Resale Vulnerability
 
 ## Priority: HIGH
+
 - **Status: ✅ FIXED**
 - **Last Checked: 2025-08-13**
 
 ## ⚠️ CURRENT STATUS
 
 **STILL VULNERABLE**: The contract does not check redemption status when selecting tokens for sale:
+
 - Line 357 in `getPartialIds`: Only checks `balanceOf(address(this), tokenId) > 0`
 - Missing check: `&& !tokens[tokenId].redeemed`
 - **Attack Vector**: User can transfer redeemed NFT back to contract, it will be resold to unsuspecting buyers
