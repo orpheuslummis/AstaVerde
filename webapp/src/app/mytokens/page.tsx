@@ -50,7 +50,7 @@ export default function MyTokensPage() {
     const [batchData, setBatchData] = useState<Map<bigint, any>>(new Map());
     
     const { astaverdeContractConfig } = useAppContext();
-    const { getUserLoans, isVaultAvailable, getSccBalance } = useVault();
+    const { getUserLoans, isVaultAvailable, getSccBalance, deposit, approveNFT } = useVault();
     const { execute: getTokensOfOwner } = useContractInteraction(
         astaverdeContractConfig,
         "balanceOf",
@@ -201,6 +201,46 @@ export default function MyTokensPage() {
     useEffect(() => {
         fetchTokens();
     }, [fetchTokens]);
+
+    // Handle bulk deposit of all available tokens in a group
+    const [isBulkDepositing, setIsBulkDepositing] = useState(false);
+    const [bulkDepositProgress, setBulkDepositProgress] = useState({ current: 0, total: 0 });
+    
+    const handleDepositAll = useCallback(async (tokenIds: bigint[]) => {
+        if (!tokenIds || tokenIds.length === 0) {
+            console.log("No tokens to deposit");
+            return;
+        }
+
+        console.log(`Starting bulk deposit of ${tokenIds.length} tokens:`, tokenIds);
+        setIsBulkDepositing(true);
+        setBulkDepositProgress({ current: 0, total: tokenIds.length });
+        
+        try {
+            // First ensure NFT approval
+            await approveNFT();
+            
+            // Deposit each token sequentially
+            // Note: In production, this should use a batch deposit function for gas efficiency
+            for (let i = 0; i < tokenIds.length; i++) {
+                const tokenId = tokenIds[i];
+                console.log(`Depositing token #${tokenId}...`);
+                setBulkDepositProgress({ current: i + 1, total: tokenIds.length });
+                await deposit(tokenId);
+                console.log(`Token #${tokenId} deposited successfully`);
+            }
+            
+            console.log(`Successfully deposited all ${tokenIds.length} tokens!`);
+            
+            // Refresh the token list to update the UI
+            await fetchTokens();
+        } catch (error) {
+            console.error("Error during bulk deposit:", error);
+        } finally {
+            setIsBulkDepositing(false);
+            setBulkDepositProgress({ current: 0, total: 0 });
+        }
+    }, [deposit, approveNFT, fetchTokens]);
 
     // Group tokens by their actual batch ID from the contract
     const tokenGroups = useMemo(() => {
@@ -613,12 +653,15 @@ export default function MyTokensPage() {
                                             <button 
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    // Handle bulk deposit - would need to implement batch deposit
-                                                    console.log(`Deposit all ${group.availableCount} tokens from batch ${group.batchId}`);
+                                                    handleDepositAll(group.availableTokenIds);
                                                 }}
-                                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors"
+                                                disabled={isBulkDepositing}
+                                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors"
                                             >
-                                                Deposit All ({group.availableCount})
+                                                {isBulkDepositing && bulkDepositProgress.total > 0 
+                                                    ? `Depositing... (${bulkDepositProgress.current}/${bulkDepositProgress.total})`
+                                                    : `Deposit All (${group.availableCount})`
+                                                }
                                             </button>
                                         )}
                                         

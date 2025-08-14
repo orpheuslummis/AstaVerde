@@ -6,6 +6,7 @@ import { usePublicClient } from "wagmi";
 import astaverdeAbi from "../config/AstaVerde.json";
 import ecoStabilizerAbi from "../config/EcoStabilizer.json";
 import stabilizedCarbonCoinAbi from "../config/StabilizedCarbonCoin.json";
+import mockUsdcAbi from "../config/MockUSDC.json";
 
 import {
     ASTAVERDE_CONTRACT_ADDRESS,
@@ -15,9 +16,12 @@ import {
 } from "../app.config";
 
 export function getUsdcContractConfig() {
+    // Always use MockUSDC ABI for the mock contract address
+    // The mock contract address starts with 0xB7f8BC for local dev
+    const isMockContract = USDC_ADDRESS.toLowerCase().startsWith("0xb7f8bc");
     return {
         address: USDC_ADDRESS as `0x${string}`,
-        abi: extendedERC20Abi,
+        abi: isMockContract ? (mockUsdcAbi.abi as Abi) : extendedERC20Abi,
     };
 }
 

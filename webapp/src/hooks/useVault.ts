@@ -192,7 +192,7 @@ export function useVault(): VaultHook {
                 // Success toast will be shown in useEffect when transaction is confirmed
             } catch (err: any) {
                 const parsedError = parseVaultError(err, {
-                    operation: 'deposit',
+                    operation: "deposit",
                     approveNFT: async () => approveNFT(),
                     retry: () => deposit(tokenId),
                 });
@@ -233,7 +233,7 @@ export function useVault(): VaultHook {
                 // Success toast will be shown in useEffect when transaction is confirmed
             } catch (err: any) {
                 const parsedError = parseVaultError(err, {
-                    operation: 'withdraw',
+                    operation: "withdraw",
                     approveSCC: async () => approveSCC(SCC_PER_ASSET),
                     retry: () => withdraw(tokenId),
                 });
@@ -274,7 +274,7 @@ export function useVault(): VaultHook {
                 // Success toast will be shown in useEffect when transaction is confirmed
             } catch (err: any) {
                 const parsedError = parseVaultError(err, {
-                    operation: 'withdraw',
+                    operation: "withdraw",
                     approveSCC: async () => approveSCC(SCC_PER_ASSET),
                     retry: () => repayAndWithdraw(tokenId),
                 });
