@@ -252,7 +252,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         }
         usdcTokenAddress = envUsdcAddress;
         console.log("Using existing USDC at address:", usdcTokenAddress);
-        
+
         // Verify USDC has 6 decimals
         try {
             const usdcContract = await hre.ethers.getContractAt("IERC20Metadata", usdcTokenAddress);

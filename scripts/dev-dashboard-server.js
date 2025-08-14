@@ -199,8 +199,11 @@ async function handleAPI(req, res) {
 
             case "/api/vault-stats":
                 try {
-                    const sccContract = new ethers.Contract(CONTRACTS.scc, 
-                        ["function totalSupply() view returns (uint256)"], provider);
+                    const sccContract = new ethers.Contract(
+                        CONTRACTS.scc,
+                        ["function totalSupply() view returns (uint256)"],
+                        provider,
+                    );
 
                     const totalSCC = await sccContract.totalSupply();
                     const totalDeposits = Number(ethers.formatUnits(totalSCC, 18)) / 20; // 20 SCC per NFT

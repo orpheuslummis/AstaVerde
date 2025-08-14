@@ -47,6 +47,8 @@ class DevEnvironment {
         const users = [alice, bob, charlie, dave];
         for (const user of users) {
             await usdc.mint(user.address, ethers.parseUnits("50000", 6)); // 50k USDC each
+            const balance = await usdc.balanceOf(user.address);
+            console.log(`   Funded ${user.address} with ${ethers.formatUnits(balance, 6)} USDC`);
         }
 
         this.contracts = { usdc, astaVerde, scc, vault };

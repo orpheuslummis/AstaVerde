@@ -21,11 +21,7 @@ class AllInOneDev {
         console.log("🏗️  Starting Hardhat node...");
 
         return new Promise((resolve, reject) => {
-            this.hardhatProcess = spawn(
-                "npx",
-                ["cross-env", "TS_NODE_TRANSPILE_ONLY=true", "npx", "hardhat", "node", "--no-deploy"],
-                { stdio: "pipe" },
-            );
+            this.hardhatProcess = spawn("npx", ["hardhat", "node", "--no-deploy"], { stdio: "pipe" });
 
             let nodeReady = false;
 
@@ -58,22 +54,36 @@ class AllInOneDev {
     async deployContracts() {
         console.log("🚀 Deploying contracts to local node...");
 
-        const [deployer, alice, bob, charlie, dave] = await ethers.getSigners();
+        // Connect to the running localhost node
+        const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+
+        // Use the test accounts with known private keys
+        const deployer = new ethers.Wallet(
+            "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+            provider,
+        );
+        const alice = new ethers.Wallet("0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", provider);
+        const bob = new ethers.Wallet("0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", provider);
+        const charlie = new ethers.Wallet(
+            "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
+            provider,
+        );
+        const dave = new ethers.Wallet("0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a", provider);
 
         // Deploy contracts
-        const MockUSDC = await ethers.getContractFactory("MockUSDC");
+        const MockUSDC = await ethers.getContractFactory("MockUSDC", deployer);
         const usdc = await MockUSDC.deploy(ethers.parseUnits("10000000", 6));
         await usdc.waitForDeployment();
 
-        const AstaVerde = await ethers.getContractFactory("AstaVerde");
+        const AstaVerde = await ethers.getContractFactory("AstaVerde", deployer);
         const astaVerde = await AstaVerde.deploy(deployer.address, await usdc.getAddress());
         await astaVerde.waitForDeployment();
 
-        const SCC = await ethers.getContractFactory("StabilizedCarbonCoin");
+        const SCC = await ethers.getContractFactory("StabilizedCarbonCoin", deployer);
         const scc = await SCC.deploy(ethers.ZeroAddress);
         await scc.waitForDeployment();
 
-        const EcoStabilizer = await ethers.getContractFactory("EcoStabilizer");
+        const EcoStabilizer = await ethers.getContractFactory("EcoStabilizer", deployer);
         const vault = await EcoStabilizer.deploy(await astaVerde.getAddress(), await scc.getAddress());
         await vault.waitForDeployment();
 
@@ -81,7 +91,8 @@ class AllInOneDev {
         await scc.grantRole(await scc.MINTER_ROLE(), await vault.getAddress());
 
         // Fund test users with USDC (realistic amounts)
-        const users = [alice, bob, charlie, dave];
+        // Include deployer to prevent issues when testing with default account
+        const users = [deployer, alice, bob, charlie, dave];
         for (const user of users) {
             await usdc.mint(user.address, ethers.parseUnits("50000", 6)); // 50k USDC each
         }
@@ -175,14 +186,14 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
             });
         }
 
-        // Start webapp
-        this.webappProcess = spawn("npm", ["run", "dev"], {
+        // Start webapp - listen on all interfaces for Tailscale access
+        this.webappProcess = spawn("npm", ["run", "dev", "--", "-H", "0.0.0.0"], {
             cwd: webappPath,
             stdio: "inherit",
             env: { ...process.env, NODE_ENV: "development" },
         });
 
-        console.log("   ✅ Webapp starting at http://localhost:3000");
+        console.log("   ✅ Webapp starting at http://localhost:3000 (accessible on all interfaces)");
 
         // Wait a moment for webapp to boot
         await new Promise((resolve) => setTimeout(resolve, 3000));
