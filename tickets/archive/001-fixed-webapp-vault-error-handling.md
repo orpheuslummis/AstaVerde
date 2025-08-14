@@ -16,6 +16,7 @@ The VaultCard component lacks comprehensive error handling, leading to poor user
 ### 1. Missing Error States
 
 The component only shows generic error messages via toast:
+
 ```typescript
 // webapp/src/components/VaultCard.tsx:141
 customToast.error(error?.message || "Failed to deposit NFT");
@@ -42,7 +43,7 @@ customToast.error(error?.message || "Failed to deposit NFT");
 ## User Impact
 
 1. **Confusion:** Users don't understand why transactions fail
-2. **Abandonment:** Users leave without completing vault operations  
+2. **Abandonment:** Users leave without completing vault operations
 3. **Support Burden:** Increased support tickets for common issues
 4. **Trust:** Reduced confidence in platform reliability
 
@@ -69,7 +70,7 @@ function VaultErrorDisplay({ error }: { error: VaultErrorState }) {
         <p className="text-sm text-red-600 mt-2">{error.details}</p>
       )}
       {error.action && (
-        <button 
+        <button
           onClick={error.action.handler}
           className="mt-3 px-4 py-2 bg-red-600 text-white rounded"
         >
@@ -85,60 +86,60 @@ function VaultErrorDisplay({ error }: { error: VaultErrorState }) {
 
 ```typescript
 function parseVaultError(error: any): VaultErrorState {
-  // Insufficient SCC balance
-  if (error.message?.includes('burn amount exceeds balance')) {
+    // Insufficient SCC balance
+    if (error.message?.includes("burn amount exceeds balance")) {
+        return {
+            type: "insufficient-funds",
+            message: "Insufficient SCC Balance",
+            details: "You need 20 SCC to withdraw this NFT. You can get SCC by depositing other NFTs.",
+            action: {
+                label: "View Other NFTs",
+                handler: () => router.push("/mytokens"),
+            },
+        };
+    }
+
+    // Not approved
+    if (error.message?.includes("ERC20: insufficient allowance")) {
+        return {
+            type: "approval",
+            message: "Approval Required",
+            details: "Please approve the vault to spend your SCC tokens.",
+            action: {
+                label: "Approve SCC",
+                handler: async () => await approveSCC(),
+            },
+        };
+    }
+
+    // Contract paused
+    if (error.message?.includes("Pausable: paused")) {
+        return {
+            type: "contract",
+            message: "Vault Temporarily Unavailable",
+            details: "The vault is currently paused for maintenance. Please try again later.",
+        };
+    }
+
+    // Network issues
+    if (error.code === "NETWORK_ERROR" || error.message?.includes("timeout")) {
+        return {
+            type: "network",
+            message: "Network Connection Issue",
+            details: "Please check your connection and try again.",
+            action: {
+                label: "Retry",
+                handler: () => window.location.reload(),
+            },
+        };
+    }
+
+    // Default
     return {
-      type: 'insufficient-funds',
-      message: 'Insufficient SCC Balance',
-      details: 'You need 20 SCC to withdraw this NFT. You can get SCC by depositing other NFTs.',
-      action: {
-        label: 'View Other NFTs',
-        handler: () => router.push('/mytokens')
-      }
+        type: "unknown",
+        message: "Transaction Failed",
+        details: error.message || "An unexpected error occurred. Please try again.",
     };
-  }
-  
-  // Not approved
-  if (error.message?.includes('ERC20: insufficient allowance')) {
-    return {
-      type: 'approval',
-      message: 'Approval Required',
-      details: 'Please approve the vault to spend your SCC tokens.',
-      action: {
-        label: 'Approve SCC',
-        handler: async () => await approveSCC()
-      }
-    };
-  }
-  
-  // Contract paused
-  if (error.message?.includes('Pausable: paused')) {
-    return {
-      type: 'contract',
-      message: 'Vault Temporarily Unavailable',
-      details: 'The vault is currently paused for maintenance. Please try again later.'
-    };
-  }
-  
-  // Network issues
-  if (error.code === 'NETWORK_ERROR' || error.message?.includes('timeout')) {
-    return {
-      type: 'network',
-      message: 'Network Connection Issue',
-      details: 'Please check your connection and try again.',
-      action: {
-        label: 'Retry',
-        handler: () => window.location.reload()
-      }
-    };
-  }
-  
-  // Default
-  return {
-    type: 'unknown',
-    message: 'Transaction Failed',
-    details: error.message || 'An unexpected error occurred. Please try again.'
-  };
 }
 ```
 
@@ -163,24 +164,24 @@ interface VaultLoadingState {
 
 ```typescript
 enum TxStatus {
-  IDLE = 'idle',
-  SIGNING = 'signing',
-  PENDING = 'pending',
-  CONFIRMING = 'confirming', 
-  SUCCESS = 'success',
-  ERROR = 'error'
+    IDLE = "idle",
+    SIGNING = "signing",
+    PENDING = "pending",
+    CONFIRMING = "confirming",
+    SUCCESS = "success",
+    ERROR = "error",
 }
 
 function useTransactionStatus() {
-  const [status, setStatus] = useState<TxStatus>(TxStatus.IDLE);
-  const [txHash, setTxHash] = useState<string>();
-  
-  return {
-    status,
-    txHash,
-    explorerUrl: txHash ? `${EXPLORER_URL}/tx/${txHash}` : undefined,
-    isProcessing: [TxStatus.SIGNING, TxStatus.PENDING, TxStatus.CONFIRMING].includes(status)
-  };
+    const [status, setStatus] = useState<TxStatus>(TxStatus.IDLE);
+    const [txHash, setTxHash] = useState<string>();
+
+    return {
+        status,
+        txHash,
+        explorerUrl: txHash ? `${EXPLORER_URL}/tx/${txHash}` : undefined,
+        isProcessing: [TxStatus.SIGNING, TxStatus.PENDING, TxStatus.CONFIRMING].includes(status),
+    };
 }
 ```
 

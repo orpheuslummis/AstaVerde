@@ -4,12 +4,14 @@
 **Type**: Enhancement  
 **Status**: Open  
 **Component**: AstaVerde.sol  
-**Security Impact**: Low - Improves transparency and auditability  
+**Security Impact**: Low - Improves transparency and auditability
 
 ## Summary
+
 The `setTrustedVault` function doesn't emit an event when the trusted vault address is changed. Adding an event would improve transparency and allow off-chain monitoring of this critical configuration change.
 
 ## Current Issue
+
 ```solidity
 function setTrustedVault(address _vault) external onlyOwner {
     require(_vault != address(0), "Invalid vault address");
@@ -19,6 +21,7 @@ function setTrustedVault(address _vault) external onlyOwner {
 ```
 
 ## Proposed Solution
+
 Add an event and emit it when the trusted vault is set or changed.
 
 ### Implementation
@@ -27,7 +30,7 @@ Add an event and emit it when the trusted vault is set or changed.
 contract AstaVerde {
     // Add new event
     event TrustedVaultSet(address indexed previousVault, address indexed newVault);
-    
+
     // Update function
     function setTrustedVault(address _vault) external onlyOwner {
         require(_vault != address(0), "Invalid vault address");
@@ -39,9 +42,10 @@ contract AstaVerde {
 ```
 
 ### Alternative: Include timestamp
+
 ```solidity
 event TrustedVaultSet(
-    address indexed previousVault, 
+    address indexed previousVault,
     address indexed newVault,
     uint256 timestamp
 );
@@ -50,6 +54,7 @@ emit TrustedVaultSet(previousVault, _vault, block.timestamp);
 ```
 
 ## Benefits
+
 - Provides audit trail for vault changes
 - Enables off-chain monitoring and alerts
 - Improves protocol transparency
@@ -57,12 +62,14 @@ emit TrustedVaultSet(previousVault, _vault, block.timestamp);
 - Standard best practice for configuration changes
 
 ## Testing Requirements
+
 - [ ] Test event emission on vault set
 - [ ] Test event emission on vault change
 - [ ] Verify event parameters are correct
 - [ ] Test integration with monitoring tools
 
 ## Acceptance Criteria
+
 - [ ] Event defined with proper indexing
 - [ ] Event emitted in setTrustedVault
 - [ ] Previous and new vault addresses included

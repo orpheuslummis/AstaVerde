@@ -7,14 +7,16 @@
 ## Status Overview
 
 ### ✅ FIXED (6 tickets)
+
 - `001-fixed-astaverde-refund-siphon.md` - Refund siphon vulnerability fixed
-- `002-fixed-astaverde-redeemed-resale.md` - Redeemed NFT check added  
+- `002-fixed-astaverde-redeemed-resale.md` - Redeemed NFT check added
 - `003-fixed-astaverde-vault-pause.md` - trustedVault mechanism implemented
 - `004-fixed-astaverde-price-dos.md` - DoS via loop fixed with MAX_PRICE_UPDATE_ITERATIONS
 - `005-fixed-astaverde-event-order.md` - Events now emitted after transfers
 - `006-fixed-astaverde-price-underflow.md` - Underflow prevention added
 
 ### 📝 OPEN (9 tickets requiring action)
+
 - `fix-astaverde-batch-index-consistency.md` - 1-based/0-based indexing pattern still exists
 - `fix-astaverde-ghost-token-redemption.md` - Needs verification
 - `fix-astaverde-partial-batch-ordering.md` - Needs verification
@@ -26,26 +28,32 @@
 - `fix-scc-role-governance-hardening.md` - Needs verification
 
 ### 🔧 ENHANCEMENTS (4 tickets)
+
 - `enhance-astaverde-producer-payout-rounding.md`
 - `enhance-astaverde-safeerc20.md`
 - `enhance-ecostabilizer-emit-maxScanRange-change-event.md`
 - `enhance-ecostabilizer-view-scan-dos-hardening.md`
 
 ### 📚 DOCUMENTATION (2 tickets)
+
 - `doc-astaverde-tokeninfo-owner-non-authoritative.md`
 - `docs-astaverde-usdc-6-decimals-check.md`
 
 ### 🧹 CLEANUP (1 ticket)
+
 - `cleanup-astaverde-onlyTokenOwner-modifier.md`
 
 ### 🎯 FEATURE (1 ticket)
+
 - `feature-scc-add-eip2612-permit.md`
 
 ### 🧪 TESTING (2 tickets)
+
 - `e2e-wallet-testing-status.md`
 - `tests-astaverde-security-regressions.md`
 
 ### 🛡️ GUARDS (1 ticket)
+
 - `guard-astaverde-maxBatchSize-upper-bound.md`
 
 ## Recommendations

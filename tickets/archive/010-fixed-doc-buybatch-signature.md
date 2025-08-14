@@ -15,6 +15,7 @@ function buyBatch(uint256 batchID, uint256 usdcAmount, uint256 tokenAmount) exte
 ```
 
 The function:
+
 1. Pulls the full `usdcAmount` from the buyer
 2. Calculates actual cost based on current Dutch auction price
 3. Refunds any excess USDC to the buyer
