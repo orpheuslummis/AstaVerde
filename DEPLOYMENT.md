@@ -356,4 +356,91 @@ npx hardhat run scripts/test-interaction.js --network base-mainnet
 
 ---
 
+## 📋 Production Deployment Checklist
+
+### Pre-Deployment Validation
+
+- [ ] **Tests**: All 173 tests passing
+- [ ] **Coverage**: Run `npm run coverage` and verify >90%
+- [ ] **Gas targets**: Deposit <165k, Withdraw <120k verified
+- [ ] **Webapp build**: `cd webapp && npm run build` succeeds
+- [ ] **Lint checks**: `npm run lint` shows no errors
+- [ ] **Audit**: Security audit completed (if applicable)
+
+### Deployment Environment
+
+- [ ] **Deployer wallet**: Has at least 0.01 ETH for gas
+- [ ] **Hardware wallet**: Consider using for production deployment
+- [ ] **Environment variables**: All required vars set in `.env`
+- [ ] **Network selection**: Confirmed targeting Base mainnet (chainId: 8453)
+- [ ] **AstaVerde address**: Verified correct Phase 1 contract address
+
+### Post-Deployment Verification
+
+#### Contract Verification
+- [ ] **SCC deployed**: Address saved and verified on BaseScan
+- [ ] **EcoStabilizer deployed**: Address saved and verified on BaseScan
+- [ ] **Role configuration**: Vault has exclusive MINTER_ROLE on SCC
+- [ ] **Admin roles**: Deployer admin roles properly renounced
+- [ ] **Pause test**: Pause functionality tested then unpaused
+
+#### Integration Testing
+- [ ] **Small deposit**: Test with minimal amount (e.g., 1 NFT)
+- [ ] **SCC minting**: Verify 20 SCC minted per deposit
+- [ ] **Withdraw flow**: Complete withdrawal successfully
+- [ ] **Gas costs**: Actual costs match expectations
+- [ ] **Redeemed check**: Verify redeemed NFTs cannot be deposited
+
+#### Webapp Configuration
+- [ ] **Update addresses**: Add deployed addresses to `webapp/.env.local`
+- [ ] **Rebuild webapp**: `cd webapp && npm run build`
+- [ ] **Deploy webapp**: Update production webapp deployment
+- [ ] **Test connection**: Verify webapp connects to new contracts
+
+### Security Checklist
+
+- [ ] **Access control**: No unauthorized MINTER_ROLE holders
+- [ ] **Reentrancy**: Protection confirmed active
+- [ ] **Supply cap**: MAX_SUPPLY enforcement verified
+- [ ] **Emergency functions**: adminSweepNFT tested
+- [ ] **Event monitoring**: Deposit/Withdraw events tracked
+
+### Documentation Updates
+
+- [ ] **README.md**: Update with mainnet addresses
+- [ ] **Contract addresses**: Document all deployed addresses
+- [ ] **Transaction hashes**: Save deployment tx hashes
+- [ ] **Gas costs**: Document actual mainnet gas usage
+- [ ] **User guide**: Create/update vault operation guide
+
+### Liquidity & Market Setup (External)
+
+- [ ] **DEX pool**: SCC/USDC pool deployed on Uniswap/Aerodrome
+- [ ] **Initial liquidity**: $10-20k minimum seeded
+- [ ] **Price monitoring**: Tracking tools configured
+- [ ] **Arbitrage**: Bots configured if needed
+
+### Final Verification
+
+- [ ] **End-to-end test**: Complete user flow on mainnet
+- [ ] **Mobile wallets**: Test with MetaMask Mobile, Coinbase Wallet
+- [ ] **Error handling**: Verify user-friendly error messages
+- [ ] **Loading states**: Confirm proper UI feedback
+- [ ] **Multi-browser**: Test on Chrome, Firefox, Safari
+
+### Emergency Preparedness
+
+- [ ] **Pause capability**: Ensure pause function accessible
+- [ ] **Contact list**: Technical support contacts documented
+- [ ] **Rollback plan**: Document contingency procedures
+- [ ] **Monitoring alerts**: Configure for critical events
+
+---
+
 **⚠️ Security Reminder**: Always verify contract addresses and test thoroughly on Sepolia before mainnet deployment. The EcoStabilizer system is immutable once deployed.
+
+**💡 Pro Tips**:
+- Use hardware wallet for deployment
+- Save all deployment artifacts securely
+- Consider time-delayed announcement
+- Have support team ready for launch

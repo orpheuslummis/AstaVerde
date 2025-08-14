@@ -9,6 +9,14 @@ Carbon offset NFT marketplace with Dutch auction pricing and collateralized lend
 - **Deployment**: Ready for Base mainnet
 - **Gas Efficiency**: Deposit <150k, Withdraw <120k
 
+## 📚 Documentation
+
+- **[Development Guide](./DEV_GUIDE.md)** - Setup, structure, and workflow
+- **[Testing Guide](./TESTING.md)** - Comprehensive testing documentation
+- **[Deployment Guide](./DEPLOYMENT.md)** - Production deployment and checklist
+- **[SSC Plan](./SSC_PLAN.md)** - Phase 2 technical specification
+- **[Claude Instructions](./CLAUDE.md)** - AI assistant configuration
+
 ## Architecture
 
 ### Phase 1: Dutch Auction Marketplace (Live)
