@@ -75,7 +75,7 @@ async function main() {
         const astaVerde = await AstaVerde.deploy(deployer.address, await usdc.getAddress());
         await astaVerde.waitForDeployment();
 
-        const scc = await SCC.deploy();
+        const scc = await SCC.deploy(ethers.ZeroAddress); // Deploy without vault initially
         await scc.waitForDeployment();
 
         const vault = await EcoStabilizer.deploy(await astaVerde.getAddress(), await scc.getAddress());
