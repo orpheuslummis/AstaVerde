@@ -171,7 +171,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     }
 
     /*────────────────────  PAGINATED VIEW FUNCTIONS  ──────────────*/
-    
+
     /// @notice Get user's active loans with pagination support
     /// @param user The user address to check
     /// @param startId The token ID to start scanning from (inclusive)
@@ -185,17 +185,17 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     ) external view returns (uint256[] memory tokenIds, uint256 nextStartId) {
         require(startId > 0, "startId must be > 0");
         require(limit > 0 && limit <= MAX_PAGE_SIZE, "invalid limit");
-        
+
         uint256 maxTokenId = ecoAsset.lastTokenID();
         if (startId > maxTokenId) {
             return (new uint256[](0), 0);
         }
-        
+
         uint256 endId = startId + limit - 1;
         if (endId > maxTokenId) {
             endId = maxTokenId;
         }
-        
+
         // First pass: count matching loans
         uint256 count = 0;
         for (uint256 i = startId; i <= endId; i++) {
@@ -203,7 +203,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
                 count++;
             }
         }
-        
+
         // Second pass: collect matching loans
         tokenIds = new uint256[](count);
         uint256 index = 0;
@@ -213,11 +213,11 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
                 index++;
             }
         }
-        
+
         // Set next start position
         nextStartId = endId < maxTokenId ? endId + 1 : 0;
     }
-    
+
     /// @notice Get total active loans count with pagination
     /// @param startId The token ID to start scanning from (inclusive)
     /// @param limit Maximum number of tokens to scan (capped at MAX_PAGE_SIZE)
@@ -229,28 +229,28 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     ) external view returns (uint256 count, uint256 nextStartId) {
         require(startId > 0, "startId must be > 0");
         require(limit > 0 && limit <= MAX_PAGE_SIZE, "invalid limit");
-        
+
         uint256 maxTokenId = ecoAsset.lastTokenID();
         if (startId > maxTokenId) {
             return (0, 0);
         }
-        
+
         uint256 endId = startId + limit - 1;
         if (endId > maxTokenId) {
             endId = maxTokenId;
         }
-        
+
         // Count active loans in range
         for (uint256 i = startId; i <= endId; i++) {
             if (loans[i].active) {
                 count++;
             }
         }
-        
+
         // Set next start position
         nextStartId = endId < maxTokenId ? endId + 1 : 0;
     }
-    
+
     /// @notice Get user's loan count with pagination
     /// @param user The user address to check
     /// @param startId The token ID to start scanning from (inclusive)
@@ -264,24 +264,24 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     ) external view returns (uint256 count, uint256 nextStartId) {
         require(startId > 0, "startId must be > 0");
         require(limit > 0 && limit <= MAX_PAGE_SIZE, "invalid limit");
-        
+
         uint256 maxTokenId = ecoAsset.lastTokenID();
         if (startId > maxTokenId) {
             return (0, 0);
         }
-        
+
         uint256 endId = startId + limit - 1;
         if (endId > maxTokenId) {
             endId = maxTokenId;
         }
-        
+
         // Count user's active loans in range
         for (uint256 i = startId; i <= endId; i++) {
             if (loans[i].active && loans[i].borrower == user) {
                 count++;
             }
         }
-        
+
         // Set next start position
         nextStartId = endId < maxTokenId ? endId + 1 : 0;
     }

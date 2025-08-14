@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    
+
     IERC20 public immutable usdcToken;
     uint256 constant INTERNAL_PRECISION = 1e18;
     uint256 constant USDC_PRECISION = 1e6;
@@ -43,7 +43,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         bool redeemed;
     }
 
-    /** 
+    /**
      * @notice Batch storage with 1-based external IDs
      * @dev INDEXING STRATEGY:
      * - External batch IDs are 1-based (batchId starts at 1)
@@ -88,7 +88,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     event DailyPriceDecaySet(uint256 newDailyDecay);
     event ProducerPayment(address indexed producer, uint256 amount);
     event PriceUpdateIterationLimitReached(uint256 batchesProcessed, uint256 totalBatches);
-
 
     constructor(address owner, IERC20 _usdcToken) ERC1155("ipfs://") Ownable(owner) {
         usdcToken = _usdcToken;
@@ -139,10 +138,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         // Allow transfers to/from trusted vault even when paused
         if (paused() && trustedVault != address(0)) {
             // If paused, only allow transfers involving the trusted vault
-            require(
-                from == trustedVault || to == trustedVault,
-                "Pausable: paused"
-            );
+            require(from == trustedVault || to == trustedVault, "Pausable: paused");
             // Call parent ERC1155 directly, bypassing Pausable check
             ERC1155._update(from, to, ids, values);
         } else {
@@ -150,7 +146,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             super._update(from, to, ids, values);
         }
     }
-
 
     function setPlatformSharePercentage(uint256 newSharePercentage) external onlyOwner {
         require(newSharePercentage <= 50, "Platform share cannot exceed 50%");
@@ -239,12 +234,12 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
         uint256 daysSinceCreation = (block.timestamp - batch.creationTime) / SECONDS_IN_A_DAY;
         uint256 priceDecrement = daysSinceCreation * dailyPriceDecay;
-        
+
         // Prevent underflow: if decrement exceeds starting price, return floor
         if (priceDecrement >= batch.startingPrice) {
             return priceFloor;
         }
-        
+
         uint256 decayedPrice = batch.startingPrice - priceDecrement;
         return decayedPrice > priceFloor ? decayedPrice : priceFloor;
     }
@@ -393,7 +388,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
                 ++i;
             }
         }
-        
+
         // Add remainder to first producer for deterministic distribution
         if (remainder > 0 && uniqueCount > 0) {
             tempAmounts[0] += remainder;
@@ -517,12 +512,12 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
                     emit PriceUpdateIterationLimitReached(iterations, batches.length);
                     break;
                 }
-                
+
                 Batch storage batch = batches[i - 1];
-                
+
                 // Early exit if batch is before the window
                 if (batch.creationTime < windowStart) break;
-                
+
                 if (
                     batch.creationTime <= thresholdStartTime &&
                     batch.remainingTokens == batch.tokenIds.length &&
@@ -531,7 +526,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
                     unsoldBatchCount++;
                     batchUsedInPriceDecrease[batch.batchId] = true;
                 }
-                
+
                 iterations++;
             }
 

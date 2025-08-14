@@ -37,10 +37,11 @@ function mintBatch(
 ) external onlyOwner
 
 // Purchase tokens at current auction price
+// Note: Pulls full usdcAmount, then refunds any excess
 function buyBatch(
     uint256 batchID,
-    uint256 maxPrice,
-    uint256 amount
+    uint256 usdcAmount,  // Total USDC to pull (must be >= actual cost)
+    uint256 tokenAmount  // Number of tokens to purchase
 ) external
 
 // Retire NFT permanently
