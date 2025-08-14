@@ -4,6 +4,7 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { getEcoStabilizerContractConfig, getSccContractConfig, astaverdeContractConfig } from "../lib/contracts";
 import { customToast } from "../utils/customToast";
 import { ECOSTABILIZER_CONTRACT_ADDRESS, SCC_CONTRACT_ADDRESS } from "../app.config";
+import { parseVaultError, TxStatus, VaultErrorState, getTransactionStatusMessage } from "../utils/errors";
 
 export interface VaultLoan {
     tokenId: bigint;
@@ -33,6 +34,10 @@ export interface VaultHook {
     isVaultAvailable: boolean;
     isLoading: boolean;
     error: string | null;
+    vaultError: VaultErrorState | null;
+    txStatus: TxStatus;
+    txHash?: string;
+    clearError: () => void;
 }
 
 const SCC_PER_ASSET = parseEther("20");
@@ -41,6 +46,8 @@ export function useVault(): VaultHook {
     const { address } = useAccount();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [vaultError, setVaultError] = useState<VaultErrorState | null>(null);
+    const [txStatus, setTxStatus] = useState<TxStatus>(TxStatus.IDLE);
 
     const { writeContract, data: hash, isPending: isTransactionPending } = useWriteContract();
     const {
@@ -118,19 +125,42 @@ export function useVault(): VaultHook {
         }
     }, [isVaultAvailable, address, refetchSccBalance, refetchSccAllowance, refetchUserLoans, refetchNftApproval]);
 
+    // Clear error state
+    const clearError = useCallback(() => {
+        setError(null);
+        setVaultError(null);
+        setTxStatus(TxStatus.IDLE);
+    }, []);
+
+    // Handle transaction status changes
+    useEffect(() => {
+        if (isTransactionPending) {
+            setTxStatus(TxStatus.SIGNING);
+        } else if (isConfirming) {
+            setTxStatus(TxStatus.CONFIRMING);
+        }
+    }, [isTransactionPending, isConfirming]);
+
     // Handle transaction success/error states
     useEffect(() => {
         if (isConfirmed && hash) {
+            setTxStatus(TxStatus.SUCCESS);
             customToast.success("Transaction confirmed successfully!");
             setIsLoading(false);
             setError(null);
+            setVaultError(null);
             // Refresh all data after successful transaction
             refreshContractData();
+            // Reset status after delay
+            setTimeout(() => setTxStatus(TxStatus.IDLE), 3000);
         }
         if (txError && hash) {
+            setTxStatus(TxStatus.ERROR);
             const errorMessage = txError?.message || "Transaction failed";
             setError(errorMessage);
-            customToast.error(errorMessage);
+            const parsedError = parseVaultError(txError);
+            setVaultError(parsedError);
+            customToast.error(parsedError.message);
             setIsLoading(false);
         }
     }, [isConfirmed, txError, hash, refreshContractData]);
@@ -145,10 +175,13 @@ export function useVault(): VaultHook {
             try {
                 setIsLoading(true);
                 setError(null);
+                setVaultError(null);
+                setTxStatus(TxStatus.IDLE);
 
                 const vaultConfig = getVaultConfig();
 
                 customToast.info("Depositing NFT to vault...");
+                setTxStatus(TxStatus.SIGNING);
 
                 writeContract({
                     ...vaultConfig,
@@ -158,9 +191,15 @@ export function useVault(): VaultHook {
 
                 // Success toast will be shown in useEffect when transaction is confirmed
             } catch (err: any) {
-                const errorMessage = err?.message || "Failed to deposit NFT";
-                setError(errorMessage);
-                customToast.error(errorMessage);
+                const parsedError = parseVaultError(err, {
+                    operation: 'deposit',
+                    approveNFT: async () => approveNFT(),
+                    retry: () => deposit(tokenId),
+                });
+                setError(err?.message || "Failed to deposit NFT");
+                setVaultError(parsedError);
+                setTxStatus(TxStatus.ERROR);
+                customToast.error(parsedError.message);
                 setIsLoading(false);
                 throw err;
             }
@@ -177,10 +216,13 @@ export function useVault(): VaultHook {
             try {
                 setIsLoading(true);
                 setError(null);
+                setVaultError(null);
+                setTxStatus(TxStatus.IDLE);
 
                 const vaultConfig = getVaultConfig();
 
                 customToast.info("Withdrawing NFT from vault...");
+                setTxStatus(TxStatus.SIGNING);
 
                 writeContract({
                     ...vaultConfig,
@@ -190,9 +232,15 @@ export function useVault(): VaultHook {
 
                 // Success toast will be shown in useEffect when transaction is confirmed
             } catch (err: any) {
-                const errorMessage = err?.message || "Failed to withdraw NFT";
-                setError(errorMessage);
-                customToast.error(errorMessage);
+                const parsedError = parseVaultError(err, {
+                    operation: 'withdraw',
+                    approveSCC: async () => approveSCC(SCC_PER_ASSET),
+                    retry: () => withdraw(tokenId),
+                });
+                setError(err?.message || "Failed to withdraw NFT");
+                setVaultError(parsedError);
+                setTxStatus(TxStatus.ERROR);
+                customToast.error(parsedError.message);
                 setIsLoading(false);
                 throw err;
             }
@@ -209,10 +257,13 @@ export function useVault(): VaultHook {
             try {
                 setIsLoading(true);
                 setError(null);
+                setVaultError(null);
+                setTxStatus(TxStatus.IDLE);
 
                 const vaultConfig = getVaultConfig();
 
                 customToast.info("Repaying loan and withdrawing NFT...");
+                setTxStatus(TxStatus.SIGNING);
 
                 writeContract({
                     ...vaultConfig,
@@ -222,9 +273,15 @@ export function useVault(): VaultHook {
 
                 // Success toast will be shown in useEffect when transaction is confirmed
             } catch (err: any) {
-                const errorMessage = err?.message || "Failed to repay and withdraw NFT";
-                setError(errorMessage);
-                customToast.error(errorMessage);
+                const parsedError = parseVaultError(err, {
+                    operation: 'withdraw',
+                    approveSCC: async () => approveSCC(SCC_PER_ASSET),
+                    retry: () => repayAndWithdraw(tokenId),
+                });
+                setError(err?.message || "Failed to repay and withdraw NFT");
+                setVaultError(parsedError);
+                setTxStatus(TxStatus.ERROR);
+                customToast.error(parsedError.message);
                 setIsLoading(false);
                 throw err;
             }
@@ -354,6 +411,10 @@ export function useVault(): VaultHook {
         isVaultAvailable,
         isLoading: isLoading || isTransactionPending || isConfirming,
         error,
+        vaultError,
+        txStatus,
+        txHash: hash,
+        clearError,
     };
 }
 

@@ -7,6 +7,8 @@ import { ECOSTABILIZER_CONTRACT_ADDRESS, SCC_CONTRACT_ADDRESS } from "../app.con
 import { useVault } from "../hooks/useVault";
 import { getEcoStabilizerContractConfig } from "../lib/contracts";
 import { customToast } from "../utils/customToast";
+import { VaultErrorDisplay, CompactErrorDisplay } from "./VaultErrorDisplay";
+import { TxStatus, getTransactionStatusMessage } from "../utils/errors";
 
 interface VaultCardProps {
   tokenId: bigint;
@@ -28,7 +30,10 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     getIsNftApproved,
     isVaultAvailable,
     isLoading: vaultLoading,
-    error: vaultError
+    vaultError,
+    txStatus,
+    txHash,
+    clearError
   } = useVault();
 
   const [isDepositLoading, setIsDepositLoading] = useState(false);
@@ -116,6 +121,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       return;
     }
     
+    clearError();
     setIsDepositLoading(true);
     try {
       if (!isNftApproved) {
@@ -124,9 +130,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         setIsNftApproved(true);
       }
       
-      customToast.info("Depositing NFT to vault...");
       await deposit(tokenId);
-      customToast.success("NFT deposited successfully! You received 20 SCC.");
       
       if (address) {
         const newBalance = await getSccBalance(address);
@@ -138,11 +142,11 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       }
     } catch (error: any) {
       console.error("Deposit error:", error);
-      customToast.error(error?.message || "Failed to deposit NFT");
+      // Error handling is now done in the hook
     } finally {
       setIsDepositLoading(false);
     }
-  }, [tokenId, isRedeemed, isNftApproved, approveNFT, deposit, address, getSccBalance, onActionComplete]);
+  }, [tokenId, isRedeemed, isNftApproved, approveNFT, deposit, address, getSccBalance, onActionComplete, clearError]);
 
   const handleWithdraw = useCallback(async () => {
     if (!tokenId || !isInVault || !isCurrentUserBorrower) {
@@ -150,6 +154,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       return;
     }
     
+    clearError();
     setIsWithdrawLoading(true);
     try {
       const requiredScc = parseEther("20");
@@ -166,9 +171,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         setSccAllowance(requiredScc);
       }
       
-      customToast.info("Repaying loan and withdrawing NFT...");
       await repayAndWithdraw(tokenId);
-      customToast.success("NFT withdrawn successfully!");
       
       if (address) {
         const newBalance = await getSccBalance(address);
@@ -180,12 +183,12 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       }
     } catch (error: any) {
       console.error("Withdraw error:", error);
-      customToast.error(error?.message || "Failed to withdraw NFT");
+      // Error handling is now done in the hook
     } finally {
       setIsWithdrawLoading(false);
     }
   }, [tokenId, isInVault, isCurrentUserBorrower, sccBalance, isApproved, sccAllowance, 
-      approveSCC, repayAndWithdraw, address, getSccBalance, onActionComplete]);
+      approveSCC, repayAndWithdraw, address, getSccBalance, onActionComplete, clearError]);
 
   if (!isVaultAvailable) {
     return null;
@@ -197,12 +200,20 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     );
   }
 
-  if (vaultError) {
-    return null;
-  }
+  // Show transaction status
+  const showTxStatus = txStatus !== TxStatus.IDLE && txStatus !== TxStatus.ERROR;
+  const txStatusMessage = getTransactionStatusMessage(txStatus);
 
   // Compact mode for list view
   if (isCompact) {
+    if (vaultError) {
+      return <CompactErrorDisplay error={vaultError} />;
+    }
+
+    if (showTxStatus) {
+      return <span className="text-xs text-blue-600">{txStatusMessage}</span>;
+    }
+
     if (isRedeemed) {
       return <span className="text-xs text-gray-500">Redeemed</span>;
     }
@@ -215,11 +226,11 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       return (
         <button
           onClick={handleWithdraw}
-          disabled={isWithdrawLoading || sccBalance < parseEther("20")}
+          disabled={isWithdrawLoading || vaultLoading || sccBalance < parseEther("20")}
           className="px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 
                    text-white text-xs rounded-md transition-colors"
         >
-          {isWithdrawLoading ? "..." : sccBalance < parseEther("20") ? "Need 20 SCC" : "Withdraw"}
+          {isWithdrawLoading || vaultLoading ? "..." : sccBalance < parseEther("20") ? "Need 20 SCC" : "Withdraw"}
         </button>
       );
     }
@@ -227,11 +238,11 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     return (
       <button
         onClick={handleDeposit}
-        disabled={isDepositLoading}
+        disabled={isDepositLoading || vaultLoading}
         className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 
                  text-white text-xs rounded-md transition-colors"
       >
-        {isDepositLoading ? "..." : "Deposit"}
+        {isDepositLoading || vaultLoading ? "..." : "Deposit"}
       </button>
     );
   }
@@ -250,6 +261,33 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
           </span>
         )}
       </div>
+
+      {/* Error Display */}
+      {vaultError && (
+        <VaultErrorDisplay 
+          error={vaultError} 
+          onDismiss={() => clearError()}
+        />
+      )}
+
+      {/* Transaction Status */}
+      {showTxStatus && (
+        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            {txStatusMessage}
+          </p>
+          {txHash && txStatus === TxStatus.CONFIRMING && (
+            <a
+              href={`https://basescan.org/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block"
+            >
+              View on Explorer →
+            </a>
+          )}
+        </div>
+      )}
 
       {isRedeemed ? (
         <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded">
@@ -272,12 +310,12 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
             <button
               data-testid="withdraw-button"
               onClick={handleWithdraw}
-              disabled={isWithdrawLoading || sccBalance < parseEther("20")}
+              disabled={isWithdrawLoading || vaultLoading || showTxStatus || sccBalance < parseEther("20")}
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg 
                        hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed
                        transition-colors duration-200"
             >
-              {isWithdrawLoading ? "Processing..." : 
+              {isWithdrawLoading || vaultLoading || showTxStatus ? "Processing..." : 
                sccBalance < parseEther("20") ? "Insufficient SCC" : 
                "Repay 20 SCC & Withdraw"}
             </button>
@@ -300,12 +338,12 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
           <button
             data-testid="deposit-button"
             onClick={handleDeposit}
-            disabled={isDepositLoading}
+            disabled={isDepositLoading || vaultLoading || showTxStatus}
             className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg 
                      hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed
                      transition-colors duration-200"
           >
-            {isDepositLoading ? "Processing..." : "Deposit to Vault"}
+            {isDepositLoading || vaultLoading || showTxStatus ? "Processing..." : "Deposit to Vault"}
           </button>
         </div>
       )}
