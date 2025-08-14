@@ -399,43 +399,65 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                         chainId: walletClient.chain?.id,
                     });
 
-                    const approveTx = await walletClient.writeContract({
-                        ...getUsdcContractConfig(),
-                        functionName: "approve",
-                        args: [astaverdeContractConfig.address as `0x${string}`, approvalAmount],
-                        account: walletClient.account,
-                        chain: walletClient.chain,
-                    });
-                    customToast.info("Approval transaction submitted");
-                    await publicClient.waitForTransactionReceipt({
-                        hash: approveTx,
-                    });
-                    customToast.success("Approval confirmed");
-                    await refetchAllowance();
+                    try {
+                        const approveTx = await walletClient.writeContract({
+                            ...getUsdcContractConfig(),
+                            functionName: "approve",
+                            args: [astaverdeContractConfig.address as `0x${string}`, approvalAmount],
+                            account: walletClient.account,
+                            chain: walletClient.chain,
+                            gas: 100000n, // Use fixed gas limit for local network
+                        });
+                        customToast.info("Approval transaction submitted");
+                        await publicClient.waitForTransactionReceipt({
+                            hash: approveTx,
+                        });
+                        customToast.success("Approval confirmed");
+                        await refetchAllowance();
+                    } catch (approveError: any) {
+                        console.error("Approval transaction failed:", approveError);
+                        // Try without gas limit as fallback
+                        const approveTx = await walletClient.writeContract({
+                            ...getUsdcContractConfig(),
+                            functionName: "approve",
+                            args: [astaverdeContractConfig.address as `0x${string}`, approvalAmount],
+                            account: walletClient.account,
+                            chain: walletClient.chain,
+                        });
+                        customToast.info("Approval transaction submitted (retry)");
+                        await publicClient.waitForTransactionReceipt({
+                            hash: approveTx,
+                        });
+                        customToast.success("Approval confirmed");
+                        await refetchAllowance();
+                    }
                 }
 
                 // Prepare the arguments for the buyBatch function
                 const buyBatchArgs = [batchId, exactTotalCost, tokenAmount];
 
-                // Estimate gas for the buy transaction
-                const gasEstimate = await publicClient.estimateContractGas({
-                    ...astaverdeContractConfig,
-                    functionName: "buyBatch",
-                    args: buyBatchArgs,
-                    account: walletClient.account.address,
-                });
-
-                // Add a buffer to the estimated gas (e.g., 20% more)
-                const estimatedGas = (gasEstimate * 120n) / 100n;
-
-                console.log("Estimated gas:", formatUnits(estimatedGas, 0));
+                // Skip gas estimation for local network, use a fixed high gas limit
+                let gasLimit: bigint;
+                try {
+                    const gasEstimate = await publicClient.estimateContractGas({
+                        ...astaverdeContractConfig,
+                        functionName: "buyBatch",
+                        args: buyBatchArgs,
+                        account: walletClient.account,
+                    });
+                    gasLimit = (gasEstimate * 150n) / 100n;
+                    console.log("Estimated gas:", formatUnits(gasLimit, 0));
+                } catch (gasError) {
+                    console.warn("Gas estimation failed, using default:", gasError);
+                    gasLimit = 500000n; // Use a safe default for local network
+                }
 
                 const { request } = await publicClient.simulateContract({
                     ...astaverdeContractConfig,
                     functionName: "buyBatch",
                     args: buyBatchArgs,
-                    account: walletClient.account.address,
-                    gas: (estimatedGas * 150n) / 100n,
+                    account: walletClient.account,
+                    gas: gasLimit,
                 });
 
                 const buyTx = await walletClient.writeContract(request);
@@ -490,16 +512,25 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                         }
                     }
                 }
-            } catch (error) {
-                console.error("Error in approve and buy process:", error);
-                if (error instanceof Error) {
-                    if (error.message.includes("Insufficient funds sent")) {
-                        customToast.error("Insufficient USDC balance for this purchase.");
-                    } else {
-                        customToast.error("Transaction failed: " + error.message);
-                    }
+            } catch (error: any) {
+                // Don't log user rejections to console - it's normal behavior
+                if (
+                    error?.cause?.name === "UserRejectedRequestError" ||
+                    error?.message?.includes("User rejected") ||
+                    error?.message?.includes("User denied")
+                ) {
+                    customToast.info("Transaction cancelled");
                 } else {
-                    customToast.error("An unknown error occurred during the transaction.");
+                    console.error("Error in approve and buy process:", error);
+                    if (error instanceof Error) {
+                        if (error.message.includes("Insufficient funds sent")) {
+                            customToast.error("Insufficient USDC balance for this purchase.");
+                        } else {
+                            customToast.error("Transaction failed: " + error.message);
+                        }
+                    } else {
+                        customToast.error("An unknown error occurred during the transaction.");
+                    }
                 }
             } finally {
                 setIsLoading(false);

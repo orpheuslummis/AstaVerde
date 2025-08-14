@@ -47,6 +47,7 @@ export default function MyTokensPage() {
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<TabType>('all');
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+    const [batchData, setBatchData] = useState<Map<bigint, any>>(new Map());
     
     const { astaverdeContractConfig } = useAppContext();
     const { getUserLoans, isVaultAvailable, getSccBalance } = useVault();
@@ -66,6 +67,14 @@ export default function MyTokensPage() {
         astaverdeContractConfig,
         "uri",
     );
+    const { execute: getLastBatchID } = useContractInteraction(
+        astaverdeContractConfig,
+        "lastBatchID",
+    );
+    const { execute: getBatchInfo } = useContractInteraction(
+        astaverdeContractConfig,
+        "getBatchInfo",
+    );
 
     const fetchTokens = useCallback(async () => {
         if (!address) return;
@@ -76,6 +85,36 @@ export default function MyTokensPage() {
             if (lastTokenID === undefined || lastTokenID === null) {
                 throw new Error("Failed to fetch last token ID");
             }
+
+            // Fetch all batch information in parallel
+            const lastBatchID = await getLastBatchID();
+            const batchMap = new Map<bigint, any>();
+            
+            if (lastBatchID && lastBatchID > 0n) {
+                // Create array of batch IDs to fetch
+                const batchIds = Array.from({ length: Number(lastBatchID) }, (_, i) => BigInt(i + 1));
+                
+                // Fetch all batches in parallel
+                const batchPromises = batchIds.map(async (batchId) => {
+                    try {
+                        const batch = await getBatchInfo(batchId);
+                        return { batchId, batch };
+                    } catch (err) {
+                        console.error(`Failed to fetch batch ${batchId}:`, err);
+                        return null;
+                    }
+                });
+                
+                const batchResults = await Promise.all(batchPromises);
+                
+                // Process results
+                batchResults.forEach(result => {
+                    if (result && result.batch) {
+                        batchMap.set(result.batchId, result.batch);
+                    }
+                });
+            }
+            setBatchData(batchMap);
             
             const userTokens: bigint[] = [];
             const balances: Record<string, bigint> = {};
@@ -157,90 +196,158 @@ export default function MyTokensPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [address, getTokensOfOwner, getTokenInfo, getLastTokenID, fetchTokenURI, isVaultAvailable, getUserLoans]);
+    }, [address, getTokensOfOwner, getTokenInfo, getLastTokenID, fetchTokenURI, isVaultAvailable, getUserLoans, getLastBatchID, getBatchInfo]);
 
     useEffect(() => {
         fetchTokens();
     }, [fetchTokens]);
 
-    // Group tokens by their batch (consecutive token IDs from same mint)
+    // Group tokens by their actual batch ID from the contract
     const tokenGroups = useMemo(() => {
         const groups = new Map<string, TokenGroup>();
         
-        // Get all unique token IDs and sort them
+        // Get all unique token IDs
         const allTokenIds = new Set<bigint>([...tokens, ...vaultedTokens]);
-        const sortedTokenIds = Array.from(allTokenIds).sort((a, b) => Number(a - b));
         
-        if (sortedTokenIds.length === 0) {
+        if (allTokenIds.size === 0) {
             return [];
         }
         
-        // Group consecutive token IDs into batches
-        const batches: bigint[][] = [];
-        let currentBatch: bigint[] = [sortedTokenIds[0]];
-        
-        for (let i = 1; i < sortedTokenIds.length; i++) {
-            const currentId = sortedTokenIds[i];
-            const prevId = sortedTokenIds[i - 1];
+        // If batch data is available, use it to group tokens
+        if (batchData.size > 0) {
+            // Create a map to track which batch each token belongs to
+            const tokenToBatch = new Map<bigint, bigint>();
             
-            // If IDs are consecutive (or very close), they're likely from the same batch
-            // Allow gaps of up to 5 to account for partial batch purchases
-            if (currentId - prevId <= 5n) {
-                currentBatch.push(currentId);
-            } else {
-                // Start a new batch
-                batches.push(currentBatch);
-                currentBatch = [currentId];
-            }
-        }
-        // Don't forget the last batch
-        if (currentBatch.length > 0) {
-            batches.push(currentBatch);
-        }
-        
-        // Create groups for each batch
-        batches.forEach((batchTokenIds, batchIndex) => {
-            // Get the first token's metadata as representative of the batch
-            const firstTokenId = batchTokenIds[0];
-            const metadata = tokenMetadata[firstTokenId.toString()];
-            const name = metadata?.name || `Eco Asset Batch ${batchIndex + 1}`;
+            // Iterate through all batches to find which tokens belong to which batch
+            batchData.forEach((batch, batchId) => {
+                if (batch && batch[1]) { // batch[1] contains the token IDs array
+                    const tokenIds = batch[1];
+                    tokenIds.forEach((tokenId: bigint) => {
+                        tokenToBatch.set(tokenId, batchId);
+                    });
+                }
+            });
             
-            // Separate available and vaulted tokens for this batch
-            const availableTokenIds: bigint[] = [];
-            const vaultedTokenIds: bigint[] = [];
+            // Group tokens by their batch
+            const batchGroups = new Map<bigint, Set<bigint>>();
             
-            batchTokenIds.forEach(tokenId => {
-                // Count how many of this token ID we have available
-                const availableCount = tokens.filter(t => t === tokenId && !vaultedTokens.includes(t)).length;
-                const vaultedCount = vaultedTokens.filter(t => t === tokenId).length;
+            allTokenIds.forEach(tokenId => {
+                const batchId = tokenToBatch.get(tokenId);
+                if (batchId) {
+                    if (!batchGroups.has(batchId)) {
+                        batchGroups.set(batchId, new Set());
+                    }
+                    batchGroups.get(batchId)!.add(tokenId);
+                } else {
+                    // If no batch found, create individual group
+                    const individualBatchId = BigInt(-Number(tokenId)); // Use negative to avoid collision
+                    batchGroups.set(individualBatchId, new Set([tokenId]));
+                }
+            });
+            
+            // Create TokenGroup objects for each batch
+            batchGroups.forEach((batchTokenIdSet, batchId) => {
+                const batchTokenIds = Array.from(batchTokenIdSet).sort((a, b) => Number(a - b));
                 
-                // Add the appropriate number of instances
-                for (let i = 0; i < availableCount; i++) {
+                // For batch grouping, use the batch ID for naming, not individual token metadata
+                const firstTokenId = batchTokenIds[0];
+                const metadata = tokenMetadata[firstTokenId.toString()];
+                const isIndividual = batchId < 0n;
+                const displayBatchId = isIndividual ? firstTokenId : batchId;
+                // Always use batch name for consistency
+                const name = `Batch #${displayBatchId}`;
+                
+                // Separate available and vaulted tokens for this batch
+                const availableTokenIds: bigint[] = [];
+                const vaultedTokenIds: bigint[] = [];
+                
+                batchTokenIds.forEach(tokenId => {
+                    // Count how many of this token ID we have available
+                    const availableCount = tokens.filter(t => t === tokenId).length;
+                    const vaultedCount = vaultedTokens.filter(t => t === tokenId).length;
+                    
+                    // Add the appropriate number of instances
+                    for (let i = 0; i < availableCount; i++) {
+                        availableTokenIds.push(tokenId);
+                    }
+                    for (let i = 0; i < vaultedCount; i++) {
+                        vaultedTokenIds.push(tokenId);
+                    }
+                });
+                
+                const batchIdStr = `batch-${displayBatchId}`;
+                
+                groups.set(batchIdStr, {
+                    batchId: batchIdStr,
+                    name,
+                    description: metadata?.description,
+                    availableTokenIds,
+                    vaultedTokenIds,
+                    availableCount: availableTokenIds.length,
+                    vaultedCount: vaultedTokenIds.length,
+                    totalCount: availableTokenIds.length + vaultedTokenIds.length,
+                    metadata,
+                    imageUrl: metadata?.image ? resolveIpfsUriToUrl(metadata.image) : undefined
+                });
+            });
+        } else {
+            // Fallback: If no batch data, group all identical tokens together
+            const tokenGroupMap = new Map<bigint, { available: number; vaulted: number }>();
+            
+            tokens.forEach(tokenId => {
+                if (!tokenGroupMap.has(tokenId)) {
+                    tokenGroupMap.set(tokenId, { available: 0, vaulted: 0 });
+                }
+                tokenGroupMap.get(tokenId)!.available++;
+            });
+            
+            vaultedTokens.forEach(tokenId => {
+                if (!tokenGroupMap.has(tokenId)) {
+                    tokenGroupMap.set(tokenId, { available: 0, vaulted: 0 });
+                }
+                tokenGroupMap.get(tokenId)!.vaulted++;
+            });
+            
+            tokenGroupMap.forEach((counts, tokenId) => {
+                const metadata = tokenMetadata[tokenId.toString()];
+                const name = metadata?.name || `Token #${tokenId}`;
+                
+                const availableTokenIds: bigint[] = [];
+                const vaultedTokenIds: bigint[] = [];
+                
+                for (let i = 0; i < counts.available; i++) {
                     availableTokenIds.push(tokenId);
                 }
-                for (let i = 0; i < vaultedCount; i++) {
+                for (let i = 0; i < counts.vaulted; i++) {
                     vaultedTokenIds.push(tokenId);
                 }
+                
+                const batchIdStr = `token-${tokenId}`;
+                
+                groups.set(batchIdStr, {
+                    batchId: batchIdStr,
+                    name,
+                    description: metadata?.description,
+                    availableTokenIds,
+                    vaultedTokenIds,
+                    availableCount: availableTokenIds.length,
+                    vaultedCount: vaultedTokenIds.length,
+                    totalCount: availableTokenIds.length + vaultedTokenIds.length,
+                    metadata,
+                    imageUrl: metadata?.image ? resolveIpfsUriToUrl(metadata.image) : undefined
+                });
             });
-            
-            const batchId = `batch-${firstTokenId}-${batchTokenIds[batchTokenIds.length - 1]}`;
-            
-            groups.set(batchId, {
-                batchId,
-                name,
-                description: metadata?.description,
-                availableTokenIds,
-                vaultedTokenIds,
-                availableCount: availableTokenIds.length,
-                vaultedCount: vaultedTokenIds.length,
-                totalCount: availableTokenIds.length + vaultedTokenIds.length,
-                metadata,
-                imageUrl: metadata?.image ? resolveIpfsUriToUrl(metadata.image) : undefined
-            });
-        });
+        }
         
-        return Array.from(groups.values());
-    }, [tokens, vaultedTokens, tokenMetadata]);
+        // Sort groups
+        return Array.from(groups.values()).sort((a, b) => {
+            const aMatch = a.batchId.match(/(\d+)/);
+            const bMatch = b.batchId.match(/(\d+)/);
+            const aId = aMatch ? parseInt(aMatch[1]) : 0;
+            const bId = bMatch ? parseInt(bMatch[1]) : 0;
+            return aId - bId;
+        });
+    }, [tokens, vaultedTokens, tokenMetadata, batchData]);
 
     // Filter based on active tab
     const filteredGroups = useMemo(() => {

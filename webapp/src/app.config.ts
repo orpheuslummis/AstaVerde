@@ -19,15 +19,17 @@ export const FALLBACK_IPFS_GATEWAY_URL = "https://dweb.link/ipfs/"; // General p
 
 export const ASTAVERDE_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS || "";
 
+// Define CHAIN_SELECTION before using it
+export const CHAIN_SELECTION = (process.env.NEXT_PUBLIC_CHAIN_SELECTION || "base_sepolia") as ChainSelection;
+
 // USDC addresses by network
-export const USDC_ADDRESS = 
-    CHAIN_SELECTION === "base_mainnet" 
+export const USDC_ADDRESS =
+    CHAIN_SELECTION === "base_mainnet"
         ? process.env.NEXT_PUBLIC_USDC_ADDRESS || "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913" // Native Circle USDC on Base
         : process.env.NEXT_PUBLIC_USDC_ADDRESS || "";
 
 export const ECOSTABILIZER_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ECOSTABILIZER_ADDRESS || "";
 export const SCC_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_SCC_ADDRESS || "";
-export const CHAIN_SELECTION = (process.env.NEXT_PUBLIC_CHAIN_SELECTION || "base_sepolia") as ChainSelection;
 export const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 export const WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "";
 export const IPFS_PREFIX = "ipfs://";

@@ -13,7 +13,6 @@ import {
     ShoppingCartIcon,
     TagIcon,
 } from "@heroicons/react/24/solid";
-import TokenCard from "./TokenCard";
 import type { BatchCardProps } from "../types";
 import Loader from "./Loader";
 
@@ -63,18 +62,13 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
             if (updateCard) {
                 updateCard();
             }
-        } catch (error) {
-            console.error("Error in approve and buy process:", error);
-            if (error instanceof Error) {
-                // Don't show error toast if it's already been shown by the hook
-                if (!error.message.includes("Transaction cancelled by user") && 
-                    !error.message.includes("Transaction confirmation timed out")) {
-                    customToast.error(`Transaction failed: ${error.message}`);
-                }
-            } else {
-                customToast.error(
-                    "An unknown error occurred during the transaction",
-                );
+        } catch (error: any) {
+            // The error handling is already done in the hook, so we just need to handle
+            // any errors that weren't already handled
+            if (!error?.message?.includes("User rejected") && 
+                !error?.message?.includes("User denied") &&
+                !error?.cause?.name?.includes("UserRejected")) {
+                console.error("Error in approve and buy process:", error);
             }
         }
     };
@@ -112,13 +106,6 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                     `Buy for ${formattedPrice} USDC`
                 )}
         </button>
-    );
-
-    const MAX_DISPLAYED_TOKENS = 5;
-    const displayedTokens = batch.tokenIds.slice(0, MAX_DISPLAYED_TOKENS);
-    const remainingTokens = Math.max(
-        0,
-        batch.tokenIds.length - MAX_DISPLAYED_TOKENS,
     );
 
     return (
@@ -240,35 +227,22 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
 
             {batch.tokenIds.length > 0 && (
                 <div className="p-4 border-t dark:border-gray-700">
-                    <h3 className="text-sm font-semibold mb-2 dark:text-white">
-                        Tokens in this batch
-                    </h3>
-                    <div className="grid grid-cols-3 gap-2">
-                        {displayedTokens.map((tokenId) => (
-                            <div
-                                key={tokenId.toString()}
-                                className="aspect-square token-card-wrapper"
-                            >
-                                <TokenCard
-                                    tokenId={tokenId}
-                                    isCompact={true}
-                                    linkTo={`/token/${tokenId}`}
-                                    isMyTokensPage={false}
-                                    isRedeemed={false}
-                                />
-                            </div>
-                        ))}
-                        {remainingTokens > 0 && (
-                            <Link
-                                href={`/batch/${batch.batchId}`}
-                                className="flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg aspect-square hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                            >
-                                <span className="text-sm font-semibold mr-1 dark:text-white">
-                                    +{remainingTokens}
-                                </span>
-                                <ChevronRightIcon className="h-4 w-4 dark:text-white" />
-                            </Link>
-                        )}
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-sm font-semibold dark:text-white">
+                                Batch Details
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                {batch.itemsLeft.toString()} token{Number(batch.itemsLeft) !== 1 ? 's' : ''} available
+                            </p>
+                        </div>
+                        <Link
+                            href={`/batch/${batch.batchId}`}
+                            className="flex items-center text-sm text-primary hover:text-primary-dark transition-colors"
+                        >
+                            <span className="mr-1">View Details</span>
+                            <ChevronRightIcon className="h-4 w-4" />
+                        </Link>
                     </div>
                 </div>
             )}

@@ -8,10 +8,9 @@ import { mockConnector } from "../lib/mock-connector";
 const chains = getConfiguredChains();
 
 // Check if we're in E2E test mode
-const isE2EMode = typeof window !== 'undefined' && (
-    window.location.search.includes('e2e=true') ||
-    localStorage.getItem('e2e-mode') === 'true'
-);
+const isE2EMode =
+    typeof window !== "undefined" &&
+    (window.location.search.includes("e2e=true") || localStorage.getItem("e2e-mode") === "true");
 
 // Configure wallet connection
 // For local development, don't use WalletConnect to avoid connection errors
@@ -33,10 +32,7 @@ if (isE2EMode && isLocalDevelopment()) {
     // E2E mode: Add mock connector to the config
     wagmiConfig = createConfig({
         chains,
-        connectors: [
-            mockConnector(),
-            ...getDefaultConfig(baseConfig as any).connectors || []
-        ],
+        connectors: [mockConnector(), ...(getDefaultConfig(baseConfig as any).connectors || [])],
         transports: chains.reduce((acc, chain) => {
             acc[chain.id] = http();
             return acc;
