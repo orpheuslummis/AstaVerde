@@ -71,6 +71,14 @@ const config: HardhatUserConfig = {
                 interval: 0,
             },
         },
+        localhost: {
+            // External JSON-RPC hardhat node
+            url: "http://127.0.0.1:8545",
+            chainId: chainIds.hardhat,
+            accounts: {
+                mnemonic,
+            },
+        },
         "base-mainnet": {
             ...getChainConfig("base-mainnet"),
             accounts: privateKey ? [privateKey] : [],
