@@ -7,19 +7,6 @@ import { parseUnits } from "viem";
 const USDC_ADDRESS = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e" as const;
 const ASTAVERDE_ADDRESS = "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0" as const;
 
-// Minimal approve ABI
-const APPROVE_ABI = [
-  {
-    inputs: [
-      { name: "spender", type: "address" },
-      { name: "value", type: "uint256" }
-    ],
-    name: "approve",
-    outputs: [{ name: "", type: "bool" }],
-    stateMutability: "nonpayable",
-    type: "function"
-  }
-] as const;
 
 export default function SimpleApprovePage() {
   const { address } = useAccount();
@@ -80,7 +67,7 @@ export default function SimpleApprovePage() {
         setStatus("Transaction pending...");
       }
 
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error:", error);
       setStatus(`Error: ${error.message || error.toString()}`);
     }

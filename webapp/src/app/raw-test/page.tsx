@@ -40,7 +40,7 @@ export default function RawTestPage() {
       });
 
       setStatus(`Transaction sent: ${txHash}`);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Raw approve error:", error);
       setStatus(`Error: ${error.message}`);
     }
@@ -70,7 +70,7 @@ export default function RawTestPage() {
 
       const balance = parseInt(result, 16) / 1e6;
       setStatus(`Balance: ${balance} USDC`);
-    } catch (error: any) {
+    } catch (error) {
       console.error("eth_call error:", error);
       setStatus(`Error: ${error.message}`);
     }

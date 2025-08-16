@@ -26,14 +26,14 @@ export default function TestVaultPage() {
     try {
       const isApproved = await publicClient.readContract({
         address: ASTAVERDE_ADDRESS,
-        abi: astaVerdeAbi.abi as any,
+        abi: astaVerdeAbi.abi,
         functionName: "isApprovedForAll",
         args: [address, VAULT_ADDRESS],
       });
       
       addLog(`NFT approval status: ${isApproved ? "✅ Approved" : "❌ Not approved"}`);
       return isApproved;
-    } catch (error: any) {
+    } catch (error) {
       addLog(`Error checking approval: ${error.message}`);
       return false;
     }
@@ -47,7 +47,7 @@ export default function TestVaultPage() {
     try {
       const hash = await walletClient.writeContract({
         address: ASTAVERDE_ADDRESS,
-        abi: astaVerdeAbi.abi as any,
+        abi: astaVerdeAbi.abi,
         functionName: "setApprovalForAll",
         args: [VAULT_ADDRESS, true],
         account: address,
@@ -59,7 +59,7 @@ export default function TestVaultPage() {
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
         addLog(`✅ Approval confirmed in block ${receipt.blockNumber}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       addLog(`❌ Approval error: ${error.message}`);
     }
   };
@@ -73,7 +73,7 @@ export default function TestVaultPage() {
       for (let tokenId = 1; tokenId <= 3; tokenId++) {
         const balance = await publicClient.readContract({
           address: ASTAVERDE_ADDRESS,
-          abi: astaVerdeAbi.abi as any,
+          abi: astaVerdeAbi.abi,
           functionName: "balanceOf",
           args: [address, BigInt(tokenId)],
         }) as bigint;
@@ -82,7 +82,7 @@ export default function TestVaultPage() {
           addLog(`Token #${tokenId}: ${balance} owned`);
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       addLog(`Error checking balance: ${error.message}`);
     }
   };
@@ -104,7 +104,7 @@ export default function TestVaultPage() {
       
       const hash = await walletClient.writeContract({
         address: VAULT_ADDRESS,
-        abi: ecoStabilizerAbi.abi as any,
+        abi: ecoStabilizerAbi.abi,
         functionName: "deposit",
         args: [BigInt(tokenId)],
         account: address,
@@ -116,7 +116,7 @@ export default function TestVaultPage() {
       addLog(`✅ Deposit confirmed in block ${receipt.blockNumber}`);
       addLog("Successfully deposited! You should have received 20 SCC.");
       
-    } catch (error: any) {
+    } catch (error) {
       addLog(`❌ Deposit error: ${error.message}`);
       if (error.cause) {
         addLog(`Cause: ${JSON.stringify(error.cause)}`);

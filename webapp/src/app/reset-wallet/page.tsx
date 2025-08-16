@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useAccount } from "wagmi";
 
 export default function ResetWalletPage() {
   const { address } = useAccount();
-  const [status, setStatus] = useState("");
 
   return (
     <div className="container mx-auto p-8">
@@ -13,15 +11,15 @@ export default function ResetWalletPage() {
       
       <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
         <p className="font-bold mb-2">⚠️ MetaMask Nonce Out of Sync</p>
-        <p className="mb-4">Your MetaMask wallet's transaction count is out of sync with the local Hardhat node.</p>
+        <p className="mb-4">Your MetaMask wallet&apos;s transaction count is out of sync with the local Hardhat node.</p>
         
         <p className="font-bold mb-2">To fix this issue:</p>
         <ol className="list-decimal list-inside space-y-2">
           <li>Open MetaMask</li>
           <li>Click on your account icon (top right)</li>
           <li>Go to Settings → Advanced</li>
-          <li>Scroll down to "Clear activity tab data"</li>
-          <li>Click "Clear" button</li>
+          <li>Scroll down to &quot;Clear activity tab data&quot;</li>
+          <li>Click &quot;Clear&quot; button</li>
           <li>Confirm the action</li>
         </ol>
         

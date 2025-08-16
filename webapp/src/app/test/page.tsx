@@ -58,7 +58,7 @@ export default function TestPage() {
       });
       setBalance(formatUnits(bal as bigint, 6));
       setStatus(`Balance: ${formatUnits(bal as bigint, 6)} USDC`);
-    } catch (error: any) {
+    } catch (error) {
       setStatus(`Error: ${error.message}`);
     }
   };
@@ -75,7 +75,7 @@ export default function TestPage() {
       });
       setAllowance(formatUnits(allow as bigint, 6));
       setStatus(`Allowance: ${formatUnits(allow as bigint, 6)} USDC`);
-    } catch (error: any) {
+    } catch (error) {
       setStatus(`Error: ${error.message}`);
     }
   };
@@ -103,7 +103,7 @@ export default function TestPage() {
         setStatus(`Success! Block: ${receipt.blockNumber}`);
         checkAllowance();
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Approve error:", error);
       setStatus(`Error: ${error.message}`);
     }

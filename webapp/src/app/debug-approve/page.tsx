@@ -36,7 +36,7 @@ export default function DebugApprovePage() {
       addLog("Checking balance...");
       const balanceResult = await publicClient.readContract({
         address: USDC_ADDRESS,
-        abi: mockUsdcAbi.abi as any,
+        abi: mockUsdcAbi.abi,
         functionName: "balanceOf",
         args: [address],
       });
@@ -46,7 +46,7 @@ export default function DebugApprovePage() {
       addLog("Checking current allowance...");
       const allowanceResult = await publicClient.readContract({
         address: USDC_ADDRESS,
-        abi: mockUsdcAbi.abi as any,
+        abi: mockUsdcAbi.abi,
         functionName: "allowance",
         args: [address, ASTAVERDE_ADDRESS],
       });
@@ -65,7 +65,7 @@ export default function DebugApprovePage() {
 
       const hash = await walletClient.writeContract({
         address: USDC_ADDRESS,
-        abi: mockUsdcAbi.abi as any,
+        abi: mockUsdcAbi.abi,
         functionName: "approve",
         args: [ASTAVERDE_ADDRESS, amount],
         account: address,
@@ -80,13 +80,13 @@ export default function DebugApprovePage() {
       // Check new allowance
       const newAllowance = await publicClient.readContract({
         address: USDC_ADDRESS,
-        abi: mockUsdcAbi.abi as any,
+        abi: mockUsdcAbi.abi,
         functionName: "allowance",
         args: [address, ASTAVERDE_ADDRESS],
       });
       addLog(`New allowance: ${newAllowance} (raw)`);
 
-    } catch (error: any) {
+    } catch (error) {
       addLog(`ERROR: ${error.message}`);
       if (error.cause) {
         addLog(`Cause: ${JSON.stringify(error.cause)}`);
