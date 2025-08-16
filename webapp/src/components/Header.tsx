@@ -50,12 +50,6 @@ export function Header({ links }: HeaderProps) {
         if (sccConfig) void refetchSccBalance();
     }, [blockNumber, isConnected, sccConfig, refetchUsdcBalance, refetchSccBalance]);
 
-    useEffect(() => {
-        if (!isBalanceDataLoading) {
-            setIsBalanceLoading(false);
-        }
-    }, [isBalanceDataLoading]);
-
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pathname = usePathname();
     const router = useRouter();
