@@ -67,7 +67,7 @@ export default function TokenCard({
             } else {
                 throw new Error(`Failed to load metadata for ${contractTokenURI} from any gateway.`);
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error(`Error in fetchTokenDisplayData for token ${tokenId}:`, err);
             setError(err.message || "Failed to load token data. Please try again later.");
         }

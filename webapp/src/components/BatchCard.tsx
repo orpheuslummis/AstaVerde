@@ -8,15 +8,18 @@ import { ENV } from "../config/environment";
 import { useAppContext } from "../contexts/AppContext";
 import { useBatchOperations } from "../features/marketplace";
 import { dispatchRefetch } from "../hooks/useGlobalEvent";
-import { customToast } from "../shared/utils/customToast";
 import type { BatchCardProps } from "../types";
 import { getPlaceholderImageUrl } from "../utils/placeholderImage";
+import { getActiveMarketplace } from "../utils/vaultRouting";
 import Loader from "./Loader";
 
 export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
   const { isConnected } = useAccount();
   const { refetchBatches } = useAppContext();
   const [tokenAmount, setTokenAmount] = useState(1);
+  
+  // Determine if this batch is from V1.1 marketplace
+  const marketplaceVersion = getActiveMarketplace().version;
 
   useEffect(() => {
     setTokenAmount((prev) => Math.min(prev, Number(batch.itemsLeft)));
@@ -40,7 +43,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     [batch.price, tokenAmount],
   );
 
-  const { handleApproveAndBuy, isLoading, hasEnoughUSDC } = useBatchOperations(batch.batchId, totalPrice);
+  const { handleApproveAndBuy, isLoading } = useBatchOperations(batch.batchId, totalPrice);
 
   const handleBuyClick = async () => {
     if (batch.itemsLeft === 0n || isSoldOut) return;
@@ -52,7 +55,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
       if (updateCard) {
         updateCard();
       }
-    } catch (error: any) {
+    } catch (error) {
       // The error handling is already done in the hook, so we just need to handle
       // any errors that weren't already handled
       if (
@@ -64,17 +67,6 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
       }
     }
   };
-
-  const getButtonText = () => {
-    if (!isConnected) return "Buy";
-    if (isLoading) return "Processing...";
-    if (isSoldOut || batch.itemsLeft === 0n) return "Sold Out";
-    if (!hasEnoughUSDC) return "Insufficient USDC";
-    return "Buy";
-  };
-
-  const isButtonDisabled =
-    !isConnected || isLoading || isSoldOut || batch.itemsLeft === 0n || (!isConnected && !hasEnoughUSDC);
 
   const buttonContent = (
     <button
@@ -111,7 +103,18 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
             />
           </div>
           <div className="flex-grow">
-            <h2 className="text-xl font-semibold mb-1 dark:text-white">{`Batch ${batch.batchId}`}</h2>
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-xl font-semibold dark:text-white">{`Batch ${batch.batchId}`}</h2>
+              {marketplaceVersion && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  marketplaceVersion === "V1.1"
+                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                    : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                }`}>
+                  {marketplaceVersion}
+                </span>
+              )}
+            </div>
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mb-2">
               <TagIcon className="w-4 h-4 mr-1" />
               <span className="font-medium mr-2">{formattedPrice} USDC per unit</span>
@@ -175,7 +178,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                 {buttonContent}
                 <div className="tooltip-content">
                   <p>
-                    Please connect your wallet to purchase tokens. Once connected, you'll be able to buy tokens from
+                    Please connect your wallet to purchase tokens. Once connected, you&apos;ll be able to buy tokens from
                     this batch.
                   </p>
                   <div className="tooltip-arrow"></div>
