@@ -15,8 +15,11 @@ async function main() {
     }
     console.log("Account balance:", ethers.formatEther(balance), "ETH");
 
-    // Get and validate AstaVerde address from environment or use default for local
+    // Get and validate AstaVerde addresses from environment or use default for local
+    // AV_ADDR is the existing V1 marketplace (supports historical NFTs)
+    // AV_ADDR_V11 is the hardened V1.1 marketplace for all future batches
     let astaVerdeAddress = process.env.AV_ADDR;
+    let astaVerdeAddressV11 = process.env.AV_ADDR_V11;
 
     // For local development, use the standard deployed address
     if (!astaVerdeAddress && (await ethers.provider.getNetwork()).chainId === 31337n) {
@@ -37,7 +40,18 @@ async function main() {
     console.log("Using AstaVerde contract at:", astaVerdeAddress);
     console.log("Network:", (await ethers.provider.getNetwork()).name);
 
-    let scc, ecoStabilizer;
+    // If a second address is provided, validate it as well
+    if (astaVerdeAddressV11) {
+        if (!ethers.isAddress(astaVerdeAddressV11)) {
+            throw new Error(`Invalid AV_ADDR_V11 format: ${astaVerdeAddressV11} (must be a valid Ethereum address)`);
+        }
+        if (!astaVerdeAddressV11.startsWith("0x")) {
+            throw new Error("AV_ADDR_V11 must be a checksummed Ethereum address starting with 0x");
+        }
+        console.log("Using AstaVerde V1.1 contract at:", astaVerdeAddressV11);
+    }
+
+    let scc, ecoStabilizer, ecoStabilizerV11;
 
     try {
         // Step 1: Deploy both contracts (SCC without vault initially)
@@ -47,23 +61,38 @@ async function main() {
         await scc.waitForDeployment();
         console.log("StabilizedCarbonCoin deployed to:", await scc.getAddress());
 
-        // Step 2: Deploy EcoStabilizer vault
-        console.log("\n2. Deploying EcoStabilizer vault...");
+        // Step 2: Deploy EcoStabilizer vault for V1
+        console.log("\n2. Deploying EcoStabilizer vault (V1)...");
         const EcoStabilizerFactory = await ethers.getContractFactory("EcoStabilizer");
         ecoStabilizer = await EcoStabilizerFactory.deploy(astaVerdeAddress, await scc.getAddress());
         await ecoStabilizer.waitForDeployment();
-        console.log("EcoStabilizer deployed to:", await ecoStabilizer.getAddress());
+        console.log("EcoStabilizer (V1) deployed to:", await ecoStabilizer.getAddress());
+
+        // Optionally deploy a second EcoStabilizer vault for V1.1
+        if (astaVerdeAddressV11) {
+            console.log("\n2b. Deploying EcoStabilizer vault (V1.1)...");
+            ecoStabilizerV11 = await EcoStabilizerFactory.deploy(astaVerdeAddressV11, await scc.getAddress());
+            await ecoStabilizerV11.waitForDeployment();
+            console.log("EcoStabilizer (V1.1) deployed to:", await ecoStabilizerV11.getAddress());
+        }
 
         // Step 3: ATOMIC role management (critical security section)
         console.log("\n3. Configuring secure role management...");
         const MINTER_ROLE = await scc.MINTER_ROLE();
         const DEFAULT_ADMIN_ROLE = await scc.DEFAULT_ADMIN_ROLE();
 
-        // Grant MINTER_ROLE to vault
-        console.log("Granting MINTER_ROLE to vault...");
+        // Grant MINTER_ROLE to vault(s)
+        console.log("Granting MINTER_ROLE to vault (V1)...");
         const grantRoleTx = await scc.grantRole(MINTER_ROLE, await ecoStabilizer.getAddress());
         await grantRoleTx.wait();
-        console.log("✅ MINTER_ROLE granted to vault");
+        console.log("✅ MINTER_ROLE granted to vault (V1)");
+
+        if (ecoStabilizerV11) {
+            console.log("Granting MINTER_ROLE to vault (V1.1)...");
+            const grantRoleTx2 = await scc.grantRole(MINTER_ROLE, await ecoStabilizerV11.getAddress());
+            await grantRoleTx2.wait();
+            console.log("✅ MINTER_ROLE granted to vault (V1.1)");
+        }
 
         // Immediately renounce admin privileges (minimize attack window)
         console.log("Renouncing deployer admin privileges...");
@@ -100,8 +129,8 @@ async function main() {
         const vaultSCC = await ecoStabilizer.scc();
 
         console.log("🔍 Contract references:");
-        console.log("- Vault AstaVerde reference:", vaultAstaVerde);
-        console.log("- Vault SCC reference:", vaultSCC);
+        console.log("- Vault (V1) AstaVerde reference:", vaultAstaVerde);
+        console.log("- Vault (V1) SCC reference:", vaultSCC);
 
         // Verify address consistency
         if (vaultAstaVerde.toLowerCase() !== astaVerdeAddress.toLowerCase()) {
@@ -109,6 +138,19 @@ async function main() {
         }
         if (vaultSCC.toLowerCase() !== (await scc.getAddress()).toLowerCase()) {
             throw new Error(`Vault SCC reference mismatch: ${vaultSCC} != ${await scc.getAddress()}`);
+        }
+
+        if (ecoStabilizerV11) {
+            const vaultAstaVerde2 = await ecoStabilizerV11.ecoAsset();
+            const vaultSCC2 = await ecoStabilizerV11.scc();
+            console.log("- Vault (V1.1) AstaVerde reference:", vaultAstaVerde2);
+            console.log("- Vault (V1.1) SCC reference:", vaultSCC2);
+            if (vaultAstaVerde2.toLowerCase() !== (astaVerdeAddressV11 as string).toLowerCase()) {
+                throw new Error(`Vault V1.1 AstaVerde reference mismatch: ${vaultAstaVerde2} != ${astaVerdeAddressV11}`);
+            }
+            if (vaultSCC2.toLowerCase() !== (await scc.getAddress()).toLowerCase()) {
+                throw new Error(`Vault V1.1 SCC reference mismatch: ${vaultSCC2} != ${await scc.getAddress()}`);
+            }
         }
 
         // Check SCC constants
@@ -140,13 +182,21 @@ async function main() {
         const deployerHasMinterRole = await scc.hasRole(MINTER_ROLE, deployer.address);
 
         console.log("🔒 Security verification:");
-        console.log("- Vault has MINTER_ROLE:", vaultHasMinterRole);
+        console.log("- Vault (V1) has MINTER_ROLE:", vaultHasMinterRole);
+        let vaultV11HasMinterRole = false;
+        if (ecoStabilizerV11) {
+            vaultV11HasMinterRole = await scc.hasRole(MINTER_ROLE, await ecoStabilizerV11.getAddress());
+            console.log("- Vault (V1.1) has MINTER_ROLE:", vaultV11HasMinterRole);
+        }
         console.log("- Deployer has DEFAULT_ADMIN_ROLE:", deployerHasAdminRole);
         console.log("- Deployer has MINTER_ROLE:", deployerHasMinterRole);
 
         // Verify security state (CRITICAL)
         if (!vaultHasMinterRole) {
             throw new Error("🚨 CRITICAL: Vault does not have MINTER_ROLE");
+        }
+        if (ecoStabilizerV11 && !vaultV11HasMinterRole) {
+            throw new Error("🚨 CRITICAL: Vault (V1.1) does not have MINTER_ROLE");
         }
         if (deployerHasAdminRole) {
             throw new Error("🚨 CRITICAL: Deployer still has DEFAULT_ADMIN_ROLE");
@@ -182,7 +232,10 @@ async function main() {
         contracts: {
             AstaVerde: astaVerdeAddress,
             StabilizedCarbonCoin: await scc.getAddress(),
-            EcoStabilizer: await ecoStabilizer.getAddress(),
+            EcoStabilizerV1: await ecoStabilizer.getAddress(),
+            ...(ecoStabilizerV11
+                ? { AstaVerdeV11: astaVerdeAddressV11, EcoStabilizerV11: await ecoStabilizerV11.getAddress() }
+                : {}),
         },
         constants: {
             SCC_PER_ASSET: ethers.formatEther(sccPerAsset),
@@ -193,6 +246,7 @@ async function main() {
         security: {
             deployerRolesRenounced: true,
             vaultHasMinterRole: true,
+            ...(ecoStabilizerV11 ? { vaultV11HasMinterRole: true } : {}),
             securityVerified: true,
             deploymentSecure: true,
         },
@@ -229,7 +283,10 @@ async function main() {
     console.log("\n🎉 EcoStabilizer deployment completed successfully!");
     console.log("\n📋 Deployment Summary:");
     console.log("- StabilizedCarbonCoin:", await scc.getAddress());
-    console.log("- EcoStabilizer Vault:", await ecoStabilizer.getAddress());
+    console.log("- EcoStabilizer Vault (V1):", await ecoStabilizer.getAddress());
+    if (ecoStabilizerV11) {
+        console.log("- EcoStabilizer Vault (V1.1):", await ecoStabilizerV11.getAddress());
+    }
     console.log("- Network:", deploymentInfo.network.name, `(${deploymentInfo.network.chainId})`);
     console.log("- Security State: ✅ Fully Secured (admin roles renounced)");
 
