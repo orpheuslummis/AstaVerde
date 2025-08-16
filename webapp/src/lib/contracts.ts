@@ -5,6 +5,7 @@ import { getContract } from "viem";
 import { usePublicClient } from "wagmi";
 import astaverdeAbi from "../config/AstaVerde.json";
 import ecoStabilizerAbi from "../config/EcoStabilizer.json";
+import ecoStabilizerV2Abi from "../config/EcoStabilizerV2.json";
 import stabilizedCarbonCoinAbi from "../config/StabilizedCarbonCoin.json";
 import mockUsdcAbi from "../config/MockUSDC.json";
 
@@ -65,16 +66,45 @@ export const ecoStabilizerContractConfig = {
     abi: ecoStabilizerAbi.abi as Abi,
 } as const;
 
+export const ecoStabilizerV2ContractConfig = {
+    address: ENV.ECOSTABILIZER_ADDRESS as `0x${string}`,
+    abi: ecoStabilizerV2Abi.abi as Abi,
+} as const;
+
 export const sccContractConfig = {
     address: ENV.SCC_ADDRESS as `0x${string}`,
     abi: stabilizedCarbonCoinAbi.abi as Abi,
 } as const;
 
-export function getEcoStabilizerContractConfig() {
+// Detect if contract is V2 by checking for batch functions
+export async function detectVaultVersion(publicClient: any): Promise<'V1' | 'V2'> {
+    if (!ENV.ECOSTABILIZER_ADDRESS) {
+        return 'V1';
+    }
+    
+    try {
+        // Try to call a V2-only function selector
+        const bytecode = await publicClient.getBytecode({
+            address: ENV.ECOSTABILIZER_ADDRESS as `0x${string}`,
+        });
+        
+        // Check if depositBatch function selector exists in bytecode
+        // depositBatch selector: 0x5ae401dc
+        if (bytecode && bytecode.includes('5ae401dc')) {
+            return 'V2';
+        }
+    } catch (error) {
+        console.log('Error detecting vault version, defaulting to V1:', error);
+    }
+    
+    return 'V1';
+}
+
+export function getEcoStabilizerContractConfig(version: 'V1' | 'V2' = 'V1') {
     if (!ENV.ECOSTABILIZER_ADDRESS) {
         throw new Error("EcoStabilizer contract address not configured");
     }
-    return ecoStabilizerContractConfig;
+    return version === 'V2' ? ecoStabilizerV2ContractConfig : ecoStabilizerContractConfig;
 }
 
 export function getSccContractConfig() {

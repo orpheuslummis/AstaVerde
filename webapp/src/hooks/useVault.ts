@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import { parseEther, formatEther } from "viem";
 import { useAccount, usePublicClient, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { getEcoStabilizerContractConfig, getSccContractConfig, astaverdeContractConfig } from "../lib/contracts";
+import { getEcoStabilizerContractConfig, getSccContractConfig, astaverdeContractConfig, detectVaultVersion } from "../lib/contracts";
 import { customToast } from "../shared/utils/customToast";
 import { ENV } from "../config/environment";
 import { VAULT_GAS_LIMITS } from "../config/constants";
@@ -14,6 +14,11 @@ export interface VaultHook {
     withdraw: (tokenId: bigint) => Promise<void>;
     // Backward-compatible alias maintained via frontend: calls withdraw
     repayAndWithdraw: (tokenId: bigint) => Promise<void>;
+    
+    // Batch operations (V2 only)
+    depositBatch: (tokenIds: bigint[]) => Promise<void>;
+    withdrawBatch: (tokenIds: bigint[]) => Promise<void>;
+    vaultVersion: 'V1' | 'V2' | null;
 
     // Read functions
     getUserLoans: () => Promise<bigint[]>;
@@ -46,6 +51,8 @@ export function useVault(): VaultHook {
     const [error, setError] = useState<string | null>(null);
     const [vaultError, setVaultError] = useState<VaultErrorState | null>(null);
     const [txStatus, setTxStatus] = useState<TxStatus>(TxStatus.IDLE);
+    const [paginatedLoans, setPaginatedLoans] = useState<bigint[]>([]);
+    const [vaultVersion, setVaultVersion] = useState<'V1' | 'V2' | null>(null);
 
     const { writeContract, data: hash, isPending: isTransactionPending } = useWriteContract();
     const {
@@ -61,14 +68,25 @@ export function useVault(): VaultHook {
     const isVaultAvailable = useMemo(() => {
         return !!(ENV.ECOSTABILIZER_ADDRESS && ENV.SCC_ADDRESS);
     }, []);
+    
+    // Detect vault version on mount
+    useEffect(() => {
+        const detectVersion = async () => {
+            if (publicClient && isVaultAvailable) {
+                const version = await detectVaultVersion(publicClient);
+                setVaultVersion(version);
+            }
+        };
+        detectVersion();
+    }, [publicClient, isVaultAvailable]);
 
     // Get contract configs safely
     const getVaultConfig = useCallback(() => {
         if (!isVaultAvailable) {
             throw new Error("Vault contracts not configured");
         }
-        return getEcoStabilizerContractConfig();
-    }, [isVaultAvailable]);
+        return getEcoStabilizerContractConfig(vaultVersion || 'V1');
+    }, [isVaultAvailable, vaultVersion]);
 
     const getSccConfig = useCallback(() => {
         if (!isVaultAvailable) {
@@ -93,12 +111,13 @@ export function useVault(): VaultHook {
         query: { enabled: !!address && isVaultAvailable },
     });
 
-    // Read user's loans
+    // Read user's loans - disabled in favor of paginated version
+    // Keeping this for backward compatibility but not using it
     const { data: userLoansData, refetch: refetchUserLoans } = useReadContract({
         ...(isVaultAvailable ? getEcoStabilizerContractConfig() : { address: undefined, abi: [] }),
         functionName: "getUserLoans",
         args: address ? [address] : undefined,
-        query: { enabled: !!address && isVaultAvailable },
+        query: { enabled: false }, // Disabled - using paginated version instead
     });
 
     // Read total active loans
@@ -116,13 +135,6 @@ export function useVault(): VaultHook {
         query: { enabled: !!address && isVaultAvailable },
     });
 
-    // Refresh all contract data
-    const refreshContractData = useCallback(async () => {
-        if (isVaultAvailable && address) {
-            await Promise.all([refetchSccBalance(), refetchSccAllowance(), refetchUserLoans(), refetchNftApproval()]);
-        }
-    }, [isVaultAvailable, address, refetchSccBalance, refetchSccAllowance, refetchUserLoans, refetchNftApproval]);
-
     // Clear error state
     const clearError = useCallback(() => {
         setError(null);
@@ -139,6 +151,9 @@ export function useVault(): VaultHook {
         }
     }, [isTransactionPending, isConfirming]);
 
+    // Declare refreshContractData ref (will be properly assigned later)
+    const refreshContractDataRef = useRef<() => Promise<void>>(() => Promise.resolve());
+
     // Handle transaction success/error states
     useEffect(() => {
         if (isConfirmed && hash) {
@@ -148,7 +163,7 @@ export function useVault(): VaultHook {
             setError(null);
             setVaultError(null);
             // Refresh all data after successful transaction
-            refreshContractData();
+            refreshContractDataRef.current();
             // Reset status after delay
             setTimeout(() => setTxStatus(TxStatus.IDLE), 1500);
         }
@@ -161,7 +176,7 @@ export function useVault(): VaultHook {
             customToast.error(parsedError.message);
             setIsLoading(false);
         }
-    }, [isConfirmed, txError, hash, refreshContractData]);
+    }, [isConfirmed, txError, hash]);
 
     // Core vault functions
     const deposit = useCallback(
@@ -260,6 +275,116 @@ export function useVault(): VaultHook {
             }
         },
         [address, isVaultAvailable, getVaultConfig, writeContract],
+    );
+
+    // Batch deposit function (V2 only)
+    const depositBatch = useCallback(
+        async (tokenIds: bigint[]) => {
+            if (!address || !isVaultAvailable) {
+                throw new Error("Wallet not connected or vault not available");
+            }
+            
+            if (vaultVersion !== 'V2') {
+                throw new Error("Batch operations require EcoStabilizerV2 contract");
+            }
+
+            try {
+                setIsLoading(true);
+                setError(null);
+                setVaultError(null);
+                setTxStatus(TxStatus.IDLE);
+
+                const vaultConfig = getVaultConfig();
+
+                customToast.info(`Depositing ${tokenIds.length} NFTs to vault in a single transaction...`);
+                setTxStatus(TxStatus.SIGNING);
+
+                writeContract({
+                    ...vaultConfig,
+                    functionName: "depositBatch",
+                    args: [tokenIds],
+                });
+
+                // Success toast will be shown in useEffect when transaction is confirmed
+            } catch (err: any) {
+                const parsedError = parseVaultError(err, {
+                    operation: "depositBatch",
+                    approveNFT: async () => approveNFT(),
+                    retry: () => depositBatch(tokenIds),
+                });
+                setError(err?.message || "Failed to deposit NFTs");
+                setVaultError(parsedError);
+                setTxStatus(TxStatus.ERROR);
+                customToast.error(parsedError.message);
+                setIsLoading(false);
+                throw err;
+            }
+        },
+        [address, isVaultAvailable, vaultVersion, getVaultConfig, writeContract],
+    );
+    
+    // Batch withdraw function (V2 only)
+    const withdrawBatch = useCallback(
+        async (tokenIds: bigint[]) => {
+            if (!address || !isVaultAvailable) {
+                throw new Error("Wallet not connected or vault not available");
+            }
+            
+            if (vaultVersion !== 'V2') {
+                throw new Error("Batch operations require EcoStabilizerV2 contract");
+            }
+
+            try {
+                setIsLoading(true);
+                setError(null);
+                setVaultError(null);
+                setTxStatus(TxStatus.IDLE);
+
+                const vaultConfig = getVaultConfig();
+                const totalScc = BigInt(tokenIds.length) * SCC_PER_ASSET;
+
+                customToast.info(`Withdrawing ${tokenIds.length} NFTs from vault in a single transaction...`);
+                setTxStatus(TxStatus.SIGNING);
+
+                let gasLimit: bigint | undefined;
+                try {
+                    if (publicClient && address) {
+                        const estimate = await publicClient.estimateContractGas({
+                            ...vaultConfig,
+                            functionName: "withdrawBatch",
+                            args: [tokenIds],
+                            account: address,
+                        });
+                        gasLimit = (estimate * 150n) / 100n; // add 50% buffer
+                    }
+                } catch {
+                    // Estimate gas for batch (roughly 60k per token for V2)
+                    gasLimit = BigInt(60000 * tokenIds.length);
+                }
+
+                writeContract({
+                    ...vaultConfig,
+                    functionName: "withdrawBatch",
+                    args: [tokenIds],
+                    ...(gasLimit ? { gas: gasLimit } : {}),
+                });
+
+                // Success toast will be shown in useEffect when transaction is confirmed
+            } catch (err: any) {
+                const parsedError = parseVaultError(err, {
+                    operation: "withdrawBatch",
+                    approveSCC: async () => approveSCC(BigInt(tokenIds.length) * SCC_PER_ASSET),
+                    retry: () => withdrawBatch(tokenIds),
+                });
+                setError(err?.message || "Failed to withdraw NFTs");
+                setVaultError(parsedError);
+                setTxStatus(TxStatus.ERROR);
+                customToast.error(parsedError.message);
+                setIsLoading(false);
+                throw err;
+            }
+        },
+        [address, isVaultAvailable, vaultVersion, getVaultConfig, writeContract, publicClient],
     );
 
     const repayAndWithdraw = useCallback(
@@ -379,10 +504,73 @@ export function useVault(): VaultHook {
         [address, isVaultAvailable, getSccConfig, writeContract],
     );
 
+    // Fetch paginated loans
+    const fetchPaginatedLoans = useCallback(async (): Promise<bigint[]> => {
+        if (!address || !isVaultAvailable || !publicClient) {
+            return [];
+        }
+
+        try {
+            const loans: bigint[] = [];
+            let startId = 1n;
+            const pageSize = 2000n; // MAX_PAGE_SIZE from contract
+            
+            while (true) {
+                const result = await publicClient.readContract({
+                    ...getVaultConfig(),
+                    functionName: "getUserLoansPaginated",
+                    args: [address, startId, pageSize],
+                });
+                
+                const { tokenIds, nextStartId } = result as { tokenIds: bigint[]; nextStartId: bigint };
+                loans.push(...tokenIds);
+                
+                if (nextStartId === 0n) break;
+                startId = nextStartId;
+            }
+            
+            setPaginatedLoans(loans);
+            return loans;
+        } catch (err) {
+            console.error("Error fetching user loans:", err);
+            // Fallback to non-paginated if paginated fails (e.g., old contract)
+            const fallbackLoans = (userLoansData as bigint[]) || [];
+            setPaginatedLoans(fallbackLoans);
+            return fallbackLoans;
+        }
+    }, [address, isVaultAvailable, publicClient, getVaultConfig, userLoansData]);
+
+    // Refresh all contract data
+    const refreshContractData = useCallback(async () => {
+        if (isVaultAvailable && address) {
+            await Promise.all([
+                refetchSccBalance(),
+                refetchSccAllowance(),
+                fetchPaginatedLoans(), // Use paginated fetch instead of refetchUserLoans
+                refetchNftApproval()
+            ]);
+        }
+    }, [isVaultAvailable, address, refetchSccBalance, refetchSccAllowance, fetchPaginatedLoans, refetchNftApproval]);
+    
+    // Assign to ref for use in effects
+    refreshContractDataRef.current = refreshContractData;
+
+    // Initialize paginated loans on mount and when address changes
+    useEffect(() => {
+        if (address && isVaultAvailable) {
+            fetchPaginatedLoans();
+        }
+    }, [address, isVaultAvailable, fetchPaginatedLoans]);
+
     // Read functions
     const getUserLoans = useCallback(async (): Promise<bigint[]> => {
-        return (userLoansData as bigint[]) || [];
-    }, [userLoansData]);
+        // If we have cached paginated loans, return them
+        if (paginatedLoans.length > 0) {
+            return paginatedLoans;
+        }
+        // Otherwise fetch them
+        return fetchPaginatedLoans();
+    }, [paginatedLoans, fetchPaginatedLoans]);
 
     const getTotalActiveLoans = useCallback(async (): Promise<bigint> => {
         return (totalActiveLoansData as bigint) || 0n;
@@ -424,6 +612,11 @@ export function useVault(): VaultHook {
         deposit,
         withdraw,
         repayAndWithdraw,
+        
+        // Batch operations (V2 only)
+        depositBatch,
+        withdrawBatch,
+        vaultVersion,
 
         // Read functions
         getUserLoans,
