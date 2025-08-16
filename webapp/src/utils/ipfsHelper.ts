@@ -23,7 +23,7 @@ export async function initializeWeb3StorageClient() {
     }
 }
 
-export async function uploadToIPFS(client: any, content: File | string, contentType: string): Promise<string> {
+export async function uploadToIPFS(client: unknown, content: File | string, contentType: string): Promise<string> {
     if (!client) {
         throw new Error("Web3Storage client is not initialized");
     }
@@ -37,7 +37,7 @@ export async function uploadToIPFS(client: any, content: File | string, contentT
     }
 }
 
-export async function connectToSpace(client: any, email: string, spaceName: string) {
+export async function connectToSpace(client: unknown, email: string, spaceName: string) {
     if (!client) {
         throw new Error("Web3Storage client is not initialized");
     }
@@ -56,7 +56,7 @@ export async function connectToSpace(client: any, email: string, spaceName: stri
     }
 }
 
-export async function fetchJsonFromIpfsWithFallback(cidOrUri: string): Promise<{ data: any; gateway: string } | null> {
+export async function fetchJsonFromIpfsWithFallback(cidOrUri: string): Promise<{ data: unknown; gateway: string } | null> {
     const cid = cidOrUri.replace("ipfs://", "");
 
     // For local development, return mock metadata instead of trying external gateways

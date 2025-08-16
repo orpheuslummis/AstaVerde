@@ -17,7 +17,7 @@ export interface VaultErrorState {
         handler: () => void | Promise<void>;
     };
     details?: string;
-    originalError?: any;
+    originalError?: unknown;
 }
 
 export enum TxStatus {
@@ -39,7 +39,7 @@ export interface TransactionState {
  * Parse vault-specific errors and provide user-friendly messages with actions
  */
 export function parseVaultError(
-    error: any,
+    error: unknown,
     context?: {
         operation?: "deposit" | "withdraw" | "approve" | "depositBatch" | "withdrawBatch";
         approveSCC?: () => Promise<void>;
@@ -106,7 +106,7 @@ export function parseVaultError(
                           try {
                               await context.approveSCC?.();
                               customToast.success("Approval initiated. Please confirm in your wallet.");
-                          } catch (err) {
+                          } catch {
                               customToast.error("Failed to initiate approval");
                           }
                       },
@@ -132,7 +132,7 @@ export function parseVaultError(
                           try {
                               await context.approveNFT?.();
                               customToast.success("Approval initiated. Please confirm in your wallet.");
-                          } catch (err) {
+                          } catch {
                               customToast.error("Failed to initiate approval");
                           }
                       },

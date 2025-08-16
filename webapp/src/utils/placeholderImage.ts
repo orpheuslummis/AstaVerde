@@ -1,4 +1,4 @@
-const generateFractalPath = (seed: number, iterations: number, angle: number): string => {
+const _generateFractalPath = (seed: number, iterations: number, angle: number): string => {
     const rules = ["F+F-F-F+F", "F-F+F+F-F", "F+F-F+F-F", "F-F+F-F+F", "F+F+F-F-F", "F-F-F+F+F"];
     let path = "F";
     const ruleIndex = seed % rules.length;
