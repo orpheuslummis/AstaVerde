@@ -76,8 +76,9 @@ contract EcoStabilizerV2 is EcoStabilizer {
             emit Withdrawn(msg.sender, tokenId);
         }
 
-        // Burn all SCC at once
-        scc.burnFrom(msg.sender, totalSCC);
+        // Collect repayment then burn all SCC at once
+        scc.transferFrom(msg.sender, address(this), totalSCC);
+        scc.burn(totalSCC);
 
         // Transfer all NFTs back in one batch call
         uint256[] memory amounts = new uint256[](tokenIds.length);

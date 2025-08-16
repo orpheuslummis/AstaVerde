@@ -60,30 +60,20 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     }
 
     function withdraw(uint256 tokenId) external nonReentrant whenNotPaused {
-        Loan memory loan = loans[tokenId];
-        require(loan.active && loan.borrower == msg.sender, "not borrower");
-
-        // Update state first (CEI pattern)
-        loans[tokenId].active = false;
-
-        // External interactions after state changes
-        scc.burnFrom(msg.sender, SCC_PER_ASSET);
-        ecoAsset.safeTransferFrom(address(this), msg.sender, tokenId, 1, "");
-
-        emit Withdrawn(msg.sender, tokenId);
+        _withdrawInternal(tokenId);
     }
 
-    /// @notice Convenience function: identical to withdraw but with different name for UX
-    /// @dev Still requires user to approve vault for 20 SCC spend before calling
-    function repayAndWithdraw(uint256 tokenId) external nonReentrant whenNotPaused {
+    /** Internalized withdraw logic to avoid duplication */
+    function _withdrawInternal(uint256 tokenId) internal {
         Loan memory loan = loans[tokenId];
         require(loan.active && loan.borrower == msg.sender, "not borrower");
 
         // Update state first (CEI pattern)
         loans[tokenId].active = false;
 
-        // External interactions after state changes
-        scc.burnFrom(msg.sender, SCC_PER_ASSET);
+        // Collect repayment then return collateral
+        scc.transferFrom(msg.sender, address(this), SCC_PER_ASSET);
+        scc.burn(SCC_PER_ASSET);
         ecoAsset.safeTransferFrom(address(this), msg.sender, tokenId, 1, "");
 
         emit Withdrawn(msg.sender, tokenId);
