@@ -71,14 +71,13 @@ export class VaultService {
             throw new Error("Vault contracts not available");
         }
 
-        // This is an alternative to withdraw that repays the loan in one transaction
-        // Ensure SCC approval
+        // Backward-compatible alias to withdraw. Ensure SCC approval
         await this.ensureSccApproval(SCC_PER_ASSET);
 
         const vaultContract = getEcoStabilizerContract();
         const { request } = await this.publicClient.simulateContract({
             ...vaultContract,
-            functionName: "repayAndWithdraw",
+            functionName: "withdraw",
             args: [tokenId],
             account: this.walletClient!.account,
         });
@@ -221,7 +220,7 @@ export class VaultService {
         const isApproved = (await this.publicClient.readContract({
             ...astaverdeContract,
             functionName: "isApprovedForAll",
-            args: [this.walletClient!.account.address, vaultContract.address],
+            args: [this.walletClient!.account!.address, vaultContract.address],
         })) as boolean;
 
         if (!isApproved) {
@@ -234,7 +233,7 @@ export class VaultService {
         if (!this.walletClient) return;
 
         const vaultContract = getEcoStabilizerContract();
-        const allowance = await this.getSccAllowance(this.walletClient!.account.address, vaultContract.address);
+        const allowance = await this.getSccAllowance(this.walletClient!.account!.address, vaultContract.address);
 
         if (allowance < amount) {
             const approveTx = await this.approveScc(amount);

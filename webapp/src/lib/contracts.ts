@@ -8,19 +8,15 @@ import ecoStabilizerAbi from "../config/EcoStabilizer.json";
 import stabilizedCarbonCoinAbi from "../config/StabilizedCarbonCoin.json";
 import mockUsdcAbi from "../config/MockUSDC.json";
 
-import {
-    ASTAVERDE_CONTRACT_ADDRESS,
-    USDC_ADDRESS,
-    ECOSTABILIZER_CONTRACT_ADDRESS,
-    SCC_CONTRACT_ADDRESS,
-} from "../app.config";
+import { ENV } from "../config/environment";
 
 export function getUsdcContractConfig() {
-    // Always use MockUSDC ABI for the mock contract address
-    // The mock contract address starts with 0xB7f8BC for local dev
-    const isMockContract = USDC_ADDRESS.toLowerCase().startsWith("0xb7f8bc");
+    // For local development, always use MockUSDC ABI
+    // Check if we're on local chain or if the address matches common MockUSDC patterns
+    const isLocalChain = ENV.CHAIN_SELECTION === "local";
+    const isMockContract = isLocalChain || ENV.USDC_ADDRESS.toLowerCase().startsWith("0x5fbd");
     return {
-        address: USDC_ADDRESS as `0x${string}`,
+        address: ENV.USDC_ADDRESS as `0x${string}`,
         abi: isMockContract ? (mockUsdcAbi.abi as Abi) : extendedERC20Abi,
     };
 }
@@ -49,40 +45,40 @@ const extendedERC20Abi = [
 
 // Base Sepolia official USDC
 export const mainUSDCContractConfig = {
-    address: USDC_ADDRESS as `0x${string}`,
+    address: ENV.USDC_ADDRESS as `0x${string}`,
     abi: erc20Abi,
 } as const;
 
 // MockUSDC on Base Sepolia
 export const mockUSDCContractConfig = {
-    address: USDC_ADDRESS as `0x${string}`,
+    address: ENV.USDC_ADDRESS as `0x${string}`,
     abi: extendedERC20Abi,
 } as const;
 
 export const astaverdeContractConfig = {
-    address: ASTAVERDE_CONTRACT_ADDRESS as `0x${string}`,
+    address: ENV.ASTAVERDE_ADDRESS as `0x${string}`,
     abi: astaverdeAbi.abi as Abi,
 } as const;
 
 export const ecoStabilizerContractConfig = {
-    address: ECOSTABILIZER_CONTRACT_ADDRESS as `0x${string}`,
+    address: ENV.ECOSTABILIZER_ADDRESS as `0x${string}`,
     abi: ecoStabilizerAbi.abi as Abi,
 } as const;
 
 export const sccContractConfig = {
-    address: SCC_CONTRACT_ADDRESS as `0x${string}`,
+    address: ENV.SCC_ADDRESS as `0x${string}`,
     abi: stabilizedCarbonCoinAbi.abi as Abi,
 } as const;
 
 export function getEcoStabilizerContractConfig() {
-    if (!ECOSTABILIZER_CONTRACT_ADDRESS) {
+    if (!ENV.ECOSTABILIZER_ADDRESS) {
         throw new Error("EcoStabilizer contract address not configured");
     }
     return ecoStabilizerContractConfig;
 }
 
 export function getSccContractConfig() {
-    if (!SCC_CONTRACT_ADDRESS) {
+    if (!ENV.SCC_ADDRESS) {
         throw new Error("SCC contract address not configured");
     }
     return sccContractConfig;
@@ -109,7 +105,7 @@ export function useEcoStabilizerContract() {
         throw new Error("Public client not available");
     }
 
-    if (!ECOSTABILIZER_CONTRACT_ADDRESS) {
+    if (!ENV.ECOSTABILIZER_ADDRESS) {
         throw new Error("EcoStabilizer contract address not configured");
     }
 
@@ -127,7 +123,7 @@ export function useSccContract() {
         throw new Error("Public client not available");
     }
 
-    if (!SCC_CONTRACT_ADDRESS) {
+    if (!ENV.SCC_ADDRESS) {
         throw new Error("SCC contract address not configured");
     }
 
@@ -161,7 +157,7 @@ export function useIsVaultDeployed() {
     const publicClient = usePublicClient();
 
     const checkVaultDeployment = async () => {
-        if (!publicClient || !ECOSTABILIZER_CONTRACT_ADDRESS) {
+        if (!publicClient || !ENV.ECOSTABILIZER_ADDRESS) {
             return false;
         }
         try {

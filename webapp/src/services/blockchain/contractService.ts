@@ -51,7 +51,7 @@ export class ContractService {
         args?: unknown[],
         account?: `0x${string}`,
     ): Promise<bigint> {
-        if (!account && this.walletClient) {
+        if (!account && this.walletClient?.account) {
             account = this.walletClient.account.address;
         }
 

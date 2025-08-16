@@ -162,7 +162,7 @@ export class MarketplaceService {
         const allowance = (await this.publicClient.readContract({
             ...usdcContract,
             functionName: "allowance",
-            args: [this.walletClient!.account.address, astaverdeContract.address],
+            args: [this.walletClient!.account!.address, astaverdeContract.address],
         })) as bigint;
 
         if (allowance < amount) {

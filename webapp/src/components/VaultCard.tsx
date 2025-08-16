@@ -3,12 +3,14 @@
 import { useState, useCallback, useEffect } from "react";
 import { formatEther, parseEther } from "viem";
 import { useAccount, useReadContract } from "wagmi";
-import { ECOSTABILIZER_CONTRACT_ADDRESS, SCC_CONTRACT_ADDRESS } from "../app.config";
+import { readContract } from "wagmi/actions";
+import { ENV } from "../config/environment";
 import { useVault } from "../hooks/useVault";
 import { getEcoStabilizerContractConfig } from "../lib/contracts";
-import { customToast } from "../utils/customToast";
+import { customToast } from "../shared/utils/customToast";
 import { VaultErrorDisplay, CompactErrorDisplay } from "./VaultErrorDisplay";
 import { TxStatus, getTransactionStatusMessage } from "../utils/errors";
+import { wagmiConfig } from "../config/wagmi";
 
 interface VaultCardProps {
   tokenId: bigint;
@@ -22,7 +24,6 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
   const {
     deposit,
     withdraw,
-    repayAndWithdraw,
     approveNFT,
     approveSCC,
     getSccBalance,
@@ -42,6 +43,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
   const [sccAllowance, setSccAllowance] = useState<bigint>(0n);
   const [isApproved, setIsApproved] = useState(false);
   const [isNftApproved, setIsNftApproved] = useState(false);
+  const [transactionStep, setTransactionStep] = useState<string>("");
   
   const tokenIdStr = tokenId.toString();
   
@@ -54,11 +56,9 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     const fetchLoanData = async () => {
       setIsLoadingLoan(true);
       try {
-        const { readContract } = await import('wagmi/actions');
-        const { config } = await import('../wagmi');
         const contractConfig = getEcoStabilizerContractConfig();
         
-        const data = await readContract(config, {
+        const data = await readContract(wagmiConfig, {
           ...contractConfig,
           functionName: "loans",
           args: [BigInt(tokenIdStr)],
@@ -78,7 +78,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
   const loanInfo = loanData;
   const isInVault = loanInfo ? loanInfo[1] : false;
   const borrower = loanInfo ? loanInfo[0] : null;
-  const isCurrentUserBorrower = borrower && address && 
+    const isCurrentUserBorrower = borrower && address && 
     borrower.toLowerCase() === address.toLowerCase();
 
   useEffect(() => {
@@ -86,10 +86,10 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       if (!address || !isVaultAvailable) return;
       
       try {
-        const balance = await getSccBalance(address);
+        const balance = await getSccBalance();
         setSccBalance(balance);
         
-        const allowance = await getSccAllowance(address);
+        const allowance = await getSccAllowance();
         setSccAllowance(allowance);
         setIsApproved(allowance >= parseEther("20"));
       } catch (error) {
@@ -105,7 +105,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       if (!address || !isVaultAvailable || !tokenId) return;
       
       try {
-        const approved = await getIsNftApproved(address);
+        const approved = await getIsNftApproved();
         setIsNftApproved(approved);
       } catch (error) {
         console.error("Error checking NFT approval:", error);
@@ -114,6 +114,16 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     
     checkNftApproval();
   }, [address, isVaultAvailable, tokenId, getIsNftApproved]);
+
+  // Trigger parent refresh when a transaction succeeds and broadcast a global hint
+  useEffect(() => {
+    if (txStatus === TxStatus.SUCCESS) {
+      if (onActionComplete) onActionComplete();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('astaverde:refetch'));
+      }
+    }
+  }, [txStatus, onActionComplete]);
 
   const handleDeposit = useCallback(async () => {
     if (!tokenId || isRedeemed) {
@@ -125,26 +135,33 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     setIsDepositLoading(true);
     try {
       if (!isNftApproved) {
-        customToast.info("Approving NFT for vault...");
+        setTransactionStep("Approving NFT...");
+        customToast.info("Step 1/2: Approving NFT for vault. Please confirm the approval transaction.", 8000);
         await approveNFT();
         setIsNftApproved(true);
+        customToast.success("NFT approved! Now processing deposit...", 6000);
       }
       
+      setTransactionStep("Depositing...");
+      customToast.info("Step 2/2: Depositing NFT to vault. Please confirm the deposit transaction.", 8000);
       await deposit(tokenId);
+      customToast.success("NFT deposited! You received 20 SCC tokens.", 6000);
       
       if (address) {
-        const newBalance = await getSccBalance(address);
+        const newBalance = await getSccBalance();
         setSccBalance(newBalance);
-      }
-      
-      if (onActionComplete) {
-        onActionComplete();
       }
     } catch (error: any) {
       console.error("Deposit error:", error);
-      // Error handling is now done in the hook
+      // Check if user cancelled the transaction
+      if (error?.message?.includes("User rejected") || error?.message?.includes("User denied")) {
+        customToast.info("Transaction cancelled");
+      } else {
+        customToast.error("Deposit failed. Please try again.");
+      }
     } finally {
       setIsDepositLoading(false);
+      setTransactionStep("");
     }
   }, [tokenId, isRedeemed, isNftApproved, approveNFT, deposit, address, getSccBalance, onActionComplete, clearError]);
 
@@ -165,30 +182,47 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       }
       
       if (!isApproved || sccAllowance < requiredScc) {
-        customToast.info("Approving SCC for repayment...");
+        setTransactionStep("Approving SCC...");
+        customToast.info("Step 1/2: Approving SCC for repayment. Please confirm the approval transaction.", 8000);
         await approveSCC(requiredScc);
-        setIsApproved(true);
-        setSccAllowance(requiredScc);
+        
+        // Wait a moment for the approval to be processed
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Re-fetch allowance to confirm approval went through
+        const newAllowance = await getSccAllowance();
+        setSccAllowance(newAllowance);
+        setIsApproved(newAllowance >= requiredScc);
+        customToast.success("SCC approved! Now processing withdrawal...", 6000);
+        
+        // Small delay to ensure state is updated
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
-      await repayAndWithdraw(tokenId);
+      // Backward-compatible alias calls withdraw under the hood
+      setTransactionStep("Withdrawing...");
+      customToast.info("Step 2/2: Withdrawing NFT from vault. Please confirm the withdrawal transaction.", 8000);
+      await withdraw(tokenId);
+      customToast.success("NFT successfully withdrawn from vault!", 6000);
       
       if (address) {
-        const newBalance = await getSccBalance(address);
+        const newBalance = await getSccBalance();
         setSccBalance(newBalance);
-      }
-      
-      if (onActionComplete) {
-        onActionComplete();
       }
     } catch (error: any) {
       console.error("Withdraw error:", error);
-      // Error handling is now done in the hook
+      // Check if user cancelled the transaction
+      if (error?.message?.includes("User rejected") || error?.message?.includes("User denied")) {
+        customToast.info("Transaction cancelled");
+      } else {
+        customToast.error("Withdrawal failed. Please try again.");
+      }
     } finally {
       setIsWithdrawLoading(false);
+      setTransactionStep("");
     }
   }, [tokenId, isInVault, isCurrentUserBorrower, sccBalance, isApproved, sccAllowance, 
-      approveSCC, repayAndWithdraw, address, getSccBalance, onActionComplete, clearError]);
+      approveSCC, withdraw, address, getSccBalance, getSccAllowance, onActionComplete, clearError]);
 
   if (!isVaultAvailable) {
     return null;
@@ -199,6 +233,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       <div className="animate-pulse h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
     );
   }
+
 
   // Show transaction status
   const showTxStatus = txStatus !== TxStatus.IDLE && txStatus !== TxStatus.ERROR;
@@ -228,9 +263,16 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
           onClick={handleWithdraw}
           disabled={isWithdrawLoading || vaultLoading || sccBalance < parseEther("20")}
           className="px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 
-                   text-white text-xs rounded-md transition-colors"
+                   text-white text-xs rounded-md transition-colors min-w-[100px]"
+          title={sccBalance < parseEther("20") ? "You need 20 SCC to withdraw" : "Withdraw NFT from vault (requires 20 SCC)"}
         >
-          {isWithdrawLoading || vaultLoading ? "..." : sccBalance < parseEther("20") ? "Need 20 SCC" : "Withdraw"}
+          {isWithdrawLoading 
+            ? transactionStep || "Processing..." 
+            : vaultLoading 
+            ? "..." 
+            : sccBalance < parseEther("20") 
+            ? "Need 20 SCC" 
+            : "Withdraw"}
         </button>
       );
     }
@@ -240,9 +282,14 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         onClick={handleDeposit}
         disabled={isDepositLoading || vaultLoading}
         className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 
-                 text-white text-xs rounded-md transition-colors"
+                 text-white text-xs rounded-md transition-colors min-w-[100px]"
+        title="Deposit NFT to vault to earn 20 SCC"
       >
-        {isDepositLoading || vaultLoading ? "..." : "Deposit"}
+        {isDepositLoading 
+          ? transactionStep || "Processing..." 
+          : vaultLoading 
+          ? "..." 
+          : "Deposit"}
       </button>
     );
   }

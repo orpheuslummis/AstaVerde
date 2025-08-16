@@ -1,64 +1,14 @@
 import { multicall } from "@wagmi/core";
 import { useCallback, useMemo, useState } from "react";
 import { formatUnits } from "viem";
-import {
-    useBalance,
-    usePublicClient,
-    useReadContract,
-    useSimulateContract,
-    useWalletClient,
-    useWriteContract,
-} from "wagmi";
-import { USDC_DECIMALS } from "../app.config";
+import { useBalance, usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
+import { ENV } from "../config/environment";
 import { useAppContext } from "../contexts/AppContext";
-import { customToast } from "../utils/customToast";
-import { config } from "../wagmi";
+import { customToast } from "../shared/utils/customToast";
+import { wagmiConfig } from "../config/wagmi";
+import { READ_ONLY_FUNCTIONS, WRITE_FUNCTIONS } from "../config/constants";
 
-const READ_ONLY_FUNCTIONS = [
-    "uri",
-    "balanceOf",
-    "lastTokenID",
-    "tokens",
-    "getCurrentBatchPrice",
-    "getBatchInfo",
-    "lastBatchID",
-    "platformShareAccumulated",
-    "basePrice",
-    "priceFloor",
-    "priceDelta",
-    "priceDecreaseRate",
-    "dayIncreaseThreshold",
-    "dayDecreaseThreshold",
-    "lastPriceChangeTime",
-    "pricingInfo",
-    "maxBatchSize",
-    "platformSharePercentage",
-    "supportsInterface",
-    "balanceOf",
-    "tokenOfOwnerByIndex",
-    "lastTokenID",
-    "dailyPriceDecay",
-    "priceAdjustDelta",
-];
-
-const WRITE_FUNCTIONS = [
-    "updateBasePrice",
-    "mintBatch",
-    "buyBatch",
-    "redeemToken",
-    "claimPlatformFunds",
-    "pause",
-    "unpause",
-    "setURI",
-    "setPriceFloor",
-    "setBasePrice",
-    "setMaxBatchSize",
-    "setAuctionDayThresholds",
-    "setPlatformSharePercentage",
-    "mint",
-    "setPriceDelta",
-    "setDailyPriceDecay",
-];
+// Function name lists centralized in config/constants
 
 type ExecuteFunction = (...args: unknown[]) => Promise<any>;
 
@@ -71,18 +21,11 @@ export function useContractInteraction(contractConfig: any, functionName: string
     const publicClient = usePublicClient();
     const { data: walletClient } = useWalletClient();
     const { writeContractAsync } = useWriteContract();
-    const {
-        data: simulationData,
-        error: simulationError,
-        refetch: refetchSimulation,
-    } = useSimulateContract({
-        ...contractConfig,
-        functionName,
-        enabled: false, // Disable automatic simulation
-    });
+    // Note: We avoid pre-creating simulate hooks for write functions to prevent
+    // unintended eth_call noise on non-admin accounts. We simulate only inside execute().
 
-    const isReadOnlyFunction = READ_ONLY_FUNCTIONS.includes(functionName);
-    const isWriteFunction = WRITE_FUNCTIONS.includes(functionName);
+    const isReadOnlyFunction = READ_ONLY_FUNCTIONS.includes(functionName as any);
+    const isWriteFunction = WRITE_FUNCTIONS.includes(functionName as any);
 
     const { data: readData, refetch: refetchReadData } = useReadContract({
         ...contractConfig,
@@ -190,7 +133,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
                         args: [ownerAddress, BigInt(start + index)],
                     }));
 
-                    const results = await multicall(config, {
+                    const results = await multicall(wagmiConfig, {
                         contracts: calls as any[],
                         allowFailure: true,
                     });
@@ -209,7 +152,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
                 throw error;
             }
         },
-        [publicClient, contractConfig, config],
+        [publicClient, contractConfig, wagmiConfig],
     );
 
     const getCurrentBatchPrice = useCallback(
@@ -304,10 +247,9 @@ export function useContractInteraction(contractConfig: any, functionName: string
         isSimulating,
         isPending,
         error,
-        simulationError,
+        
         readData,
         refetchReadData,
-        refetchSimulation,
         getTokensOfOwner,
         getCurrentBatchPrice,
         redeemToken,
@@ -384,7 +326,7 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                     const approvalForMultiplePurchases = 10n; // Approve for up to 10 tokens
                     const approvalAmount = pricePerUnit * approvalForMultiplePurchases;
 
-                    console.log("Calculated approval amount:", formatUnits(approvalAmount, USDC_DECIMALS));
+                    console.log("Calculated approval amount:", formatUnits(approvalAmount, ENV.USDC_DECIMALS));
                     console.log("Approval details:", {
                         spender: astaverdeContractConfig.address,
                         amount: approvalAmount.toString(),

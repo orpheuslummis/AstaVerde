@@ -1,4 +1,4 @@
-import { IPFS_GATEWAY_URL } from "../app.config";
+import { ENV } from "../config/environment";
 
 export class Batch {
     id: bigint;
@@ -25,7 +25,7 @@ export class Batch {
     }
 
     getBatchImageURL() {
-        return IPFS_GATEWAY_URL + this.cid;
+        return ENV.IPFS_GATEWAY_URL + this.cid;
     }
 
     updateItemsLeft(newItemsLeft: bigint): Batch {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { formatEther } from "viem";
+import Link from "next/link";
 import TokenCard from "../../components/TokenCard";
 import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
@@ -46,7 +47,6 @@ export default function MyTokensPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<TabType>('all');
-    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     const [batchData, setBatchData] = useState<Map<bigint, any>>(new Map());
     
     const { astaverdeContractConfig } = useAppContext();
@@ -222,15 +222,24 @@ export default function MyTokensPage() {
             
             // Deposit each token sequentially
             // Note: In production, this should use a batch deposit function for gas efficiency
+            const depositedTokens: bigint[] = [];
             for (let i = 0; i < tokenIds.length; i++) {
                 const tokenId = tokenIds[i];
                 console.log(`Depositing token #${tokenId}...`);
                 setBulkDepositProgress({ current: i + 1, total: tokenIds.length });
                 await deposit(tokenId);
+                depositedTokens.push(tokenId);
                 console.log(`Token #${tokenId} deposited successfully`);
             }
             
             console.log(`Successfully deposited all ${tokenIds.length} tokens!`);
+            
+            // Clear deposited tokens from selection
+            setSelectedTokens(prev => {
+                const newSet = new Set(prev);
+                depositedTokens.forEach(id => newSet.delete(id));
+                return newSet;
+            });
             
             // Refresh the token list to update the UI
             await fetchTokens();
@@ -414,21 +423,21 @@ export default function MyTokensPage() {
         fetchTokens();
         setSelectedTokens(new Set());
     }, [fetchTokens]);
-
-    const toggleGroupExpansion = (batchId: string) => {
-        setExpandedGroups(prev => {
+    
+    // Callback for individual token deposit to clear from selection
+    const handleIndividualDeposit = useCallback((tokenId: bigint) => {
+        setSelectedTokens(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(batchId)) {
-                newSet.delete(batchId);
-            } else {
-                newSet.add(batchId);
-            }
+            newSet.delete(tokenId);
             return newSet;
         });
-    };
+        fetchTokens();
+    }, [fetchTokens]);
 
     // Calculate vault statistics
     const [sccBalance, setSccBalance] = useState<bigint>(0n);
+    const [activeTransaction, setActiveTransaction] = useState<string>("");
+    
     useEffect(() => {
         if (isVaultAvailable && address) {
             getSccBalance().then(setSccBalance);
@@ -448,19 +457,8 @@ export default function MyTokensPage() {
         };
     }, [tokens, vaultedTokens, redeemStatus, sccBalance]);
 
-    if (!address) {
-        return (
-            <div className="container mx-auto px-4 py-16 max-w-6xl">
-                <div className="text-center">
-                    <svg className="mx-auto h-16 w-16 mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <p className="text-xl font-semibold mb-2">Connect your wallet to get started</p>
-                    <p className="text-gray-500">View and manage your Eco Assets after connecting</p>
-                </div>
-            </div>
-        );
-    }
+    // Gate content visually if no address, but do not return early to avoid conditional hooks issues
+    const showConnectPrompt = !address;
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -469,7 +467,57 @@ export default function MyTokensPage() {
                 <p className="text-gray-600 dark:text-gray-400">
                     Manage your carbon offset NFTs and vault operations
                 </p>
+                
+                {/* Action Guide */}
+                <div className="mt-4 flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                        <div className="px-2 py-1 bg-emerald-600 text-white rounded text-xs">Deposit</div>
+                        <span className="text-gray-600 dark:text-gray-400">Lock NFT to earn 20 SCC tokens</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="px-2 py-1 bg-purple-600 text-white rounded text-xs">Withdraw</div>
+                        <span className="text-gray-600 dark:text-gray-400">Return 20 SCC to reclaim NFT</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="px-2 py-1 bg-red-600 text-white rounded text-xs">Redeem</div>
+                        <span className="text-gray-600 dark:text-gray-400">Retire carbon credits (permanent)</span>
+                    </div>
+                </div>
+                
+                {/* Transaction Helper */}
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
+                    <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        <div>
+                            <p className="font-medium text-blue-900 dark:text-blue-100">About MetaMask Transactions</p>
+                            <p className="text-blue-700 dark:text-blue-300 mt-1">
+                                Vault operations require 2 transactions:
+                            </p>
+                            <ul className="ml-4 mt-1 text-blue-700 dark:text-blue-300 list-disc">
+                                <li><strong>First transaction (Approval):</strong> Shows as "Send 0 ETH" - this gives permission to the vault contract</li>
+                                <li><strong>Second transaction:</strong> The actual deposit/withdrawal operation</li>
+                            </ul>
+                            <p className="text-blue-600 dark:text-blue-400 mt-1 text-xs">
+                                Watch the button text and toast notifications to know which step you're on.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            {showConnectPrompt && (
+                <div className="container mx-auto px-4 py-16 max-w-6xl">
+                    <div className="text-center">
+                        <svg className="mx-auto h-16 w-16 mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <p className="text-xl font-semibold mb-2">Connect your wallet to get started</p>
+                        <p className="text-gray-500">View and manage your Eco Assets after connecting</p>
+                    </div>
+                </div>
+            )}
 
             {/* Simplified Stats Dashboard */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -577,15 +625,15 @@ export default function MyTokensPage() {
             </div>
 
             {/* Main Content */}
-            {isLoading ? (
+            {!showConnectPrompt && isLoading ? (
                 <div className="flex justify-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
                 </div>
-            ) : error ? (
+            ) : !showConnectPrompt && error ? (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
                     <p className="text-red-600 dark:text-red-400">{error}</p>
                 </div>
-            ) : filteredGroups.length === 0 ? (
+            ) : !showConnectPrompt && filteredGroups.length === 0 ? (
                 <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl">
                     <svg className="mx-auto h-16 w-16 mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -601,184 +649,160 @@ export default function MyTokensPage() {
                         {activeTab === 'all' && 'Purchase Eco Assets from the marketplace'}
                     </p>
                 </div>
-            ) : (
+            ) : !showConnectPrompt && (
                 <div className="space-y-4">
                     {filteredGroups.map((group) => (
-                        <div key={group.batchId} className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
-                            {/* Group Header */}
-                            <div 
-                                className="p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                                onClick={() => toggleGroupExpansion(group.batchId)}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        {/* Show actual NFT image or placeholder */}
-                                        {group.imageUrl ? (
-                                            <img 
-                                                src={group.imageUrl} 
-                                                alt={group.name}
-                                                className="w-16 h-16 rounded-lg object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-blue-500 rounded-lg flex items-center justify-center">
-                                                <span className="text-white font-bold text-lg">CO2</span>
-                                            </div>
+                        <div key={group.batchId} className="bg-white dark:bg-gray-800 rounded-xl p-6">
+                            {/* Batch Header */}
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-4">
+                                    {/* Show actual NFT image or placeholder */}
+                                    {group.imageUrl ? (
+                                        <img 
+                                            src={group.imageUrl} 
+                                            alt={group.name}
+                                            className="w-16 h-16 rounded-lg object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-blue-500 rounded-lg flex items-center justify-center">
+                                            <span className="text-white font-bold text-lg">CO2</span>
+                                        </div>
+                                    )}
+                                    
+                                    <div>
+                                        <Link 
+                                            href={`/batch/${group.batchId.replace('batch-', '')}`}
+                                            className="text-lg font-semibold hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                                        >
+                                            {group.name}
+                                        </Link>
+                                        <div className="flex gap-4 mt-1">
+                                            {group.availableCount > 0 && (
+                                                <span className="text-sm text-emerald-600 dark:text-emerald-400">
+                                                    {group.availableCount} available
+                                                </span>
+                                            )}
+                                            {group.vaultedCount > 0 && (
+                                                <span className="text-sm text-purple-600 dark:text-purple-400">
+                                                    {group.vaultedCount} in vault
+                                                </span>
+                                            )}
+                                        </div>
+                                        {group.description && (
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                {group.description}
+                                            </p>
                                         )}
-                                        
-                                        <div>
-                                            <h3 className="text-lg font-semibold">{group.name}</h3>
-                                            <div className="flex gap-4 mt-1">
-                                                {group.availableCount > 0 && (
-                                                    <span className="text-sm text-emerald-600 dark:text-emerald-400">
-                                                        {group.availableCount} available
-                                                    </span>
-                                                )}
-                                                {group.vaultedCount > 0 && (
-                                                    <span className="text-sm text-purple-600 dark:text-purple-400">
-                                                        {group.vaultedCount} in vault
-                                                    </span>
-                                                )}
+                                    </div>
+                                </div>
+
+                                {/* Batch Actions - Only show if there are available tokens */}
+                                {group.availableCount > 0 && (
+                                    <button 
+                                        onClick={() => handleDepositAll(group.availableTokenIds)}
+                                        disabled={isBulkDepositing}
+                                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors"
+                                    >
+                                        {isBulkDepositing && bulkDepositProgress.total > 0 
+                                            ? `Depositing... (${bulkDepositProgress.current}/${bulkDepositProgress.total})`
+                                            : `Deposit All (${group.availableCount})`
+                                        }
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Token List - Always visible, no expansion needed */}
+                            <div className="space-y-2">
+                                {/* Available Tokens */}
+                                {group.availableTokenIds.map((tokenId, index) => (
+                                    <div key={`${tokenId}-${index}`} className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                            <Link 
+                                                href={`/token/${tokenId}`}
+                                                className="text-sm font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                                            >
+                                                Token #{tokenId.toString()}
+                                                {tokenBalances[tokenId.toString()] && tokenBalances[tokenId.toString()] > 1n && 
+                                                    ` (Instance ${index + 1})`
+                                                }
+                                            </Link>
+                                            <span className="text-xs text-emerald-600 dark:text-emerald-400">Available</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {/* Vault Action */}
+                                            <div className="relative group">
+                                                <VaultCard
+                                                    tokenId={tokenId}
+                                                    isRedeemed={redeemStatus[tokenId.toString()]}
+                                                    onActionComplete={() => handleIndividualDeposit(tokenId)}
+                                                />
+                                                <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 hidden group-hover:block z-10">
+                                                    <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap">
+                                                        Deposit to vault to earn 20 SCC
+                                                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                                                            <div className="border-4 border-transparent border-t-gray-900"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            {group.description && (
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                                                    {group.description}
-                                                </p>
+                                            
+                                            {/* Redeem Action - only for non-redeemed tokens */}
+                                            {!redeemStatus[tokenId.toString()] && !vaultedTokens.includes(tokenId) && (
+                                                <div className="relative group">
+                                                    <button
+                                                        onClick={() => {
+                                                            const newSet = new Set(selectedTokens);
+                                                            if (newSet.has(tokenId)) {
+                                                                newSet.delete(tokenId);
+                                                            } else {
+                                                                newSet.add(tokenId);
+                                                            }
+                                                            setSelectedTokens(newSet);
+                                                        }}
+                                                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                                                            selectedTokens.has(tokenId)
+                                                                ? 'bg-red-600 text-white hover:bg-red-700'
+                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300'
+                                                        }`}
+                                                    >
+                                                        {selectedTokens.has(tokenId) ? 'Selected' : 'Select to Redeem'}
+                                                    </button>
+                                                    <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 hidden group-hover:block z-10">
+                                                        <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap">
+                                                            Mark as retired (permanent, cannot be deposited to vault)
+                                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                                                                <div className="border-4 border-transparent border-t-gray-900"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
-
-                                    <div className="flex items-center gap-4">
-                                        {/* Quick Actions */}
-                                        {group.availableCount > 0 && (
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDepositAll(group.availableTokenIds);
-                                                }}
-                                                disabled={isBulkDepositing}
-                                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors"
+                                ))}
+                                
+                                {/* Vaulted Tokens */}
+                                {group.vaultedTokenIds.map((tokenId, index) => (
+                                    <div key={`${tokenId}-vault-${index}`} className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                            <Link 
+                                                href={`/token/${tokenId}`}
+                                                className="text-sm font-medium hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
                                             >
-                                                {isBulkDepositing && bulkDepositProgress.total > 0 
-                                                    ? `Depositing... (${bulkDepositProgress.current}/${bulkDepositProgress.total})`
-                                                    : `Deposit All (${group.availableCount})`
-                                                }
-                                            </button>
-                                        )}
-                                        
-                                        <svg 
-                                            className={`w-5 h-5 text-gray-400 transition-transform ${
-                                                expandedGroups.has(group.batchId) ? 'rotate-180' : ''
-                                            }`} 
-                                            fill="none" 
-                                            viewBox="0 0 24 24" 
-                                            stroke="currentColor"
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
+                                                Token #{tokenId.toString()}
+                                            </Link>
+                                            <span className="text-xs text-purple-600 dark:text-purple-400">In Vault</span>
+                                        </div>
+                                        <VaultCard
+                                            tokenId={tokenId}
+                                            isRedeemed={redeemStatus[tokenId.toString()]}
+                                            onActionComplete={fetchTokens}
+                                        />
                                     </div>
-                                </div>
+                                ))}
                             </div>
-
-                            {/* Expanded Details - Show ALL tokens in this batch */}
-                            {expandedGroups.has(group.batchId) && (
-                                <div className="border-t border-gray-200 dark:border-gray-700 p-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {/* Available NFTs */}
-                                        {group.availableCount > 0 && (
-                                            <div>
-                                                <h4 className="font-medium mb-3 text-emerald-600 dark:text-emerald-400">
-                                                    Available NFTs ({group.availableCount})
-                                                </h4>
-                                                <div className="space-y-2 max-h-96 overflow-y-auto">
-                                                    {group.availableTokenIds.map((tokenId, index) => (
-                                                        <div key={`${tokenId}-${index}`} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                                            <div className="flex items-center gap-3">
-                                                                {group.imageUrl ? (
-                                                                    <img 
-                                                                        src={group.imageUrl} 
-                                                                        alt={`Token #${tokenId}`}
-                                                                        className="w-10 h-10 rounded object-cover"
-                                                                    />
-                                                                ) : (
-                                                                    <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-500 rounded flex items-center justify-center">
-                                                                        <span className="text-white text-xs font-bold">CO2</span>
-                                                                    </div>
-                                                                )}
-                                                                <span className="text-sm font-medium">
-                                                                    Token #{tokenId.toString()} 
-                                                                    {tokenBalances[tokenId.toString()] && tokenBalances[tokenId.toString()] > 1n && 
-                                                                        ` (Instance ${index + 1})`
-                                                                    }
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex gap-2">
-                                                                <VaultCard
-                                                                    tokenId={tokenId}
-                                                                    isRedeemed={redeemStatus[tokenId.toString()]}
-                                                                    onActionComplete={fetchTokens}
-                                                                />
-                                                                {!redeemStatus[tokenId.toString()] && (
-                                                                    <label className="flex items-center">
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            checked={selectedTokens.has(tokenId)}
-                                                                            onChange={() => {
-                                                                                const newSet = new Set(selectedTokens);
-                                                                                if (newSet.has(tokenId)) {
-                                                                                    newSet.delete(tokenId);
-                                                                                } else {
-                                                                                    newSet.add(tokenId);
-                                                                                }
-                                                                                setSelectedTokens(newSet);
-                                                                            }}
-                                                                            className="w-4 h-4 text-emerald-600 rounded"
-                                                                        />
-                                                                        <span className="ml-2 text-xs">Redeem</span>
-                                                                    </label>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Vaulted NFTs */}
-                                        {group.vaultedCount > 0 && (
-                                            <div>
-                                                <h4 className="font-medium mb-3 text-purple-600 dark:text-purple-400">
-                                                    In Vault ({group.vaultedCount})
-                                                </h4>
-                                                <div className="space-y-2 max-h-96 overflow-y-auto">
-                                                    {group.vaultedTokenIds.map((tokenId, index) => (
-                                                        <div key={`${tokenId}-vault-${index}`} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                                            <div className="flex items-center gap-3">
-                                                                {group.imageUrl ? (
-                                                                    <img 
-                                                                        src={group.imageUrl} 
-                                                                        alt={`Token #${tokenId}`}
-                                                                        className="w-10 h-10 rounded object-cover"
-                                                                    />
-                                                                ) : (
-                                                                    <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-500 rounded flex items-center justify-center">
-                                                                        <span className="text-white text-xs font-bold">CO2</span>
-                                                                    </div>
-                                                                )}
-                                                                <span className="text-sm font-medium">Token #{tokenId.toString()}</span>
-                                                            </div>
-                                                            <VaultCard
-                                                                tokenId={tokenId}
-                                                                isRedeemed={redeemStatus[tokenId.toString()]}
-                                                                onActionComplete={fetchTokens}
-                                                            />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     ))}
                 </div>
@@ -786,12 +810,15 @@ export default function MyTokensPage() {
 
             {/* Batch Redemption Section */}
             {selectedTokens.size > 0 && (
-                <div className="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                <div className="mt-8 p-6 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl">
                     <div className="flex justify-between items-center">
                         <div>
-                            <p className="font-medium">Batch Redemption</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {selectedTokens.size} NFTs selected
+                            <p className="font-medium text-lg">Carbon Credit Retirement</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                {selectedTokens.size} NFTs selected for permanent retirement
+                            </p>
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                                ⚠️ This action is permanent. Redeemed NFTs cannot be deposited to vault or transferred.
                             </p>
                         </div>
                         <div className="flex gap-2">
@@ -799,7 +826,7 @@ export default function MyTokensPage() {
                                 onClick={handleDeselectAll}
                                 className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                             >
-                                Deselect All
+                                Cancel Selection
                             </button>
                             <RedeemTokensButton
                                 selectedTokens={Array.from(selectedTokens)}
