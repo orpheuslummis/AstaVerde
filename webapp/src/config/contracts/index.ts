@@ -4,7 +4,7 @@ import astaverdeAbi from "../../config/AstaVerde.json";
 import ecoStabilizerAbi from "../../config/EcoStabilizer.json";
 import stabilizedCarbonCoinAbi from "../../config/StabilizedCarbonCoin.json";
 import { ENV } from "../environment";
-import { getActiveMarketplace, VAULT_CONFIGS } from "../../utils/vaultRouting";
+import { getActiveMarketplace } from "../../utils/vaultRouting";
 import type { ContractConfig } from "../../shared/types/contracts";
 
 // Extended ERC20 ABI with mint function for MockUSDC

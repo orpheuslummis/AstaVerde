@@ -1,40 +1,6 @@
 // Minimal vault routing utility for dual-vault setup
 // Maps an AstaVerde marketplace address (asset) to its bound EcoStabilizer vault
 
-import { ENV } from "../config/environment";
-
-export function getVaultForAsset(assetAddress: `0x${string}`): `0x${string}` {
-    const v1 = (process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS || ENV.ASTAVERDE_ADDRESS) as string;
-    const v11 = process.env.NEXT_PUBLIC_ASTAVERDE_V11_ADDRESS as string | undefined;
-    const vaultV1 = (process.env.NEXT_PUBLIC_ECOSTABILIZER_ADDRESS || ENV.ECOSTABILIZER_ADDRESS) as string;
-    const vaultV11 = process.env.NEXT_PUBLIC_ECOSTABILIZER_V11_ADDRESS as string | undefined;
-
-    if (!assetAddress) {
-        throw new Error("Asset address is required for vault routing");
-    }
-
-    if (v1 && assetAddress.toLowerCase() === v1.toLowerCase()) {
-        if (!vaultV1) throw new Error("Vault address for V1 is not configured");
-        return vaultV1 as `0x${string}`;
-    }
-
-    if (v11 && assetAddress.toLowerCase() === v11.toLowerCase()) {
-        if (!vaultV11) throw new Error("Vault address for V1.1 is not configured");
-        return vaultV11 as `0x${string}`;
-    }
-
-    throw new Error("Unknown asset contract for vault routing");
-}
-
-export function getMarketplaceVersion(assetAddress: `0x${string}`): "V1" | "V1.1" {
-    const v1 = (process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS || ENV.ASTAVERDE_ADDRESS) as string;
-    const v11 = process.env.NEXT_PUBLIC_ASTAVERDE_V11_ADDRESS as string | undefined;
-
-    if (v1 && assetAddress.toLowerCase() === v1.toLowerCase()) return "V1";
-    if (v11 && assetAddress.toLowerCase() === v11.toLowerCase()) return "V1.1";
-    throw new Error("Unknown asset contract for version detection");
-}
-
 import { ENV } from "@/config/environment";
 
 export interface VaultConfig {

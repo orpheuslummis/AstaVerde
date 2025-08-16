@@ -13,7 +13,7 @@ import { customToast } from "../shared/utils/customToast";
 import { ENV } from "../config/environment";
 import { VAULT_GAS_LIMITS } from "../config/constants";
 import { parseVaultError, TxStatus, VaultErrorState } from "../utils/errors";
-import { getVaultForAsset, getAssetVersion } from "../utils/vaultRouting";
+import { getVaultForAsset } from "../utils/vaultRouting";
 import type { VaultLoan } from "../features/vault/types";
 
 export interface VaultHook {

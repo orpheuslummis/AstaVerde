@@ -8,24 +8,29 @@ The webapp is a Next.js 14 application using TypeScript, Tailwind CSS, and Web3 
 
 ## Linting and Formatting
 
-**IMPORTANT:** This project uses **Biome** for linting and formatting, NOT ESLint.
+**IMPORTANT:** This project uses **ESLint** for linting (Next.js default).
 
 ```bash
 # Check for issues
-npx @biomejs/biome check webapp/src
+npm run lint
 
 # Fix auto-fixable issues
-npx @biomejs/biome check webapp/src --write
-
-# Format code
-npx @biomejs/biome format webapp/src --write
+npm run lint:fix
 ```
 
-Current Biome configuration:
+Current ESLint configuration:
+- Extends: next/core-web-vitals, next/typescript
+- Warnings for unused variables (prefix with _ to ignore)
+- Warnings for `any` types (disabled in test files)
+- Console warnings (except warn/error)
+- React hooks dependency warnings
+
+Prettier configuration:
 - Indent: 2 spaces
 - Line width: 120 characters
-- Formatter and linter enabled
-- Organize imports enabled
+- Semicolons: enabled
+- Trailing commas: all
+- Double quotes
 
 ## Known Issues to Fix
 
@@ -197,7 +202,7 @@ customToast.loading("Processing...");
 
 1. **TypeScript**: Avoid `any` types, use proper typing
 2. **Components**: Functional components with hooks (no class components)
-3. **Imports**: Let Biome organize imports automatically
+3. **Imports**: Organize imports logically (React first, then external, then internal)
 4. **Naming**: 
    - Components: PascalCase
    - Hooks: camelCase starting with 'use'
@@ -221,11 +226,12 @@ customToast.loading("Processing...");
 
 ## Before Committing
 
-1. Run Biome check: `npx @biomejs/biome check webapp/src`
-2. Fix TypeScript errors: `npx tsc --noEmit`
-3. Test build: `npm run build`
-4. Remove console.log statements
-5. Ensure no hardcoded test values
+1. Run ESLint: `npm run lint`
+2. Fix linting issues: `npm run lint:fix`
+3. Fix TypeScript errors: `npx tsc --noEmit`
+4. Test build: `npm run build`
+5. Remove console.log statements (or use console.warn/error)
+6. Ensure no hardcoded test values
 
 ## Memory Patterns
 

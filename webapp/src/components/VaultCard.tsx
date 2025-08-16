@@ -7,7 +7,7 @@ import { readContract } from "wagmi/actions";
 import { wagmiConfig } from "../config/wagmi";
 import { dispatchRefetch } from "../hooks/useGlobalEvent";
 import { useVault } from "../hooks/useVault";
-import { getEcoStabilizerContractConfig, getEcoStabilizerConfigForAsset } from "../lib/contracts";
+import { getEcoStabilizerConfigForAsset } from "../lib/contracts";
 import { customToast } from "../shared/utils/customToast";
 import { getTransactionStatusMessage, TxStatus } from "../utils/errors";
 import { getAssetVersion } from "../utils/vaultRouting";

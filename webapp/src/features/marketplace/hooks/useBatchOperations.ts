@@ -45,13 +45,14 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                 await marketplaceService.buyBatch(Number(batchId), Number(tokenAmount));
 
                 customToast.success("Purchase confirmed successfully!");
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error("Error in approve and buy process:", error);
-
-                if (error.message?.includes("Insufficient funds sent")) {
+                
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                if (errorMessage.includes("Insufficient funds sent")) {
                     customToast.error("Insufficient USDC balance for this purchase.");
-                } else if (!error.message?.includes("cancelled by user")) {
-                    customToast.error(`Transaction failed: ${error.message}`);
+                } else if (!errorMessage.includes("cancelled by user")) {
+                    customToast.error(`Transaction failed: ${errorMessage}`);
                 }
 
                 throw error;
