@@ -7,8 +7,10 @@ export const ENV = {
 
     // Contract addresses - V1 (original)
     ASTAVERDE_ADDRESS: process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS || "",
+    ASTAVERDE_V11_ADDRESS: process.env.NEXT_PUBLIC_ASTAVERDE_V11_ADDRESS || "",
     USDC_ADDRESS: process.env.NEXT_PUBLIC_USDC_ADDRESS || "",
     ECOSTABILIZER_ADDRESS: process.env.NEXT_PUBLIC_ECOSTABILIZER_ADDRESS || "",
+    ECOSTABILIZER_V11_ADDRESS: process.env.NEXT_PUBLIC_ECOSTABILIZER_V11_ADDRESS || "",
     SCC_ADDRESS: process.env.NEXT_PUBLIC_SCC_ADDRESS || "",
 
     // Contract addresses - V1.1 (hardened version)
