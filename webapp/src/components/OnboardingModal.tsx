@@ -11,7 +11,7 @@ export function OnboardingModal() {
     const isTestEnvironment = 
       typeof window !== "undefined" && (
         window.Cypress || 
-        (window as any).__PLAYWRIGHT__ || // Add Playwright detection
+        (window as unknown as { __PLAYWRIGHT__?: boolean }).__PLAYWRIGHT__ || // Add Playwright detection
         process.env.NODE_ENV === 'test' ||
         localStorage.getItem("e2e-testing") === "true" ||
         localStorage.getItem("skipOnboarding") === "true"
@@ -49,7 +49,7 @@ export function OnboardingModal() {
         <div className="p-8 overflow-y-auto max-h-[calc(90vh-180px)]">
           <div className="space-y-8">
             <section className="text-center mb-8">
-              <p className="text-xl text-gray-700 dark:text-gray-300">You're about to enter a revolutionary marketplace for environmental assets. Before you dive in, here's what you need to know:</p>
+              <p className="text-xl text-gray-700 dark:text-gray-300">You&apos;re about to enter a revolutionary marketplace for environmental assets. Before you dive in, here&apos;s what you need to know:</p>
             </section>
 
             <div className="grid md:grid-cols-2 gap-8">

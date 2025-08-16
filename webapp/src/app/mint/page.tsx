@@ -236,7 +236,7 @@ interface TokenFormProps {
     uploadImages: boolean;
 }
 
-const TokenForm = React.memo(({ token, index, lastTokenId, handleTokenChange, handleImageChange, uploadImages }: TokenFormProps) => {
+const TokenForm = React.memo<TokenFormProps>(({ token, index, lastTokenId, handleTokenChange, handleImageChange, uploadImages }) => {
     const handleInputChange = useCallback((field: keyof TokenMetadata, value: string) => {
         handleTokenChange(index, field, value);
     }, [index, handleTokenChange]);
@@ -275,13 +275,15 @@ const TokenForm = React.memo(({ token, index, lastTokenId, handleTokenChange, ha
     );
 });
 
+TokenForm.displayName = 'TokenForm';
+
 interface InputFieldProps {
     label: string;
     value: string;
     onChange: (value: string) => void;
 }
 
-const InputField = React.memo(({ label, value: propValue, onChange }: InputFieldProps) => {
+const InputField = React.memo<InputFieldProps>(({ label, value: propValue, onChange }) => {
     const [localValue, setLocalValue] = useState(propValue);
     const inputRef = useRef<HTMLInputElement>(null);
     const id = `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
@@ -314,3 +316,5 @@ const InputField = React.memo(({ label, value: propValue, onChange }: InputField
         </div>
     );
 });
+
+InputField.displayName = 'InputField';

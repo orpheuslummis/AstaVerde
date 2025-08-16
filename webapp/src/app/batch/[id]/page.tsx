@@ -73,8 +73,7 @@ export default function Page({ params }: { params: BatchParams }) {
         );
     }
 
-    const [batchId, tokenIds, creationTime, currentPrice, remainingTokens] =
-        batchData;
+    const [batchId, tokenIds] = batchData;
 
     return (
         <div className="container mx-auto px-4 py-8">

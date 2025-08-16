@@ -9,7 +9,7 @@ export default function Page() {
                     EcoTradeZone revolutionizes the way biochar production is valued and traded. It stands as a unique
                     marketplace where the diligent work of biochar producers is transformed into tangible tokens, each
                     representing their creation. These tokens are not just symbolic; they embody the genuine
-                    environmental impact of the producers' efforts, quantified as one tonne of carbon dioxide
+                    environmental impact of the producers&apos; efforts, quantified as one tonne of carbon dioxide
                     equivalent. At EcoTradeZone, these tokens can be both purchased and redeemed, offering a direct and
                     meaningful way to participate in climate action. This system not only incentivizes biochar
                     production but also connects the efforts of producers with individuals and organizations eager to
@@ -47,7 +47,7 @@ export default function Page() {
                 <div className="space-y-6">
                     <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
                         <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">
-                            Q: Why don't the Ethereums work here to buy eco assets?
+                            Q: Why don&apos;t the Ethereums work here to buy eco assets?
                         </h3>
                         <p className="text-gray-700 dark:text-gray-300">
                             A: This is on the Base network, which runs in parallel to the main Ethereum network and has

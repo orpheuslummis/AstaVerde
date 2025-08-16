@@ -34,8 +34,8 @@ export function useMarketplace(): MarketplaceOperations & {
                 const hash = await marketplaceService.buyBatch(batchId, tokenAmount);
                 customToast.success("Purchase successful!");
                 return hash;
-            } catch (err: any) {
-                const errorMessage = err?.message || "Failed to buy batch";
+            } catch (err) {
+                const errorMessage = (err as Error)?.message || "Failed to buy batch";
                 setError(errorMessage);
 
                 if (!errorMessage.includes("User rejected") && !errorMessage.includes("User denied")) {
@@ -64,8 +64,8 @@ export function useMarketplace(): MarketplaceOperations & {
                 const hash = await marketplaceService.redeemToken(tokenId);
                 customToast.success("Token redeemed successfully!");
                 return hash;
-            } catch (err: any) {
-                const errorMessage = err?.message || "Failed to redeem token";
+            } catch (err) {
+                const errorMessage = (err as Error)?.message || "Failed to redeem token";
                 setError(errorMessage);
 
                 if (errorMessage.includes("User rejected") || errorMessage.includes("User denied")) {
@@ -90,7 +90,7 @@ export function useMarketplace(): MarketplaceOperations & {
 
             try {
                 return await marketplaceService.getCurrentBatchPrice(batchId);
-            } catch (err: any) {
+            } catch (err) {
                 console.error("Error getting batch price:", err);
                 throw err;
             }
@@ -107,7 +107,7 @@ export function useMarketplace(): MarketplaceOperations & {
 
             try {
                 return await marketplaceService.getBatchInfo(batchId);
-            } catch (err: any) {
+            } catch (err) {
                 console.error("Error getting batch info:", err);
                 throw err;
             }
@@ -124,7 +124,7 @@ export function useMarketplace(): MarketplaceOperations & {
 
             try {
                 return await marketplaceService.getTokensOfOwner(ownerAddress);
-            } catch (err: any) {
+            } catch (err) {
                 console.error("Error getting owner tokens:", err);
                 throw err;
             }

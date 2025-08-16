@@ -7,25 +7,20 @@ import { useAppContext } from "../contexts/AppContext";
 import { customToast } from "../shared/utils/customToast";
 import { wagmiConfig } from "../config/wagmi";
 import { READ_ONLY_FUNCTIONS, WRITE_FUNCTIONS } from "../config/constants";
+import type { ContractConfig, ExecuteFunction, ContractError } from "../types/contracts";
 
-// Function name lists centralized in config/constants
-
-type ExecuteFunction = (...args: unknown[]) => Promise<any>;
-
-type ContractError = Error | null;
-
-export function useContractInteraction(contractConfig: any, functionName: string) {
-    const [isSimulating, setIsSimulating] = useState(false);
-    const [isPending, setIsPending] = useState(false);
-    const [error, setError] = useState<ContractError>(null);
+export function useContractInteraction(contractConfig: ContractConfig, functionName: string) {
+    const [isSimulating] = useState(false);
+    const [isPending] = useState(false);
+    const [error] = useState<ContractError>(null);
     const publicClient = usePublicClient();
     const { data: walletClient } = useWalletClient();
     const { writeContractAsync } = useWriteContract();
     // Note: We avoid pre-creating simulate hooks for write functions to prevent
     // unintended eth_call noise on non-admin accounts. We simulate only inside execute().
 
-    const isReadOnlyFunction = READ_ONLY_FUNCTIONS.includes(functionName as any);
-    const isWriteFunction = WRITE_FUNCTIONS.includes(functionName as any);
+    const isReadOnlyFunction = READ_ONLY_FUNCTIONS.includes(functionName as typeof READ_ONLY_FUNCTIONS[number]);
+    const isWriteFunction = WRITE_FUNCTIONS.includes(functionName as typeof WRITE_FUNCTIONS[number]);
 
     const { data: readData, refetch: refetchReadData } = useReadContract({
         ...contractConfig,
@@ -134,7 +129,7 @@ export function useContractInteraction(contractConfig: any, functionName: string
                     }));
 
                     const results = await multicall(wagmiConfig, {
-                        contracts: calls as any[],
+                        contracts: calls,
                         allowFailure: true,
                     });
 
@@ -178,11 +173,12 @@ export function useContractInteraction(contractConfig: any, functionName: string
         [publicClient, contractConfig],
     );
 
-    const getRevertReason = (error: any): string => {
-        if (error.data && error.data.message) {
-            return error.data.message;
-        } else if (error.message) {
-            return error.message;
+    const getRevertReason = (error: unknown): string => {
+        const err = error as { data?: { message?: string }; message?: string };
+        if (err.data && err.data.message) {
+            return err.data.message;
+        } else if (err.message) {
+            return err.message;
         } else {
             return "Transaction failed without a reason.";
         }
@@ -198,15 +194,16 @@ export function useContractInteraction(contractConfig: any, functionName: string
                 const result = await execute(tokenId);
                 console.log("Redeem token result:", result);
                 return result;
-            } catch (error: any) {
+            } catch (error) {
                 console.error("Error in redeemToken:", error);
 
                 // Check if user rejected the transaction
+                const err = error as { message?: string; code?: number; cause?: { code?: number } };
                 if (
-                    error.message?.includes("User rejected") ||
-                    error.message?.includes("User denied") ||
-                    error.code === 4001 ||
-                    error.cause?.code === 4001
+                    err.message?.includes("User rejected") ||
+                    err.message?.includes("User denied") ||
+                    err.code === 4001 ||
+                    err.cause?.code === 4001
                 ) {
                     throw new Error("Transaction cancelled by user");
                 }
@@ -283,7 +280,7 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
     }, [usdcBalance, totalPrice]);
 
     const handleApproveAndBuy = useCallback(
-        async (tokenAmount: bigint, usdcAmount: bigint) => {
+        async (tokenAmount: bigint) => {
             if (!walletClient) throw new Error("Wallet not connected");
             if (!publicClient) throw new Error("Public client not available");
             setIsLoading(true);
@@ -302,24 +299,6 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                 const needsApproval = currentAllowance < exactTotalCost;
 
                 if (needsApproval) {
-                    // Fetch the current max batch size from the contract
-                    const maxBatchSize = await publicClient.readContract({
-                        ...astaverdeContractConfig,
-                        functionName: "maxBatchSize",
-                    });
-
-                    // Safely convert maxBatchSize to a bigint
-                    let maxBatchSizeBigInt: bigint;
-                    if (typeof maxBatchSize === "bigint") {
-                        maxBatchSizeBigInt = maxBatchSize;
-                    } else if (typeof maxBatchSize === "number") {
-                        maxBatchSizeBigInt = BigInt(maxBatchSize);
-                    } else if (typeof maxBatchSize === "string") {
-                        maxBatchSizeBigInt = BigInt(maxBatchSize);
-                    } else {
-                        throw new Error("Unexpected type for maxBatchSize");
-                    }
-
                     // Calculate a reasonable approval amount
                     // Approve for 10 tokens worth to avoid multiple approvals
                     const pricePerUnit = currentUnitPrice as bigint;
@@ -356,7 +335,7 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                         });
                         customToast.success("Approval confirmed");
                         await refetchAllowance();
-                    } catch (approveError: any) {
+                    } catch (approveError) {
                         console.error("Approval transaction failed:", approveError);
                         // Try without gas limit as fallback
                         const approveTx = await walletClient.writeContract({
@@ -425,9 +404,10 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                             throw new Error("Transaction failed");
                         }
                         break;
-                    } catch (error: any) {
+                    } catch (error) {
                         retryCount++;
-                        console.log(`Transaction confirmation attempt ${retryCount} failed:`, error.message);
+                        const txErr = error as { message?: string };
+                        console.log(`Transaction confirmation attempt ${retryCount} failed:`, txErr.message);
 
                         if (retryCount === maxRetries) {
                             // Check one more time if the transaction was actually successful
@@ -454,12 +434,13 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
                         }
                     }
                 }
-            } catch (error: any) {
+            } catch (error) {
                 // Don't log user rejections to console - it's normal behavior
+                const err = error as { cause?: { name?: string }; message?: string };
                 if (
-                    error?.cause?.name === "UserRejectedRequestError" ||
-                    error?.message?.includes("User rejected") ||
-                    error?.message?.includes("User denied")
+                    err?.cause?.name === "UserRejectedRequestError" ||
+                    err?.message?.includes("User rejected") ||
+                    err?.message?.includes("User denied")
                 ) {
                     customToast.info("Transaction cancelled");
                 } else {

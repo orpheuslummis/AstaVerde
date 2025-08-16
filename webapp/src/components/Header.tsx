@@ -16,8 +16,6 @@ interface HeaderProps {
 export function Header({ links }: HeaderProps) {
     const { address, isConnected } = useAccount();
     const usdcConfig = getUsdcContractConfig();
-    const [showBalance, setShowBalance] = useState(false);
-    const [isBalanceLoading, setIsBalanceLoading] = useState(true);
     const { data: usdcBalance, isLoading: isBalanceDataLoading, refetch: refetchUsdcBalance } = useBalance({
         address,
         token: usdcConfig.address,
@@ -65,8 +63,6 @@ export function Header({ links }: HeaderProps) {
     const toggleMenu = () => {
         setIsMenuOpen((prev) => !prev);
     };
-
-    const balanceClassName = "hidden lg:block border border-gray-300 rounded-md bg-blue-100 p-2";
 
     const usdcBalanceFormatted = useMemo(() => {
         if (!usdcBalance) return "0";
