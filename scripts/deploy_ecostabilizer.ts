@@ -120,8 +120,34 @@ async function main() {
         throw error;
     }
 
-    // Step 4: Comprehensive verification
-    console.log("\n4. Verifying deployment integrity...");
+    // Step 4: Configure trusted vault(s) on marketplaces (if supported)
+    console.log("\n4. Configuring trusted vault(s) on marketplaces (if supported)...");
+    try {
+        // Configure V1.1 marketplace to trust its vault (recommended for pause safety)
+        if (astaVerdeAddressV11 && ecoStabilizerV11) {
+            console.log("Setting trustedVault on AstaVerde V1.1 → EcoStabilizer V1.1...");
+            const av11: any = await ethers.getContractAt("AstaVerde", astaVerdeAddressV11);
+            const setTx = await av11.setTrustedVault(await ecoStabilizerV11.getAddress());
+            await setTx.wait();
+            console.log("✅ trustedVault set on V1.1");
+        }
+
+        // Attempt to configure V1 marketplace to trust its vault (may not be supported on legacy V1)
+        try {
+            console.log("Attempting to set trustedVault on AstaVerde V1 → EcoStabilizer V1...");
+            const av1: any = await ethers.getContractAt("AstaVerde", astaVerdeAddress);
+            const setTx1 = await av1.setTrustedVault(await ecoStabilizer.getAddress());
+            await setTx1.wait();
+            console.log("✅ trustedVault set on V1");
+        } catch (e: any) {
+            console.warn("⚠️  Could not set trustedVault on V1 (likely unsupported). Continuing...");
+        }
+    } catch (e: any) {
+        console.warn("⚠️  Skipping trustedVault configuration due to error:", e?.message || e);
+    }
+
+    // Step 5: Comprehensive verification
+    console.log("\n5. Verifying deployment integrity...");
 
     try {
         // Check vault references
@@ -206,14 +232,14 @@ async function main() {
         }
 
         console.log("✅ All security verifications passed!");
-    } catch (error) {
+    } catch (error: any) {
         console.error("💥 VERIFICATION FAILED!");
         console.error("Error:", error.message);
         throw error;
     }
 
-    // Step 5: Save deployment info
-    console.log("\n5. Saving deployment information...");
+    // Step 6: Save deployment info
+    console.log("\n6. Saving deployment information...");
 
     const network = await ethers.provider.getNetwork();
     const sccPerAsset = await ecoStabilizer.SCC_PER_ASSET();
@@ -275,8 +301,9 @@ async function main() {
         // Write deployment info with proper formatting
         fs.writeFileSync(deploymentPath, JSON.stringify(deploymentInfo, null, 2), { mode: 0o644 });
         console.log("✅ Deployment info saved to:", deploymentPath);
-    } catch (error) {
-        console.error("⚠️  Warning: Failed to save deployment info:", error.message);
+    } catch (error: unknown) {
+        const msg = error && typeof error === 'object' && 'message' in error ? (error as any).message : String(error);
+        console.error("⚠️  Warning: Failed to save deployment info:", msg);
         console.error("Deployment was successful, but info file could not be saved.");
     }
 
@@ -311,13 +338,19 @@ if (require.main === module) {
             console.log("Deployed contracts:", result);
             process.exit(0);
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
             console.error("\n💥 DEPLOYMENT SCRIPT FAILED");
-            console.error("❌ Error:", error.message);
+            if (error && typeof error === 'object' && 'message' in error) {
+                console.error("❌ Error:", (error as any).message);
+            } else {
+                console.error("❌ Error:", error);
+            }
 
-            if (error.stack) {
+            // Print stack if present
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((error as any)?.stack) {
                 console.error("\n📍 Stack trace:");
-                console.error(error.stack);
+                console.error((error as any).stack);
             }
 
             console.error("\n⚠️  IMPORTANT: If this was a partial deployment failure,");
