@@ -5,11 +5,15 @@ export const ENV = {
     // Chain configuration
     CHAIN_SELECTION: (process.env.NEXT_PUBLIC_CHAIN_SELECTION || "base_sepolia") as ChainSelection,
 
-    // Contract addresses
+    // Contract addresses - V1 (original)
     ASTAVERDE_ADDRESS: process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS || "",
     USDC_ADDRESS: process.env.NEXT_PUBLIC_USDC_ADDRESS || "",
     ECOSTABILIZER_ADDRESS: process.env.NEXT_PUBLIC_ECOSTABILIZER_ADDRESS || "",
     SCC_ADDRESS: process.env.NEXT_PUBLIC_SCC_ADDRESS || "",
+
+    // Contract addresses - V1.1 (hardened version)
+    ASTAVERDE_V11_ADDRESS: process.env.NEXT_PUBLIC_ASTAVERDE_V11_ADDRESS || "",
+    ECOSTABILIZER_V11_ADDRESS: process.env.NEXT_PUBLIC_ECOSTABILIZER_V11_ADDRESS || "",
 
     // API Keys
     ALCHEMY_API_KEY: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || "",
