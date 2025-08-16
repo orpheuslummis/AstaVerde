@@ -6,6 +6,7 @@ Carbon offset NFT marketplace with Dutch auction pricing and collateralized lend
 
 - **Phase 1**: ✅ Live on Base Mainnet - Dutch auction marketplace
 - **Phase 2**: ✅ Implementation Complete - EcoStabilizer vault (173 tests passing)
+- **QA Testing**: 🧪 Available on Base Sepolia testnet
 - **Deployment**: Ready for Base mainnet
 - **Gas Efficiency**: Deposit <150k, Withdraw <120k
 
@@ -77,6 +78,38 @@ See [CLAUDE.md](CLAUDE.md) for complete command reference.
 - Reentrancy protection and pausability
 - Comprehensive test coverage (173 tests)
 - Redeemed NFT protection in vault
+
+## 🧪 Phase 2 QA Testing
+
+The EcoStabilizer vault system is deployed on Base Sepolia testnet for client testing.
+
+### For Testers
+
+- **[QA Testing Guide](./QA_GUIDE.md)** - Complete guide for testing the vault system
+- **[QA Checklist](./QA_CHECKLIST.md)** - Structured test scenarios and expected outcomes
+- **Test URL**: [Vercel deployment URL - to be provided]
+- **Network**: Base Sepolia (testnet)
+
+### For Developers
+
+1. **Deploy Contracts to Testnet**:
+   ```bash
+   npm run deploy:testnet
+   ```
+
+2. **Configure Webapp**:
+   ```bash
+   cd webapp
+   cp .env.example .env.local
+   # Edit .env.local with testnet addresses
+   ```
+
+3. **Deploy to Vercel**:
+   ```bash
+   vercel --prod
+   ```
+
+See [QA_GUIDE.md](./QA_GUIDE.md) for detailed testing instructions.
 
 ## License
 
