@@ -76,9 +76,9 @@ export default function TestVaultPage() {
           abi: astaVerdeAbi.abi as any,
           functionName: "balanceOf",
           args: [address, BigInt(tokenId)],
-        });
+        }) as bigint;
         
-        if (balance > 0) {
+        if (balance > 0n) {
           addLog(`Token #${tokenId}: ${balance} owned`);
         }
       }

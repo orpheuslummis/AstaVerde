@@ -1,6 +1,26 @@
-import { base, baseSepolia, hardhat } from "wagmi/chains";
+import { base, baseSepolia } from "wagmi/chains";
 import { ENV } from "./environment";
 import type { Chain } from "wagmi/chains";
+
+// Custom local chain configuration with explicit RPC URL
+const localChain: Chain = {
+    id: 31337,
+    name: "Hardhat",
+    nativeCurrency: {
+        decimals: 18,
+        name: "Ether",
+        symbol: "ETH",
+    },
+    rpcUrls: {
+        default: {
+            http: ["http://127.0.0.1:8545"],
+        },
+        public: {
+            http: ["http://127.0.0.1:8545"],
+        },
+    },
+    testnet: true,
+};
 
 // Chain configurations with custom RPC endpoints
 export const chainConfigs = {
@@ -20,7 +40,7 @@ export const chainConfigs = {
             },
         },
     },
-    local: hardhat,
+    local: localChain,
 } as const;
 
 // Get the current chain configuration
@@ -33,8 +53,8 @@ export function getCurrentChain(): Chain {
 }
 
 // Get all configured chains (for wallet connection)
-export function getConfiguredChains(): readonly Chain[] {
-    return [getCurrentChain()];
+export function getConfiguredChains(): readonly [Chain, ...Chain[]] {
+    return [getCurrentChain()] as const;
 }
 
 // Check if we're on a testnet

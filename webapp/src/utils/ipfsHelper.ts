@@ -1,11 +1,10 @@
+import { ENV } from "../config/environment";
 import {
-    IPFS_GATEWAY_URL,
     FALLBACK_IPFS_GATEWAY_URL,
     WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION,
     WEB3_STORAGE_GATEWAY_PREFIX,
     WEB3_STORAGE_GATEWAY_SUFFIX,
-    CHAIN_SELECTION,
-} from "../app.config";
+} from "../config/constants";
 
 export interface TokenMetadata {
     name: string;
@@ -61,7 +60,7 @@ export async function fetchJsonFromIpfsWithFallback(cidOrUri: string): Promise<{
     const cid = cidOrUri.replace("ipfs://", "");
 
     // For local development, return mock metadata instead of trying external gateways
-    if (CHAIN_SELECTION === "local") {
+    if (ENV.CHAIN_SELECTION === "local") {
         console.log(`Local development mode: returning mock metadata for ${cid}`);
 
         // Generate different mock data based on the CID to simulate variety
@@ -165,15 +164,15 @@ export async function fetchJsonFromIpfsWithFallback(cidOrUri: string): Promise<{
 
     // Try primary gateway
     try {
-        const response = await fetch(`${IPFS_GATEWAY_URL}${cid}`);
+        const response = await fetch(`${ENV.IPFS_GATEWAY_URL}${cid}`);
         if (response.ok) {
             const data = await response.json();
-            console.log(`Primary gateway fetch SUCCEEDED for ${cid} using ${IPFS_GATEWAY_URL}`);
-            return { data, gateway: IPFS_GATEWAY_URL };
+            console.log(`Primary gateway fetch SUCCEEDED for ${cid} using ${ENV.IPFS_GATEWAY_URL}`);
+            return { data, gateway: ENV.IPFS_GATEWAY_URL };
         }
-        console.warn(`Primary gateway fetch failed for ${cid} using ${IPFS_GATEWAY_URL}: ${response.status}`);
+        console.warn(`Primary gateway fetch failed for ${cid} using ${ENV.IPFS_GATEWAY_URL}: ${response.status}`);
     } catch (error) {
-        console.warn(`Error fetching from primary gateway ${IPFS_GATEWAY_URL} for ${cid}:`, error);
+        console.warn(`Error fetching from primary gateway ${ENV.IPFS_GATEWAY_URL} for ${cid}:`, error);
     }
 
     // Try web3.storage gateway (second attempt)
@@ -219,21 +218,24 @@ export async function fetchJsonFromIpfsWithFallback(cidOrUri: string): Promise<{
     return null;
 }
 
-export function resolveIpfsUriToUrl(ipfsUri: string | undefined | null, gateway: string): string {
+export function resolveIpfsUriToUrl(ipfsUri: string | undefined | null, gateway?: string): string {
     // For local mock data or data URLs, return as-is
     if (gateway === "local-mock" || (ipfsUri && ipfsUri.startsWith("data:"))) {
         return ipfsUri || "";
     }
 
+    // Fallback to default configured gateway if none provided
+    const effectiveGateway = gateway || ENV.IPFS_GATEWAY_URL;
+
     if (ipfsUri && ipfsUri.startsWith("ipfs://")) {
         const cid = ipfsUri.replace("ipfs://", "");
         // Handle subdomain gateway structure if the provided gateway is a base for it (e.g., "https://*.ipfs.w3s.link/")
         // This is a simplified check. A more robust solution might involve checking specific hostnames.
-        if (gateway.includes(".w3s.link")) {
+        if (effectiveGateway.includes(".w3s.link")) {
             // Check if it's the w3s.link special gateway
             return `${WEB3_STORAGE_GATEWAY_PREFIX}${cid}${WEB3_STORAGE_GATEWAY_SUFFIX}`;
         } else {
-            return `${gateway}${cid}`;
+            return `${effectiveGateway}${cid}`;
         }
     }
     return ipfsUri || "";

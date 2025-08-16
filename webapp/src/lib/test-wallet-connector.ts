@@ -48,6 +48,10 @@ export function testWalletConnector() {
             return "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
         },
 
+        async getAccounts() {
+            return ["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"];
+        },
+
         async getChainId() {
             return 31337;
         },

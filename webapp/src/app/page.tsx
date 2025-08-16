@@ -13,14 +13,27 @@ function BatchListing() {
 
     const fetchBatches = useCallback(async () => {
         setIsLoading(true);
-        await refetchBatches();
-        setIsLoading(false);
+        try {
+            await refetchBatches();
+        } catch (error) {
+            console.error("Failed to fetch batches:", error);
+        } finally {
+            setIsLoading(false);
+        }
     }, [refetchBatches]);
 
     useEffect(() => {
-        fetchBatches();
+        // Add a small delay to ensure providers are ready
+        const timeoutId = setTimeout(() => {
+            fetchBatches();
+        }, 1000);
+        
         const intervalId = setInterval(fetchBatches, 30000); // Refetch every 30 seconds
-        return () => clearInterval(intervalId);
+        
+        return () => {
+            clearTimeout(timeoutId);
+            clearInterval(intervalId);
+        };
     }, [fetchBatches]);
 
     const sortedBatches = useMemo(() => {

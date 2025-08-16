@@ -5,12 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
-import { useAccount, useBalance } from "wagmi";
-import { USDC_DECIMALS, SCC_CONTRACT_ADDRESS } from "../app.config";
+import { useAccount, useBalance, useBlockNumber } from "wagmi";
+import { ENV } from "../config/environment";
 import { getUsdcContractConfig, getSccContractConfig } from "../lib/contracts";
 
 interface HeaderProps {
-    links: { name: string; url: string }[];
+    links: readonly { readonly name: string; readonly url: string }[];
 }
 
 export function Header({ links }: HeaderProps) {
@@ -18,23 +18,39 @@ export function Header({ links }: HeaderProps) {
     const usdcConfig = getUsdcContractConfig();
     const [showBalance, setShowBalance] = useState(false);
     const [isBalanceLoading, setIsBalanceLoading] = useState(true);
-    const { data: usdcBalance, isLoading: isBalanceDataLoading } = useBalance({
+    const { data: usdcBalance, isLoading: isBalanceDataLoading, refetch: refetchUsdcBalance } = useBalance({
         address,
         token: usdcConfig.address,
         query: {
             enabled: isConnected && !!address,
+            staleTime: 0,
+            refetchOnWindowFocus: true,
         },
     });
 
     // SCC Balance (only if vault is available)
-    const sccConfig = SCC_CONTRACT_ADDRESS ? getSccContractConfig() : null;
-    const { data: sccBalance } = useBalance({
+    const sccConfig = ENV.SCC_ADDRESS ? getSccContractConfig() : null;
+    const { data: sccBalance, refetch: refetchSccBalance } = useBalance({
         address,
         token: sccConfig?.address,
         query: {
             enabled: isConnected && !!address && !!sccConfig,
+            staleTime: 0,
+            refetchOnWindowFocus: true,
         },
     });
+
+    // Watch new blocks to keep balances fresh after on-chain actions
+    const { data: blockNumber } = useBlockNumber({
+        watch: true,
+        query: { enabled: isConnected },
+    });
+
+    useEffect(() => {
+        if (!isConnected || !blockNumber) return;
+        void refetchUsdcBalance();
+        if (sccConfig) void refetchSccBalance();
+    }, [blockNumber, isConnected, sccConfig, refetchUsdcBalance, refetchSccBalance]);
 
     useEffect(() => {
         if (!isBalanceDataLoading) {
@@ -54,7 +70,7 @@ export function Header({ links }: HeaderProps) {
 
     const usdcBalanceFormatted = useMemo(() => {
         if (!usdcBalance) return "0";
-        return formatUnits(usdcBalance.value, USDC_DECIMALS);
+        return formatUnits(usdcBalance.value, ENV.USDC_DECIMALS);
     }, [usdcBalance]);
 
     const sccBalanceFormatted = useMemo(() => {

@@ -3,10 +3,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
-import { USDC_DECIMALS } from "../app.config";
+import { ENV } from "../config/environment";
 import { useAppContext } from "../contexts/AppContext";
-import { useBatchOperations } from "../hooks/useContractInteraction";
-import { customToast } from "../utils/customToast";
+import { useBatchOperations } from "../features/marketplace";
+import { customToast } from "../shared/utils/customToast";
 import { getPlaceholderImageUrl } from "../utils/placeholderImage";
 import {
     ChevronRightIcon,
@@ -33,7 +33,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
 
     const formattedPrice = useMemo(() => {
         if (batch.price === undefined) return "N/A";
-        return formatUnits(batch.price, USDC_DECIMALS);
+        return formatUnits(batch.price, ENV.USDC_DECIMALS);
     }, [batch.price]);
 
     const placeholderImage = useMemo(() => {
@@ -59,6 +59,9 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
             await handleApproveAndBuy(BigInt(tokenAmount), totalPrice);
             // Immediately refresh the batches after successful purchase
             await refetchBatches();
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new Event('astaverde:refetch'));
+            }
             if (updateCard) {
                 updateCard();
             }
@@ -203,7 +206,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
                             <span>{batch.itemsLeft.toString()}</span>
                         </div>
                         <p className="text-sm font-medium mt-2 dark:text-white">
-                            Total: {formatUnits(totalPrice, USDC_DECIMALS)} USDC
+                            Total: {formatUnits(totalPrice, ENV.USDC_DECIMALS)} USDC
                         </p>
                         {isConnected
                             ? buttonContent

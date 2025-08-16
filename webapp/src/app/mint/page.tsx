@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { EXTERNAL_URL, IPFS_PREFIX } from "../../app.config";
+import { EXTERNAL_URL, IPFS_PREFIX } from "../../config/constants";
 import { useAppContext } from "../../contexts/AppContext";
 import { useWallet } from "../../contexts/WalletContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
-import { customToast } from "../../utils/customToast";
+import { customToast } from "../../shared/utils/customToast";
 import { connectToSpace, initializeWeb3StorageClient, type TokenMetadata, uploadToIPFS } from "../../utils/ipfsHelper";
 
 export default function MintPage() {

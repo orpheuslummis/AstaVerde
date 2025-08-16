@@ -6,7 +6,7 @@ import { astaverdeContractConfig } from "../../../lib/contracts";
 import { usePublicClient } from "wagmi";
 import Loader from "../../../components/Loader";
 import { fetchJsonFromIpfsWithFallback, resolveIpfsUriToUrl } from "../../../utils/ipfsHelper";
-import { IPFS_GATEWAY_URL } from "../../../app.config";
+import { ENV } from "../../../config/environment";
 
 // Helper to stringify BigInt values for logging
 function bigIntReplacer(key: any, value: any) {

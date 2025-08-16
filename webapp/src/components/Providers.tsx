@@ -5,19 +5,19 @@ import { ConnectKitProvider } from "connectkit";
 import { WagmiProvider } from "wagmi";
 import { AppProvider } from '../contexts/AppContext';
 import { WalletProvider } from "../contexts/WalletContext";
-import { config } from "../wagmi";
+import { wagmiConfig } from "../config/wagmi";
 import { GlobalLoadingProvider } from './GlobalLoadingProvider';
-import { CHAIN_SELECTION } from '../app.config';
+import { ENV } from '../config/environment';
 
 const queryClient = new QueryClient()
 
 export function Providers({ children }: { children: React.ReactNode }) {
     // Disable analytics and debugging features for local development
-    const connectKitOptions = CHAIN_SELECTION === 'local' 
+    const connectKitOptions = ENV.CHAIN_SELECTION === 'local' 
         ? {
             options: {
                 disclaimer: undefined,
-                walletConnectCTA: 'both',
+                walletConnectCTA: 'both' as const,
                 enableWebSocketProvider: false,
             },
             debugMode: false,
@@ -27,7 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
     return (
         <GlobalLoadingProvider>
-            <WagmiProvider config={config}>
+            <WagmiProvider config={wagmiConfig}>
                 <QueryClientProvider client={queryClient}>
                     <ConnectKitProvider {...connectKitOptions}>
                         <WalletProvider>

@@ -1,7 +1,7 @@
 "use client";
 
 import { formatUnits } from "viem";
-import { USDC_DECIMALS } from "../app.config";
+import { ENV } from "../config/environment";
 
 interface BatchInfoProps {
     batchData: [bigint, bigint[], bigint, bigint, bigint];
@@ -18,7 +18,7 @@ export default function BatchInfo({ batchData }: BatchInfoProps) {
             </div>
             <div>
                 <p className="font-semibold">Price:</p>
-                <p>{formatUnits(price, USDC_DECIMALS)} USDC</p>
+                <p>{formatUnits(price, ENV.USDC_DECIMALS)} USDC</p>
             </div>
             <div>
                 <p className="font-semibold">Total Tokens:</p>

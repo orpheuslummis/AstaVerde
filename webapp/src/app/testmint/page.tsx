@@ -2,7 +2,7 @@
 
 import { parseUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
-import { USDC_DECIMALS } from "../../app.config";
+import { ENV } from "../../config/environment";
 // import { useAppContext } from "../../contexts/AppContext"
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import { astaverdeContractConfig, getUsdcContractConfig } from "../../lib/contracts";
@@ -26,7 +26,7 @@ export default function Page() {
     const handleMintUSDC = async () => {
         if (!address) return;
         try {
-            const amount = parseUnits("10000", USDC_DECIMALS);
+            const amount = parseUnits("10000", ENV.USDC_DECIMALS);
             await mintUSDC(address, amount); 
             customToast.success("Successfully minted 10000 USDC");
         } catch (error) {
@@ -38,7 +38,7 @@ export default function Page() {
     const handleApproveUSDC = async () => {
         if (!address) return;
         try {
-            const amount = parseUnits("10000", USDC_DECIMALS);
+            const amount = parseUnits("10000", ENV.USDC_DECIMALS);
             await approveUSDC(astaverdeContractConfig.address, amount);
             customToast.success("Successfully approved USDC");
         } catch (error) {

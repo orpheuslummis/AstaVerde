@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { formatUnits, parseUnits } from "viem";
 import { useAccount, useReadContract } from "wagmi";
-import { USDC_DECIMALS } from "../../app.config";
+import { ENV } from "../../config/environment";
 import { Connected } from "../../components/Connected";
 import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
@@ -127,7 +127,7 @@ function ClaimPlatformFunds() {
             <div className="flex flex-col gap-4">
                 {typeof platformFunds === "bigint" && (
                     <div className="text-gray-600 dark:text-gray-300">
-                        Available Funds: {formatUnits(platformFunds, USDC_DECIMALS)} USDC
+                        Available Funds: {formatUnits(platformFunds, ENV.USDC_DECIMALS)} USDC
                     </div>
                 )}
                 <button
@@ -162,7 +162,7 @@ function PriceFloorControl() {
     const handleSetPriceFloor = async () => {
         if (priceFloor) {
             try {
-                const priceFloorInWei = parseUnits(priceFloor, USDC_DECIMALS);
+                const priceFloorInWei = parseUnits(priceFloor, ENV.USDC_DECIMALS);
                 await adminControls.setPriceFloor(priceFloorInWei.toString());
                 const newValue = await getPriceFloor();
                 setCurrentValue(newValue as bigint);
@@ -198,7 +198,7 @@ function PriceFloorControl() {
             </div>
             {typeof currentValue === "bigint" && (
                 <div className="text-gray-600 dark:text-gray-300 mt-4">
-                    Current Price Floor: {formatUnits(currentValue, USDC_DECIMALS)} USDC
+                    Current Price Floor: {formatUnits(currentValue, ENV.USDC_DECIMALS)} USDC
                 </div>
             )}
         </ControlContainer>
@@ -217,7 +217,7 @@ function BasePriceControl() {
         if (basePrice) {
             try {
                 // Convert the input value to wei (considering USDC decimals)
-                const basePriceInWei = parseUnits(basePrice, USDC_DECIMALS);
+                const basePriceInWei = parseUnits(basePrice, ENV.USDC_DECIMALS);
                 await adminControls.setBasePrice(basePriceInWei);
                 customToast.success("Base price updated successfully");
                 refetchCurrentBasePrice();
@@ -254,7 +254,7 @@ function BasePriceControl() {
             </div>
             {typeof currentBasePrice === "bigint" && (
                 <div className="text-gray-600 dark:text-gray-300 mt-4">
-                    Current Base Price: {Number(formatUnits(currentBasePrice, USDC_DECIMALS)).toLocaleString(undefined, {
+                    Current Base Price: {Number(formatUnits(currentBasePrice, ENV.USDC_DECIMALS)).toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 6
                     })} USDC
@@ -473,7 +473,7 @@ function DailyPriceDecayControl() {
     const handleSetDailyPriceDecay = async () => {
         if (dailyPriceDecay) {
             try {
-                const decayInWei = parseUnits(dailyPriceDecay, USDC_DECIMALS);
+                const decayInWei = parseUnits(dailyPriceDecay, ENV.USDC_DECIMALS);
                 await adminControls.setDailyPriceDecay(decayInWei);
                 const newValue = await getDailyPriceDecay();
                 setCurrentValue(newValue as bigint);
@@ -509,7 +509,7 @@ function DailyPriceDecayControl() {
             </div>
             {typeof currentValue === "bigint" && (
                 <div className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-                    Current: {formatUnits(currentValue, USDC_DECIMALS)} USDC/day
+                    Current: {formatUnits(currentValue, ENV.USDC_DECIMALS)} USDC/day
                 </div>
             )}
         </ControlContainer>
@@ -527,7 +527,7 @@ function PriceAdjustDeltaControl() {
     const handleSetPriceAdjustDelta = async () => {
         if (priceAdjustDelta) {
             try {
-                const deltaInWei = parseUnits(priceAdjustDelta, USDC_DECIMALS);
+                const deltaInWei = parseUnits(priceAdjustDelta, ENV.USDC_DECIMALS);
                 await adminControls.setPriceDelta(deltaInWei);
                 const newValue = await getPriceAdjustDelta();
                 setCurrentValue(newValue as bigint);
@@ -571,7 +571,7 @@ function PriceAdjustDeltaControl() {
             </div>
             {typeof currentValue === "bigint" && (
                 <div className="text-gray-600 dark:text-gray-300 mt-4">
-                    Current Price Adjustment Delta: {formatUnits(currentValue, USDC_DECIMALS)} USDC
+                    Current Price Adjustment Delta: {formatUnits(currentValue, ENV.USDC_DECIMALS)} USDC
                 </div>
             )}
         </ControlContainer>

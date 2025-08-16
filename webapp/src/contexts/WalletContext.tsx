@@ -1,7 +1,7 @@
 import type React from 'react';
 import { createContext, useCallback, useContext, useEffect, useRef } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { customToast } from '../utils/customToast';
+import { customToast } from '../shared/utils/customToast';
 import type { WalletContextType } from '../types';
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);

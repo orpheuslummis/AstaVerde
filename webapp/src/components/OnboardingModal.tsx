@@ -34,7 +34,11 @@ export function OnboardingModal() {
   if (!showModal) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4"
+      data-fixed-overlay="true"
+      suppressHydrationWarning
+    >
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         <div className="flex justify-between items-center p-6 bg-gradient-to-r from-emerald-600 to-teal-500 text-white">
           <h2 className="text-3xl font-bold">Welcome to AstaVerde</h2>

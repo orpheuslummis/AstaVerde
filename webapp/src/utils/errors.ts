@@ -104,7 +104,7 @@ export function parseVaultError(
                       label: "Approve SCC",
                       handler: async () => {
                           try {
-                              await context.approveSCC();
+                              await context.approveSCC?.();
                               customToast.success("Approval initiated. Please confirm in your wallet.");
                           } catch (err) {
                               customToast.error("Failed to initiate approval");
@@ -130,7 +130,7 @@ export function parseVaultError(
                       label: "Approve NFTs",
                       handler: async () => {
                           try {
-                              await context.approveNFT();
+                              await context.approveNFT?.();
                               customToast.success("Approval initiated. Please confirm in your wallet.");
                           } catch (err) {
                               customToast.error("Failed to initiate approval");

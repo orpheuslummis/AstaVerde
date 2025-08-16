@@ -11,9 +11,39 @@ const nextConfig = {
         // This specifically handles the viem/ox Authorization.ts type conflict
         ignoreBuildErrors: true,
     },
-    webpack: (config) => {
+    // Memory optimization settings
+    experimental: {
+        // Use worker threads for better performance (uses all CPUs by default)
+        workerThreads: true,
+        // cpus: auto-detected (uses all available CPUs)
+        // Keep webpack build worker enabled for better parallelization
+        webpackBuildWorker: true,
+    },
+    // Reduce webpack memory usage
+    webpack: (config, { dev, isServer }) => {
         config.resolve.fallback = { fs: false, net: false, tls: false };
         config.resolve.alias["@"] = path.join(__dirname, "src");
+        
+        // Memory optimizations for development
+        if (dev) {
+            // Use filesystem cache instead of memory cache
+            config.cache = {
+                type: 'filesystem',
+                buildDependencies: {
+                    config: [__filename],
+                },
+            };
+            // Keep optimizations but reduce memory usage
+            config.optimization = {
+                ...config.optimization,
+                removeAvailableModules: false,
+                removeEmptyChunks: false,
+                splitChunks: false,
+            };
+            // Allow webpack to use all available CPUs for parallel processing
+            // (parallelism is auto-detected based on CPU count)
+        }
+        
         return config;
     },
     async headers() {
