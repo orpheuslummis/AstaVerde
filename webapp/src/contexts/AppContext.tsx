@@ -5,7 +5,6 @@ import { useContractInteraction } from "../hooks/useContractInteraction";
 import { useAstaVerdeRefetch } from "../hooks/useGlobalEvent";
 import { Batch } from "../lib/batch";
 import { astaverdeContractConfig, getUsdcContractConfig } from "../lib/contracts";
-import { serializeBigInt } from "../shared/utils/bigIntHelper";
 import { customToast } from "../shared/utils/customToast";
 import type { AppContextType } from "../types";
 
@@ -19,7 +18,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { execute: getLastBatchID } = useContractInteraction(astaverdeContractConfig, "lastBatchID");
   const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
 
-  const { data: lastBatchID } = useReadContract({
+  const { } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "lastBatchID",
   }) as { data: bigint | undefined };

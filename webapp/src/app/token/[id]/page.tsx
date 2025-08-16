@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import TokenCard from "../../../components/TokenCard";
 import { astaverdeContractConfig } from "../../../lib/contracts";
 import { usePublicClient } from "wagmi";
 import Loader from "../../../components/Loader";
 import { fetchJsonFromIpfsWithFallback, resolveIpfsUriToUrl } from "../../../utils/ipfsHelper";
-import { ENV } from "../../../config/environment";
 
 // Helper to stringify BigInt values for logging
-function bigIntReplacer(key: any, value: any) {
+function bigIntReplacer(key: string, value: unknown) {
     if (typeof value === 'bigint') {
         return value.toString() + 'n'; // Suffix with 'n' to denote BigInt in logs
     }
@@ -115,7 +113,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
                 imageUrl: resolvedImageUrl,
             });
 
-        } catch (err: any) {
+        } catch (err) {
             console.error(`Error fetching token ${params.id} details:`, err);
             setError(err.message || "Failed to fetch token details.");
         } finally {

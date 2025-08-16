@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { formatEther } from "viem";
 import Link from "next/link";
-import TokenCard from "../../components/TokenCard";
 import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import RedeemTokensButton from "./RedeemTokensButton";
@@ -47,7 +46,7 @@ export default function MyTokensPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<TabType>('all');
-    const [batchData, setBatchData] = useState<Map<bigint, any>>(new Map());
+    const [batchData, setBatchData] = useState<Map<bigint, unknown>>(new Map());
     
     const { astaverdeContractConfig } = useAppContext();
     const { 
@@ -96,7 +95,7 @@ export default function MyTokensPage() {
 
             // Fetch all batch information in parallel
             const lastBatchID = await getLastBatchID();
-            const batchMap = new Map<bigint, any>();
+            const batchMap = new Map<bigint, unknown>();
             
             if (lastBatchID && lastBatchID > 0n) {
                 // Create array of batch IDs to fetch
@@ -469,7 +468,6 @@ export default function MyTokensPage() {
 
     // Calculate vault statistics
     const [sccBalance, setSccBalance] = useState<bigint>(0n);
-    const [activeTransaction, setActiveTransaction] = useState<string>("");
     
     useEffect(() => {
         if (isVaultAvailable && address) {
@@ -529,11 +527,11 @@ export default function MyTokensPage() {
                                 Vault operations require 2 transactions:
                             </p>
                             <ul className="ml-4 mt-1 text-blue-700 dark:text-blue-300 list-disc">
-                                <li><strong>First transaction (Approval):</strong> Shows as "Send 0 ETH" - this gives permission to the vault contract</li>
+                                <li><strong>First transaction (Approval):</strong> Shows as &quot;Send 0 ETH&quot; - this gives permission to the vault contract</li>
                                 <li><strong>Second transaction:</strong> The actual deposit/withdrawal operation</li>
                             </ul>
                             <p className="text-blue-600 dark:text-blue-400 mt-1 text-xs">
-                                Watch the button text and toast notifications to know which step you're on.
+                                Watch the button text and toast notifications to know which step you&apos;re on.
                             </p>
                         </div>
                     </div>

@@ -1,10 +1,8 @@
 import { useCallback, useState, useMemo } from "react";
 import { usePublicClient, useWalletClient, useBalance } from "wagmi";
-import { formatUnits } from "viem";
 import { wagmiConfig } from "../../../config/wagmi";
 import { MarketplaceService } from "../../../services/blockchain/marketplaceService";
 import { getUsdcContract } from "../../../config/contracts";
-import { ENV } from "../../../config/environment";
 import { customToast } from "../../../shared/utils/customToast";
 
 export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
@@ -31,7 +29,7 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
 
     // Handle approve and buy
     const handleApproveAndBuy = useCallback(
-        async (tokenAmount: bigint, usdcAmount: bigint) => {
+        async (tokenAmount: bigint) => {
             if (!marketplaceService) {
                 throw new Error("Marketplace service not initialized");
             }

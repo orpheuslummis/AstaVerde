@@ -7,7 +7,7 @@ export default function Page() {
                 <h1 className="text-4xl font-bold mb-8 text-emerald-800 dark:text-emerald-400">Eco Assets</h1>
                 <p className="text-xl mb-8 text-gray-700 dark:text-gray-300 leading-relaxed">
                     Eco asset production is the core of our mission. These digital assets transform the semi-tangible
-                    commodity of 'carbon removal' into a specific, verifiable occurrence for each tonne. By gathering
+                    commodity of &apos;carbon removal&apos; into a specific, verifiable occurrence for each tonne. By gathering
                     comprehensive proofs and audits, we enable anyone to understand exactly how much carbon was
                     removed without being at the site, all encapsulated in an exchangeable and redeemable NFT.
                 </p>
@@ -43,8 +43,8 @@ export default function Page() {
                 </ul>
 
                 <p className="mb-6 text-gray-700 dark:text-gray-300">
-                    Every tonne of carbon removal in eco assets has been audited for an independent auditor's opinion
-                    for how many tonnes are removed in accordance with ISO 14064-3. This includes meeting the EU's
+                    Every tonne of carbon removal in eco assets has been audited for an independent auditor&apos;s opinion
+                    for how many tonnes are removed in accordance with ISO 14064-3. This includes meeting the EU&apos;s
                     concept of additionality.
                 </p>
 
