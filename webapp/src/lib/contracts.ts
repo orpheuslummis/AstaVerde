@@ -10,6 +10,7 @@ import stabilizedCarbonCoinAbi from "../config/StabilizedCarbonCoin.json";
 import mockUsdcAbi from "../config/MockUSDC.json";
 
 import { ENV } from "../config/environment";
+import { getVaultForAsset, VAULT_CONFIGS } from "../utils/vaultRouting";
 
 export function getUsdcContractConfig() {
     // For local development, always use MockUSDC ABI
@@ -56,6 +57,7 @@ export const mockUSDCContractConfig = {
     abi: extendedERC20Abi,
 } as const;
 
+// V1 Contracts
 export const astaverdeContractConfig = {
     address: ENV.ASTAVERDE_ADDRESS as `0x${string}`,
     abi: astaverdeAbi.abi as Abi,
@@ -63,6 +65,17 @@ export const astaverdeContractConfig = {
 
 export const ecoStabilizerContractConfig = {
     address: ENV.ECOSTABILIZER_ADDRESS as `0x${string}`,
+    abi: ecoStabilizerAbi.abi as Abi,
+} as const;
+
+// V1.1 Contracts
+export const astaverdeV11ContractConfig = {
+    address: (ENV.ASTAVERDE_V11_ADDRESS || ENV.ASTAVERDE_ADDRESS) as `0x${string}`,
+    abi: astaverdeAbi.abi as Abi,
+} as const;
+
+export const ecoStabilizerV11ContractConfig = {
+    address: (ENV.ECOSTABILIZER_V11_ADDRESS || ENV.ECOSTABILIZER_ADDRESS) as `0x${string}`,
     abi: ecoStabilizerAbi.abi as Abi,
 } as const;
 
@@ -77,7 +90,7 @@ export const sccContractConfig = {
 } as const;
 
 // Detect if contract is V2 by checking for batch functions
-export async function detectVaultVersion(publicClient: any): Promise<'V1' | 'V2'> {
+export async function detectVaultVersion(publicClient: unknown): Promise<'V1' | 'V2'> {
     if (!ENV.ECOSTABILIZER_ADDRESS) {
         return 'V1';
     }
@@ -105,6 +118,26 @@ export function getEcoStabilizerContractConfig(version: 'V1' | 'V2' = 'V1') {
         throw new Error("EcoStabilizer contract address not configured");
     }
     return version === 'V2' ? ecoStabilizerV2ContractConfig : ecoStabilizerContractConfig;
+}
+
+// Get the appropriate AstaVerde contract config based on the asset address
+export function getAstaVerdeConfigForAsset(assetAddress: string) {
+    const vault = getVaultForAsset(assetAddress);
+    if (!vault) {
+        // Default to V1 if asset not recognized
+        return astaverdeContractConfig;
+    }
+    return vault.version === "V1.1" ? astaverdeV11ContractConfig : astaverdeContractConfig;
+}
+
+// Get the appropriate EcoStabilizer contract config based on the asset address
+export function getEcoStabilizerConfigForAsset(assetAddress: string) {
+    const vault = getVaultForAsset(assetAddress);
+    if (!vault) {
+        // Default to V1 if asset not recognized
+        return ecoStabilizerContractConfig;
+    }
+    return vault.version === "V1.1" ? ecoStabilizerV11ContractConfig : ecoStabilizerContractConfig;
 }
 
 export function getSccContractConfig() {

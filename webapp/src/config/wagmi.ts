@@ -26,13 +26,13 @@ const baseConfig = isLocalDevelopment()
       };
 
 // Create wagmi config with explicit transports
-let wagmiConfig: any;
+let wagmiConfig: ReturnType<typeof createConfig>;
 
 if (isE2EMode && isLocalDevelopment()) {
     // E2E mode: Add mock connector to the config (filter out Coinbase)
-    const defaultConfig: any = getDefaultConfig(baseConfig as any);
-    const connectors: any[] = [mockConnector(), ...(defaultConfig.connectors || [])].filter(
-        (c: any) => c?.id !== "coinbaseWallet",
+    const defaultConfig = getDefaultConfig(baseConfig as Parameters<typeof getDefaultConfig>[0]);
+    const connectors = [mockConnector(), ...(defaultConfig.connectors || [])].filter(
+        (c) => c?.id !== "coinbaseWallet",
     );
     wagmiConfig = createConfig({
         chains,
@@ -40,24 +40,24 @@ if (isE2EMode && isLocalDevelopment()) {
         transports: chains.reduce((acc, chain) => {
             acc[chain.id] = http("http://127.0.0.1:8545");
             return acc;
-        }, {} as any),
+        }, {}),
     });
 } else if (isLocalDevelopment()) {
     // Local development: Use explicit transport for local chain (filter out Coinbase)
-    const defaultConfig: any = getDefaultConfig(baseConfig as any);
+    const defaultConfig = getDefaultConfig(baseConfig as Parameters<typeof getDefaultConfig>[0]);
     wagmiConfig = createConfig({
         ...defaultConfig,
-        connectors: (defaultConfig.connectors || []).filter((c: any) => c?.id !== "coinbaseWallet"),
+        connectors: (defaultConfig.connectors || []).filter((c) => c?.id !== "coinbaseWallet"),
         transports: {
             31337: http("http://127.0.0.1:8545"),
         },
     });
 } else {
     // Normal mode: Use default config (filter out Coinbase)
-    const defaultConfig: any = getDefaultConfig(baseConfig as any);
+    const defaultConfig = getDefaultConfig(baseConfig as Parameters<typeof getDefaultConfig>[0]);
     wagmiConfig = createConfig({
         ...defaultConfig,
-        connectors: (defaultConfig.connectors || []).filter((c: any) => c?.id !== "coinbaseWallet"),
+        connectors: (defaultConfig.connectors || []).filter((c) => c?.id !== "coinbaseWallet"),
     });
 }
 

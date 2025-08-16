@@ -4,6 +4,7 @@ import astaverdeAbi from "../../config/AstaVerde.json";
 import ecoStabilizerAbi from "../../config/EcoStabilizer.json";
 import stabilizedCarbonCoinAbi from "../../config/StabilizedCarbonCoin.json";
 import { ENV } from "../environment";
+import { getActiveMarketplace, VAULT_CONFIGS } from "../../utils/vaultRouting";
 import type { ContractConfig } from "../../shared/types/contracts";
 
 // Extended ERC20 ABI with mint function for MockUSDC
@@ -54,6 +55,14 @@ export const contracts = {
 
 // Helper functions for contract access
 export function getAstaVerdeContract(): ContractConfig {
+    // Use V1.1 for new purchases if available
+    const activeMarketplace = getActiveMarketplace();
+    if (activeMarketplace.version === "V1.1" && ENV.ASTAVERDE_V11_ADDRESS) {
+        return {
+            address: ENV.ASTAVERDE_V11_ADDRESS as `0x${string}`,
+            abi: astaverdeAbi.abi as Abi,
+        } as ContractConfig;
+    }
     return contracts.astaverde;
 }
 
