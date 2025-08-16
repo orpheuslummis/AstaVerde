@@ -6,22 +6,164 @@ This document summarizes all changes made from the `main` branch to implement Ph
 
 **Branch**: `ssc-clean`  
 **Total Changes**: 275 files changed, 72,775 insertions(+), 32,256 deletions(-)  
-**Status**: Implementation Complete, Ready for Production Deployment
+**Implementation Status**: Core vault system complete; Dual-vault architecture PLANNED but not deployed
 
-## Key Achievements
+### Critical Context: Security Issues Necessitate Dual-Vault Strategy
 
-1. Full Vault System Implementation - Non-fungible CDP system with fixed 20 SCC loans per NFT
-2. Comprehensive Test Coverage - 173 tests passing with complete security validation
-3. Production-Ready Deployment - Automated deployment with security checks and role management
-4. Complete UI Integration - React components for deposit/withdraw operations
-5. Enhanced Developer Experience - Improved tooling, documentation, and local development
+During implementation, critical security vulnerabilities were discovered in the production AstaVerde V1 contract. This discovery expanded the scope from a simple vault addition to a dual-vault architecture that maintains backward compatibility while enabling security hardening for future NFTs.
 
-## Statistics
+## Why Two Vaults? Security Vulnerabilities in Production
 
-- New Smart Contracts: 4 (StabilizedCarbonCoin, EcoStabilizer, EcoStabilizerV2, IAstaVerde)
-- New Test Files: 10 comprehensive test suites
-- Documentation Added: 85 new documentation files
-- Development Scripts: 39 new utility and testing scripts
+### Original Plan vs. Reality
+
+The original Phase 2 specification (SSC_PLAN.md) called for a straightforward vault system to be deployed alongside the existing, unchanged AstaVerde contract. However, security review revealed 6 critical/high severity vulnerabilities in the live contract that could not be ignored.
+
+### Critical Security Issues in Production V1
+
+1. **Refund Siphon Attack** (CRITICAL)
+   - Overpayment refunds pulled from contract balance instead of sender
+   - Could drain entire platform funds and producer payments
+   - **Impact**: Complete loss of contract USDC reserves
+
+2. **Redeemed NFT Resale** (HIGH)
+   - Already-redeemed NFTs could be sold again to unsuspecting buyers
+   - Contract accepted transfers of redeemed tokens back
+   - **Impact**: Users purchasing worthless NFTs for full price
+
+3. **Vault Operation Blocking** (HIGH)
+   - Pausing AstaVerde would lock all vault collateral
+   - Users unable to withdraw NFTs even with SCC to repay
+   - **Impact**: Indefinite collateral lockup, liquidity crisis
+
+4. **Price Update DoS** (MEDIUM)
+   - Unbounded iteration in price updates could exhaust gas
+   - Attacker could create many batches to make contract unusable
+   - **Impact**: Complete marketplace shutdown via gas exhaustion
+
+5. **Price Arithmetic Underflow** (HIGH)
+   - Dutch auction price calculation could underflow and revert
+   - Old batches become unpurchasable over time
+   - **Impact**: Permanent DoS on batch purchases
+
+6. **Zero Address Producer** (HIGH)
+   - Minting with address(0) producers burns funds permanently
+   - No validation on producer addresses
+   - **Impact**: Irreversible loss of producer revenues
+
+### The Dual-Vault Solution
+
+Given these critical issues, the implementation was designed to support a dual-vault architecture:
+
+- **AstaVerde V1**: Existing vulnerable contract (unchanged, users' NFTs remain here)
+- **AstaVerde V1.1**: New hardened contract with all security fixes (for future NFTs)
+- **Two Vaults**: Each vault binds to its respective marketplace
+- **Single SCC Token**: Shared liquidity across both systems
+
+This approach:
+- Preserves existing NFTs without forced migration
+- Enables security hardening for new NFTs
+- Maintains unified liquidity through single SCC token
+- Requires no user action for existing holdings
+
+## Current Implementation Status
+
+### ✅ Completed Components
+
+**Smart Contracts (Production-Ready)**
+- StabilizedCarbonCoin.sol - ERC-20 debt token with vault-exclusive minting
+- EcoStabilizer.sol - Core vault with non-fungible CDP system
+- EcoStabilizerV2.sol - Enhanced vault with batch operations
+- IAstaVerde.sol - Interface for vault integration
+- AstaVerde.sol - Hardened with 16 security improvements
+
+**Testing Infrastructure (Comprehensive)**
+- 173 tests passing across 10 test suites
+- Security-specific tests: reentrancy, boundaries, ghost supply
+- Gas optimization verified (<150k deposit, <120k withdraw)
+- Complete code coverage achieved
+
+**Deployment Infrastructure (Ready)**
+- scripts/deploy_ecostabilizer.ts supports dual vault deployment
+- Atomic role management with security verification
+- Conditional logic for single or dual vault setup
+
+### ⚠️ Partially Implemented
+
+**Frontend Configuration**
+- Environment variables defined for dual system
+- Contract ABIs generated for all components
+- But NO vault routing logic implemented
+- UI components reference single vault only
+
+### ❌ Not Implemented
+
+**Frontend Vault Routing**
+- Missing getVaultForAsset() function
+- No automatic vault selection based on NFT source
+- UI doesn't distinguish V1 vs V1.1 marketplaces
+
+**V1.1 Marketplace Deployment**
+- Hardened AstaVerde.sol exists but not deployed
+- No production V1.1 contract address
+- Minting still continues on vulnerable V1
+
+## Critical Decisions Pending
+
+### 1. Deployment Strategy Decision
+
+**Option A: Single Vault (Simpler, Higher Risk)**
+- Deploy vault for existing V1 only
+- Accept security vulnerabilities for all NFTs
+- Simpler implementation and user experience
+- Risk: Vulnerable to known exploits
+
+**Option B: Dual Vault (Complex, Secure)**
+- Deploy hardened V1.1 for new NFTs
+- Maintain V1 vault for existing NFTs
+- Requires frontend routing implementation
+- Benefit: Security for future, compatibility for past
+
+### 2. Implementation Requirements for Option B
+
+If proceeding with dual-vault:
+
+1. **Deploy V1.1 Marketplace**
+   - Deploy hardened AstaVerde.sol as new contract
+   - Configure with same parameters as V1
+   - Stop all minting on V1
+
+2. **Deploy Dual Vaults**
+   - EcoStabilizer-V1 bound to existing vulnerable contract
+   - EcoStabilizer-V1.1 bound to new hardened contract
+   - Single SCC token with both vaults as minters
+
+3. **Implement Frontend Routing**
+   ```typescript
+   // Required: webapp/src/utils/vaultRouting.ts
+   export function getVaultForAsset(assetAddress: `0x${string}`) {
+     const v1 = process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS;
+     const v11 = process.env.NEXT_PUBLIC_ASTAVERDE_V11_ADDRESS;
+     
+     if (assetAddress.toLowerCase() === v1?.toLowerCase()) {
+       return process.env.NEXT_PUBLIC_ECOSTABILIZER_ADDRESS;
+     } else if (assetAddress.toLowerCase() === v11?.toLowerCase()) {
+       return process.env.NEXT_PUBLIC_ECOSTABILIZER_V11_ADDRESS;
+     }
+     throw new Error("Unknown asset contract");
+   }
+   ```
+
+4. **Update UI Components**
+   - Show marketplace version (V1/V1.1) in UI
+   - Direct new purchases to V1.1 only
+   - Add migration notices for V1 users
+
+### 3. Key Risk Acknowledgments
+
+- **V1 remains vulnerable**: Existing NFTs exposed to known exploits
+- **No migration path**: V1 NFTs cannot move to V1.1
+- **Complexity increase**: Two marketplaces, two vaults, one token
+- **trustedVault limitation**: V1 lacks this function, vault ops pause with marketplace
 
 ## Smart Contract Changes
 
@@ -48,342 +190,233 @@ This document summarizes all changes made from the `main` branch to implement Ph
    - Interface extending IERC1155 for vault integration
    - Provides token metadata access methods
 
-### Modified Contracts
+### AstaVerde.sol Security Hardening
 
-1. **AstaVerde.sol** - Security hardening and vault integration
-   - Added SafeERC20 for safer USDC token transfers
-   - Added trustedVault mechanism to allow vault operations during pause
-   - Added MAX_PRICE_UPDATE_ITERATIONS (100) to prevent DOS attacks
-   - Platform share capped at 50% (reduced from 99%)
-   - Batch size limited to 1-100 tokens (previously unlimited)
-   - Added setTrustedVault() function for seamless vault integration
-   - Enhanced input validation for producer addresses
-   - Improved documentation and indexing strategy comments
+The following 16 improvements were applied to create the hardened V1.1 version:
 
-2. **MockUSDC.sol** - Updated for testing compatibility
-   
-3. **AnotherERC20.sol** - Minor formatting updates
+**Security Fixes (7 items):**
+- SafeERC20 migration for all token transfers
+- Refund siphon prevention via full-amount pull
+- Redeemed token check in partial sales
+- TrustedVault mechanism for pause bypass
+- Iteration limit with MAX_PRICE_UPDATE_ITERATIONS
+- Saturation arithmetic for price underflow
+- Token existence validation in redemption
+
+**Business Logic Protections (3 items):**
+- Platform share capped at 50% maximum
+- Batch size limited to 100 tokens
+- Producer address validation against zero
+
+**Code Quality Improvements (6 items):**
+- Event emission after transfers complete
+- Documentation for 1-based batch indexing
+- Warning about non-authoritative owner field
+- Fair remainder distribution in payouts
+- Cleanup of unused modifiers and constants
+- USDC decimals assumption documented
 
 ## Testing Infrastructure
 
-### New Test Suites (10 new files, 173 total tests)
+### Comprehensive Test Coverage (173 tests, all passing)
 
-1. Core Functionality Tests
-   - EcoStabilizer.ts - Vault core operations
-   - StabilizedCarbonCoin.ts - SCC token functionality
-   - IntegrationPhase1Phase2.ts - Cross-phase integration
+1. **Core Functionality Tests**
+   - EcoStabilizer.ts - Complete vault lifecycle operations
+   - StabilizedCarbonCoin.ts - ERC-20 token security and compliance
+   - IntegrationPhase1Phase2.ts - Cross-phase interaction validation
 
-2. Security Tests
+2. **Security Tests**
    - VaultReentrancy.ts - Reentrancy attack protection
    - SecurityDeployment.ts - Production deployment security
-   - SCCInvariants.ts - Supply invariants and ghost supply
+   - SCCInvariants.ts - Supply invariant maintenance
 
-3. Edge Case Tests
-   - VaultBoundaries.ts - Boundary conditions
-   - VaultDirectTransfer.ts - Direct NFT transfer handling
+3. **Edge Case Tests**
+   - VaultBoundaries.ts - System limits and boundary conditions
+   - VaultDirectTransfer.ts - Unexpected NFT transfer handling
    - VaultRedeemed.ts - Redeemed asset protection
-   - VaultCoverageGapsFixed.ts - Complete coverage scenarios
+   - VaultCoverageGapsFixed.ts - Complete code coverage
 
-### Test Results
-- Total Tests: 173 passing
-- Execution Time: ~7 seconds
-- Coverage: Comprehensive security and functionality validation
+## Deployment Guide
 
-## Webapp/UI Changes
+### For Single Vault Deployment (Option A - Simpler)
 
-### New Components (3 files)
+```bash
+# Environment setup
+export AV_ADDR=0x[existing_vulnerable_v1_address]
+export BASE_RPC=https://mainnet.base.org
+export PRIVATE_KEY=...
 
-1. **VaultCard.tsx** (396 lines)
-   - Complete deposit/withdraw interface
-   - Transaction status tracking
-   - Error handling with retry logic
-   - Compact and full display modes
-
-2. **VaultErrorDisplay.tsx** (116 lines)
-   - Specialized error display for vault operations
-   - User-friendly error messages
-
-3. **BatchCard.refactored.tsx** (103 lines)
-   - Refactored batch display component
-   - Optimized rendering logic
-
-### New Hooks (2 files)
-
-1. **useVault.ts** (673 lines)
-   - Complete vault interaction logic
-   - NFT approval management
-   - SCC balance and allowance tracking
-
-2. **useGlobalEvent.ts** (40 lines)
-   - Global event management system
-   - Prevents memory leaks from event listeners
-
-### Enhanced Features
-
-- Wallet Integration: Improved ConnectKit configuration
-- Multi-chain Support: Local, Base Sepolia, Base Mainnet
-- Transaction Management: Better status tracking and user feedback
-- Error Handling: Comprehensive error parsing and display
-
-### Configuration Updates
-
-New Configuration Files (5 TypeScript modules):
-- chains.ts - Chain configurations for multi-network support
-- constants.ts - Application-wide constants
-- contracts/index.ts - Contract address management
-- environment.ts - Environment variable handling
-- wagmi.ts - Wagmi client configuration
-  
-Contract ABIs Added (5 JSON files):
-- EcoStabilizer.json (487 lines)
-- EcoStabilizerV2.json (675 lines) 
-- StabilizedCarbonCoin.json (604 lines)
-- MockUSDC.json (341 lines)
-- local-dev.json (17 lines)
-  
-Updated Files:
-- app.config.ts - Enhanced with vault addresses and chain selection
-- AstaVerde.json - Updated ABI
-
-## Deployment and Infrastructure
-
-### Deployment Architecture - Dual Vault System
-
-The implementation supports a coexistence strategy for V1 (existing live marketplace) and V1.1 (hardened marketplace):
-
-1. **Single SCC Token** - Shared by both vaults
-   - Both vaults receive MINTER_ROLE
-   - Unified liquidity pool across all NFTs
-   - No token bridges or migrations required
-
-2. **Dual Vault Deployment**
-   - EcoStabilizer-V1: Binds to existing AstaVerde V1 contract
-   - EcoStabilizer-V11: Binds to hardened AstaVerde V1.1 contract
-   - Each vault only accepts NFTs from its bound marketplace
-
-3. **Deployment Scripts**
-   - **deploy/deploy.ts** - Enhanced deployment logic with Phase 2 support
-     - Detects and integrates with existing AstaVerde deployment
-     - Deploys SCC and EcoStabilizer contracts
-     - Handles role configuration automatically
-   
-   - **scripts/deploy_ecostabilizer.ts** (331 lines)
-     - Production-ready deployment with atomic role management
-     - Security verification and validation
-     - Support for dual vault deployment (V1 and V1.1 marketplaces)
-     - Automatic admin role renunciation after setup
-
-### Development Tools
-
-1. **scripts/dev-environment.js** (777 lines)
-   - Complete local development environment
-   - Automated contract deployment and data seeding
-   - Interactive dashboard with real-time monitoring
-
-2. **scripts/claude-friendly-qa.js** (471 lines)
-   - Comprehensive QA automation
-   - Multiple test scenarios
-   - Performance benchmarking
-
-3. Dashboard Tools
-   - dev-dashboard.html - Real-time monitoring interface
-   - dev-dashboard-server.js - WebSocket-based live updates
-   - Enhanced versions with advanced features
-
-### Build Configuration
-
-- **package.json**: Complete overhaul of development scripts
-  - New quick QA commands: qa:status, qa:fast, qa:full
-  - Integrated development environment: dev:complete / start
-  - Deployment scripts: deploy:testnet, deploy:mainnet
-  - Migrated from pnpm to npm with package-lock.json (20,624 lines)
-- **hardhat.config.ts**: Updated for Phase 2 deployment
-- **biome.json**: Code formatting and linting configuration
-- **tsconfig.json**: Updated TypeScript configuration
-
-## Documentation
-
-### New Documentation Files
-
-1. Core Documentation
-   - SSC_PLAN.md - Complete Phase 2 specification
-   - DEPLOYMENT.md - Production deployment guide
-   - DEV_GUIDE.md - Development setup and workflow
-   - TESTING.md - Testing methodology
-
-2. Integration Guides
-   - test/INTEGRATION_TESTING.md - Phase integration testing
-   - test/TESTING_GUIDE.md - Comprehensive test documentation
-   - webapp/CLAUDE.md - Webapp development guide
-
-3. Script Documentation
-   - scripts/README.md - Script usage guide
-   - scripts/DEV_TOOLS_README.md - Development tools documentation
-
-## Security Enhancements
-
-1. Access Control
-   - Role-based permissions with AccessControl
-   - Automated admin renunciation after deployment
-   - Exclusive MINTER_ROLE for vault
-
-2. Protection Mechanisms
-   - Reentrancy guards on all state-changing functions
-   - Pausability for emergency situations
-   - Redeemed asset validation
-
-3. Testing and Validation
-   - Comprehensive security test suite
-   - Deployment verification scripts
-   - Role management validation
-
-## Code Quality Improvements
-
-1. Formatting and Linting
-   - Prettier configuration for consistent formatting
-   - Biome for TypeScript/JavaScript linting
-   - Solhint for Solidity best practices
-
-2. Developer Experience
-   - Improved error messages
-   - Better logging and debugging tools
-   - Streamlined development commands
-
-## Removed Files
-
-1. Build Scripts (3 files)
-   - deploy.sh - Replaced with npm scripts
-   - mint.sh - Replaced with JavaScript utilities
-   - mint_local.sh - Replaced with JavaScript utilities
-
-2. Package Managers (2 files)
-   - pnpm-lock.yaml - Migrated to npm
-   - webapp/pnpm-lock.yaml - Migrated to npm
-
-3. Test Files (1 file)
-   - test/AstaVerde.behavior.ts - Refactored into AstaVerde.logic.behavior.ts
-
-## Migration Notes
-
-### Breaking Changes
-- None - Phase 1 contracts remain unchanged
-- Package manager changed from pnpm to npm
-
-### Configuration Required
-
-1. Environment Variables for Deployment:
-   - `AV_ADDR` - Existing AstaVerde V1 contract address
-   - `AV_ADDR_V11` - New AstaVerde V1.1 contract address (if deploying hardened version)
-   - Network RPC URLs and private keys
-
-2. Webapp Configuration for Dual Vault System:
-   ```
-   NEXT_PUBLIC_ASTAVERDE_V1=0x...     # Existing live marketplace
-   NEXT_PUBLIC_ASTAVERDE_V11=0x...    # Hardened marketplace (optional)
-   NEXT_PUBLIC_ECOSTABILIZER_V1=0x... # Vault for V1 NFTs
-   NEXT_PUBLIC_ECOSTABILIZER_V11=0x...# Vault for V1.1 NFTs
-   NEXT_PUBLIC_SCC_ADDRESS=0x...      # Single SCC token
-   ```
-
-3. Frontend Vault Routing:
-   - Automatic vault selection based on NFT source contract
-   - No user intervention required for vault selection
-
-### Deployment Steps
-
-For Single Vault (V1 only):
+# Deployment steps
 1. Deploy SCC token contract
 2. Deploy EcoStabilizer vault bound to existing AstaVerde V1
 3. Grant MINTER_ROLE to vault on SCC
 4. Renounce admin roles on SCC
-5. Set trustedVault on AstaVerde (if function exists)
-6. Update frontend configuration
-7. Run smoke tests
+5. Update frontend configuration
+6. Run smoke tests
+```
 
-For Dual Vault System (V1 + V1.1):
-1. Deploy AstaVerde V1.1 (hardened version)
-2. Deploy SCC token contract (or reuse existing)
-3. Deploy EcoStabilizer-V1 (bound to V1) and EcoStabilizer-V11 (bound to V1.1)
-4. Grant MINTER_ROLE to both vaults on SCC
-5. Renounce admin roles on SCC
-6. Set trustedVault on both AstaVerde contracts
-7. Configure frontend with all contract addresses
-8. Implement vault routing in frontend
-9. Run comprehensive integration tests
+### For Dual Vault Deployment (Option B - Recommended)
 
-## Testing Recommendations
+```bash
+# Environment setup
+export AV_ADDR=0x[existing_vulnerable_v1_address]
+export AV_ADDR_V11=0x[new_hardened_v11_address]
+export BASE_RPC=https://mainnet.base.org
+export PRIVATE_KEY=...
 
-1. Local Testing
-   ```bash
-   npm run dev:complete  # Full local environment
-   npm run qa:fast       # Quick validation
-   ```
+# Deployment steps
+1. Deploy hardened AstaVerde.sol as V1.1
+2. Deploy SCC token contract
+3. Deploy EcoStabilizer-V1 (bound to V1)
+4. Deploy EcoStabilizer-V1.1 (bound to V1.1)
+5. Grant MINTER_ROLE to both vaults on SCC
+6. Renounce admin roles on SCC
+7. Call setTrustedVault() on V1.1 (V1 lacks this function)
+8. Stop minting on V1, redirect to V1.1
+9. Implement frontend vault routing
+10. Update webapp configuration
+11. Run comprehensive integration tests
+```
 
-2. Testnet Testing
-   ```bash
-   npm run deploy:testnet
-   npm run verify:contracts
-   ```
+### Required Frontend Configuration
 
-3. Security Verification
-   ```bash
-   npm run test
-   npm run coverage
-   ```
+```env
+# Single Vault (Current capability)
+NEXT_PUBLIC_ASTAVERDE_ADDRESS=0x[existing_v1]
+NEXT_PUBLIC_ECOSTABILIZER_ADDRESS=0x[single_vault]
+NEXT_PUBLIC_SCC_ADDRESS=0x[scc_token]
+
+# Dual Vault (Requires frontend work)
+NEXT_PUBLIC_ASTAVERDE_ADDRESS=0x[existing_v1]
+NEXT_PUBLIC_ASTAVERDE_V11_ADDRESS=0x[new_v11]
+NEXT_PUBLIC_ECOSTABILIZER_ADDRESS=0x[vault_for_v1]
+NEXT_PUBLIC_ECOSTABILIZER_V11_ADDRESS=0x[vault_for_v11]
+NEXT_PUBLIC_SCC_ADDRESS=0x[shared_scc_token]
+```
+
+## Webapp/UI Changes
+
+### Completed Components
+
+1. **VaultCard.tsx** (396 lines)
+   - Deposit/withdraw interface
+   - Transaction status tracking
+   - Error handling with retry logic
+
+2. **useVault.ts** (673 lines)
+   - Vault interaction logic
+   - NFT approval management
+   - SCC balance tracking
+
+3. **VaultErrorDisplay.tsx** (116 lines)
+   - Specialized error display
+   - User-friendly messages
+
+### Required for Dual Vault
+
+1. **Vault Routing** (Not implemented)
+   - Create utils/vaultRouting.ts
+   - Update useVault.ts to use routing
+   - Modify VaultCard.tsx for dual support
+
+2. **UI Indicators** (Not implemented)
+   - Show V1 vs V1.1 marketplace
+   - Migration notices for users
+   - Clear labeling of NFT sources
+
+## Development Infrastructure
+
+### Build and Test Commands
+
+```bash
+# Development
+npm run dev:complete      # Full local environment
+npm run qa:fast          # Quick validation
+npm run test             # Run all tests
+npm run coverage         # Coverage analysis
+
+# Deployment
+npm run deploy:testnet   # Deploy to Base Sepolia
+npm run deploy:mainnet   # Deploy to Base mainnet
+
+# Webapp
+cd webapp && npm run dev # Start Next.js dev server
+```
+
+### Key Development Tools
+
+- scripts/dev-environment.js - Local development environment
+- scripts/claude-friendly-qa.js - QA automation
+- scripts/deploy_ecostabilizer.ts - Production deployment
 
 ## Performance Metrics
 
-Gas Usage (Target met):
-- Deposit: <150k gas
-- Withdraw: <120k gas
-  
-Test Execution:
-- Full test suite: ~7 seconds (173 tests)
-- Quick QA: ~450ms (status + fast checks)
-- Complete dev environment: ~30 seconds startup
+**Gas Usage (Targets Met):**
+- Deposit: <150k gas ✓
+- Withdraw: <120k gas ✓
 
-## Future Enhancements
+**Test Execution:**
+- Full suite: ~7 seconds (173 tests)
+- Quick QA: ~450ms
+- Dev environment: ~30 seconds startup
 
-While the current implementation is complete and production-ready, potential future improvements include:
+## Next Steps for Production
 
-1. Advanced vault features (as noted in contracts)
-2. Additional UI components for analytics
-3. Enhanced monitoring and reporting tools
-4. Cross-chain bridge integration
+### Immediate Actions Required
 
-## Recent Development Activity
+1. **Make Deployment Decision**
+   - Choose between Option A (single vault) or Option B (dual vault)
+   - If Option B, allocate resources for frontend work
 
-### Latest Commits (ssc-clean branch)
-- 0ac241f - Archive completed development tickets
-- 247c053 - Add environment configuration and test utilities
-- 32880bb - Optimize components and improve code organization
-- 0c201bd - Implement global event listener cleanup system
-- 16a2bfd - Enhance vault with V2 support and batch operations
+2. **If Proceeding with Option B:**
+   - Deploy V1.1 marketplace contract
+   - Implement frontend routing
+   - Create user communication plan
+   - Test dual-vault system end-to-end
 
-## Architectural Decision: Coexistence Strategy
+3. **If Proceeding with Option A:**
+   - Accept and document security risks
+   - Deploy single vault system
+   - Monitor for exploit attempts
+   - Plan future migration strategy
 
-The implementation adopts a dual-vault architecture to support both the existing live AstaVerde V1 marketplace and a potential hardened V1.1 marketplace without requiring migrations:
+### Timeline Considerations
 
-### Rationale
-- **Preserve V1 NFTs**: Existing NFTs remain fully functional without migration
-- **Security Hardening**: V1.1 incorporates security fixes not suitable for backporting
-- **Unified Liquidity**: Single SCC token shared across all vaults
-- **Zero Migration**: No user action required to continue using existing NFTs
+- **Option A**: 1-2 days to production
+- **Option B**: 5-7 days including frontend work and testing
 
-### Implementation
-- Two separate vault contracts, each bound to its respective marketplace
-- Single SCC token with both vaults having minting privileges
-- Frontend automatically routes to correct vault based on NFT source
-- TrustedVault mechanism ensures vault operations continue during marketplace pauses
+## Impact Analysis
+
+### Development Complexity Increase
+
+**Original Estimate**: 2 weeks for simple vault addition
+**Actual Duration**: 6+ weeks including security analysis
+**Reason**: Discovery of critical vulnerabilities requiring architectural changes
+
+### Scope Expansion
+
+- Test suites: 3 planned → 10 implemented
+- Total tests: ~50 planned → 173 implemented
+- Documentation: Basic → Comprehensive security analysis
+- Architecture: Simple vault → Dual-vault capable system
 
 ## Conclusion
 
-The Phase 2 EcoStabilizer implementation is complete and production-ready. The system provides a secure, gas-efficient solution for NFT collateralization that preserves backward compatibility while enabling future security enhancements.
+The Phase 2 implementation successfully delivers a production-ready vault system with the capability to support a dual-vault architecture. While the core smart contracts are complete and thoroughly tested, the decision to deploy as a single or dual vault system remains pending.
 
-### Key Differentiators
-- Non-fungible CDPs: Each NFT maintains unique identity as collateral
-- No liquidations: Users always reclaim their exact deposited NFT
-- Fixed rate system: 20 SCC per NFT, no oracle dependency
-- Dual marketplace support: Seamless V1 and V1.1 coexistence
-- Production hardened: Extensive security testing and gas optimization
-- Zero migration path: Existing NFTs work without any user action
+The discovery of critical security vulnerabilities in the production V1 contract necessitated a more complex but responsible approach. The recommended path forward is Option B (dual vault), which provides security for future NFTs while maintaining compatibility for existing ones.
+
+### Key Achievements
+- ✅ Secure vault system with non-fungible CDPs
+- ✅ Comprehensive test coverage (173 tests)
+- ✅ Gas-efficient implementation
+- ✅ Production-ready deployment scripts
+- ✅ Security hardening for V1.1
+
+### Pending Decisions
+- ⏳ Single vs. dual vault deployment
+- ⏳ Frontend routing implementation
+- ⏳ V1 minting cessation timeline
+- ⏳ User communication strategy
+
+The additional complexity introduced by the dual-vault architecture is a necessary tradeoff for maintaining both security and backward compatibility in a production environment with existing user assets.
