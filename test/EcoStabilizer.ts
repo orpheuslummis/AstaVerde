@@ -221,7 +221,7 @@ describe("EcoStabilizer", function () {
             );
         });
 
-        it("Should allow repayAndWithdraw convenience function", async function () {
+        it("Should allow withdraw via single entrypoint", async function () {
             const { ecoStabilizer, astaVerde, scc, user1 } = await loadFixture(deployEcoStabilizerFixture);
 
             // First deposit
@@ -235,8 +235,8 @@ describe("EcoStabilizer", function () {
             const initialSCCBalance = await scc.balanceOf(user1.address);
             const initialNFTBalance = await astaVerde.balanceOf(user1.address, 1);
 
-            // Use convenience function
-            const tx = await ecoStabilizer.connect(user1).repayAndWithdraw(1);
+            // Use single entrypoint
+            const tx = await ecoStabilizer.connect(user1).withdraw(1);
 
             // Check SCC was burned
             const finalSCCBalance = await scc.balanceOf(user1.address);
@@ -255,17 +255,17 @@ describe("EcoStabilizer", function () {
             await expect(tx).to.emit(ecoStabilizer, "Withdrawn").withArgs(user1.address, 1);
         });
 
-        it("Should measure gas consumption for repayAndWithdraw", async function () {
+        it("Should measure gas consumption for withdraw (single entrypoint)", async function () {
             const { ecoStabilizer, astaVerde, scc, user1 } = await loadFixture(deployEcoStabilizerFixture);
 
             await astaVerde.connect(user1).setApprovalForAll(ecoStabilizer.target, true);
             await ecoStabilizer.connect(user1).deposit(1);
             await scc.connect(user1).approve(ecoStabilizer.target, ethers.parseEther("20"));
 
-            const tx = await ecoStabilizer.connect(user1).repayAndWithdraw(1);
+            const tx = await ecoStabilizer.connect(user1).withdraw(1);
             const receipt = await tx.wait();
 
-            console.log(`repayAndWithdraw gas used: ${receipt!.gasUsed}`);
+            console.log(`withdraw gas used: ${receipt!.gasUsed}`);
             expect(receipt!.gasUsed).to.be.lessThan(150000); // Should be efficient
         });
     });

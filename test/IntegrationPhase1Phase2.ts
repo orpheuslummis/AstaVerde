@@ -799,7 +799,7 @@ describe("Integration: Phase 1 ↔ Phase 2", function () {
             const sccBalance = await scc.balanceOf(user1.address);
             await scc.connect(user1).approve(ecoStabilizer.target, sccBalance);
 
-            await expect(ecoStabilizer.connect(user1).repayAndWithdraw(1))
+            await expect(ecoStabilizer.connect(user1).withdraw(1))
                 .to.emit(ecoStabilizer, "Withdrawn")
                 .withArgs(user1.address, 1);
 

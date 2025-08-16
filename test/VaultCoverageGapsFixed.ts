@@ -279,8 +279,8 @@ describe("Vault Contracts - Coverage Gap Tests (Fixed)", function () {
                 "EnforcedPause",
             );
 
-            // Try repayAndWithdraw while paused (should fail)
-            await expect(ecoStabilizer.connect(user1).repayAndWithdraw(1)).to.be.revertedWithCustomError(
+            // Try withdraw while paused (should fail)
+            await expect(ecoStabilizer.connect(user1).withdraw(1)).to.be.revertedWithCustomError(
                 ecoStabilizer,
                 "EnforcedPause",
             );
