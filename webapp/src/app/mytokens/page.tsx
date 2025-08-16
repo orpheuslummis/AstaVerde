@@ -50,7 +50,15 @@ export default function MyTokensPage() {
     const [batchData, setBatchData] = useState<Map<bigint, any>>(new Map());
     
     const { astaverdeContractConfig } = useAppContext();
-    const { getUserLoans, isVaultAvailable, getSccBalance, deposit, approveNFT } = useVault();
+    const { 
+        getUserLoans, 
+        isVaultAvailable, 
+        getSccBalance, 
+        deposit, 
+        depositBatch,
+        vaultVersion,
+        approveNFT 
+    } = useVault();
     const { execute: getTokensOfOwner } = useContractInteraction(
         astaverdeContractConfig,
         "balanceOf",
@@ -220,16 +228,41 @@ export default function MyTokensPage() {
             // First ensure NFT approval
             await approveNFT();
             
-            // Deposit each token sequentially
-            // Note: In production, this should use a batch deposit function for gas efficiency
+            // Use batch operations if V2, otherwise fall back to sequential
             const depositedTokens: bigint[] = [];
-            for (let i = 0; i < tokenIds.length; i++) {
-                const tokenId = tokenIds[i];
-                console.log(`Depositing token #${tokenId}...`);
-                setBulkDepositProgress({ current: i + 1, total: tokenIds.length });
-                await deposit(tokenId);
-                depositedTokens.push(tokenId);
-                console.log(`Token #${tokenId} deposited successfully`);
+            
+            if (vaultVersion === 'V2') {
+                // V2: Single batch transaction (gas efficient)
+                console.log(`Depositing ${tokenIds.length} tokens in a single batch transaction...`);
+                setBulkDepositProgress({ current: tokenIds.length, total: tokenIds.length });
+                await depositBatch(tokenIds);
+                depositedTokens.push(...tokenIds);
+                console.log(`Successfully deposited all ${tokenIds.length} tokens in one transaction!`);
+            } else {
+                // V1: Sequential deposits with warning
+                const estimatedGas = tokenIds.length * 120000; // ~120k gas per deposit
+                const proceed = window.confirm(
+                    `⚠️ Gas Warning: This operation will require ${tokenIds.length} separate transactions.\n\n` +
+                    `Estimated total gas: ~${estimatedGas.toLocaleString()} units\n\n` +
+                    `Consider upgrading to EcoStabilizerV2 for 75% gas savings with batch operations.\n\n` +
+                    `Continue with sequential deposits?`
+                );
+                
+                if (!proceed) {
+                    setIsBulkDepositing(false);
+                    setBulkDepositProgress({ current: 0, total: 0 });
+                    return;
+                }
+                
+                // Deposit each token sequentially
+                for (let i = 0; i < tokenIds.length; i++) {
+                    const tokenId = tokenIds[i];
+                    console.log(`Depositing token #${tokenId}...`);
+                    setBulkDepositProgress({ current: i + 1, total: tokenIds.length });
+                    await deposit(tokenId);
+                    depositedTokens.push(tokenId);
+                    console.log(`Token #${tokenId} deposited successfully`);
+                }
             }
             
             console.log(`Successfully deposited all ${tokenIds.length} tokens!`);

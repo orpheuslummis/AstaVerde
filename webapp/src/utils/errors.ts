@@ -41,7 +41,7 @@ export interface TransactionState {
 export function parseVaultError(
     error: any,
     context?: {
-        operation?: "deposit" | "withdraw" | "approve";
+        operation?: "deposit" | "withdraw" | "approve" | "depositBatch" | "withdrawBatch";
         approveSCC?: () => Promise<void>;
         approveNFT?: () => Promise<void>;
         retry?: () => void;
