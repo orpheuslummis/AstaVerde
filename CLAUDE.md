@@ -2,10 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Memory System
-
-@.claude/memory.md
-
 ## Development Commands
 
 ### Building and Compilation
@@ -27,11 +23,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Manual QA Environment (Complete Local Dev)
 
-- `npm run dev` - **One command: Contracts + Webapp + Test Data**
-- `npm run dev:basic` - Basic marketplace scenario
-- `npm run dev:marketplace` - Active marketplace with various states
-- `npm run dev:vault` - Vault functionality testing scenario
-- `npm run dev:complete` - All testing scenarios combined
+- `npm run dev:complete` - **One command: All testing scenarios combined**
+- `npm run start` - Alias for dev:complete
 
 ### Linting and Formatting
 
@@ -48,20 +41,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Webapp Commands
 
-- `npm run webapp:dev` - Starts Next.js development server
-- `npm run webapp:build` - Builds webapp for production
-- `npm run webapp:install` - Installs webapp dependencies
+- Webapp commands should be run from the `webapp/` directory:
+  - `cd webapp && npm run dev` - Starts Next.js development server
+  - `cd webapp && npm run build` - Builds webapp for production
+  - `cd webapp && npm install` - Installs webapp dependencies
 
 ### Development Utilities
 
-- `npm run watch` - Watches contracts, compiles and tests on changes
-- `npm run task:mint:local` - Mints tokens locally for testing
-- `npm run task:events` - Runs event monitoring scripts
-
-### Build Verification (Prevent Vercel Failures)
-
-- `npm run build:all` - Comprehensive build: compile + test + webapp:build
-- `npm run verify:deploy` - Full verification before deployment (recommended before pushing)
+- Various utility scripts available in `scripts/` directory
+- For minting tokens locally: `node scripts/mint-local-batch.js`
+- For event monitoring: `node scripts/events/index.mjs`
 
 ## Architecture Overview
 
@@ -75,6 +64,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **AstaVerde.sol** - Phase 1: Main ERC-1155 contract (deployed, unchanged in Phase 2)
 - **StabilizedCarbonCoin.sol** - Phase 2: ERC-20 debt token with MINTER_ROLE exclusively for vault
 - **EcoStabilizer.sol** - Phase 2: Vault contract enabling 1:1 NFT collateralization for 20 SCC loans
+- **EcoStabilizerV2.sol** - Phase 2: Enhanced vault with batch operations support
 - **IAstaVerde.sol** - Phase 2: Interface extending IERC1155 for vault integration
 - **MockUSDC.sol** - Testing utility
 - **AnotherERC20.sol** - Additional testing utility
@@ -127,7 +117,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing Strategy
 
-**Comprehensive Test Suite (171 tests, all passing):**
+**Comprehensive Test Suite (173 tests, all passing):**
 
 - `AstaVerde.ts` & `AstaVerde.logic.behavior.ts` - Phase 1 marketplace functionality
 - `EcoStabilizer.ts` - Core vault operations (deposit, withdraw, admin functions)
@@ -188,7 +178,7 @@ All core Phase 2 functionality has been implemented and thoroughly tested:
 
 **Testing Suite (Complete):**
 
-- ✅ 171/171 tests passing with comprehensive coverage
+- ✅ 173/173 tests passing with comprehensive coverage
 - ✅ Security testing: reentrancy, access control, boundary conditions
 - ✅ Integration testing: Phase 1 ↔ Phase 2 interactions
 - ✅ Edge cases: redeemed assets, direct transfers, invariants
@@ -196,7 +186,7 @@ All core Phase 2 functionality has been implemented and thoroughly tested:
 
 **Deployment Infrastructure (Complete):**
 
-- ✅ `deploy/deploy_ecostabilizer.ts` - Production deployment script
+- ✅ `scripts/deploy_ecostabilizer.ts` - Production deployment script
 - ✅ Multi-network support (local, testnet, mainnet)
 - ✅ Role-based deployment with proper access control setup
 
@@ -229,10 +219,12 @@ Phase 2 smart contracts are production-ready with comprehensive security testing
 
 - Zero production security risks
 - Remaining 7 vulnerabilities are in development-only tools (hardhat-deploy, solc)
-- All 171/171 tests passing with updated dependencies
+- All 173/173 tests passing with updated dependencies
 
 **Best Practices:**
 
 - Always run `npm run verify:deploy` before pushing major changes
 - Dependencies are pinned to specific secure versions
 - Regular security audits via `npm audit` show acceptable risk levels
+
+- The developer takes care of running the local dev stack themselves, so don't run it.

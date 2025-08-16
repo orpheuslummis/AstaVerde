@@ -8,7 +8,7 @@
 
 ## Background / Justification
 
-`withdraw` and `repayAndWithdraw` require `burnFrom`, which depends on ERC20 allowances. Supporting EIP-2612 permit reduces friction (no prior approve tx) and improves UX in wallets/dapps.
+Previous design used `burnFrom` for withdraw flows, which depends on ERC20 allowances. Current design uses `transferFrom` → `burn`, still relying on allowances but without `burnFrom`. Supporting EIP-2612 permit could still reduce friction (no prior approve tx) and improve UX in wallets/dapps.
 
 ## Tasks
 

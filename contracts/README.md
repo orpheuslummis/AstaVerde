@@ -165,22 +165,18 @@ function deposit(uint256 tokenId) external nonReentrant whenNotPaused {
     scc.mint(msg.sender, SCC_PER_ASSET);
 }
 
-// Repay loan and withdraw exact NFT
+// Repay loan and withdraw exact NFT (single entrypoint)
 function withdraw(uint256 tokenId) external nonReentrant whenNotPaused {
     Loan memory loan = loans[tokenId];
     require(loan.active && loan.borrower == msg.sender, "not borrower");
 
-    // Burn SCC to repay loan
-    scc.burnFrom(msg.sender, SCC_PER_ASSET);
-
-    // Return exact NFT
-    ecoAsset.safeTransferFrom(address(this), msg.sender, tokenId, 1, "");
+    // Update state first (CEI)
     loans[tokenId].active = false;
-}
 
-// Convenience function: approve + withdraw in one transaction
-function repayAndWithdraw(uint256 tokenId) external nonReentrant whenNotPaused {
-    // Implementation combines approval and withdrawal
+    // Collect repayment then burn and return NFT
+    scc.transferFrom(msg.sender, address(this), SCC_PER_ASSET);
+    scc.burn(SCC_PER_ASSET);
+    ecoAsset.safeTransferFrom(address(this), msg.sender, tokenId, 1, "");
 }
 ```
 
