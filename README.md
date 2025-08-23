@@ -12,9 +12,10 @@ Carbon offset NFT marketplace with Dutch auction pricing and collateralized lend
 
 ## 📚 Documentation
 
-- **[Development Guide](./DEV_GUIDE.md)** - Setup, structure, and workflow
-- **[Testing Guide](./TESTING.md)** - Comprehensive testing documentation
-- **[Deployment Guide](./DEPLOYMENT.md)** - Production deployment and checklist
+- **[Development Guide](./docs/development/DEV_GUIDE.md)** - Setup, structure, and workflow
+- **[Testing Guide](./docs/development/TESTING.md)** - Comprehensive testing documentation
+- **[Deployment Guide](./docs/deployment/DEPLOYMENT.md)** - Production deployment and checklist
+- **[QA Testing Guide](./docs/qa/QA_TESTING.md)** - QA testing guide and checklist
 - **[SSC Plan](./SSC_PLAN.md)** - Phase 2 technical specification
 - **[Claude Instructions](./CLAUDE.md)** - AI assistant configuration
 

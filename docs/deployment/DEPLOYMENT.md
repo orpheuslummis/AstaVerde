@@ -1,6 +1,6 @@
 # AstaVerde EcoStabilizer Deployment Guide
 
-This guide covers the complete deployment process for the EcoStabilizer vault system (Phase 2) alongside the existing AstaVerde marketplace (Phase 1) on Base mainnet.
+This comprehensive guide covers deployment procedures for the EcoStabilizer vault system (Phase 2) alongside the existing AstaVerde marketplace (Phase 1) on both Base mainnet and testnet environments.
 
 ## 🎯 Deployment Overview
 
@@ -45,7 +45,12 @@ BASE_SEPOLIA_EXPLORER_API_KEY="..." # Sepolia BaseScan API key (for testing)
 # Optional - Development
 MNEMONIC="..." # 12-word phrase for local development
 OWNER_ADDRESS="0x..." # Override owner address if needed
+
+# Optional - Dual Vault Setup (QA)
+AV_ADDR_V11="0x..." # AstaVerde V1.1 address for dual-vault deployment
 ```
+
+---
 
 ## 📋 Pre-Deployment Checklist
 
@@ -55,13 +60,14 @@ OWNER_ADDRESS="0x..." # Override owner address if needed
 - [ ] Code quality checks: `npm run lint`
 - [ ] Gas targets verified: Deposit <165k, Withdraw <120k
 - [ ] Integration tests validate Phase 1↔2 compatibility
+- [ ] Webapp builds successfully: `cd webapp && npm run build`
 
 ### Environment Setup
 
-- [ ] Base mainnet RPC access configured
+- [ ] Target network RPC access configured
 - [ ] Deployer wallet funded with sufficient ETH for gas
-- [ ] AstaVerde contract address verified on Base mainnet
-- [ ] BaseScan API key obtained for contract verification
+- [ ] Contract addresses verified on target network
+- [ ] Explorer API key obtained for contract verification
 - [ ] Environment variables configured in `.env.local`
 
 ### Security Validation
@@ -71,7 +77,9 @@ OWNER_ADDRESS="0x..." # Override owner address if needed
 - [ ] Multi-signature or hardware wallet for production deployment
 - [ ] Backup of deployment configuration
 
-## 🚀 Deployment Process
+---
+
+## 🚀 Production Deployment (Base Mainnet)
 
 ### Step 1: Environment Configuration
 
@@ -121,7 +129,107 @@ The deployment script:
 4. ✅ Renounces deployer admin roles
 5. ✅ Saves deployment info to `deployments/ecostabilizer-<chainId>.json`
 
-## 📊 Deployment Script Breakdown
+---
+
+## 🧪 QA Deployment (Base Sepolia Testnet)
+
+### Overview
+
+QA deployments support testing of:
+- Single vault configuration (standard)
+- Dual-vault configuration (V1 + V1.1 marketplaces sharing single SCC)
+
+### Prerequisites
+
+Create or update `.env.local`:
+
+```bash
+# Deployment wallet private key (with Base Sepolia ETH)
+PRIVATE_KEY=<your_deployment_wallet_private_key>
+
+# Alchemy API key for Base Sepolia RPC
+RPC_API_KEY=<your_alchemy_api_key>
+
+# Blockscout API key for contract verification
+BASE_SEPOLIA_EXPLORER_API_KEY=<your_blockscout_api_key>
+```
+
+Create `webapp/.env.production`:
+
+```bash
+# Network selection
+NEXT_PUBLIC_CHAIN_SELECTION=base_sepolia
+
+# Contract addresses (filled after deployment)
+NEXT_PUBLIC_ASTAVERDE_ADDRESS=
+NEXT_PUBLIC_ASTAVERDE_V11_ADDRESS=  # For dual-vault only
+NEXT_PUBLIC_USDC_ADDRESS=
+NEXT_PUBLIC_ECOSTABILIZER_ADDRESS=
+NEXT_PUBLIC_ECOSTABILIZER_V11_ADDRESS=  # For dual-vault only
+NEXT_PUBLIC_SCC_ADDRESS=
+
+# Configuration
+NEXT_PUBLIC_USDC_DECIMALS=6
+NEXT_PUBLIC_IPFS_GATEWAY_URL=https://ipfs.io/ipfs/
+
+# API Keys (production keys required)
+NEXT_PUBLIC_ALCHEMY_API_KEY=<your_alchemy_api_key>
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=<your_walletconnect_project_id>
+```
+
+### Standard Deployment (Single Vault)
+
+```bash
+# 1. Get test ETH from faucet
+# Visit: https://www.alchemy.com/faucets/base-sepolia
+
+# 2. Deploy V1 marketplace contracts
+npm run deploy:testnet
+
+# 3. Deploy SCC + EcoStabilizer vault
+export AV_ADDR=0x[deployed_astaverde_address]
+npx hardhat run scripts/deploy_ecostabilizer.ts --network base-sepolia
+
+# 4. Update webapp configuration with addresses
+# 5. Deploy webapp to Vercel
+```
+
+### Dual-Vault Deployment (V1 + V1.1)
+
+```bash
+# 1. Deploy V1 marketplace
+npm run deploy:testnet
+
+# 2. Deploy V1.1 marketplace (hardened version)
+# Deploy AstaVerde.sol with same constructor args as V1
+
+# 3. Deploy SCC + both vaults
+export AV_ADDR=0x[deployed_astaverde_v1]
+export AV_ADDR_V11=0x[deployed_astaverde_v11]
+npx hardhat run scripts/deploy_ecostabilizer.ts --network base-sepolia
+
+# 4. Update webapp with all addresses
+# 5. Deploy webapp to Vercel
+```
+
+### Post-Deployment Setup
+
+```bash
+# Seed test data
+node scripts/mint.mjs --count 6
+
+# Or use test seeder (recommended)
+ASTAVERDE_ADDRESS=0x[...] USDC_ADDRESS=0x[...] \
+SCC_ADDRESS=0x[...] ECOSTABILIZER_ADDRESS=0x[...] \
+npx hardhat run scripts/test-seed.js --network base-sepolia
+
+# Verify contracts on Blockscout
+npx hardhat verify --network base-sepolia <CONTRACT_ADDRESS>
+```
+
+---
+
+## 📊 Deployment Script Details
 
 ### deploy/deploy_ecostabilizer.ts (excerpt)
 
@@ -153,30 +261,7 @@ assert(await scc.hasRole(MINTER_ROLE, ecoStabilizer.target));
 - **Verification Checks**: Deployment fails if security requirements not met
 - **Role Validation**: Confirms proper MINTER_ROLE assignment
 
-## 🔧 Testing Deployment
-
-### Sepolia Testnet Deployment
-
-```bash
-# Deploy to Sepolia for testing
-AV_ADDR=0x... npm run deploy:testnet
-
-# Run smoke tests
-node scripts/smoke_test_vault.mjs --network base-sepolia
-```
-
-### Local Development Deployment
-
-```bash
-# Start local network
-npx hardhat node
-
-# Deploy locally (separate terminal)
-AV_ADDR=0x5FC8d32690cc91D4c39d9d3abcBD16989F875707 npm run deploy:local
-
-# Run integration tests
-npm run test test/IntegrationPhase1Phase2.ts
-```
+---
 
 ## 📁 Deployment Artifacts
 
@@ -217,29 +302,31 @@ webapp/src/config/
 }
 ```
 
+---
+
 ## 🔍 Post-Deployment Validation
 
 ### Functional Testing
 
 ```bash
 # Smoke test - basic functionality
-node scripts/smoke_test_vault.mjs --network base-mainnet
+node scripts/smoke_test_vault.mjs --network [network]
 
 # Integration test - Phase 1↔2 compatibility
-npm run test test/IntegrationPhase1Phase2.ts -- --network base-mainnet
+npm run test test/IntegrationPhase1Phase2.ts -- --network [network]
 
 # Gas analysis
-node scripts/gas_analysis.mjs --network base-mainnet
+node scripts/gas_analysis.mjs --network [network]
 ```
 
 ### Security Audit
 
 ```bash
 # Verify role assignments
-npx hardhat run scripts/audit-roles.js --network base-mainnet
+npx hardhat run scripts/audit-roles.js --network [network]
 
 # Validate contract state
-npx hardhat run scripts/validate-deployment.js --network base-mainnet
+npx hardhat run scripts/validate-deployment.js --network [network]
 ```
 
 ### Frontend Integration
@@ -251,6 +338,8 @@ npm run webapp:build
 # Test webapp with new contracts
 npm run webapp:dev
 ```
+
+---
 
 ## 🚨 Emergency Procedures
 
@@ -278,6 +367,8 @@ await ecoStabilizer.adminSweepNFT(tokenId, rescueAddress);
 - **Role Changes**: Alert on any admin function calls
 - **Error Patterns**: Monitor for failed transactions
 
+---
+
 ## 📈 Expected Gas Costs
 
 ### Deployment Costs (Base Mainnet)
@@ -297,6 +388,8 @@ await ecoStabilizer.adminSweepNFT(tokenId, rescueAddress);
 | Withdraw NFT | ~75k     | <120k  | ✅     |
 | SCC Approval | ~46k     | N/A    | ✅     |
 | NFT Approval | ~24k     | N/A    | ✅     |
+
+---
 
 ## 🔗 Integration Points
 
@@ -324,35 +417,6 @@ await scc.approve(ecoStabilizer.address, parseEther("20"));
 const tx2 = await ecoStabilizer.withdraw(tokenId);
 await tx2.wait();
 ```
-
-## 📞 Support & Troubleshooting
-
-### Common Issues
-
-1. **Deployment Fails**: Check environment variables and network connectivity
-2. **Role Assignment Error**: Verify MINTER_ROLE grant before renunciation
-3. **Gas Estimation Error**: Increase gas limit or check Base network status
-4. **Verification Failed**: Ensure BaseScan API key is valid
-
-### Debug Commands
-
-```bash
-# Check deployment status
-npx hardhat run scripts/debug-deployment.js --network base-mainnet
-
-# Verify contract bytecode
-npx hardhat verify --network base-mainnet <CONTRACT_ADDRESS>
-
-# Test contract interaction
-npx hardhat run scripts/test-interaction.js --network base-mainnet
-```
-
-### Resources
-
-- **Base Documentation**: https://docs.base.org
-- **BaseScan Explorer**: https://basescan.org
-- **Hardhat Documentation**: https://hardhat.org/docs
-- **OpenZeppelin Contracts**: https://docs.openzeppelin.com/contracts
 
 ---
 
@@ -437,6 +501,49 @@ npx hardhat run scripts/test-interaction.js --network base-mainnet
 
 ---
 
+## 📞 Support & Troubleshooting
+
+### Common Issues
+
+1. **Deployment Fails**: Check environment variables and network connectivity
+2. **Role Assignment Error**: Verify MINTER_ROLE grant before renunciation
+3. **Gas Estimation Error**: Increase gas limit or check Base network status
+4. **Verification Failed**: Ensure BaseScan API key is valid
+5. **Build Failures**: Fix ESLint/TypeScript errors before deployment
+
+### Debug Commands
+
+```bash
+# Check deployment status
+npx hardhat run scripts/debug-deployment.js --network [network]
+
+# Verify contract bytecode
+npx hardhat verify --network [network] <CONTRACT_ADDRESS>
+
+# Test contract interaction
+npx hardhat run scripts/test-interaction.js --network [network]
+```
+
+### Resources
+
+- **Base Documentation**: https://docs.base.org
+- **BaseScan Explorer**: https://basescan.org
+- **Blockscout (Sepolia)**: https://base-sepolia.blockscout.com
+- **Hardhat Documentation**: https://hardhat.org/docs
+- **OpenZeppelin Contracts**: https://docs.openzeppelin.com/contracts
+
+---
+
+## Summary of Key Changes for QA Testing
+
+1. **Dual-vault deployment**: V1 + V1.1 marketplaces, each with their own vault; single shared SCC
+2. **Correct mint scripts**: Use `mint.mjs` or `test-seed.js`
+3. **Explorer target**: Blockscout for Base Sepolia
+4. **Vault limitations**: V1 contracts only (no batch operations)
+5. **Frontend routing**: Use per-asset vault routing with V1/V1.1 envs
+
+---
+
 **⚠️ Security Reminder**: Always verify contract addresses and test thoroughly on Sepolia before mainnet deployment. The EcoStabilizer system is immutable once deployed.
 
 **💡 Pro Tips**:
@@ -444,3 +551,9 @@ npx hardhat run scripts/test-interaction.js --network base-mainnet
 - Save all deployment artifacts securely
 - Consider time-delayed announcement
 - Have support team ready for launch
+
+---
+
+*Last Updated: 2025-01-23*
+*Branch: ssc-clean*
+*Version: Phase 2 Implementation (Vault System)*
