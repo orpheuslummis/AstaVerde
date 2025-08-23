@@ -5,7 +5,6 @@ import { getContract } from "viem";
 import { usePublicClient } from "wagmi";
 import astaverdeAbi from "../config/AstaVerde.json";
 import ecoStabilizerAbi from "../config/EcoStabilizer.json";
-import ecoStabilizerV2Abi from "../config/EcoStabilizerV2.json";
 import stabilizedCarbonCoinAbi from "../config/StabilizedCarbonCoin.json";
 import mockUsdcAbi from "../config/MockUSDC.json";
 
@@ -79,45 +78,24 @@ export const ecoStabilizerV11ContractConfig = {
     abi: ecoStabilizerAbi.abi as Abi,
 } as const;
 
-export const ecoStabilizerV2ContractConfig = {
-    address: ENV.ECOSTABILIZER_ADDRESS as `0x${string}`,
-    abi: ecoStabilizerV2Abi.abi as Abi,
-} as const;
 
 export const sccContractConfig = {
     address: ENV.SCC_ADDRESS as `0x${string}`,
     abi: stabilizedCarbonCoinAbi.abi as Abi,
 } as const;
 
-// Detect if contract is V2 by checking for batch functions
+// All EcoStabilizer contracts now have batch functions built-in
 export async function detectVaultVersion(publicClient: unknown): Promise<'V1' | 'V2'> {
-    if (!ENV.ECOSTABILIZER_ADDRESS) {
-        return 'V1';
-    }
-    
-    try {
-        // Try to call a V2-only function selector
-        const bytecode = await publicClient.getBytecode({
-            address: ENV.ECOSTABILIZER_ADDRESS as `0x${string}`,
-        });
-        
-        // Check if depositBatch function selector exists in bytecode
-        // depositBatch selector: 0x5ae401dc
-        if (bytecode && bytecode.includes('5ae401dc')) {
-            return 'V2';
-        }
-    } catch (error) {
-        console.log('Error detecting vault version, defaulting to V1:', error);
-    }
-    
-    return 'V1';
+    // Since we merged V2 into base contract, all deployments now support batch operations
+    return 'V2';
 }
 
-export function getEcoStabilizerContractConfig(version: 'V1' | 'V2' = 'V1') {
+export function getEcoStabilizerContractConfig() {
     if (!ENV.ECOSTABILIZER_ADDRESS) {
         throw new Error("EcoStabilizer contract address not configured");
     }
-    return version === 'V2' ? ecoStabilizerV2ContractConfig : ecoStabilizerContractConfig;
+    // Single contract now includes batch operations
+    return ecoStabilizerContractConfig;
 }
 
 // Get the appropriate AstaVerde contract config based on the asset address
@@ -127,7 +105,8 @@ export function getAstaVerdeConfigForAsset(assetAddress: string) {
         // Default to V1 if asset not recognized
         return astaverdeContractConfig;
     }
-    return vault.version === "V1.1" ? astaverdeV11ContractConfig : astaverdeContractConfig;
+    // Return the appropriate config based on the asset address
+    return vault.astaVerdeAddress === ENV.ASTAVERDE_V11_ADDRESS ? astaverdeV11ContractConfig : astaverdeContractConfig;
 }
 
 // Get the appropriate EcoStabilizer contract config based on the asset address
@@ -137,7 +116,8 @@ export function getEcoStabilizerConfigForAsset(assetAddress: string) {
         // Default to V1 if asset not recognized
         return ecoStabilizerContractConfig;
     }
-    return vault.version === "V1.1" ? ecoStabilizerV11ContractConfig : ecoStabilizerContractConfig;
+    // Return the appropriate config based on the vault address
+    return vault.ecoStabilizerAddress === ENV.ECOSTABILIZER_V11_ADDRESS ? ecoStabilizerV11ContractConfig : ecoStabilizerContractConfig;
 }
 
 export function getSccContractConfig() {
