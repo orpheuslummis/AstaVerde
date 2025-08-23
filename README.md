@@ -25,7 +25,7 @@ Carbon offset NFT marketplace with Dutch auction pricing and collateralized lend
 - ERC-1155 NFTs representing verified carbon offsets
 - Dynamic pricing: Base price adjusts with market demand
 - Dutch auction: Daily 1 USDC decrease to 40 USDC floor
-- 30% platform commission, 70% to producers
+- 30% default platform commission (configurable up to 50%), remainder to producers
 
 ### Phase 2: EcoStabilizer Vault (Complete)
 

@@ -24,7 +24,7 @@ This directory contains all smart contracts for the AstaVerde ecosystem, includi
 - **ERC-1155 Multi-Token Standard**: Efficient batch operations
 - **Dutch Auction Mechanism**: Price decreases 1 USDC daily from base to floor
 - **Dynamic Base Price**: Adjusts ±10 USDC based on market demand
-- **Revenue Split**: 70% producers, 30% platform
+- **Revenue Split**: Default 70% producers, 30% platform (configurable up to 50% platform share)
 - **Token Redemption**: Permanent NFT retirement mechanism
 
 #### Core Functions

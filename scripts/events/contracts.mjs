@@ -267,7 +267,7 @@ export const astaverdeContractConfig = {
 				{
 					indexed: false,
 					internalType: "uint256",
-					name: "batchSoldTime",
+					name: "partialSaleTime",
 					type: "uint256",
 				},
 				{

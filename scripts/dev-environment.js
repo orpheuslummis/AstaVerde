@@ -445,7 +445,12 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
             env: { 
                 ...process.env, 
                 NODE_ENV: "development",
-                NODE_OPTIONS: "--max-old-space-size=2048" // Limit Node.js memory to 2GB
+                // Increase memory limit to 4GB and disable experimental features that might cause memory issues
+                NODE_OPTIONS: "--max-old-space-size=4096",
+                // Disable SWC optimizations in dev to reduce memory usage
+                NEXT_TELEMETRY_DISABLED: "1",
+                // Reduce webpack memory usage
+                WEBPACK_CACHE_TYPE: "filesystem"
             },
             // Make the process detached so we can kill the entire process group
             detached: process.platform !== "win32",
