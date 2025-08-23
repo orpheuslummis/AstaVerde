@@ -251,6 +251,25 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "batchId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "BatchMarkedUsedInPriceDecrease",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": false,
           "internalType": "uint256",
           "name": "batchId",
@@ -321,6 +340,19 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newLimit",
+          "type": "uint256"
+        }
+      ],
+      "name": "MaxPriceUpdateIterationsSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": true,
           "internalType": "address",
           "name": "previousOwner",
@@ -348,7 +380,7 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "batchSoldTime",
+          "name": "partialSaleTime",
           "type": "uint256"
         },
         {
@@ -579,6 +611,19 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": true,
+          "internalType": "address",
+          "name": "vault",
+          "type": "address"
+        }
+      ],
+      "name": "TrustedVaultSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": false,
           "internalType": "string",
           "name": "value",
@@ -608,8 +653,58 @@
       "type": "event"
     },
     {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "vault",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256[]",
+          "name": "ids",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "VaultRecalled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "vault",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256[]",
+          "name": "ids",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "VaultSent",
+      "type": "event"
+    },
+    {
       "inputs": [],
-      "name": "MAX_PRICE_UPDATE_ITERATIONS",
+      "name": "MAX_CID_LENGTH",
       "outputs": [
         {
           "internalType": "uint256",
@@ -697,25 +792,6 @@
     {
       "inputs": [],
       "name": "basePrice",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "batchCreationIndex",
       "outputs": [
         {
           "internalType": "uint256",
@@ -1040,6 +1116,19 @@
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "maxPriceUpdateIterations",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "address[]",
@@ -1066,7 +1155,7 @@
         },
         {
           "internalType": "address",
-          "name": "",
+          "name": "from",
           "type": "address"
         },
         {
@@ -1105,7 +1194,7 @@
         },
         {
           "internalType": "address",
-          "name": "",
+          "name": "from",
           "type": "address"
         },
         {
@@ -1218,6 +1307,29 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "recoverERC20",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -1385,6 +1497,19 @@
       "inputs": [
         {
           "internalType": "uint256",
+          "name": "newLimit",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMaxPriceUpdateIterations",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
           "name": "newSharePercentage",
           "type": "uint256"
         }
@@ -1477,7 +1602,7 @@
       "outputs": [
         {
           "internalType": "address",
-          "name": "owner",
+          "name": "originalMinter",
           "type": "address"
         },
         {
@@ -1567,6 +1692,32 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "ids",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "vaultRecallTokens",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "ids",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "vaultSendTokens",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     }
   ]
