@@ -109,7 +109,7 @@ export function useVault(assetAddress?: string): VaultHook {
         }
         return assetAddress 
             ? getEcoStabilizerConfigForAsset(assetAddress)
-            : getEcoStabilizerContractConfig(vaultVersion || 'V1');
+            : getEcoStabilizerContractConfig();
     }, [isVaultAvailable, vaultVersion, assetAddress, vaultConfig]);
     
     const getAssetContractConfig = useCallback(() => {
@@ -322,7 +322,7 @@ export function useVault(assetAddress?: string): VaultHook {
             }
             
             if (vaultVersion !== 'V2') {
-                throw new Error("Batch operations require EcoStabilizerV2 contract");
+                throw new Error("Batch operations not available - check contract deployment");
             }
 
             try {
@@ -368,7 +368,7 @@ export function useVault(assetAddress?: string): VaultHook {
             }
             
             if (vaultVersion !== 'V2') {
-                throw new Error("Batch operations require EcoStabilizerV2 contract");
+                throw new Error("Batch operations not available - check contract deployment");
             }
 
             try {

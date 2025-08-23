@@ -243,7 +243,7 @@ export default function MyTokensPage() {
                 const proceed = window.confirm(
                     `⚠️ Gas Warning: This operation will require ${tokenIds.length} separate transactions.\n\n` +
                     `Estimated total gas: ~${estimatedGas.toLocaleString()} units\n\n` +
-                    `Consider upgrading to EcoStabilizerV2 for 75% gas savings with batch operations.\n\n` +
+                    `Batch operations provide 75% gas savings.\n\n` +
                     `Continue with sequential deposits?`
                 );
                 

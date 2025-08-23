@@ -12,13 +12,10 @@ const nextConfig = {
         ignoreBuildErrors: true,
     },
     // Memory optimization settings
-    experimental: {
-        // Use worker threads for better performance (uses all CPUs by default)
-        workerThreads: true,
-        // cpus: auto-detected (uses all available CPUs)
-        // Keep webpack build worker enabled for better parallelization
-        webpackBuildWorker: true,
-    },
+    // experimental: {
+        // Disable webpack build worker in dev to reduce memory overhead
+    //     webpackBuildWorker: false,
+    // },
     // Reduce webpack memory usage
     webpack: (config, { dev, isServer }) => {
         config.resolve.fallback = { fs: false, net: false, tls: false };

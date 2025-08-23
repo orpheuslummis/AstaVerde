@@ -10,7 +10,6 @@ import { useVault } from "../hooks/useVault";
 import { getEcoStabilizerConfigForAsset } from "../lib/contracts";
 import { customToast } from "../shared/utils/customToast";
 import { getTransactionStatusMessage, TxStatus } from "../utils/errors";
-import { getAssetVersion } from "../utils/vaultRouting";
 import { ENV } from "../config/environment";
 import { CompactErrorDisplay, VaultErrorDisplay } from "./VaultErrorDisplay";
 
@@ -27,7 +26,6 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
   
   // Determine asset address - default to V1 if not provided
   const effectiveAssetAddress = assetAddress || ENV.ASTAVERDE_ADDRESS;
-  const assetVersion = getAssetVersion(effectiveAssetAddress);
   
   const {
     deposit,
@@ -270,47 +268,27 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
 
     if (isInVault) {
       if (!isCurrentUserBorrower) {
-        return (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">In Vault (not yours)</span>
-            {assetVersion && (
-              <span className={`text-xs px-1.5 py-0.5 rounded ${
-                assetVersion === "V1.1" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"
-              }`}>
-                {assetVersion}
-              </span>
-            )}
-          </div>
-        );
+        return <span className="text-xs text-gray-500">In Vault (not yours)</span>;
       }
 
       return (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleWithdraw}
-            disabled={isWithdrawLoading || vaultLoading || sccBalance < parseEther("20")}
-            className="px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 
-                     text-white text-xs rounded-md transition-colors min-w-[100px]"
-            title={
-              sccBalance < parseEther("20") ? "You need 20 SCC to withdraw" : "Withdraw NFT from vault (requires 20 SCC)"
-            }
-          >
-            {isWithdrawLoading
-              ? transactionStep || "Processing..."
-              : vaultLoading
-                ? "..."
-                : sccBalance < parseEther("20")
-                  ? "Need 20 SCC"
-                  : "Withdraw"}
-          </button>
-          {assetVersion && (
-            <span className={`text-xs px-1.5 py-0.5 rounded ${
-              assetVersion === "V1.1" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"
-            }`}>
-              {assetVersion}
-            </span>
-          )}
-        </div>
+        <button
+          onClick={handleWithdraw}
+          disabled={isWithdrawLoading || vaultLoading || sccBalance < parseEther("20")}
+          className="px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 
+                   text-white text-xs rounded-md transition-colors min-w-[100px]"
+          title={
+            sccBalance < parseEther("20") ? "You need 20 SCC to withdraw" : "Withdraw NFT from vault (requires 20 SCC)"
+          }
+        >
+          {isWithdrawLoading
+            ? transactionStep || "Processing..."
+            : vaultLoading
+              ? "..."
+              : sccBalance < parseEther("20")
+                ? "Need 20 SCC"
+                : "Withdraw"}
+        </button>
       );
     }
 
@@ -331,20 +309,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
   return (
     <div data-testid="vault-card" className="flex flex-col gap-3 p-4 border rounded-lg bg-white dark:bg-gray-800">
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Vault Operations</h3>
-          {assetVersion && (
-            <span
-              className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                assetVersion === "V1.1"
-                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-              }`}
-            >
-              {assetVersion}
-            </span>
-          )}
-        </div>
+        <h3 className="font-semibold text-gray-900 dark:text-white">Vault Operations</h3>
         {isInVault && (
           <span
             className="px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 
