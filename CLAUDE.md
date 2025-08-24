@@ -2,6 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+
 ## Development Commands
 
 ### Building and Compilation
@@ -64,7 +65,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **AstaVerde.sol** - Phase 1: Main ERC-1155 contract (deployed, unchanged in Phase 2)
 - **StabilizedCarbonCoin.sol** - Phase 2: ERC-20 debt token with MINTER_ROLE exclusively for vault
 - **EcoStabilizer.sol** - Phase 2: Vault contract enabling 1:1 NFT collateralization for 20 SCC loans
-- **EcoStabilizerV2.sol** - Phase 2: Enhanced vault with batch operations support
 - **IAstaVerde.sol** - Phase 2: Interface extending IERC1155 for vault integration
 - **MockUSDC.sol** - Testing utility
 
@@ -116,20 +116,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing Strategy
 
-**Comprehensive Test Suite (173 tests, all passing):**
+**Test Suite Structure:**
 
-- `AstaVerde.ts` & `AstaVerde.logic.behavior.ts` - Phase 1 marketplace functionality
-- `EcoStabilizer.ts` - Core vault operations (deposit, withdraw, admin functions)
-- `StabilizedCarbonCoin.ts` - SCC token functionality and security
-- `IntegrationPhase1Phase2.ts` - Cross-phase interaction testing
-- `VaultBoundaries.ts` - Edge cases and boundary conditions
-- `VaultDirectTransfer.ts` - Direct NFT transfer handling
-- `VaultRedeemed.ts` - Redeemed asset protection
-- `VaultReentrancy.ts` - Reentrancy attack protection
-- `VaultCoverageGapsFixed.ts` - Complete code coverage
-- `SCCInvariants.ts` - Supply invariant and ghost supply scenarios
-- `SecurityDeployment.ts` - Production deployment security
-- `HelperTest.ts` - Testing utilities
+- `AstaVerde.test.ts` - Phase 1 marketplace functionality
+- `EcoStabilizer.test.ts` - Core vault operations (deposit, withdraw, admin functions)
+- `StabilizedCarbonCoin.test.ts` - SCC token functionality and security
+- `Integration.test.ts` - Cross-phase interaction testing
+- `AstaVerdeCoverageGaps.test.ts` - Coverage gap testing
+- `DirectTransferRecovery.ts` - Direct NFT transfer handling
 
 **Test Documentation:**
 
@@ -161,64 +155,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - When testing locally, use `npm run task:mint:local` to create test NFTs
 - Base network is production target, Sepolia for testing
 
-## Phase 2 Implementation Status
-
-**Phase 2 Vault System - IMPLEMENTATION COMPLETE**
-
-All core Phase 2 functionality has been implemented and thoroughly tested:
-
-**Smart Contracts (Complete):**
-
-- ✅ `contracts/StabilizedCarbonCoin.sol` - ERC-20 debt token with access control
-- ✅ `contracts/EcoStabilizer.sol` - Vault contract with full functionality
-- ✅ `contracts/IAstaVerde.sol` - Interface for vault integration
-- ✅ All security features: reentrancy protection, access control, supply caps
-- ✅ Gas optimization: deposit <150k, withdraw <120k gas
-
-**Testing Suite (Complete):**
-
-- ✅ 173/173 tests passing with comprehensive coverage
-- ✅ Security testing: reentrancy, access control, boundary conditions
-- ✅ Integration testing: Phase 1 ↔ Phase 2 interactions
-- ✅ Edge cases: redeemed assets, direct transfers, invariants
-- ✅ Production deployment scenarios and role management
-
-**Deployment Infrastructure (Complete):**
-
-- ✅ `scripts/deploy_ecostabilizer.ts` - Production deployment script
-- ✅ Multi-network support (local, testnet, mainnet)
-- ✅ Role-based deployment with proper access control setup
-
-**Webapp Integration (Partial - UI Implementation Needed):**
-
-- ✅ Contract configurations in `webapp/src/app.config.ts`
-- ✅ Contract interaction setup in `webapp/src/lib/contracts.ts`
-- ✅ ABI generation: `webapp/src/config/EcoStabilizer.json`, `StabilizedCarbonCoin.json`
-- ⏳ Vault UI components (`VaultCard.tsx`, `useVault.ts`) referenced but need implementation
-
-**Remaining Tasks:**
-
-- Frontend vault UI implementation (deposit/withdraw interface)
-- Production deployment to Base mainnet
-- User documentation for vault functionality
-
-Phase 2 smart contracts are production-ready with comprehensive security testing.
 
 ## Dependency Management & Security
 
-**Recent Updates (2025-01-07):**
+**Dependency Management:**
 
-- All dependencies updated to latest secure versions
-- Critical security vulnerabilities eliminated (26 → 7)
-- Major version updates: Hardhat toolbox 6.1.0, chai 5.2.1, viem 2.33.3
+- Major dependencies: Hardhat toolbox 6.1.0, chai 4.3.11, viem 2.0.6
 - Next.js configured to handle viem/ox type compatibility issues
 - Build verification scripts added to prevent Vercel deployment failures
-
-**Security Status:**
-
-- Zero production security risks
-- Remaining 7 vulnerabilities are in development-only tools (hardhat-deploy, solc)
-- All 173/173 tests passing with updated dependencies
+- Regular security audits recommended via `npm audit`
 
 **Best Practices:**
 
