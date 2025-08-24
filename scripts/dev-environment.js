@@ -22,11 +22,7 @@ class DevEnvironment {
         this.startedNode = false;
     }
 
-    async ensureHardhatNodeRunning({
-        rpcUrl = "http://127.0.0.1:8545",
-        hostname = "127.0.0.1",
-        port = 8545,
-    } = {}) {
+    async ensureHardhatNodeRunning({ rpcUrl = "http://127.0.0.1:8545", hostname = "127.0.0.1", port = 8545 } = {}) {
         const isUp = async () => {
             try {
                 const result = await this.#jsonRpcRequest(rpcUrl, {
@@ -92,25 +88,28 @@ class DevEnvironment {
         const { hostname, port, pathname } = new URL(url);
         const pathWithDefault = pathname && pathname.length > 0 ? pathname : "/";
         return new Promise((resolve, reject) => {
-            const req = lib.request({
-                hostname,
-                port,
-                path: pathWithDefault,
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
+            const req = lib.request(
+                {
+                    hostname,
+                    port,
+                    path: pathWithDefault,
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
                 },
-            }, (res) => {
-                let data = "";
-                res.on("data", (chunk) => (data += chunk));
-                res.on("end", () => {
-                    try {
-                        resolve(JSON.parse(data));
-                    } catch (err) {
-                        reject(err);
-                    }
-                });
-            });
+                (res) => {
+                    let data = "";
+                    res.on("data", (chunk) => (data += chunk));
+                    res.on("end", () => {
+                        try {
+                            resolve(JSON.parse(data));
+                        } catch (err) {
+                            reject(err);
+                        }
+                    });
+                },
+            );
             req.on("error", reject);
             req.write(JSON.stringify(payload));
             req.end();
@@ -134,11 +133,11 @@ class DevEnvironment {
 
         // Get deployed contract addresses from deployments
         const deployments = hre.deployments;
-        
+
         // Get deployed contract addresses
         const MockUSDCDeployment = await deployments.get("MockUSDC");
         const AstaVerdeDeployment = await deployments.get("AstaVerde");
-        
+
         // Check if Phase 2 contracts are already deployed
         let scc, vault;
         try {
@@ -235,13 +234,13 @@ class DevEnvironment {
         // Alice buys some NFTs
         const batch1Price = await astaVerde.getCurrentBatchPrice(firstBatchId);
         // Approve slightly more than needed to avoid rounding issues
-        const aliceApproval = batch1Price + (batch1Price / 100n);
+        const aliceApproval = batch1Price + batch1Price / 100n;
         await usdc.connect(alice).approve(await astaVerde.getAddress(), aliceApproval);
         await astaVerde.connect(alice).buyBatch(firstBatchId, batch1Price, 1);
 
         // Bob buys and redeems one
         const batch2Price = await astaVerde.getCurrentBatchPrice(secondBatchId);
-        const bobApproval = batch2Price + (batch2Price / 100n);
+        const bobApproval = batch2Price + batch2Price / 100n;
         await usdc.connect(bob).approve(await astaVerde.getAddress(), bobApproval);
         await astaVerde.connect(bob).buyBatch(secondBatchId, batch2Price, 1);
 
@@ -407,7 +406,7 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
         const host = process.env.WEBAPP_HOST || "0.0.0.0";
         // Default to 3001 to avoid common port 3000 conflicts (especially with SSH forwarding)
         let port = process.env.WEBAPP_PORT || "3001";
-        
+
         // Check if port is available, try alternatives if not
         const isPortAvailable = async (port) => {
             return new Promise((resolve) => {
@@ -421,7 +420,7 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
                 server.listen(port, "127.0.0.1");
             });
         };
-        
+
         // Try ports 3000, 3001, 3002, etc. until we find an available one
         const originalPort = port;
         let attempts = 0;
@@ -430,7 +429,7 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
             port = String(parseInt(port) + 1);
             attempts++;
         }
-        
+
         if (attempts >= 10) {
             reject(new Error(`Could not find an available port after trying ${originalPort}-${port}`));
             return;
@@ -442,15 +441,15 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
         this.webappProcess = spawn("npx", nextArgs, {
             cwd: webappPath,
             stdio: "inherit",
-            env: { 
-                ...process.env, 
+            env: {
+                ...process.env,
                 NODE_ENV: "development",
                 // Increase memory limit to 4GB and disable experimental features that might cause memory issues
                 NODE_OPTIONS: "--max-old-space-size=4096",
                 // Disable SWC optimizations in dev to reduce memory usage
                 NEXT_TELEMETRY_DISABLED: "1",
                 // Reduce webpack memory usage
-                WEBPACK_CACHE_TYPE: "filesystem"
+                WEBPACK_CACHE_TYPE: "filesystem",
             },
             // Make the process detached so we can kill the entire process group
             detached: process.platform !== "win32",
@@ -467,7 +466,11 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
             setTimeout(async () => {
                 try {
                     console.log("🔁 Restarting webapp dev server...");
-                    await this.startWebappDev(webappPath, () => {}, (err) => console.error("Webapp restart error:", err));
+                    await this.startWebappDev(
+                        webappPath,
+                        () => {},
+                        (err) => console.error("Webapp restart error:", err),
+                    );
                     console.log("   ✅ Webapp restarted");
                 } catch (err) {
                     console.error("   ❌ Failed to restart webapp:", err);
@@ -482,12 +485,8 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
 
         // Wait for webapp to actually accept connections before resolving
         (async () => {
-            const displayHost = (host === "0.0.0.0" || host === "::") ? "localhost" : host;
-            const candidates = [
-                `http://127.0.0.1:${port}/`,
-                `http://[::1]:${port}/`,
-                `http://${displayHost}:${port}/`,
-            ];
+            const displayHost = host === "0.0.0.0" || host === "::" ? "localhost" : host;
+            const candidates = [`http://127.0.0.1:${port}/`, `http://[::1]:${port}/`, `http://${displayHost}:${port}/`];
             const start = Date.now();
             const timeout = 20000;
             while (Date.now() - start < timeout) {
@@ -496,7 +495,9 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
                         await this.#httpGet(url);
                         console.log(`   ✅ Webapp starting at http://${displayHost}:${port}`);
                         if (host === "0.0.0.0") {
-                            console.log(`   📡 Accessible from: http://localhost:${port}, http://127.0.0.1:${port}, or via SSH forwarding`);
+                            console.log(
+                                `   📡 Accessible from: http://localhost:${port}, http://127.0.0.1:${port}, or via SSH forwarding`,
+                            );
                         }
                         console.log("   🔗 Use MetaMask with network: http://localhost:8545");
                         // Store the actual port for later reference
@@ -579,9 +580,7 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
             for (const entry of entries) {
                 if (entry.isDirectory()) {
                     if (["styles"].includes(entry.name)) continue;
-                    const seg = entry.name
-                        .replace(/^\[(.+)\]$/, "1")
-                        .replace(/^\[\.\.\.\w+\]$/, "1");
+                    const seg = entry.name.replace(/^\[(.+)\]$/, "1").replace(/^\[\.\.\.\w+\]$/, "1");
                     const childPrefix = prefix === "/" ? `/${seg}` : `${prefix}/${seg}`;
                     walk(path.join(dir, entry.name), prefix ? childPrefix : `/${seg}`);
                 }
@@ -646,47 +645,47 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
 
     cleanup() {
         this._shuttingDown = true;
-        
+
         // Kill webapp process group
         if (this.webappProcess) {
             console.log("\n🧹 Shutting down webapp...");
             try {
                 // On Unix, kill the entire process group
                 if (process.platform !== "win32") {
-                    process.kill(-this.webappProcess.pid, 'SIGTERM');
+                    process.kill(-this.webappProcess.pid, "SIGTERM");
                 } else {
-                    this.webappProcess.kill('SIGTERM');
+                    this.webappProcess.kill("SIGTERM");
                 }
             } catch (e) {
                 // Fallback to regular kill
                 try {
-                    this.webappProcess.kill('SIGKILL');
+                    this.webappProcess.kill("SIGKILL");
                 } catch (e2) {
                     console.log("   ⚠️  Could not kill webapp process");
                 }
             }
         }
-        
+
         // Kill hardhat node process group
         if (this.nodeProcess && this.startedNode) {
             console.log("🧹 Shutting down local Hardhat node...");
             try {
                 // On Unix, kill the entire process group
                 if (process.platform !== "win32") {
-                    process.kill(-this.nodeProcess.pid, 'SIGTERM');
+                    process.kill(-this.nodeProcess.pid, "SIGTERM");
                 } else {
-                    this.nodeProcess.kill('SIGTERM');
+                    this.nodeProcess.kill("SIGTERM");
                 }
             } catch (e) {
                 // Fallback to regular kill
                 try {
-                    this.nodeProcess.kill('SIGKILL');
+                    this.nodeProcess.kill("SIGKILL");
                 } catch (e2) {
                     console.log("   ⚠️  Could not kill hardhat node process");
                 }
             }
         }
-        
+
         // Give processes a moment to clean up, then force exit
         setTimeout(() => {
             process.exit(0);
@@ -713,19 +712,19 @@ async function main() {
             env.cleanup();
         }
     };
-    
+
     // Register multiple signal handlers for robust cleanup
-    process.on("SIGINT", handleExit);  // Ctrl+C
+    process.on("SIGINT", handleExit); // Ctrl+C
     process.on("SIGTERM", handleExit); // Termination signal
-    process.on("SIGHUP", handleExit);  // Terminal closed
+    process.on("SIGHUP", handleExit); // Terminal closed
     process.on("SIGQUIT", handleExit); // Quit signal
-    
+
     // Handle uncaught exceptions
     process.on("uncaughtException", (err) => {
         console.error("\n❌ Uncaught exception:", err);
         handleExit();
     });
-    
+
     process.on("unhandledRejection", (err) => {
         console.error("\n❌ Unhandled rejection:", err);
         handleExit();

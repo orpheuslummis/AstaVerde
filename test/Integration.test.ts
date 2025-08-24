@@ -315,7 +315,7 @@ describe("Integration & End-to-End Testing", function () {
                 const expectedProducerPayment = (batchPrice * 70n) / 100n;
                 const producerAccruedBalance = await astaVerde.producerBalances(producer1.address);
                 expect(producerAccruedBalance).to.equal(expectedProducerPayment);
-                
+
                 // Producer can claim their funds
                 await astaVerde.connect(producer1).claimProducerFunds();
                 const producerUsdcBalance = await mockUSDC.balanceOf(producer1.address);
@@ -491,10 +491,9 @@ describe("Integration & End-to-End Testing", function () {
                 expect(await scc.hasRole(MINTER_ROLE, ecoStabilizer.target)).to.be.true;
 
                 // Regular users cannot mint
-                await expect(scc.connect(user1).mint(user1.address, ethers.parseEther("1"))).to.be.revertedWithCustomError(
-                    scc,
-                    "AccessControlUnauthorizedAccount",
-                );
+                await expect(
+                    scc.connect(user1).mint(user1.address, ethers.parseEther("1")),
+                ).to.be.revertedWithCustomError(scc, "AccessControlUnauthorizedAccount");
 
                 // Only vault should be able to mint
                 expect(await scc.hasRole(MINTER_ROLE, user1.address)).to.be.false;
@@ -524,10 +523,9 @@ describe("Integration & End-to-End Testing", function () {
                 );
 
                 // Non-owners cannot sweep NFTs
-                await expect(ecoStabilizer.connect(user1).adminSweepNFT(1, user2.address)).to.be.revertedWithCustomError(
-                    ecoStabilizer,
-                    "OwnableUnauthorizedAccount",
-                );
+                await expect(
+                    ecoStabilizer.connect(user1).adminSweepNFT(1, user2.address),
+                ).to.be.revertedWithCustomError(ecoStabilizer, "OwnableUnauthorizedAccount");
             });
 
             it("should handle role transfers and renunciation securely", async function () {
@@ -625,7 +623,9 @@ describe("Integration & End-to-End Testing", function () {
                 expect(await ecoStabilizer.maxScanRange()).to.equal(50000);
 
                 // Cannot set zero scan range
-                await expect(ecoStabilizer.connect(owner).setMaxScanRange(0)).to.be.revertedWith("range outside bounds");
+                await expect(ecoStabilizer.connect(owner).setMaxScanRange(0)).to.be.revertedWith(
+                    "range outside bounds",
+                );
             });
         });
 
@@ -716,9 +716,9 @@ describe("Integration & End-to-End Testing", function () {
                 await expect(scc.connect(user1).burn(0)).to.be.revertedWith("burn zero amount");
 
                 // Cannot burnFrom zero address
-                await expect(scc.connect(owner).burnFrom(ethers.ZeroAddress, ethers.parseEther("1"))).to.be.revertedWith(
-                    "burn from zero address",
-                );
+                await expect(
+                    scc.connect(owner).burnFrom(ethers.ZeroAddress, ethers.parseEther("1")),
+                ).to.be.revertedWith("burn from zero address");
 
                 // Cannot burnFrom zero amount
                 await expect(scc.connect(owner).burnFrom(user1.address, 0)).to.be.revertedWith("burn zero amount");
@@ -965,14 +965,14 @@ describe("Integration & End-to-End Testing", function () {
 
         describe("Multiple NFT Management", function () {
             it("Should manage users with multiple NFTs in different states", async function () {
-                const { astaVerde, scc, ecoStabilizer, mockUSDC, owner, producer1, producer2, user, buyer, dexUser } = 
+                const { astaVerde, scc, ecoStabilizer, mockUSDC, owner, producer1, producer2, user, buyer, dexUser } =
                     await loadFixture(deployMultiNFTFixture);
 
                 // ========== 1. ACCUMULATION PHASE ==========
                 // Mint batch 1 with 3 NFTs at 230 USDC
                 await astaVerde.mintBatch(
                     [producer1.address, producer1.address, producer2.address],
-                    ["QmCID1", "QmCID2", "QmCID3"]
+                    ["QmCID1", "QmCID2", "QmCID3"],
                 );
 
                 const batch1Price = await astaVerde.getCurrentBatchPrice(1);
@@ -987,10 +987,7 @@ describe("Integration & End-to-End Testing", function () {
                 await time.increase(1 * 24 * 60 * 60); // 1 day passes
 
                 // Mint batch 2 with 2 NFTs (price should increase if batch 1 sold quickly)
-                await astaVerde.mintBatch(
-                    [producer2.address, producer2.address],
-                    ["QmCID4", "QmCID5"]
-                );
+                await astaVerde.mintBatch([producer2.address, producer2.address], ["QmCID4", "QmCID5"]);
 
                 const batch2Price = await astaVerde.getCurrentBatchPrice(2);
                 // Price may have increased due to quick sale of batch 1
@@ -1014,7 +1011,7 @@ describe("Integration & End-to-End Testing", function () {
                 // ========== 2. MIXED OPERATIONS ==========
                 // User deposits NFTs #1 and #2 using batch deposit
                 await astaVerde.connect(user).setApprovalForAll(ecoStabilizer.target, true);
-                
+
                 await expect(ecoStabilizer.connect(user).depositBatch([1, 2]))
                     .to.emit(ecoStabilizer, "Deposited")
                     .withArgs(user.address, 1)
@@ -1025,13 +1022,7 @@ describe("Integration & End-to-End Testing", function () {
                 expect(await scc.balanceOf(user.address)).to.equal(ethers.parseEther("40"));
 
                 // User sells NFT #3 to another user
-                await astaVerde.connect(user).safeTransferFrom(
-                    user.address,
-                    buyer.address,
-                    3,
-                    1,
-                    "0x"
-                );
+                await astaVerde.connect(user).safeTransferFrom(user.address, buyer.address, 3, 1, "0x");
                 expect(await astaVerde.balanceOf(buyer.address, 3)).to.equal(1);
 
                 // User redeems NFT #4 for carbon offset
@@ -1064,12 +1055,13 @@ describe("Integration & End-to-End Testing", function () {
 
                 // User attempts to withdraw NFT #1 (needs 20 SCC)
                 await scc.connect(user).approve(ecoStabilizer.target, ethers.parseEther("15"));
-                await expect(ecoStabilizer.connect(user).withdraw(1))
-                    .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
+                await expect(ecoStabilizer.connect(user).withdraw(1)).to.be.revertedWithCustomError(
+                    scc,
+                    "ERC20InsufficientAllowance",
+                );
 
                 // User attempts batch withdraw [1,2] (needs 40 SCC)
-                await expect(ecoStabilizer.connect(user).withdrawBatch([1, 2]))
-                    .to.be.revertedWith("insufficient SCC");
+                await expect(ecoStabilizer.connect(user).withdrawBatch([1, 2])).to.be.revertedWith("insufficient SCC");
 
                 // ========== 4. PARTIAL RECOVERY ==========
                 // User acquires 5 more SCC (total: 20)
@@ -1078,7 +1070,7 @@ describe("Integration & End-to-End Testing", function () {
 
                 // User withdraws NFT #1 successfully
                 await scc.connect(user).approve(ecoStabilizer.target, ethers.parseEther("20"));
-                
+
                 await expect(ecoStabilizer.connect(user).withdraw(1))
                     .to.emit(ecoStabilizer, "Withdrawn")
                     .withArgs(user.address, 1);
@@ -1093,17 +1085,17 @@ describe("Integration & End-to-End Testing", function () {
                 expect(loan2.borrower).to.equal(user.address);
 
                 // Can't withdraw #2 (0 SCC left)
-                await expect(ecoStabilizer.connect(user).withdraw(2))
-                    .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
+                await expect(ecoStabilizer.connect(user).withdraw(2)).to.be.revertedWithCustomError(
+                    scc,
+                    "ERC20InsufficientAllowance",
+                );
 
                 // ========== 5. ATTEMPT INVALID OPERATIONS ==========
                 // User tries to deposit sold NFT #3
-                await expect(ecoStabilizer.connect(user).deposit(3))
-                    .to.be.revertedWith("not token owner");
+                await expect(ecoStabilizer.connect(user).deposit(3)).to.be.revertedWith("not token owner");
 
                 // User tries to deposit redeemed NFT #4
-                await expect(ecoStabilizer.connect(user).deposit(4))
-                    .to.be.revertedWith("redeemed asset");
+                await expect(ecoStabilizer.connect(user).deposit(4)).to.be.revertedWith("redeemed asset");
 
                 // User successfully deposits NFT #5
                 await expect(ecoStabilizer.connect(user).deposit(5))
@@ -1146,7 +1138,7 @@ describe("Integration & End-to-End Testing", function () {
 
                 // Batch withdraw [2,5]
                 await scc.connect(user).approve(ecoStabilizer.target, ethers.parseEther("40"));
-                
+
                 await expect(ecoStabilizer.connect(user).withdrawBatch([2, 5]))
                     .to.emit(ecoStabilizer, "Withdrawn")
                     .withArgs(user.address, 2)
@@ -1169,8 +1161,7 @@ describe("Integration & End-to-End Testing", function () {
                 expect(await scc.balanceOf(user.address)).to.equal(ethers.parseEther("20"));
 
                 // User tries to re-deposit #4 (redeemed)
-                await expect(ecoStabilizer.connect(user).deposit(4))
-                    .to.be.revertedWith("redeemed asset");
+                await expect(ecoStabilizer.connect(user).deposit(4)).to.be.revertedWith("redeemed asset");
 
                 // Final verification of user's NFT holdings
                 expect(await astaVerde.balanceOf(user.address, 1)).to.equal(0); // Re-deposited
@@ -1181,14 +1172,11 @@ describe("Integration & End-to-End Testing", function () {
             });
 
             it("Should handle complex batch operations with multiple NFTs", async function () {
-                const { astaVerde, scc, ecoStabilizer, mockUSDC, producer1, user } = 
+                const { astaVerde, scc, ecoStabilizer, mockUSDC, producer1, user } =
                     await loadFixture(deployMultiNFTFixture);
 
                 // Mint batch with 5 NFTs
-                await astaVerde.mintBatch(
-                    Array(5).fill(producer1.address),
-                    ["QmA", "QmB", "QmC", "QmD", "QmE"]
-                );
+                await astaVerde.mintBatch(Array(5).fill(producer1.address), ["QmA", "QmB", "QmC", "QmD", "QmE"]);
 
                 // User buys all 5
                 const price = await astaVerde.getCurrentBatchPrice(1);
@@ -1204,10 +1192,11 @@ describe("Integration & End-to-End Testing", function () {
 
                 // Try to batch withdraw with mixed ownership
                 await scc.connect(user).approve(ecoStabilizer.target, ethers.parseEther("60"));
-                
+
                 // This should fail because NFT #2 is not deposited
-                await expect(ecoStabilizer.connect(user).withdrawBatch([1, 2, 3]))
-                    .to.be.revertedWith("loan not active");
+                await expect(ecoStabilizer.connect(user).withdrawBatch([1, 2, 3])).to.be.revertedWith(
+                    "loan not active",
+                );
 
                 // Successful batch withdraw of deposited NFTs
                 await ecoStabilizer.connect(user).withdrawBatch([1, 3, 5]);
@@ -1219,7 +1208,7 @@ describe("Integration & End-to-End Testing", function () {
             });
 
             it("Should track loan history correctly through multiple deposit/withdraw cycles", async function () {
-                const { astaVerde, scc, ecoStabilizer, mockUSDC, producer1, user } = 
+                const { astaVerde, scc, ecoStabilizer, mockUSDC, producer1, user } =
                     await loadFixture(deployMultiNFTFixture);
 
                 // Mint and buy NFT
@@ -1253,15 +1242,15 @@ describe("Integration & End-to-End Testing", function () {
             });
 
             it("Should handle user with NFTs from different batches at different prices", async function () {
-                const { astaVerde, scc, ecoStabilizer, mockUSDC, producer1, user } = 
+                const { astaVerde, scc, ecoStabilizer, mockUSDC, producer1, user } =
                     await loadFixture(deployMultiNFTFixture);
 
                 // Batch 1 at 230 USDC
                 await astaVerde.mintBatch([producer1.address], ["Qm1"]);
-                
+
                 // Wait 3 days before buying to avoid quick sale trigger
                 await time.increase(3 * 24 * 60 * 60);
-                
+
                 let price1 = await astaVerde.getCurrentBatchPrice(1);
                 // Price should be 227 USDC (230 - 3 days of decay)
                 await mockUSDC.connect(user).approve(astaVerde.target, price1);
@@ -1327,7 +1316,7 @@ describe("Integration & End-to-End Testing", function () {
             // Mint batch with 3 NFTs
             await astaVerde.mintBatch(
                 [producer1.address, producer1.address, producer2.address],
-                ["QmCID1", "QmCID2", "QmCID3"]
+                ["QmCID1", "QmCID2", "QmCID3"],
             );
 
             return {
@@ -1347,7 +1336,7 @@ describe("Integration & End-to-End Testing", function () {
 
         describe("Complete User Lifecycle", function () {
             it("Should handle complete user lifecycle from purchase to redemption", async function () {
-                const { astaVerde, scc, ecoStabilizer, mockUSDC, user, producer1, dexUser, collector } = 
+                const { astaVerde, scc, ecoStabilizer, mockUSDC, user, producer1, dexUser, collector } =
                     await loadFixture(deployUserJourneyFixture);
 
                 // ========== 1. PURCHASE PHASE ==========
@@ -1366,9 +1355,7 @@ describe("Integration & End-to-End Testing", function () {
                 const tx = await astaVerde.connect(user).buyBatch(1, purchasePrice, 1);
                 const receipt = await tx.wait();
                 const block = await ethers.provider.getBlock(receipt.blockNumber);
-                await expect(tx)
-                    .to.emit(astaVerde, "PartialBatchSold")
-                    .withArgs(1, block.timestamp, 2); // 2 remaining
+                await expect(tx).to.emit(astaVerde, "PartialBatchSold").withArgs(1, block.timestamp, 2); // 2 remaining
 
                 // Verify NFT ownership
                 expect(await astaVerde.balanceOf(user.address, 1)).to.equal(1);
@@ -1377,8 +1364,10 @@ describe("Integration & End-to-End Testing", function () {
                 const platformFee = (purchasePrice * 30n) / 100n;
                 const producerPayment = purchasePrice - platformFee;
                 expect(await astaVerde.platformShareAccumulated()).to.equal(initialPlatformShare + platformFee);
-                expect(await astaVerde.producerBalances(producer1.address)).to.equal(initialProducerAccrued + producerPayment);
-                
+                expect(await astaVerde.producerBalances(producer1.address)).to.equal(
+                    initialProducerAccrued + producerPayment,
+                );
+
                 // Producer can claim their funds
                 await astaVerde.connect(producer1).claimProducerFunds();
                 expect(await mockUSDC.balanceOf(producer1.address)).to.equal(producerPayment);
@@ -1415,16 +1404,18 @@ describe("Integration & End-to-End Testing", function () {
                 // ========== 3. SCC USAGE PHASE ==========
                 // User transfers 15 SCC to another address (simulating DeFi usage)
                 await scc.connect(user).transfer(dexUser.address, ethers.parseEther("15"));
-                
+
                 const remainingSCC = await scc.balanceOf(user.address);
                 expect(remainingSCC).to.equal(ethers.parseEther("5"));
 
                 // ========== 4. FAILED WITHDRAWAL ==========
                 // User attempts to withdraw with insufficient SCC
                 await scc.connect(user).approve(ecoStabilizer.target, ethers.parseEther("5"));
-                
-                await expect(ecoStabilizer.connect(user).withdraw(1))
-                    .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
+
+                await expect(ecoStabilizer.connect(user).withdraw(1)).to.be.revertedWithCustomError(
+                    scc,
+                    "ERC20InsufficientAllowance",
+                );
 
                 // Verify loan remains active
                 const loanAfterFailedWithdraw = await ecoStabilizer.loans(1);
@@ -1434,7 +1425,7 @@ describe("Integration & End-to-End Testing", function () {
                 // ========== 5. SCC ACQUISITION ==========
                 // User acquires 15 more SCC (simulating DEX purchase or transfer back)
                 await scc.connect(dexUser).transfer(user.address, ethers.parseEther("15"));
-                
+
                 const totalSCC = await scc.balanceOf(user.address);
                 expect(totalSCC).to.equal(ethers.parseEther("20"));
 
@@ -1444,7 +1435,7 @@ describe("Integration & End-to-End Testing", function () {
 
                 // User withdraws NFT from vault
                 const sccSupplyBefore = await scc.totalSupply();
-                
+
                 await expect(ecoStabilizer.connect(user).withdraw(1))
                     .to.emit(ecoStabilizer, "Withdrawn")
                     .withArgs(user.address, 1);
@@ -1482,18 +1473,11 @@ describe("Integration & End-to-End Testing", function () {
 
                 // Attempt to re-deposit redeemed NFT (should fail)
                 await astaVerde.connect(user).setApprovalForAll(ecoStabilizer.target, true);
-                await expect(ecoStabilizer.connect(user).deposit(1))
-                    .to.be.revertedWith("redeemed asset");
+                await expect(ecoStabilizer.connect(user).deposit(1)).to.be.revertedWith("redeemed asset");
 
                 // ========== 8. SECONDARY MARKET ==========
                 // User can still sell redeemed NFT to collector
-                await astaVerde.connect(user).safeTransferFrom(
-                    user.address,
-                    collector.address,
-                    1,
-                    1,
-                    "0x"
-                );
+                await astaVerde.connect(user).safeTransferFrom(user.address, collector.address, 1, 1, "0x");
 
                 // Verify transfer succeeded despite redemption
                 expect(await astaVerde.balanceOf(collector.address, 1)).to.equal(1);
@@ -1501,12 +1485,11 @@ describe("Integration & End-to-End Testing", function () {
 
                 // Collector also cannot deposit redeemed NFT
                 await astaVerde.connect(collector).setApprovalForAll(ecoStabilizer.target, true);
-                await expect(ecoStabilizer.connect(collector).deposit(1))
-                    .to.be.revertedWith("redeemed asset");
+                await expect(ecoStabilizer.connect(collector).deposit(1)).to.be.revertedWith("redeemed asset");
             });
 
             it("Should track state consistency throughout lifecycle", async function () {
-                const { astaVerde, scc, ecoStabilizer, mockUSDC, user, producer1 } = 
+                const { astaVerde, scc, ecoStabilizer, mockUSDC, user, producer1 } =
                     await loadFixture(deployUserJourneyFixture);
 
                 // Buy NFT

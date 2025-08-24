@@ -6,7 +6,7 @@ import type { AstaVerde, StabilizedCarbonCoin, EcoStabilizer, MockUSDC } from ".
 
 describe("EcoStabilizer - Comprehensive Test Suite", function () {
     // ======================= FIXTURES =======================
-    
+
     async function deployEcoStabilizerFixture() {
         const [owner, producer, user1, user2] = await ethers.getSigners();
 
@@ -69,10 +69,7 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
         const scc = await SCC.deploy(ethers.ZeroAddress);
 
         const EcoStabilizer = await ethers.getContractFactory("EcoStabilizer");
-        const vault = await EcoStabilizer.deploy(
-            await astaVerde.getAddress(),
-            await scc.getAddress()
-        );
+        const vault = await EcoStabilizer.deploy(await astaVerde.getAddress(), await scc.getAddress());
 
         // Grant MINTER_ROLE to vault
         const MINTER_ROLE = await scc.MINTER_ROLE();
@@ -96,16 +93,16 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
         const totalCost = price * BigInt(tokenCount);
         await astaVerde.connect(user1).buyBatch(batchId, totalCost, tokenCount);
 
-        return { 
-            astaVerde, 
-            vault, 
-            scc, 
-            usdcToken, 
-            owner, 
-            user1, 
-            user2, 
+        return {
+            astaVerde,
+            vault,
+            scc,
+            usdcToken,
+            owner,
+            user1,
+            user2,
             producer1,
-            tokenIds: Array.from({ length: tokenCount }, (_, i) => BigInt(i + 1))
+            tokenIds: Array.from({ length: tokenCount }, (_, i) => BigInt(i + 1)),
         };
     }
 
@@ -142,9 +139,11 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
         const producers = Array(10).fill(producer1.address);
         producers[5] = producer2.address; // Mix producers
         producers[9] = producer2.address;
-        
-        const cids = Array(10).fill(null).map((_, i) => `QmCID${i + 1}`);
-        
+
+        const cids = Array(10)
+            .fill(null)
+            .map((_, i) => `QmCID${i + 1}`);
+
         await astaVerde.mintBatch(producers, cids);
 
         return {
@@ -205,7 +204,7 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
     }
 
     // ======================= DEPLOYMENT TESTS =======================
-    
+
     describe("Deployment", function () {
         it("Should set the correct AstaVerde and SCC addresses", async function () {
             const { astaVerde, scc, ecoStabilizer } = await loadFixture(deployEcoStabilizerFixture);
@@ -408,16 +407,14 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
         it("Should reject batch deposit with empty array", async function () {
             const { vault, user1 } = await loadFixture(deployBatchOperationsFixture);
 
-            await expect(vault.connect(user1).depositBatch([]))
-                .to.be.revertedWith("empty array");
+            await expect(vault.connect(user1).depositBatch([])).to.be.revertedWith("empty array");
         });
 
         it("Should reject batch deposit exceeding limit", async function () {
             const { vault, user1 } = await loadFixture(deployBatchOperationsFixture);
 
             const tooManyTokens = Array(21).fill(BigInt(1));
-            await expect(vault.connect(user1).depositBatch(tooManyTokens))
-                .to.be.revertedWith("too many tokens");
+            await expect(vault.connect(user1).depositBatch(tooManyTokens)).to.be.revertedWith("too many tokens");
         });
 
         it("Should reject batch deposit with active loan", async function () {
@@ -429,8 +426,9 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
             await vault.connect(user1).deposit(tokenIds[0]);
 
             // Try to deposit again in batch
-            await expect(vault.connect(user1).depositBatch([tokenIds[0], tokenIds[1]]))
-                .to.be.revertedWith("loan active");
+            await expect(vault.connect(user1).depositBatch([tokenIds[0], tokenIds[1]])).to.be.revertedWith(
+                "loan active",
+            );
         });
 
         it("Should measure gas for batch deposit vs sequential", async function () {
@@ -447,7 +445,11 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
             console.log(`Batch deposit (5 tokens) gas: ${batchGas}`);
 
             // Reset state for sequential test
-            const { vault: vault2, user1: user2, tokenIds: tokenIds2 } = await loadFixture(deployBatchOperationsFixture);
+            const {
+                vault: vault2,
+                user1: user2,
+                tokenIds: tokenIds2,
+            } = await loadFixture(deployBatchOperationsFixture);
             const AstaVerde2 = await ethers.getContractFactory("AstaVerde");
             const astaVerde2 = AstaVerde2.attach(await vault2.ecoAsset()) as AstaVerde;
             await astaVerde2.connect(user2).setApprovalForAll(await vault2.getAddress(), true);
@@ -464,7 +466,7 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
             console.log(`Gas savings: ${((1 - Number(batchGas) / Number(totalSequentialGas)) * 100).toFixed(1)}%`);
 
             // Batch should use significantly less gas
-            expect(batchGas).to.be.lessThan(totalSequentialGas * BigInt(70) / BigInt(100)); // At least 30% savings
+            expect(batchGas).to.be.lessThan((totalSequentialGas * BigInt(70)) / BigInt(100)); // At least 30% savings
         });
     });
 
@@ -508,8 +510,7 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
             await scc.connect(user1).burn(ethers.parseEther("10"));
 
             // Try to withdraw all
-            await expect(vault.connect(user1).withdrawBatch(tokensToDeposit))
-                .to.be.revertedWith("insufficient SCC");
+            await expect(vault.connect(user1).withdrawBatch(tokensToDeposit)).to.be.revertedWith("insufficient SCC");
         });
 
         it("Should reject batch withdraw for non-borrower", async function () {
@@ -520,8 +521,7 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
             await vault.connect(user1).depositBatch([tokenIds[0]]);
 
             // User2 tries to withdraw
-            await expect(vault.connect(user2).withdrawBatch([tokenIds[0]]))
-                .to.be.revertedWith("insufficient SCC");
+            await expect(vault.connect(user2).withdrawBatch([tokenIds[0]])).to.be.revertedWith("insufficient SCC");
         });
 
         it("Should handle mixed ownership in batch withdraw attempt", async function () {
@@ -531,21 +531,16 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
             await astaVerde.connect(user1).setApprovalForAll(await vault.getAddress(), true);
             await vault.connect(user1).deposit(tokenIds[0]);
 
-            await astaVerde.connect(user1).safeTransferFrom(
-                user1.address,
-                user2.address,
-                tokenIds[1],
-                1,
-                "0x"
-            );
+            await astaVerde.connect(user1).safeTransferFrom(user1.address, user2.address, tokenIds[1], 1, "0x");
 
             // User2 deposits token 2
             await astaVerde.connect(user2).setApprovalForAll(await vault.getAddress(), true);
             await vault.connect(user2).deposit(tokenIds[1]);
 
             // User1 tries to withdraw both (should fail on token 2)
-            await expect(vault.connect(user1).withdrawBatch([tokenIds[0], tokenIds[1]]))
-                .to.be.revertedWith("insufficient SCC");
+            await expect(vault.connect(user1).withdrawBatch([tokenIds[0], tokenIds[1]])).to.be.revertedWith(
+                "insufficient SCC",
+            );
         });
 
         it("Should maintain correct state with interleaved batch and single operations", async function () {
@@ -586,7 +581,7 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
 
     describe("Partial Batch and Price Decay Interactions", function () {
         it("Should handle vault operations on partially sold batches with price decay", async function () {
-            const { astaVerde, scc, ecoStabilizer, mockUSDC, userA, userB, userC, userD } = 
+            const { astaVerde, scc, ecoStabilizer, mockUSDC, userA, userB, userC, userD } =
                 await loadFixture(deployPartialBatchFixture);
 
             // ========== 1. PARTIAL BATCH PURCHASE ==========
@@ -622,18 +617,18 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
             // ========== 3. MIXED DEPOSITS ==========
             // UserA deposits NFTs #1 and #2 (bought at 230)
             await astaVerde.connect(userA).setApprovalForAll(ecoStabilizer.target, true);
-            
+
             await expect(ecoStabilizer.connect(userA).deposit(1))
                 .to.emit(ecoStabilizer, "Deposited")
                 .withArgs(userA.address, 1);
-            
+
             await expect(ecoStabilizer.connect(userA).deposit(2))
                 .to.emit(ecoStabilizer, "Deposited")
                 .withArgs(userA.address, 2);
 
             // UserC deposits NFT #6 (bought at 227)
             await astaVerde.connect(userC).setApprovalForAll(ecoStabilizer.target, true);
-            
+
             await expect(ecoStabilizer.connect(userC).deposit(6))
                 .to.emit(ecoStabilizer, "Deposited")
                 .withArgs(userC.address, 6);
@@ -645,7 +640,7 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
             // ========== 4. WITHDRAWAL DURING DECAY ==========
             // UserA withdraws NFT #1
             await scc.connect(userA).approve(ecoStabilizer.target, ethers.parseEther("20"));
-            
+
             await expect(ecoStabilizer.connect(userA).withdraw(1))
                 .to.emit(ecoStabilizer, "Withdrawn")
                 .withArgs(userA.address, 1);
@@ -655,8 +650,7 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
         });
 
         it("Should maintain vault independence from batch price changes", async function () {
-            const { astaVerde, scc, ecoStabilizer, mockUSDC, userA } = 
-                await loadFixture(deployPartialBatchFixture);
+            const { astaVerde, scc, ecoStabilizer, mockUSDC, userA } = await loadFixture(deployPartialBatchFixture);
 
             // Buy NFT at starting price
             const startPrice = await astaVerde.getCurrentBatchPrice(1);
@@ -896,7 +890,8 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
         });
 
         it("Should handle mixed scenario: one deposited, one direct transfer", async function () {
-            const { ecoStabilizer, astaVerde, owner, user1, user2, mockUSDC, producer } = await loadFixture(deployEcoStabilizerFixture);
+            const { ecoStabilizer, astaVerde, owner, user1, user2, mockUSDC, producer } =
+                await loadFixture(deployEcoStabilizerFixture);
 
             // Create a second NFT for user2
             await astaVerde.mintBatch([producer.address], ["QmSecond"]);

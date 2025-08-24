@@ -172,7 +172,9 @@ async function main() {
             console.log("- Vault (V1.1) AstaVerde reference:", vaultAstaVerde2);
             console.log("- Vault (V1.1) SCC reference:", vaultSCC2);
             if (vaultAstaVerde2.toLowerCase() !== (astaVerdeAddressV11 as string).toLowerCase()) {
-                throw new Error(`Vault V1.1 AstaVerde reference mismatch: ${vaultAstaVerde2} != ${astaVerdeAddressV11}`);
+                throw new Error(
+                    `Vault V1.1 AstaVerde reference mismatch: ${vaultAstaVerde2} != ${astaVerdeAddressV11}`,
+                );
             }
             if (vaultSCC2.toLowerCase() !== (await scc.getAddress()).toLowerCase()) {
                 throw new Error(`Vault V1.1 SCC reference mismatch: ${vaultSCC2} != ${await scc.getAddress()}`);
@@ -302,7 +304,7 @@ async function main() {
         fs.writeFileSync(deploymentPath, JSON.stringify(deploymentInfo, null, 2), { mode: 0o644 });
         console.log("✅ Deployment info saved to:", deploymentPath);
     } catch (error: unknown) {
-        const msg = error && typeof error === 'object' && 'message' in error ? (error as any).message : String(error);
+        const msg = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
         console.error("⚠️  Warning: Failed to save deployment info:", msg);
         console.error("Deployment was successful, but info file could not be saved.");
     }
@@ -340,7 +342,7 @@ if (require.main === module) {
         })
         .catch((error: unknown) => {
             console.error("\n💥 DEPLOYMENT SCRIPT FAILED");
-            if (error && typeof error === 'object' && 'message' in error) {
+            if (error && typeof error === "object" && "message" in error) {
                 console.error("❌ Error:", (error as any).message);
             } else {
                 console.error("❌ Error:", error);

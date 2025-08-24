@@ -122,7 +122,7 @@ describe("StabilizedCarbonCoin", function () {
         // Mint batch with multiple NFTs
         await astaVerde.mintBatch(
             [producer.address, producer.address, producer.address],
-            ["QmCID1", "QmCID2", "QmCID3"]
+            ["QmCID1", "QmCID2", "QmCID3"],
         );
 
         // UserA buys all 3 NFTs
@@ -894,8 +894,7 @@ describe("StabilizedCarbonCoin", function () {
 
     describe("SCC Transfer Impact on Withdrawals", function () {
         it("Should prevent withdrawal when SCC is transferred away - Complete Transfer", async function () {
-            const { astaVerde, scc, ecoStabilizer, userA, userB } = 
-                await loadFixture(deploySCCTransferFixture);
+            const { astaVerde, scc, ecoStabilizer, userA, userB } = await loadFixture(deploySCCTransferFixture);
 
             // ========== INITIAL DEPOSIT ==========
             await astaVerde.connect(userA).setApprovalForAll(ecoStabilizer.target, true);
@@ -916,13 +915,14 @@ describe("StabilizedCarbonCoin", function () {
             expect(await scc.balanceOf(userB.address)).to.equal(ethers.parseEther("20"));
 
             // UserA attempts withdrawal (should fail - no SCC)
-            await expect(ecoStabilizer.connect(userA).withdraw(1))
-                .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
+            await expect(ecoStabilizer.connect(userA).withdraw(1)).to.be.revertedWithCustomError(
+                scc,
+                "ERC20InsufficientAllowance",
+            );
 
             // UserB attempts withdrawal (should fail - not borrower)
             await scc.connect(userB).approve(ecoStabilizer.target, ethers.parseEther("20"));
-            await expect(ecoStabilizer.connect(userB).withdraw(1))
-                .to.be.revertedWith("not borrower");
+            await expect(ecoStabilizer.connect(userB).withdraw(1)).to.be.revertedWith("not borrower");
 
             // Loan remains active
             const loanAfterFailure = await ecoStabilizer.loans(1);
@@ -930,8 +930,7 @@ describe("StabilizedCarbonCoin", function () {
         });
 
         it("Should prevent withdrawal with partial SCC transfer", async function () {
-            const { astaVerde, scc, ecoStabilizer, userA, userB } = 
-                await loadFixture(deploySCCTransferFixture);
+            const { astaVerde, scc, ecoStabilizer, userA, userB } = await loadFixture(deploySCCTransferFixture);
 
             // UserA deposits NFT #1
             await astaVerde.connect(userA).setApprovalForAll(ecoStabilizer.target, true);
@@ -944,8 +943,10 @@ describe("StabilizedCarbonCoin", function () {
 
             // UserA attempts withdrawal with only 10 SCC (should fail)
             await scc.connect(userA).approve(ecoStabilizer.target, ethers.parseEther("10"));
-            await expect(ecoStabilizer.connect(userA).withdraw(1))
-                .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
+            await expect(ecoStabilizer.connect(userA).withdraw(1)).to.be.revertedWithCustomError(
+                scc,
+                "ERC20InsufficientAllowance",
+            );
 
             // Verify loan still active
             const loan = await ecoStabilizer.loans(1);
@@ -953,8 +954,7 @@ describe("StabilizedCarbonCoin", function () {
         });
 
         it("Should allow withdrawal after SCC is returned", async function () {
-            const { astaVerde, scc, ecoStabilizer, userA, userB } = 
-                await loadFixture(deploySCCTransferFixture);
+            const { astaVerde, scc, ecoStabilizer, userA, userB } = await loadFixture(deploySCCTransferFixture);
 
             // UserA deposits NFT #1
             await astaVerde.connect(userA).setApprovalForAll(ecoStabilizer.target, true);
@@ -970,7 +970,7 @@ describe("StabilizedCarbonCoin", function () {
 
             // UserA approves vault and successfully withdraws
             await scc.connect(userA).approve(ecoStabilizer.target, ethers.parseEther("20"));
-            
+
             await expect(ecoStabilizer.connect(userA).withdraw(1))
                 .to.emit(ecoStabilizer, "Withdrawn")
                 .withArgs(userA.address, 1);
@@ -982,8 +982,7 @@ describe("StabilizedCarbonCoin", function () {
         });
 
         it("Should handle delegation scenarios correctly", async function () {
-            const { astaVerde, scc, ecoStabilizer, userA, userB } = 
-                await loadFixture(deploySCCTransferFixture);
+            const { astaVerde, scc, ecoStabilizer, userA, userB } = await loadFixture(deploySCCTransferFixture);
 
             // ========== DELEGATION SCENARIO ==========
             // UserA deposits NFT #2
@@ -995,12 +994,11 @@ describe("StabilizedCarbonCoin", function () {
 
             // UserB attempts to use delegated SCC for withdrawal (should fail)
             // Even though UserB has approval, they are not the borrower
-            await expect(ecoStabilizer.connect(userB).withdraw(2))
-                .to.be.revertedWith("not borrower");
+            await expect(ecoStabilizer.connect(userB).withdraw(2)).to.be.revertedWith("not borrower");
 
             // UserA can still withdraw normally despite delegation
             await scc.connect(userA).approve(ecoStabilizer.target, ethers.parseEther("20"));
-            
+
             await expect(ecoStabilizer.connect(userA).withdraw(2))
                 .to.emit(ecoStabilizer, "Withdrawn")
                 .withArgs(userA.address, 2);
@@ -1010,8 +1008,7 @@ describe("StabilizedCarbonCoin", function () {
         });
 
         it("Should create ghost collateral when SCC is permanently lost", async function () {
-            const { astaVerde, scc, ecoStabilizer, userA } = 
-                await loadFixture(deploySCCTransferFixture);
+            const { astaVerde, scc, ecoStabilizer, userA } = await loadFixture(deploySCCTransferFixture);
 
             // ========== LOST SCC SCENARIO ==========
             // UserA deposits NFT #3
@@ -1028,8 +1025,10 @@ describe("StabilizedCarbonCoin", function () {
 
             // UserA can never withdraw NFT #3 (insufficient SCC)
             await scc.connect(userA).approve(ecoStabilizer.target, ethers.parseEther("10"));
-            await expect(ecoStabilizer.connect(userA).withdraw(3))
-                .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
+            await expect(ecoStabilizer.connect(userA).withdraw(3)).to.be.revertedWithCustomError(
+                scc,
+                "ERC20InsufficientAllowance",
+            );
 
             // NFT is permanently locked (ghost collateral)
             const loan = await ecoStabilizer.loans(3);
@@ -1041,22 +1040,23 @@ describe("StabilizedCarbonCoin", function () {
 
             // Admin cannot help - no liquidation mechanism
             // adminSweepNFT fails because loan is active
-            await expect(ecoStabilizer.connect(await ethers.getSigner(await ecoStabilizer.owner()))
-                .adminSweepNFT(3, userA.address))
-                .to.be.revertedWith("loan active");
+            await expect(
+                ecoStabilizer
+                    .connect(await ethers.getSigner(await ecoStabilizer.owner()))
+                    .adminSweepNFT(3, userA.address),
+            ).to.be.revertedWith("loan active");
 
             // Ghost collateral detected: SCC burned but NFT locked
             const remainingSupply = await scc.totalSupply();
             const activeLoans = await ecoStabilizer.getTotalActiveLoans();
-            
+
             // Supply is less than it should be for active loans
             const expectedSupply = activeLoans * ethers.parseEther("20");
             expect(remainingSupply).to.be.lessThan(expectedSupply);
         });
 
         it("Should handle complex SCC movement chains", async function () {
-            const { astaVerde, scc, ecoStabilizer, userA, userB, userC } = 
-                await loadFixture(deploySCCTransferFixture);
+            const { astaVerde, scc, ecoStabilizer, userA, userB, userC } = await loadFixture(deploySCCTransferFixture);
 
             // UserA deposits NFT #1
             await astaVerde.connect(userA).setApprovalForAll(ecoStabilizer.target, true);
@@ -1082,7 +1082,7 @@ describe("StabilizedCarbonCoin", function () {
         });
 
         it("Should enforce borrower identity regardless of SCC ownership", async function () {
-            const { astaVerde, scc, ecoStabilizer, mockUSDC, userA, userB, producer } = 
+            const { astaVerde, scc, ecoStabilizer, mockUSDC, userA, userB, producer } =
                 await loadFixture(deploySCCTransferFixture);
 
             // Both users deposit different NFTs
@@ -1090,9 +1090,10 @@ describe("StabilizedCarbonCoin", function () {
             await ecoStabilizer.connect(userA).deposit(1); // UserA deposits NFT #1
 
             // Mint new batch for UserB
-            await astaVerde.connect(await ethers.getSigner(await astaVerde.owner()))
+            await astaVerde
+                .connect(await ethers.getSigner(await astaVerde.owner()))
                 .mintBatch([producer.address], ["QmCID4"]);
-            
+
             const price = await astaVerde.getCurrentBatchPrice(2);
             await mockUSDC.connect(userB).approve(astaVerde.target, price);
             await astaVerde.connect(userB).buyBatch(2, price, 1); // UserB gets NFT #4
@@ -1109,16 +1110,17 @@ describe("StabilizedCarbonCoin", function () {
 
             // UserB cannot withdraw UserA's NFT even with sufficient SCC
             await scc.connect(userB).approve(ecoStabilizer.target, ethers.parseEther("40"));
-            await expect(ecoStabilizer.connect(userB).withdraw(1))
-                .to.be.revertedWith("not borrower");
+            await expect(ecoStabilizer.connect(userB).withdraw(1)).to.be.revertedWith("not borrower");
 
             // UserB can withdraw their own NFT
             await ecoStabilizer.connect(userB).withdraw(4);
             expect(await astaVerde.balanceOf(userB.address, 4)).to.equal(1);
 
             // UserA cannot withdraw their NFT (no SCC)
-            await expect(ecoStabilizer.connect(userA).withdraw(1))
-                .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
+            await expect(ecoStabilizer.connect(userA).withdraw(1)).to.be.revertedWithCustomError(
+                scc,
+                "ERC20InsufficientAllowance",
+            );
         });
     });
 });
