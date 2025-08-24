@@ -16,14 +16,14 @@ const isE2EMode =
 // For local development, don't use WalletConnect to avoid connection errors
 const baseConfig = isLocalDevelopment()
   ? {
-      appName: "Asta Verde",
-      chains,
-    }
+    appName: "Asta Verde",
+    chains,
+  }
   : {
-      appName: "Asta Verde",
-      walletConnectProjectId: ENV.WALLET_CONNECT_PROJECT_ID,
-      chains,
-    };
+    appName: "Asta Verde",
+    walletConnectProjectId: ENV.WALLET_CONNECT_PROJECT_ID,
+    chains,
+  };
 
 // Create wagmi config with explicit transports
 let wagmiConfig: ReturnType<typeof createConfig>;

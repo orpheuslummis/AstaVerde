@@ -549,7 +549,8 @@ export function useVault(assetAddress?: string): VaultHook {
       let startId = 1n;
       const pageSize = 2000n; // MAX_PAGE_SIZE from contract
 
-      while (true) {
+      let hasMore = true;
+      while (hasMore) {
         const result = await publicClient.readContract({
           ...getVaultContractConfig(),
           functionName: "getUserLoansPaginated",
@@ -559,8 +560,11 @@ export function useVault(assetAddress?: string): VaultHook {
         const { tokenIds, nextStartId } = result as { tokenIds: bigint[]; nextStartId: bigint };
         loans.push(...tokenIds);
 
-        if (nextStartId === 0n) break;
-        startId = nextStartId;
+        if (nextStartId === 0n) {
+          hasMore = false;
+        } else {
+          startId = nextStartId;
+        }
       }
 
       setPaginatedLoans(loans);
@@ -680,23 +684,23 @@ export function useLoanStatus(tokenId: bigint) {
   const { data: loanData } = useReadContract(
     ENV.ECOSTABILIZER_ADDRESS && tokenId !== undefined
       ? {
-          ...getEcoStabilizerContractConfig(),
-          functionName: "loans",
-          args: [tokenId],
-        }
+        ...getEcoStabilizerContractConfig(),
+        functionName: "loans",
+        args: [tokenId],
+      }
       : {
-          address: undefined as unknown as `0x${string}`,
-          abi: [],
-          functionName: "loans",
-        },
+        address: undefined as unknown as `0x${string}`,
+        abi: [],
+        functionName: "loans",
+      },
   );
 
   const loan: VaultLoan | null = loanData
     ? {
-        tokenId,
-        borrower: (loanData as unknown[])[0] as string,
-        active: (loanData as unknown[])[1] as boolean,
-      }
+      tokenId,
+      borrower: (loanData as unknown[])[0] as string,
+      active: (loanData as unknown[])[1] as boolean,
+    }
     : null;
 
   return {

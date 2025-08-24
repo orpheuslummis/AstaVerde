@@ -69,7 +69,7 @@ async function mintBatch(tokenCount = 3) {
         console.log(`   Price: ${ethers.formatUnits(batchInfo[3], 6)} USDC`);
         console.log(`   Remaining tokens: ${batchInfo[4]}`);
 
-        console.log(`\n✨ Batch minting complete! View the new tokens in the webapp.`);
+        console.log("\n✨ Batch minting complete! View the new tokens in the webapp.");
     } catch (error) {
         console.error("❌ Error minting batch:", error.message);
         if (error.reason) {

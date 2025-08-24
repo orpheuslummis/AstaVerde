@@ -613,7 +613,7 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
         console.log("=".repeat(60));
         console.log(`📊 Scenario: ${scenario}`);
         console.log(`🌐 Webapp: http://localhost:${port}`);
-        console.log(`⛓️  Local blockchain: http://127.0.0.1:8545`);
+        console.log("⛓️  Local blockchain: http://127.0.0.1:8545");
 
         console.log("\n🔑 Test Accounts (all have 50k USDC):");
         Object.entries(this.users).forEach(([name, user], index) => {
@@ -629,7 +629,7 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=demo
         console.log("      Bob: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a");
         console.log("      Charlie: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6");
 
-        console.log(`\n🎯 Test Scenarios Available:`);
+        console.log("\n🎯 Test Scenarios Available:");
         console.log("   • Basic: Simple marketplace testing");
         console.log("   • Marketplace: Active marketplace with various states");
         console.log("   • Vault: Vault functionality testing");
@@ -738,18 +738,18 @@ async function main() {
 
         // Seed based on scenario
         switch (scenario) {
-            case "basic":
-                await env.seedBasicScenario();
-                break;
-            case "marketplace":
-                await env.seedMarketplaceScenario();
-                break;
-            case "vault":
-                await env.seedVaultScenario();
-                break;
-            case "complete":
-                await env.seedCompleteScenario();
-                break;
+        case "basic":
+            await env.seedBasicScenario();
+            break;
+        case "marketplace":
+            await env.seedMarketplaceScenario();
+            break;
+        case "vault":
+            await env.seedVaultScenario();
+            break;
+        case "complete":
+            await env.seedCompleteScenario();
+            break;
         }
 
         await env.generateWebappConfig();

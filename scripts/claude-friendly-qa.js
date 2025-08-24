@@ -41,7 +41,7 @@ async function setupTestEnvironment() {
     const users = { deployer, user1, user2, user3 };
 
     console.log("✅ Test environment ready");
-    console.log(`📋 Contract addresses:`);
+    console.log("📋 Contract addresses:");
     console.log(`   USDC: ${await usdc.getAddress()}`);
     console.log(`   AstaVerde: ${await astaVerde.getAddress()}`);
     console.log(`   SCC: ${await scc.getAddress()}`);
@@ -222,7 +222,7 @@ async function runPhase2Tests(contracts, users) {
 
         try {
             await vault.connect(user2).deposit(redeemedTokenId);
-            console.log(`   ❌ UNEXPECTED: Redeemed NFT deposit succeeded!`);
+            console.log("   ❌ UNEXPECTED: Redeemed NFT deposit succeeded!");
             results.redeemedRejection = false;
         } catch (error) {
             if (error.message.includes("redeemed asset")) {
@@ -259,7 +259,7 @@ async function runIntegrationTests(contracts, users) {
         const totalActiveLoans = await vault.getTotalActiveLoans();
         const totalSCCSupply = await scc.totalSupply();
 
-        console.log(`📊 Current vault state:`);
+        console.log("📊 Current vault state:");
         console.log(`   Active loans: ${totalActiveLoans}`);
         console.log(`   Total SCC supply: ${ethers.formatEther(totalSCCSupply)}`);
 

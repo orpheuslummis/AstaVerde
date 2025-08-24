@@ -27,17 +27,17 @@ const chainIds = {
 function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
     let jsonRpcUrl: string;
     switch (chain) {
-        case "hardhat":
-            jsonRpcUrl = "http://localhost:8545";
-            break;
-        case "base-mainnet":
-            jsonRpcUrl = `https://base-mainnet.g.alchemy.com/v2/${rpcApiKey}`;
-            break;
-        case "base-sepolia":
-            jsonRpcUrl = `https://base-sepolia.g.alchemy.com/v2/${rpcApiKey}`;
-            break;
-        default:
-            jsonRpcUrl = "";
+    case "hardhat":
+        jsonRpcUrl = "http://localhost:8545";
+        break;
+    case "base-mainnet":
+        jsonRpcUrl = `https://base-mainnet.g.alchemy.com/v2/${rpcApiKey}`;
+        break;
+    case "base-sepolia":
+        jsonRpcUrl = `https://base-sepolia.g.alchemy.com/v2/${rpcApiKey}`;
+        break;
+    default:
+        jsonRpcUrl = "";
     }
 
     if (!jsonRpcUrl) {

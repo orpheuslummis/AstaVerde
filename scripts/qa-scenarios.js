@@ -75,7 +75,7 @@ async function scenarioHappyPath(contracts) {
     if (!tokenInfo[4]) {
         throw new Error("NFT not marked as redeemed");
     }
-    console.log(`  ✓ NFT #1 redeemed successfully`);
+    console.log("  ✓ NFT #1 redeemed successfully");
 }
 
 // Scenario 2: Redeemed NFT rejection
@@ -186,7 +186,7 @@ async function scenarioInsufficientSCC(contracts) {
     await scc.connect(user2).transfer(user1.address, transferAmount);
 
     await vault.connect(user1).withdraw(tokenId);
-    console.log(`  ✓ Withdrawal succeeded after getting sufficient SCC`);
+    console.log("  ✓ Withdrawal succeeded after getting sufficient SCC");
 }
 
 // Scenario 4: Multiple users, multiple NFTs workflow
@@ -238,7 +238,7 @@ async function scenarioMultiUser(contracts) {
     console.log("Step 5: Users trade SCC among themselves");
     const tradAmount = ethers.parseEther("5");
     await scc.connect(user1).transfer(user2.address, tradAmount);
-    console.log(`  ✓ User1 sent 5 SCC to User2`);
+    console.log("  ✓ User1 sent 5 SCC to User2");
 
     const user2Balance = await scc.balanceOf(user2.address);
     console.log(`  ✓ User2 now has ${ethers.formatEther(user2Balance)} SCC`);
@@ -296,7 +296,7 @@ async function scenarioGasUsage(contracts) {
     if (depositGas > maxDepositGas) {
         console.log(`  ⚠️  Deposit gas (${depositGas}) exceeds target (${maxDepositGas})`);
     } else {
-        console.log(`  ✓ Deposit gas within target`);
+        console.log("  ✓ Deposit gas within target");
     }
 
     console.log("Step 3: Test withdraw gas usage");
@@ -314,7 +314,7 @@ async function scenarioGasUsage(contracts) {
     if (withdrawGas > maxWithdrawGas) {
         console.log(`  ⚠️  Withdraw gas (${withdrawGas}) exceeds target (${maxWithdrawGas})`);
     } else {
-        console.log(`  ✓ Withdraw gas within target`);
+        console.log("  ✓ Withdraw gas within target");
     }
 
     return { depositGas, withdrawGas };
@@ -375,7 +375,7 @@ async function main() {
             passCount++;
         } catch (error) {
             results[name] = `FAIL: ${error.message}`;
-            console.log(`\n❌ Continuing with remaining scenarios...\n`);
+            console.log("\n❌ Continuing with remaining scenarios...\n");
         }
     }
 

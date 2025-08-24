@@ -75,9 +75,9 @@ export function parseVaultError(
       details: "You need 20 SCC to withdraw this NFT. You can get SCC by depositing other NFTs into the vault.",
       action: context?.retry
         ? {
-            label: "Try Again",
-            handler: context.retry,
-          }
+          label: "Try Again",
+          handler: context.retry,
+        }
         : undefined,
       originalError: error,
     };
@@ -101,16 +101,16 @@ export function parseVaultError(
       details: "Please approve the vault to spend your SCC tokens first.",
       action: context?.approveSCC
         ? {
-            label: "Approve SCC",
-            handler: async () => {
-              try {
-                await context.approveSCC?.();
-                customToast.success("Approval initiated. Please confirm in your wallet.");
-              } catch {
-                customToast.error("Failed to initiate approval");
-              }
-            },
-          }
+          label: "Approve SCC",
+          handler: async () => {
+            try {
+              await context.approveSCC?.();
+              customToast.success("Approval initiated. Please confirm in your wallet.");
+            } catch {
+              customToast.error("Failed to initiate approval");
+            }
+          },
+        }
         : undefined,
       originalError: error,
     };
@@ -124,16 +124,16 @@ export function parseVaultError(
       details: "Please approve the vault to transfer your NFTs first.",
       action: context?.approveNFT
         ? {
-            label: "Approve NFTs",
-            handler: async () => {
-              try {
-                await context.approveNFT?.();
-                customToast.success("Approval initiated. Please confirm in your wallet.");
-              } catch {
-                customToast.error("Failed to initiate approval");
-              }
-            },
-          }
+          label: "Approve NFTs",
+          handler: async () => {
+            try {
+              await context.approveNFT?.();
+              customToast.success("Approval initiated. Please confirm in your wallet.");
+            } catch {
+              customToast.error("Failed to initiate approval");
+            }
+          },
+        }
         : undefined,
       originalError: error,
     };
@@ -202,13 +202,13 @@ export function parseVaultError(
       details: "Please check your connection and try again.",
       action: context?.retry
         ? {
-            label: "Retry",
-            handler: context.retry,
-          }
+          label: "Retry",
+          handler: context.retry,
+        }
         : {
-            label: "Refresh Page",
-            handler: () => window.location.reload(),
-          },
+          label: "Refresh Page",
+          handler: () => window.location.reload(),
+        },
       originalError: error,
     };
   }
@@ -230,9 +230,9 @@ export function parseVaultError(
     details: error?.shortMessage || errorMessage || "An unexpected error occurred. Please try again.",
     action: context?.retry
       ? {
-          label: "Try Again",
-          handler: context.retry,
-        }
+        label: "Try Again",
+        handler: context.retry,
+      }
       : undefined,
     originalError: error,
   };
@@ -243,18 +243,18 @@ export function parseVaultError(
  */
 export function getTransactionStatusMessage(status: TxStatus): string {
   switch (status) {
-    case TxStatus.SIGNING:
-      return "Please sign the transaction in your wallet...";
-    case TxStatus.PENDING:
-      return "Transaction submitted. Waiting for confirmation...";
-    case TxStatus.CONFIRMING:
-      return "Transaction is being confirmed...";
-    case TxStatus.SUCCESS:
-      return "Transaction completed successfully!";
-    case TxStatus.ERROR:
-      return "Transaction failed";
-    default:
-      return "";
+  case TxStatus.SIGNING:
+    return "Please sign the transaction in your wallet...";
+  case TxStatus.PENDING:
+    return "Transaction submitted. Waiting for confirmation...";
+  case TxStatus.CONFIRMING:
+    return "Transaction is being confirmed...";
+  case TxStatus.SUCCESS:
+    return "Transaction completed successfully!";
+  case TxStatus.ERROR:
+    return "Transaction failed";
+  default:
+    return "";
   }
 }
 

@@ -1251,7 +1251,7 @@ describe("Integration & End-to-End Testing", function () {
                 // Wait 3 days before buying to avoid quick sale trigger
                 await time.increase(3 * 24 * 60 * 60);
 
-                let price1 = await astaVerde.getCurrentBatchPrice(1);
+                const price1 = await astaVerde.getCurrentBatchPrice(1);
                 // Price should be 227 USDC (230 - 3 days of decay)
                 await mockUSDC.connect(user).approve(astaVerde.target, price1);
                 await astaVerde.connect(user).buyBatch(1, price1, 1);
@@ -1261,7 +1261,7 @@ describe("Integration & End-to-End Testing", function () {
 
                 // Batch 2 at base price (230 USDC) - no increase because batch 1 sold after 2-day threshold
                 await astaVerde.mintBatch([producer1.address], ["Qm2"]);
-                let price2 = await astaVerde.getCurrentBatchPrice(2);
+                const price2 = await astaVerde.getCurrentBatchPrice(2);
                 // Price2 should be at base (230) or possibly decreased if batch 1 didn't sell quickly
                 expect(price2).to.be.at.most(ethers.parseUnits("230", 6));
                 await mockUSDC.connect(user).approve(astaVerde.target, price2);

@@ -36,7 +36,7 @@ async function main() {
         const astaVerde = await hre.ethers.getContractAt("AstaVerde", contracts.AstaVerde);
         const lastBatchID = await astaVerde.lastBatchID();
         const lastTokenID = await astaVerde.lastTokenID();
-        console.log(`✅ AstaVerde responding:`);
+        console.log("✅ AstaVerde responding:");
         console.log(`   Last Batch ID: ${lastBatchID}`);
         console.log(`   Last Token ID: ${lastTokenID}`);
 
@@ -53,7 +53,7 @@ async function main() {
         const usdc = await hre.ethers.getContractAt("MockUSDC", contracts.MockUSDC);
         const decimals = await usdc.decimals();
         const totalSupply = await usdc.totalSupply();
-        console.log(`✅ MockUSDC responding:`);
+        console.log("✅ MockUSDC responding:");
         console.log(`   Decimals: ${decimals}`);
         console.log(`   Total Supply: ${hre.ethers.formatUnits(totalSupply, decimals)} USDC`);
     } catch (e) {
@@ -65,7 +65,7 @@ async function main() {
         // Test EcoStabilizer
         const vault = await hre.ethers.getContractAt("EcoStabilizer", contracts.EcoStabilizer);
         const sccPerAsset = await vault.SCC_PER_ASSET();
-        console.log(`✅ EcoStabilizer responding:`);
+        console.log("✅ EcoStabilizer responding:");
         console.log(`   SCC per Asset: ${hre.ethers.formatEther(sccPerAsset)}`);
     } catch (e) {
         console.log(`❌ EcoStabilizer not responding: ${e.message}`);
@@ -145,11 +145,11 @@ async function main() {
         const rpcTest = await hre.ethers.provider.getBlockNumber();
         console.log(`✅ Hardhat RPC: Responding (Block ${rpcTest})`);
     } catch (e) {
-        console.log(`❌ Hardhat RPC: Not responding`);
+        console.log("❌ Hardhat RPC: Not responding");
         errors.push("Hardhat RPC not accessible");
     }
 
-    console.log(`✅ Webapp: Should be at http://localhost:3000`);
+    console.log("✅ Webapp: Should be at http://localhost:3000");
 
     // Final summary
     console.log("\n" + "=".repeat(80));

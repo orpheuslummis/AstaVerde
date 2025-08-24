@@ -26,6 +26,12 @@ module.exports = {
         "webapp/public/**",
         "webapp/.cache-synpress/**",
         "**/.cache-synpress/**",
+        "archive/**",
+        "webapp/webapp/**",
+        "scripts/**/*.mjs",
+        "scripts/events/**",
+        "scripts/manual-qa-flows.js",
+        "scripts/dev-dashboard-server.js",
     ],
     rules: {
         semi: ["error", "always"],
@@ -84,9 +90,24 @@ module.exports = {
                 "@typescript-eslint/no-explicit-any": "off",
             },
         },
-        // Webapp files - basic rules only, webapp config handles TypeScript/React
+        // Webapp TypeScript/TSX files
         {
-            files: ["webapp/**/*.ts", "webapp/**/*.tsx", "webapp/**/*.js", "webapp/**/*.jsx"],
+            files: ["webapp/**/*.ts", "webapp/**/*.tsx"],
+            env: {
+                browser: true,
+                node: true,
+            },
+            globals: {
+                React: "readonly",
+            },
+            rules: {
+                indent: ["error", 2], // Webapp uses 2 spaces
+                "no-console": ["warn", { allow: ["warn", "error"] }],
+            },
+        },
+        // Webapp JavaScript files
+        {
+            files: ["webapp/**/*.js", "webapp/**/*.jsx"],
             env: {
                 browser: true,
                 node: true,
@@ -106,6 +127,21 @@ module.exports = {
                 "@typescript-eslint/no-explicit-any": "off",
                 "@typescript-eslint/no-unused-vars": "off",
                 "no-console": "off",
+            },
+        },
+        // Node.js test scripts in webapp
+        {
+            files: ["webapp/test-*.js"],
+            rules: {
+                "@typescript-eslint/no-var-requires": "off",
+                "no-console": "off",
+            },
+        },
+        // Next.js config file
+        {
+            files: ["webapp/next.config.js"],
+            rules: {
+                "@typescript-eslint/no-var-requires": "off",
             },
         },
     ],

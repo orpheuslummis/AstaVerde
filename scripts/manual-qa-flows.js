@@ -34,7 +34,7 @@ async function displayAccountInfo(signer, contracts) {
     console.log(`SCC Balance: ${formatBalance(await scc.balanceOf(signer.address))} SCC`);
 
     // Show owned NFTs (check first 10 tokens)
-    console.log(`\nOwned NFTs:`);
+    console.log("\nOwned NFTs:");
     for (let i = 1; i <= 10; i++) {
         try {
             const balance = await astaVerde.balanceOf(signer.address, i);
@@ -133,47 +133,47 @@ async function main() {
         let currentUser = user1; // Default user
 
         switch (choice) {
-            case "1":
-                await testCreateNFTBatch(deployer, contracts);
-                break;
-            case "2":
-                console.log(`\nCurrent user: ${currentUser.address}`);
-                await testBuyNFTs(currentUser, contracts);
-                break;
-            case "3":
-                console.log(`\nCurrent user: ${currentUser.address}`);
-                await testRedeemNFT(currentUser, contracts);
-                break;
-            case "4":
-                console.log(`\nCurrent user: ${currentUser.address}`);
-                await testDepositNFT(currentUser, contracts);
-                break;
-            case "5":
-                console.log(`\nCurrent user: ${currentUser.address}`);
-                await testWithdrawNFT(currentUser, contracts);
-                break;
-            case "6":
-                console.log(`\nCurrent user: ${currentUser.address}`);
-                await testDepositRedeemedNFT(currentUser, contracts);
-                break;
-            case "7":
-                await displayAccountInfo(currentUser, contracts);
-                await waitForKeyPress();
-                break;
-            case "8":
-                const userOptions = { 1: user1, 2: user2, 3: user3 };
-                const userChoice = await prompt("Select user (1=user1, 2=user2, 3=user3): ");
-                if (userOptions[userChoice]) {
-                    currentUser = userOptions[userChoice];
-                    console.log(`✅ Switched to ${currentUser.address}`);
-                }
-                break;
-            case "9":
-                console.log("👋 Goodbye!");
-                rl.close();
-                process.exit(0);
-            default:
-                console.log("❌ Invalid option");
+        case "1":
+            await testCreateNFTBatch(deployer, contracts);
+            break;
+        case "2":
+            console.log(`\nCurrent user: ${currentUser.address}`);
+            await testBuyNFTs(currentUser, contracts);
+            break;
+        case "3":
+            console.log(`\nCurrent user: ${currentUser.address}`);
+            await testRedeemNFT(currentUser, contracts);
+            break;
+        case "4":
+            console.log(`\nCurrent user: ${currentUser.address}`);
+            await testDepositNFT(currentUser, contracts);
+            break;
+        case "5":
+            console.log(`\nCurrent user: ${currentUser.address}`);
+            await testWithdrawNFT(currentUser, contracts);
+            break;
+        case "6":
+            console.log(`\nCurrent user: ${currentUser.address}`);
+            await testDepositRedeemedNFT(currentUser, contracts);
+            break;
+        case "7":
+            await displayAccountInfo(currentUser, contracts);
+            await waitForKeyPress();
+            break;
+        case "8":
+            const userOptions = { 1: user1, 2: user2, 3: user3 };
+            const userChoice = await prompt("Select user (1=user1, 2=user2, 3=user3): ");
+            if (userOptions[userChoice]) {
+                currentUser = userOptions[userChoice];
+                console.log(`✅ Switched to ${currentUser.address}`);
+            }
+            break;
+        case "9":
+            console.log("👋 Goodbye!");
+            rl.close();
+            process.exit(0);
+        default:
+            console.log("❌ Invalid option");
         }
     }
 }
@@ -306,7 +306,7 @@ async function testRedeemNFT(user, contracts) {
 
         console.log(`✅ Token #${tokenId} redeemed successfully`);
         console.log(`Gas used: ${receipt.gasUsed}`);
-        console.log(`⚠️  This NFT can no longer be deposited to the vault!`);
+        console.log("⚠️  This NFT can no longer be deposited to the vault!");
     } catch (error) {
         console.log(`❌ Failed to redeem NFT: ${error.message}`);
     }
@@ -376,16 +376,16 @@ async function testDepositNFT(user, contracts) {
         const nftBalance = await astaVerde.balanceOf(user.address, tokenId);
         const vaultNftBalance = await astaVerde.balanceOf(await vault.getAddress(), tokenId);
 
-        console.log(`✅ Deposit successful!`);
+        console.log("✅ Deposit successful!");
         console.log(`Gas used: ${receipt.gasUsed}`);
         console.log(`SCC minted: ${formatBalance(finalSCC - initialSCC)} SCC`);
         console.log(`Your NFT balance: ${nftBalance} (should be 0)`);
         console.log(`Vault NFT balance: ${vaultNftBalance} (should be 1)`);
 
         if (finalSCC - initialSCC === ethers.parseEther("20")) {
-            console.log(`✅ Correct amount minted (20 SCC)`);
+            console.log("✅ Correct amount minted (20 SCC)");
         } else {
-            console.log(`❌ Incorrect amount minted`);
+            console.log("❌ Incorrect amount minted");
         }
     } catch (error) {
         console.log(`❌ Failed to deposit NFT: ${error.message}`);
@@ -455,7 +455,7 @@ async function testWithdrawNFT(user, contracts) {
         const nftBalance = await astaVerde.balanceOf(user.address, tokenId);
         const loanInfo = await vault.loans(tokenId);
 
-        console.log(`✅ Withdrawal successful!`);
+        console.log("✅ Withdrawal successful!");
         console.log(`Gas used: ${receipt.gasUsed}`);
         console.log(`SCC burned: ${formatBalance(userSCCBalance - finalSCCBalance)} SCC`);
         console.log(`Your NFT balance: ${nftBalance} (should be 1)`);
@@ -506,7 +506,7 @@ async function testDepositRedeemedNFT(user, contracts) {
     try {
         // This should fail
         console.log(`Attempting to deposit redeemed token #${tokenId}...`);
-        console.log(`⚠️  This should fail with "redeemed asset" error`);
+        console.log("⚠️  This should fail with \"redeemed asset\" error");
 
         // Approve first (this should succeed)
         await astaVerde.connect(user).setApprovalForAll(await vault.getAddress(), true);
@@ -515,10 +515,10 @@ async function testDepositRedeemedNFT(user, contracts) {
         const tx = await vault.connect(user).deposit(tokenId);
         await tx.wait();
 
-        console.log(`❌ UNEXPECTED: Deposit succeeded! This is a bug!`);
+        console.log("❌ UNEXPECTED: Deposit succeeded! This is a bug!");
     } catch (error) {
         if (error.message.includes("redeemed asset")) {
-            console.log(`✅ EXPECTED: Deposit correctly failed with "redeemed asset" error`);
+            console.log("✅ EXPECTED: Deposit correctly failed with \"redeemed asset\" error");
             console.log(`Error: ${error.message}`);
         } else {
             console.log(`❌ UNEXPECTED ERROR: ${error.message}`);

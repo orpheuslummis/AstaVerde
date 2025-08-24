@@ -64,7 +64,7 @@ async function main() {
                 if (allowance < sccNeeded) {
                     const approveTx = await scc.connect(alice).approve(addresses.EcoStabilizer, sccNeeded);
                     await approveTx.wait();
-                    console.log(`   ✅ SCC approval set`);
+                    console.log("   ✅ SCC approval set");
                 }
 
                 const withdrawTx = await vault.connect(alice).withdraw(tokenId);

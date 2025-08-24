@@ -14,15 +14,15 @@ dotenv.config();
 const chain = baseSepolia; // base
 
 export const publicClient = createPublicClient({
-  chain,
-  transport: http(),
+    chain,
+    transport: http(),
 });
 
 const data = await publicClient.readContract({
-  abi: astaverdeContractConfig.abi,
-  address: astaverdeContractConfig.address,
-  functionName: "tokens",
-  args: ["1"],
+    abi: astaverdeContractConfig.abi,
+    address: astaverdeContractConfig.address,
+    functionName: "tokens",
+    args: ["1"],
 });
 
 console.log(data);

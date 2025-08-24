@@ -38,15 +38,17 @@ setTimeout(() => {
 
     // Test 3: Check current listeners
     console.log("\nTest 3: Checking active listeners...");
-    if (typeof getEventListeners !== "undefined") {
-      const listeners = getEventListeners(window);
+    // getEventListeners is a Chrome DevTools-only function, not available in Node.js
+    // This check would only work when running in Chrome DevTools console
+    if (typeof window !== "undefined" && window.getEventListeners) {
+      const listeners = window.getEventListeners(window);
       const refetchListeners = listeners["astaverde:refetch"] || [];
       console.log(`Active 'astaverde:refetch' listeners: ${refetchListeners.length}`);
       if (refetchListeners.length > 0) {
         console.log("Note: There are active listeners, likely from React components");
       }
     } else {
-      console.log("Note: getEventListeners not available in this environment");
+      console.log("Note: getEventListeners not available in this environment (Chrome DevTools only)");
     }
 
     console.log("\n✅ Event cleanup implementation test complete!");

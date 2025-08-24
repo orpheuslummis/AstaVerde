@@ -747,118 +747,118 @@ describe("Platform Funds Withdrawal", function () {
         expect(batch3Price).to.equal(newBasePrice);
     });
 }),
-    describe("Producer payouts", function () {
-        it("Should correctly pay producers when selling part of a batch", async function () {
-            const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
+describe("Producer payouts", function () {
+    it("Should correctly pay producers when selling part of a batch", async function () {
+        const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
 
-            // Mint a batch with multiple tokens from the same producer
-            await astaVerde.mintBatch(
-                [user2.address, user2.address, user2.address],
-                ["QmValidCID1", "QmValidCID2", "QmValidCID3"],
-            );
-            const batchID = 1n;
+        // Mint a batch with multiple tokens from the same producer
+        await astaVerde.mintBatch(
+            [user2.address, user2.address, user2.address],
+            ["QmValidCID1", "QmValidCID2", "QmValidCID3"],
+        );
+        const batchID = 1n;
 
-            // Get initial balance
-            const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
+        // Get initial balance
+        const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
 
-            // User1 buys two out of three tokens
-            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const totalCost = currentPrice * 2n;
-            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
-            await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
+        // User1 buys two out of three tokens
+        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+        const totalCost = currentPrice * 2n;
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+        await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
 
-            // Check accrued balance (pull pattern - funds not transferred directly)
-            const accruedProducerBalance = await astaVerde.producerBalances(user2.address);
+        // Check accrued balance (pull pattern - funds not transferred directly)
+        const accruedProducerBalance = await astaVerde.producerBalances(user2.address);
 
-            // Calculate expected producer share
-            const platformSharePercentage = await astaVerde.platformSharePercentage();
-            const expectedProducerShare = (currentPrice * 2n * (100n - platformSharePercentage)) / 100n;
+        // Calculate expected producer share
+        const platformSharePercentage = await astaVerde.platformSharePercentage();
+        const expectedProducerShare = (currentPrice * 2n * (100n - platformSharePercentage)) / 100n;
 
-            // Verify accrued balance
-            expect(accruedProducerBalance).to.equal(expectedProducerShare);
+        // Verify accrued balance
+        expect(accruedProducerBalance).to.equal(expectedProducerShare);
 
-            // Now producer claims their funds
-            await astaVerde.connect(user2).claimProducerFunds();
-            const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
-            expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
-        });
+        // Now producer claims their funds
+        await astaVerde.connect(user2).claimProducerFunds();
+        const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
+        expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
+    });
 
-        it("Should correctly distribute payments to multiple producers in a batch", async function () {
-            const { astaVerde, mockUSDC, user1, user2, user3 } = await loadFixture(deployAstaVerdeFixture);
+    it("Should correctly distribute payments to multiple producers in a batch", async function () {
+        const { astaVerde, mockUSDC, user1, user2, user3 } = await loadFixture(deployAstaVerdeFixture);
 
-            // Mint a batch with multiple producers
-            await astaVerde.mintBatch([user2.address, user3.address], ["QmValidCID1", "QmValidCID2"]);
-            const batchID = 1n;
+        // Mint a batch with multiple producers
+        await astaVerde.mintBatch([user2.address, user3.address], ["QmValidCID1", "QmValidCID2"]);
+        const batchID = 1n;
 
-            // Get initial balances
-            const initialProducer1Balance = await mockUSDC.balanceOf(user2.address);
-            const initialProducer2Balance = await mockUSDC.balanceOf(user3.address);
+        // Get initial balances
+        const initialProducer1Balance = await mockUSDC.balanceOf(user2.address);
+        const initialProducer2Balance = await mockUSDC.balanceOf(user3.address);
 
-            // User1 buys both tokens
-            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            const totalCost = currentPrice * 2n;
-            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
-            await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
+        // User1 buys both tokens
+        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+        const totalCost = currentPrice * 2n;
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+        await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
 
-            // Check accrued balances (pull pattern - funds not transferred directly)
-            const accruedProducer1Balance = await astaVerde.producerBalances(user2.address);
-            const accruedProducer2Balance = await astaVerde.producerBalances(user3.address);
+        // Check accrued balances (pull pattern - funds not transferred directly)
+        const accruedProducer1Balance = await astaVerde.producerBalances(user2.address);
+        const accruedProducer2Balance = await astaVerde.producerBalances(user3.address);
 
-            // Calculate expected producer share
-            const platformSharePercentage = await astaVerde.platformSharePercentage();
-            const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
+        // Calculate expected producer share
+        const platformSharePercentage = await astaVerde.platformSharePercentage();
+        const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
 
-            // Verify accrued balances
-            expect(accruedProducer1Balance).to.equal(expectedProducerShare);
-            expect(accruedProducer2Balance).to.equal(expectedProducerShare);
+        // Verify accrued balances
+        expect(accruedProducer1Balance).to.equal(expectedProducerShare);
+        expect(accruedProducer2Balance).to.equal(expectedProducerShare);
 
-            // Now producers claim their funds
-            await astaVerde.connect(user2).claimProducerFunds();
-            await astaVerde.connect(user3).claimProducerFunds();
+        // Now producers claim their funds
+        await astaVerde.connect(user2).claimProducerFunds();
+        await astaVerde.connect(user3).claimProducerFunds();
 
-            const finalProducer1Balance = await mockUSDC.balanceOf(user2.address);
-            const finalProducer2Balance = await mockUSDC.balanceOf(user3.address);
-            expect(finalProducer1Balance).to.equal(initialProducer1Balance + expectedProducerShare);
-            expect(finalProducer2Balance).to.equal(initialProducer2Balance + expectedProducerShare);
-        });
-        it("Should transfer correct amount to producer when tokens are sold", async function () {
-            const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
+        const finalProducer1Balance = await mockUSDC.balanceOf(user2.address);
+        const finalProducer2Balance = await mockUSDC.balanceOf(user3.address);
+        expect(finalProducer1Balance).to.equal(initialProducer1Balance + expectedProducerShare);
+        expect(finalProducer2Balance).to.equal(initialProducer2Balance + expectedProducerShare);
+    });
+    it("Should transfer correct amount to producer when tokens are sold", async function () {
+        const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
 
-            // Mint a batch with user2 as the producer
-            await astaVerde.mintBatch([user2.address], ["QmValidCID"]);
-            const batchID = 1n;
+        // Mint a batch with user2 as the producer
+        await astaVerde.mintBatch([user2.address], ["QmValidCID"]);
+        const batchID = 1n;
 
-            // Get initial balances
-            const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
-            const initialContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
+        // Get initial balances
+        const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
+        const initialContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
 
-            // User1 buys the token
-            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
-            await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
+        // User1 buys the token
+        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
+        await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
 
-            // Check accrued balance (pull pattern - funds not transferred directly)
-            const accruedProducerBalance = await astaVerde.producerBalances(user2.address);
-            const finalContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
+        // Check accrued balance (pull pattern - funds not transferred directly)
+        const accruedProducerBalance = await astaVerde.producerBalances(user2.address);
+        const finalContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
 
-            // Calculate expected producer share
-            const platformSharePercentage = await astaVerde.platformSharePercentage();
-            const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
-            const expectedPlatformShare = currentPrice - expectedProducerShare;
+        // Calculate expected producer share
+        const platformSharePercentage = await astaVerde.platformSharePercentage();
+        const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
+        const expectedPlatformShare = currentPrice - expectedProducerShare;
 
-            // Verify accrued balance and contract holds all funds
-            expect(accruedProducerBalance).to.equal(expectedProducerShare);
-            expect(finalContractBalance).to.equal(initialContractBalance + currentPrice);
+        // Verify accrued balance and contract holds all funds
+        expect(accruedProducerBalance).to.equal(expectedProducerShare);
+        expect(finalContractBalance).to.equal(initialContractBalance + currentPrice);
 
-            // Now producer claims their funds
-            await astaVerde.connect(user2).claimProducerFunds();
-            const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
-            const finalContractBalanceAfterClaim = await mockUSDC.balanceOf(await astaVerde.getAddress());
+        // Now producer claims their funds
+        await astaVerde.connect(user2).claimProducerFunds();
+        const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
+        const finalContractBalanceAfterClaim = await mockUSDC.balanceOf(await astaVerde.getAddress());
 
-            expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
-            expect(finalContractBalanceAfterClaim).to.equal(initialContractBalance + expectedPlatformShare);
-        });
-    }));
+        expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
+        expect(finalContractBalanceAfterClaim).to.equal(initialContractBalance + expectedPlatformShare);
+    });
+}));
 
 describe("Additional Price Adjustment Tests", function () {
     it("Should not increase basePrice when only part of a batch is sold", async function () {
@@ -1452,12 +1452,12 @@ describe("AstaVerde Security Fixes", function () {
     it("should reject vault functions when not paused", async function () {
       await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
       await astaVerde.setTrustedVault(attacker.address);
-      
+
       // Both functions require whenPaused
       await expect(
         astaVerde.vaultSendTokens([1])
       ).to.be.revertedWithCustomError(astaVerde, "ExpectedPause");
-      
+
       await expect(
         astaVerde.vaultRecallTokens([1])
       ).to.be.revertedWithCustomError(astaVerde, "ExpectedPause");
@@ -1467,12 +1467,12 @@ describe("AstaVerde Security Fixes", function () {
       await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
       await astaVerde.setTrustedVault(attacker.address);
       await astaVerde.pause();
-      
+
       // Both functions require onlyOwner
       await expect(
         astaVerde.connect(buyer).vaultSendTokens([1])
       ).to.be.revertedWithCustomError(astaVerde, "OwnableUnauthorizedAccount");
-      
+
       await expect(
         astaVerde.connect(attacker).vaultRecallTokens([1])
       ).to.be.revertedWithCustomError(astaVerde, "OwnableUnauthorizedAccount");
@@ -1481,12 +1481,12 @@ describe("AstaVerde Security Fixes", function () {
     it("should reject when vault not set", async function () {
       await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
       await astaVerde.pause();
-      
+
       // Both functions require trustedVault != 0
       await expect(
         astaVerde.vaultSendTokens([1])
       ).to.be.revertedWith("Vault not set");
-      
+
       await expect(
         astaVerde.vaultRecallTokens([1])
       ).to.be.revertedWith("Vault not set");
@@ -1497,7 +1497,7 @@ describe("AstaVerde Security Fixes", function () {
       await astaVerde.connect(buyer).buyBatch(1, BASE_PRICE, 1); // Token now owned by buyer
       await astaVerde.setTrustedVault(attacker.address);
       await astaVerde.pause();
-      
+
       await expect(
         astaVerde.vaultSendTokens([1])
       ).to.be.revertedWith("Not held by contract");
@@ -1507,10 +1507,10 @@ describe("AstaVerde Security Fixes", function () {
       await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
       await astaVerde.setTrustedVault(attacker.address);
       await astaVerde.pause();
-      
+
       // Vault must approve owner first
       await astaVerde.connect(attacker).setApprovalForAll(owner.address, true);
-      
+
       // Token is still in contract, not in vault
       await expect(
         astaVerde.vaultRecallTokens([1])
@@ -1520,11 +1520,11 @@ describe("AstaVerde Security Fixes", function () {
     it("should reject empty ids array", async function () {
       await astaVerde.setTrustedVault(attacker.address);
       await astaVerde.pause();
-      
+
       await expect(
         astaVerde.vaultSendTokens([])
       ).to.be.revertedWith("No ids");
-      
+
       await expect(
         astaVerde.vaultRecallTokens([])
       ).to.be.revertedWith("No ids");
@@ -1534,10 +1534,10 @@ describe("AstaVerde Security Fixes", function () {
       await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
       await astaVerde.setTrustedVault(attacker.address);
       await astaVerde.pause();
-      
+
       // Send token to vault using vault function
       await astaVerde.vaultSendTokens([1]);
-      
+
       // Vault cannot directly transfer tokens back (must use vaultRecallTokens)
       await expect(
         astaVerde.connect(attacker).safeTransferFrom(
@@ -1548,7 +1548,7 @@ describe("AstaVerde Security Fixes", function () {
           "0x"
         )
       ).to.be.revertedWith("Pausable: paused");
-      
+
       // Non-owner cannot use safeBatchTransferFrom
       await expect(
         astaVerde.connect(buyer).safeBatchTransferFrom(
@@ -1565,15 +1565,15 @@ describe("AstaVerde Security Fixes", function () {
       await astaVerde.mintBatch([producer1.address, producer2.address], ["QmTest1", "QmTest2"]);
       await astaVerde.setTrustedVault(attacker.address);
       await astaVerde.pause();
-      
+
       // Check VaultSent event
       await expect(astaVerde.vaultSendTokens([1, 2]))
         .to.emit(astaVerde, "VaultSent")
         .withArgs(attacker.address, owner.address, [1, 2]);
-      
+
       // Vault must approve owner for recall
       await astaVerde.connect(attacker).setApprovalForAll(owner.address, true);
-      
+
       // Check VaultRecalled event
       await expect(astaVerde.vaultRecallTokens([1, 2]))
         .to.emit(astaVerde, "VaultRecalled")
@@ -1586,30 +1586,30 @@ describe("AstaVerde Security Fixes", function () {
       // Set a vault initially
       await astaVerde.setTrustedVault(buyer.address);
       expect(await astaVerde.trustedVault()).to.equal(buyer.address);
-      
+
       // Clear the vault by setting to address(0)
       await expect(astaVerde.setTrustedVault(ethers.ZeroAddress))
         .to.emit(astaVerde, "TrustedVaultSet")
         .withArgs(ethers.ZeroAddress);
-      
+
       expect(await astaVerde.trustedVault()).to.equal(ethers.ZeroAddress);
     });
 
     it("should revert vault functions when trustedVault is address(0)", async function () {
       // Mint a token
       await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
-      
+
       // Ensure trustedVault is not set (default is address(0))
       expect(await astaVerde.trustedVault()).to.equal(ethers.ZeroAddress);
-      
+
       // Pause the contract
       await astaVerde.pause();
-      
+
       // Try to send tokens to vault - should fail
       await expect(
         astaVerde.vaultSendTokens([1])
       ).to.be.revertedWith("Vault not set");
-      
+
       // Try to recall tokens from vault - should fail
       await expect(
         astaVerde.vaultRecallTokens([1])
@@ -1619,10 +1619,10 @@ describe("AstaVerde Security Fixes", function () {
     it("should allow re-enabling vault after clearing", async function () {
       // Set vault
       await astaVerde.setTrustedVault(buyer.address);
-      
+
       // Clear vault
       await astaVerde.setTrustedVault(ethers.ZeroAddress);
-      
+
       // Re-enable with new address
       await astaVerde.setTrustedVault(producer1.address);
       expect(await astaVerde.trustedVault()).to.equal(producer1.address);
@@ -1636,7 +1636,7 @@ describe("AstaVerde Security Fixes", function () {
       // Deploy malicious receiver contract
       const MaliciousVaultReceiver = await ethers.getContractFactory("MaliciousVaultReceiver");
       maliciousReceiver = await MaliciousVaultReceiver.deploy(await astaVerde.getAddress());
-      
+
       // Mint some tokens
       await astaVerde.mintBatch([producer1.address, producer2.address], ["QmTest1", "QmTest2"]);
     });
@@ -1644,25 +1644,25 @@ describe("AstaVerde Security Fixes", function () {
     it("should prevent reentrancy in vaultSendTokens", async function () {
       // Set malicious receiver as trusted vault
       await astaVerde.setTrustedVault(await maliciousReceiver.getAddress());
-      
+
       // Configure malicious receiver to attempt reentrancy
       await maliciousReceiver.setShouldReenter(true);
       await maliciousReceiver.setTokenIdsToReenter([2]); // Try to reenter with token 2
-      
+
       // Pause contract to enable vault functions
       await astaVerde.pause();
-      
+
       // Call vaultSendTokens - the receiver will try to reenter
       await expect(astaVerde.vaultSendTokens([1]))
         .to.emit(astaVerde, "VaultSent");
-      
+
       // Verify reentrancy was attempted but failed
       expect(await maliciousReceiver.reentrancyAttempts()).to.equal(1);
-      
+
       // Verify tokens were transferred correctly despite reentrancy attempt
       expect(await astaVerde.balanceOf(await maliciousReceiver.getAddress(), 1)).to.equal(1);
       expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 1)).to.equal(0);
-      
+
       // Token 2 should still be in contract (reentrancy failed)
       expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 2)).to.equal(1);
     });
@@ -1670,26 +1670,26 @@ describe("AstaVerde Security Fixes", function () {
     it("should prevent reentrancy in vaultRecallTokens", async function () {
       // Set malicious receiver as trusted vault
       await astaVerde.setTrustedVault(await maliciousReceiver.getAddress());
-      
+
       // Pause and send token to vault first
       await astaVerde.pause();
       await astaVerde.vaultSendTokens([1]);
-      
+
       // Approve owner to handle vault's tokens
       await maliciousReceiver.approveAstaVerde(owner.address);
-      
+
       // Configure malicious receiver to attempt reentrancy on recall
       await maliciousReceiver.setShouldReenter(true);
       await maliciousReceiver.setTokenIdsToReenter([2]);
-      
+
       // Call vaultRecallTokens - contract's receiver will try to reenter
       await expect(astaVerde.vaultRecallTokens([1]))
         .to.emit(astaVerde, "VaultRecalled");
-      
+
       // Verify token was recalled correctly
       expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 1)).to.equal(1);
       expect(await astaVerde.balanceOf(await maliciousReceiver.getAddress(), 1)).to.equal(0);
-      
+
       // Token 2 should still be in contract (reentrancy failed)
       expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 2)).to.equal(1);
     });
@@ -1697,25 +1697,25 @@ describe("AstaVerde Security Fixes", function () {
     it("should handle batch transfers with reentrancy protection", async function () {
       // Mint more tokens
       await astaVerde.mintBatch([producer1.address], ["QmTest3"]);
-      
+
       // Set malicious receiver as vault
       await astaVerde.setTrustedVault(await maliciousReceiver.getAddress());
-      
+
       // Configure for reentrancy attempt
       await maliciousReceiver.setShouldReenter(true);
       await maliciousReceiver.setTokenIdsToReenter([3]);
-      
+
       // Pause and send batch
       await astaVerde.pause();
-      
+
       // Send multiple tokens - should work despite reentrancy attempt
       await expect(astaVerde.vaultSendTokens([1, 2]))
         .to.emit(astaVerde, "VaultSent");
-      
+
       // Verify batch transfer succeeded
       expect(await astaVerde.balanceOf(await maliciousReceiver.getAddress(), 1)).to.equal(1);
       expect(await astaVerde.balanceOf(await maliciousReceiver.getAddress(), 2)).to.equal(1);
-      
+
       // Token 3 should still be in contract (reentrancy failed)
       expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 3)).to.equal(1);
     });

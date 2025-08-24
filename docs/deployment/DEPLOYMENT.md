@@ -247,17 +247,25 @@ const ecoStabilizer = await EcoStabilizerFactory.deploy(
 // 3. Configure roles
 await scc.grantRole(MINTER_ROLE, ecoStabilizer.target);
 
-// 4. CRITICAL: Renounce deployer roles for decentralization
+// 4. CRITICAL GUARD: Verify minter before renouncing admin
+if (!(await scc.hasRole(MINTER_ROLE, ecoStabilizer.target))) {
+    throw new Error("Vault (V1) missing MINTER_ROLE - aborting renounce");
+}
+if (ecoStabilizerV11 && !(await scc.hasRole(MINTER_ROLE, ecoStabilizerV11.target))) {
+    throw new Error("Vault (V1.1) missing MINTER_ROLE - aborting renounce");
+}
+
+// 5. Renounce deployer roles for decentralization (only after guards pass)
 await scc.renounceRole(DEFAULT_ADMIN_ROLE, deployer.address);
 
-// 5. Verification checks
+// 6. Verification checks
 assert(!(await scc.hasRole(DEFAULT_ADMIN_ROLE, deployer.address)));
 assert(await scc.hasRole(MINTER_ROLE, ecoStabilizer.target));
 ```
 
 ### Security Features
 
-- **Automatic Role Renunciation**: Deployer loses admin control
+- **Guarded Role Renunciation**: Script verifies vault(s) have MINTER_ROLE before renouncing
 - **Immutable Configuration**: No upgrade mechanisms
 - **Verification Checks**: Deployment fails if security requirements not met
 - **Role Validation**: Confirms proper MINTER_ROLE assignment

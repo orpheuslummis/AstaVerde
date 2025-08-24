@@ -19,7 +19,7 @@ async function main() {
     // AV_ADDR is the existing V1 marketplace (supports historical NFTs)
     // AV_ADDR_V11 is the hardened V1.1 marketplace for all future batches
     let astaVerdeAddress = process.env.AV_ADDR;
-    let astaVerdeAddressV11 = process.env.AV_ADDR_V11;
+    const astaVerdeAddressV11 = process.env.AV_ADDR_V11;
 
     // For local development, use the standard deployed address
     if (!astaVerdeAddress && (await ethers.provider.getNetwork()).chainId === 31337n) {
@@ -92,6 +92,21 @@ async function main() {
             const grantRoleTx2 = await scc.grantRole(MINTER_ROLE, await ecoStabilizerV11.getAddress());
             await grantRoleTx2.wait();
             console.log("✅ MINTER_ROLE granted to vault (V1.1)");
+        }
+
+        // Pre-renounce guard: verify MINTER_ROLE is correctly assigned to expected vault(s)
+        console.log("Verifying MINTER_ROLE on vault(s) before renouncing admin...");
+        const v1MinterOk = await scc.hasRole(MINTER_ROLE, await ecoStabilizer.getAddress());
+        if (!v1MinterOk) {
+            throw new Error("🚨 CRITICAL: Vault (V1) does not have MINTER_ROLE - aborting renounce");
+        }
+
+        let v11MinterOk = true;
+        if (ecoStabilizerV11) {
+            v11MinterOk = await scc.hasRole(MINTER_ROLE, await ecoStabilizerV11.getAddress());
+            if (!v11MinterOk) {
+                throw new Error("🚨 CRITICAL: Vault (V1.1) does not have MINTER_ROLE - aborting renounce");
+            }
         }
 
         // Immediately renounce admin privileges (minimize attack window)

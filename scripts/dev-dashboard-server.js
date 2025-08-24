@@ -49,132 +49,85 @@ async function handleAPI(req, res) {
 
     try {
         switch (url.pathname) {
-            case "/api/status":
-                const network = await provider.getNetwork();
-                const blockNumber = await provider.getBlockNumber();
-                let gasPrice = "0";
-                try {
-                    const feeData = await provider.getFeeData();
-                    if (feeData.gasPrice) {
-                        gasPrice = ethers.formatUnits(feeData.gasPrice, "gwei");
-                    }
-                } catch (e) {
-                    // Default gas price for local network
-                    gasPrice = "0";
+        case "/api/status":
+            const network = await provider.getNetwork();
+            const blockNumber = await provider.getBlockNumber();
+            let gasPrice = "0";
+            try {
+                const feeData = await provider.getFeeData();
+                if (feeData.gasPrice) {
+                    gasPrice = ethers.formatUnits(feeData.gasPrice, "gwei");
                 }
-                res.writeHead(200);
-                res.end(
-                    JSON.stringify({
-                        connected: true,
-                        chainId: Number(network.chainId),
-                        blockNumber,
-                        gasPrice: gasPrice,
-                    }),
-                );
-                break;
+            } catch (e) {
+                // Default gas price for local network
+                gasPrice = "0";
+            }
+            res.writeHead(200);
+            res.end(
+                JSON.stringify({
+                    connected: true,
+                    chainId: Number(network.chainId),
+                    blockNumber,
+                    gasPrice: gasPrice,
+                }),
+            );
+            break;
 
-            case "/api/batch-info":
-                const astaverde = new ethers.Contract(CONTRACTS.astaverde, ABI.astaverde, provider);
-                const lastBatchId = await astaverde.lastBatchID();
-                const lastTokenId = await astaverde.lastTokenID();
-                let currentPrice = "0";
-                let basePrice = "250"; // Default base price
+        case "/api/batch-info":
+            const astaverde = new ethers.Contract(CONTRACTS.astaverde, ABI.astaverde, provider);
+            const lastBatchId = await astaverde.lastBatchID();
+            const lastTokenId = await astaverde.lastTokenID();
+            let currentPrice = "0";
+            let basePrice = "250"; // Default base price
 
-                if (lastBatchId > 0) {
-                    const price = await astaverde.getCurrentBatchPrice(lastBatchId);
-                    currentPrice = ethers.formatUnits(price, 6);
-                    // Could calculate days since launch here if needed
-                }
+            if (lastBatchId > 0) {
+                const price = await astaverde.getCurrentBatchPrice(lastBatchId);
+                currentPrice = ethers.formatUnits(price, 6);
+                // Could calculate days since launch here if needed
+            }
 
-                res.writeHead(200);
-                res.end(
-                    JSON.stringify({
-                        lastBatchId: lastBatchId.toString(),
-                        lastTokenId: lastTokenId.toString(),
-                        currentPrice: currentPrice + " USDC",
-                        basePrice: basePrice + " USDC",
-                        daysSince: "0",
-                    }),
-                );
-                break;
+            res.writeHead(200);
+            res.end(
+                JSON.stringify({
+                    lastBatchId: lastBatchId.toString(),
+                    lastTokenId: lastTokenId.toString(),
+                    currentPrice: currentPrice + " USDC",
+                    basePrice: basePrice + " USDC",
+                    daysSince: "0",
+                }),
+            );
+            break;
 
-            case "/api/balances":
-                const deployer = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
-                const ethBalance = await provider.getBalance(deployer);
+        case "/api/balances":
+            const deployer = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+            const ethBalance = await provider.getBalance(deployer);
 
-                const usdcContract = new ethers.Contract(CONTRACTS.usdc, ABI.usdc, provider);
-                const usdcBalance = await usdcContract.balanceOf(deployer);
+            const usdcContract = new ethers.Contract(CONTRACTS.usdc, ABI.usdc, provider);
+            const usdcBalance = await usdcContract.balanceOf(deployer);
 
-                const sccContract = new ethers.Contract(CONTRACTS.scc, ABI.scc, provider);
-                const sccBalance = await sccContract.balanceOf(deployer);
+            const sccContract = new ethers.Contract(CONTRACTS.scc, ABI.scc, provider);
+            const sccBalance = await sccContract.balanceOf(deployer);
 
-                res.writeHead(200);
-                res.end(
-                    JSON.stringify({
-                        eth: ethers.formatEther(ethBalance),
-                        usdc: ethers.formatUnits(usdcBalance, 6),
-                        scc: ethers.formatUnits(sccBalance, 18),
-                    }),
-                );
-                break;
+            res.writeHead(200);
+            res.end(
+                JSON.stringify({
+                    eth: ethers.formatEther(ethBalance),
+                    usdc: ethers.formatUnits(usdcBalance, 6),
+                    scc: ethers.formatUnits(sccBalance, 18),
+                }),
+            );
+            break;
 
-            case "/api/mint":
-                // Handle POST request with custom mint count
-                if (req.method === "POST") {
-                    let body = "";
-                    req.on("data", (chunk) => (body += chunk));
-                    req.on("end", () => {
-                        try {
-                            const data = JSON.parse(body);
-                            const count = data.count || 3;
-                            exec(`node scripts/mint-local-batch.js ${count}`, (error, stdout, stderr) => {
-                                if (error) {
-                                    res.writeHead(500);
-                                    res.end(JSON.stringify({ error: error.message }));
-                                } else {
-                                    res.writeHead(200);
-                                    res.end(JSON.stringify({ success: true, output: stdout }));
-                                }
-                            });
-                        } catch (error) {
-                            res.writeHead(400);
-                            res.end(JSON.stringify({ error: "Invalid request body" }));
-                        }
-                    });
-                } else {
-                    // Default GET request
-                    exec("node scripts/mint-local-batch.js 3", (error, stdout, stderr) => {
-                        if (error) {
-                            res.writeHead(500);
-                            res.end(JSON.stringify({ error: error.message }));
-                        } else {
-                            res.writeHead(200);
-                            res.end(JSON.stringify({ success: true, output: stdout }));
-                        }
-                    });
-                }
-                break;
-
-            case "/api/check-balances":
-                exec("node scripts/check-balances.js", (error, stdout, stderr) => {
-                    if (error) {
-                        res.writeHead(500);
-                        res.end(JSON.stringify({ error: error.message }));
-                    } else {
-                        res.writeHead(200);
-                        res.end(JSON.stringify({ success: true, output: stdout }));
-                    }
-                });
-                break;
-
-            case "/api/test-flow":
-                // Handle POST request with custom account
-                if (req.method === "POST") {
-                    let body = "";
-                    req.on("data", (chunk) => (body += chunk));
-                    req.on("end", () => {
-                        // For now, just run the standard test flow
-                        exec("node scripts/test-user-flow.js", (error, stdout, stderr) => {
+        case "/api/mint":
+            // Handle POST request with custom mint count
+            if (req.method === "POST") {
+                let body = "";
+                req.on("data", (chunk) => (body += chunk));
+                req.on("end", () => {
+                    try {
+                        const data = JSON.parse(body);
+                        const count = data.count || 3;
+                        exec(`node scripts/mint-local-batch.js ${count}`, (error, stdout, stderr) => {
                             if (error) {
                                 res.writeHead(500);
                                 res.end(JSON.stringify({ error: error.message }));
@@ -183,8 +136,44 @@ async function handleAPI(req, res) {
                                 res.end(JSON.stringify({ success: true, output: stdout }));
                             }
                         });
-                    });
+                    } catch (error) {
+                        res.writeHead(400);
+                        res.end(JSON.stringify({ error: "Invalid request body" }));
+                    }
+                });
+            } else {
+                // Default GET request
+                exec("node scripts/mint-local-batch.js 3", (error, stdout, stderr) => {
+                    if (error) {
+                        res.writeHead(500);
+                        res.end(JSON.stringify({ error: error.message }));
+                    } else {
+                        res.writeHead(200);
+                        res.end(JSON.stringify({ success: true, output: stdout }));
+                    }
+                });
+            }
+            break;
+
+        case "/api/check-balances":
+            exec("node scripts/check-balances.js", (error, stdout, stderr) => {
+                if (error) {
+                    res.writeHead(500);
+                    res.end(JSON.stringify({ error: error.message }));
                 } else {
+                    res.writeHead(200);
+                    res.end(JSON.stringify({ success: true, output: stdout }));
+                }
+            });
+            break;
+
+        case "/api/test-flow":
+            // Handle POST request with custom account
+            if (req.method === "POST") {
+                let body = "";
+                req.on("data", (chunk) => (body += chunk));
+                req.on("end", () => {
+                    // For now, just run the standard test flow
                     exec("node scripts/test-user-flow.js", (error, stdout, stderr) => {
                         if (error) {
                             res.writeHead(500);
@@ -194,57 +183,68 @@ async function handleAPI(req, res) {
                             res.end(JSON.stringify({ success: true, output: stdout }));
                         }
                     });
-                }
-                break;
+                });
+            } else {
+                exec("node scripts/test-user-flow.js", (error, stdout, stderr) => {
+                    if (error) {
+                        res.writeHead(500);
+                        res.end(JSON.stringify({ error: error.message }));
+                    } else {
+                        res.writeHead(200);
+                        res.end(JSON.stringify({ success: true, output: stdout }));
+                    }
+                });
+            }
+            break;
 
-            case "/api/vault-stats":
-                try {
-                    const sccContract = new ethers.Contract(
-                        CONTRACTS.scc,
-                        ["function totalSupply() view returns (uint256)"],
-                        provider,
-                    );
+        case "/api/vault-stats":
+            try {
+                const sccContract = new ethers.Contract(
+                    CONTRACTS.scc,
+                    ["function totalSupply() view returns (uint256)"],
+                    provider,
+                );
 
-                    const totalSCC = await sccContract.totalSupply();
-                    const totalDeposits = Number(ethers.formatUnits(totalSCC, 18)) / 20; // 20 SCC per NFT
+                const totalSCC = await sccContract.totalSupply();
+                const totalDeposits = Number(ethers.formatUnits(totalSCC, 18)) / 20; // 20 SCC per NFT
 
-                    res.writeHead(200);
-                    res.end(
-                        JSON.stringify({
-                            totalDeposits: Math.floor(totalDeposits),
-                            totalSCC: ethers.formatUnits(totalSCC, 18),
-                            activePositions: Math.floor(totalDeposits),
-                        }),
-                    );
-                } catch (error) {
-                    res.writeHead(200);
-                    res.end(JSON.stringify({ totalDeposits: 0, totalSCC: "0", activePositions: 0 }));
-                }
-                break;
+                res.writeHead(200);
+                res.end(
+                    JSON.stringify({
+                        totalDeposits: Math.floor(totalDeposits),
+                        totalSCC: ethers.formatUnits(totalSCC, 18),
+                        activePositions: Math.floor(totalDeposits),
+                    }),
+                );
+            } catch (error) {
+                res.writeHead(200);
+                res.end(JSON.stringify({ totalDeposits: 0, totalSCC: "0", activePositions: 0 }));
+            }
+            break;
 
-            default:
-                // Check if it's a balance request for a specific address
-                if (url.pathname.startsWith("/api/balance/")) {
-                    const address = url.pathname.replace("/api/balance/", "");
+        default:
+            // Check if it's a balance request for a specific address
+            if (url.pathname.startsWith("/api/balance/")) {
+                const address = url.pathname.replace("/api/balance/", "");
 
-                    const ethBalance = await provider.getBalance(address);
-                    const usdcContract = new ethers.Contract(CONTRACTS.usdc, ABI.usdc, provider);
-                    const usdcBalance = await usdcContract.balanceOf(address);
-                    const sccContract = new ethers.Contract(CONTRACTS.scc, ABI.scc, provider);
-                    const sccBalance = await sccContract.balanceOf(address);
+                const ethBalance = await provider.getBalance(address);
+                const usdcContract = new ethers.Contract(CONTRACTS.usdc, ABI.usdc, provider);
+                const usdcBalance = await usdcContract.balanceOf(address);
+                const sccContract = new ethers.Contract(CONTRACTS.scc, ABI.scc, provider);
+                const sccBalance = await sccContract.balanceOf(address);
 
-                    res.writeHead(200);
-                    res.end(
-                        JSON.stringify({
-                            eth: ethers.formatEther(ethBalance),
-                            usdc: ethers.formatUnits(usdcBalance, 6),
-                            scc: ethers.formatUnits(sccBalance, 18),
-                        }),
-                    );
-                } else {
-                    res.writeHead(404);
-                    res.end(JSON.stringify({ error: "Not found" }));
-                }
+                res.writeHead(200);
+                res.end(
+                    JSON.stringify({
+                        eth: ethers.formatEther(ethBalance),
+                        usdc: ethers.formatUnits(usdcBalance, 6),
+                        scc: ethers.formatUnits(sccBalance, 18),
+                    }),
+                );
+            } else {
+                res.writeHead(404);
+                res.end(JSON.stringify({ error: "Not found" }));
+            }
         }
     } catch (error) {
         res.writeHead(500);
@@ -746,7 +746,7 @@ const server = http.createServer((req, res) => {
 
 // Start server
 server.listen(PORT, () => {
-    console.log(`\n🚀 AstaVerde Dev Dashboard Server`);
+    console.log("\n🚀 AstaVerde Dev Dashboard Server");
     console.log(`\n📊 Dashboard: http://localhost:${PORT}`);
-    console.log(`\n💡 Make sure 'npm run dev' is running in another terminal\n`);
+    console.log("\n💡 Make sure 'npm run dev' is running in another terminal\n");
 });
