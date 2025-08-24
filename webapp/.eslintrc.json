@@ -1,8 +1,5 @@
 {
-  "extends": [
-    "next/core-web-vitals",
-    "next/typescript"
-  ],
+  "extends": ["next/core-web-vitals", "next/typescript"],
   "parserOptions": {
     "project": false
   },
@@ -14,22 +11,20 @@
     "no-trailing-spaces": "error",
     "eol-last": ["error", "always"],
     "no-console": ["warn", { "allow": ["warn", "error"] }],
-    "@typescript-eslint/no-unused-vars": ["warn", {
-      "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_"
-    }],
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
     "@typescript-eslint/no-explicit-any": "warn",
     "react-hooks/exhaustive-deps": "warn",
     "@next/next/no-img-element": "warn"
   },
   "overrides": [
     {
-      "files": [
-        "**/__tests__/**/*",
-        "**/*.test.*",
-        "**/test-*.ts",
-        "**/mock-*.ts"
-      ],
+      "files": ["**/__tests__/**/*", "**/*.test.*", "**/test-*.ts", "**/mock-*.ts"],
       "rules": {
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-unused-vars": "off",
