@@ -95,81 +95,11 @@ describe("AstaVerde V2 Specific Tests", function () {
     });
   });
 
-  describe("Trusted Vault During Pause", function () {
-    it("should allow owner to transfer tokens to vault when paused", async function () {
-      await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
-      
-      // Set trusted vault
-      await astaVerde.setTrustedVault(vault.address);
-      
-      // Pause the contract
-      await astaVerde.pause();
-      
-      // Normal transfer should fail
-      await expect(
-        astaVerde.connect(buyer).safeTransferFrom(
-          buyer.address,
-          producer1.address,
-          1,
-          1,
-          "0x"
-        )
-      ).to.be.revertedWith("Pausable: paused");
-      
-      // Owner can send tokens from contract to vault using vaultSendTokens
-      await expect(
-        astaVerde.connect(owner).vaultSendTokens([1])
-      ).to.not.be.reverted;
-      
-      expect(await astaVerde.balanceOf(vault.address, 1)).to.equal(1);
-      expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 1)).to.equal(0);
-    });
-
-    it("should allow owner to recall tokens from vault when paused", async function () {
-      await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
-      
-      // Set trusted vault
-      await astaVerde.setTrustedVault(vault.address);
-      
-      // Pause the contract
-      await astaVerde.pause();
-      
-      // Send token to vault first
-      await astaVerde.connect(owner).vaultSendTokens([1]);
-      expect(await astaVerde.balanceOf(vault.address, 1)).to.equal(1);
-      
-      // Vault must approve owner for recall
-      await astaVerde.connect(vault).setApprovalForAll(owner.address, true);
-      
-      // Owner can recall tokens from vault back to contract
-      await expect(
-        astaVerde.connect(owner).vaultRecallTokens([1])
-      ).to.not.be.reverted;
-      
-      expect(await astaVerde.balanceOf(vault.address, 1)).to.equal(0);
-      expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 1)).to.equal(1);
-    });
-
-    it("should allow clearing vault address to zero", async function () {
-      // Set a vault first
-      await astaVerde.setTrustedVault(vault.address);
-      expect(await astaVerde.trustedVault()).to.equal(vault.address);
-      
-      // Now we can clear it to address(0) after our security fix
-      await expect(
-        astaVerde.setTrustedVault(ethers.ZeroAddress)
-      ).to.not.be.reverted;
-      
-      expect(await astaVerde.trustedVault()).to.equal(ethers.ZeroAddress);
-    });
-
-    it("should emit TrustedVaultSet event when setting vault", async function () {
-      await expect(
-        astaVerde.setTrustedVault(vault.address)
-      ).to.emit(astaVerde, "TrustedVaultSet")
-        .withArgs(vault.address);
-    });
+  /* VAULT TESTS REMOVED - replaced with emergencyRescue
+  describe("Trusted Vault During Pause - REMOVED", function () {
+    // Tests removed - vault mechanism replaced with emergencyRescue
   });
+  */
 
   describe("Iteration Limit for DoS Protection", function () {
     it("should emit event when iteration limit is reached", async function () {
@@ -244,26 +174,34 @@ describe("AstaVerde V2 Specific Tests", function () {
       const platformShare = (totalPrice * 33n) / 100n;
       const producerShare = totalPrice - platformShare;
       
-      // Track producer balances
-      const producer1Before = await usdc.balanceOf(producer1.address);
-      const producer2Before = await usdc.balanceOf(producer2.address);
-      
+      // Execute purchase - funds are now accrued, not transferred directly
       await astaVerde.connect(buyer).buyBatch(1, totalPrice, 3);
       
-      const producer1After = await usdc.balanceOf(producer1.address);
-      const producer2After = await usdc.balanceOf(producer2.address);
-      
-      const producer1Received = producer1After - producer1Before;
-      const producer2Received = producer2After - producer2Before;
+      // Check accrued balances (pull payment pattern)
+      const producer1Accrued = await astaVerde.producerBalances(producer1.address);
+      const producer2Accrued = await astaVerde.producerBalances(producer2.address);
       
       // Verify total distribution
-      expect(producer1Received + producer2Received).to.equal(producerShare);
+      expect(producer1Accrued + producer2Accrued).to.equal(producerShare);
       
       // Producer1 should get 2/3 of base amount plus any remainder
       const perToken = producerShare / 3n;
       const remainder = producerShare % 3n;
-      expect(producer1Received).to.equal(perToken * 2n + remainder);
-      expect(producer2Received).to.equal(perToken);
+      expect(producer1Accrued).to.equal(perToken * 2n + remainder);
+      expect(producer2Accrued).to.equal(perToken);
+      
+      // Now verify claims work correctly
+      const producer1Before = await usdc.balanceOf(producer1.address);
+      const producer2Before = await usdc.balanceOf(producer2.address);
+      
+      await astaVerde.connect(producer1).claimProducerFunds();
+      await astaVerde.connect(producer2).claimProducerFunds();
+      
+      const producer1After = await usdc.balanceOf(producer1.address);
+      const producer2After = await usdc.balanceOf(producer2.address);
+      
+      expect(producer1After - producer1Before).to.equal(producer1Accrued);
+      expect(producer2After - producer2Before).to.equal(producer2Accrued);
     });
   });
 

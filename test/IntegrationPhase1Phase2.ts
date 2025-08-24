@@ -303,31 +303,34 @@ describe("Integration: Phase 1 ↔ Phase 2", function () {
             const { astaVerde, scc, ecoStabilizer, mockUSDC, producer1, user1 } =
                 await loadFixture(deployIntegrationFixture);
 
-            const initialProducerBalance = await mockUSDC.balanceOf(producer1.address);
-
-            // Create batch and buy NFT (triggers producer payment)
+            // Create batch and buy NFT (accrues producer payment)
             await astaVerde.mintBatch([producer1.address], ["QmTestCID"]);
             const { batchPrice } = await buyNFTFromMarketplace(astaVerde, mockUSDC, user1, 1);
 
-            // Verify producer received payment (70% of batch price, 30% to platform)
+            // Verify producer payment is accrued (70% of batch price, 30% to platform)
             const expectedProducerPayment = (batchPrice * 70n) / 100n;
-            const producerBalanceAfterSale = await mockUSDC.balanceOf(producer1.address);
-            expect(producerBalanceAfterSale - initialProducerBalance).to.equal(expectedProducerPayment);
+            const producerAccruedBalance = await astaVerde.producerBalances(producer1.address);
+            expect(producerAccruedBalance).to.equal(expectedProducerPayment);
+            
+            // Producer can claim their funds
+            await astaVerde.connect(producer1).claimProducerFunds();
+            const producerUsdcBalance = await mockUSDC.balanceOf(producer1.address);
+            expect(producerUsdcBalance).to.equal(expectedProducerPayment);
 
             // Deposit NFT in vault - should not affect producer balance
             await astaVerde.connect(user1).setApprovalForAll(ecoStabilizer.target, true);
             await ecoStabilizer.connect(user1).deposit(1);
 
-            const producerBalanceAfterDeposit = await mockUSDC.balanceOf(producer1.address);
-            expect(producerBalanceAfterDeposit).to.equal(producerBalanceAfterSale);
+            const producerBalanceAfterClaim = await mockUSDC.balanceOf(producer1.address);
+            expect(producerBalanceAfterClaim).to.equal(expectedProducerPayment);
 
             // Withdraw from vault - should not trigger additional producer payment
             const sccBalance = await scc.balanceOf(user1.address);
             await scc.connect(user1).approve(ecoStabilizer.target, sccBalance);
             await ecoStabilizer.connect(user1).withdraw(1);
 
-            const producerBalanceAfterWithdraw = await mockUSDC.balanceOf(producer1.address);
-            expect(producerBalanceAfterWithdraw).to.equal(producerBalanceAfterDeposit);
+            const producerBalanceFinal = await mockUSDC.balanceOf(producer1.address);
+            expect(producerBalanceFinal).to.equal(producerBalanceAfterClaim);
 
             // Verify user got NFT back
             expect(await astaVerde.balanceOf(user1.address, 1)).to.equal(1);

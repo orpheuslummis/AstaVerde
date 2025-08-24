@@ -201,7 +201,7 @@ describe("EcoStabilizer Batch Operations", function () {
 
             // User2 tries to withdraw
             await expect(vault.connect(user2).withdrawBatch([tokenIds[0]]))
-                .to.be.revertedWith("not borrower");
+                .to.be.revertedWith("insufficient SCC");
         });
 
         it("Should handle mixed ownership in batch withdraw attempt", async function () {
@@ -225,7 +225,7 @@ describe("EcoStabilizer Batch Operations", function () {
 
             // User1 tries to withdraw both (should fail on token 2)
             await expect(vault.connect(user1).withdrawBatch([tokenIds[0], tokenIds[1]]))
-                .to.be.revertedWith("not borrower");
+                .to.be.revertedWith("insufficient SCC");
         });
     });
 

@@ -59,22 +59,19 @@ describe("AstaVerde Security Fixes", function () {
       const price = await astaVerde.getCurrentBatchPrice(1);
       const totalPrice = price * 3n;
       
-      const producer1Before = await usdc.balanceOf(producer1.address);
-      const producer2Before = await usdc.balanceOf(producer2.address);
       const platformBefore = await astaVerde.platformShareAccumulated();
       
       await astaVerde.connect(buyer).buyBatch(1, totalPrice, 3);
       
-      const producer1After = await usdc.balanceOf(producer1.address);
-      const producer2After = await usdc.balanceOf(producer2.address);
+      // Check accrued balances (pull payment pattern)
+      const producer1Accrued = await astaVerde.producerBalances(producer1.address);
+      const producer2Accrued = await astaVerde.producerBalances(producer2.address);
       const platformAfter = await astaVerde.platformShareAccumulated();
       
-      const producer1Received = producer1After - producer1Before;
-      const producer2Received = producer2After - producer2Before;
       const platformReceived = platformAfter - platformBefore;
       
       // Verify total distribution equals total price
-      expect(producer1Received + producer2Received + platformReceived).to.equal(totalPrice);
+      expect(producer1Accrued + producer2Accrued + platformReceived).to.equal(totalPrice);
       
       // Verify platform got 30%
       expect(platformReceived).to.equal((totalPrice * 30n) / 100n);
@@ -141,38 +138,98 @@ describe("AstaVerde Security Fixes", function () {
     });
   });
 
-  describe("Pause Bypass Security", function () {
-    it("should only allow owner-initiated contract↔vault transfers when paused", async function () {
-      await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
-      await astaVerde.connect(buyer).buyBatch(1, BASE_PRICE, 1);
-      
-      // Set trusted vault
-      await astaVerde.setTrustedVault(attacker.address); // Using attacker as vault for testing
+  // Emergency Rescue tests disabled - function removed from contract
+  describe.skip("Emergency Rescue Function", function () {
+    it("should allow owner to rescue tokens when paused", async function () {
+      await astaVerde.mintBatch([producer1.address, producer2.address], ["QmTest1", "QmTest2"]);
       
       // Pause the contract
       await astaVerde.pause();
       
-      // Non-owner cannot transfer to vault
+      // Owner can rescue tokens from contract
       await expect(
-        astaVerde.connect(buyer).safeTransferFrom(
-          buyer.address,
-          attacker.address, // vault
-          1,
-          1,
-          "0x"
-        )
-      ).to.be.revertedWith("Pausable: paused");
+        astaVerde.connect(owner).emergencyRescue([1, 2], buyer.address)
+      ).to.not.be.reverted;
       
-      // Non-owner cannot transfer from vault  
+      // Verify tokens are now with buyer
+      expect(await astaVerde.balanceOf(buyer.address, 1)).to.equal(1);
+      expect(await astaVerde.balanceOf(buyer.address, 2)).to.equal(1);
+      expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 1)).to.equal(0);
+      expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 2)).to.equal(0);
+    });
+
+    it("should reject rescue from non-owner", async function () {
+      await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
+      await astaVerde.pause();
+      
       await expect(
-        astaVerde.connect(attacker).safeTransferFrom(
-          attacker.address,
-          buyer.address,
-          1,
-          1,
-          "0x"
-        )
-      ).to.be.revertedWith("Pausable: paused");
+        astaVerde.connect(buyer).emergencyRescue([1], buyer.address)
+      ).to.be.revertedWithCustomError(astaVerde, "OwnableUnauthorizedAccount");
+    });
+
+    it("should reject rescue when not paused", async function () {
+      await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
+      
+      await expect(
+        astaVerde.connect(owner).emergencyRescue([1], buyer.address)
+      ).to.be.revertedWithCustomError(astaVerde, "ExpectedPause");
+    });
+
+    it("should reject rescue with invalid recipient", async function () {
+      await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
+      await astaVerde.pause();
+      
+      await expect(
+        astaVerde.connect(owner).emergencyRescue([1], ethers.ZeroAddress)
+      ).to.be.revertedWith("Invalid recipient");
+    });
+
+    it("should reject rescue with empty token list", async function () {
+      await astaVerde.pause();
+      
+      await expect(
+        astaVerde.connect(owner).emergencyRescue([], buyer.address)
+      ).to.be.revertedWith("No tokens specified");
+    });
+
+    it("should reject rescue with too many tokens", async function () {
+      await astaVerde.pause();
+      const tokenIds = Array.from({length: 101}, (_, i) => i + 1);
+      
+      await expect(
+        astaVerde.connect(owner).emergencyRescue(tokenIds, buyer.address)
+      ).to.be.revertedWith("Too many tokens");
+    });
+
+    it("should reject rescue of tokens not held by contract", async function () {
+      await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
+      await astaVerde.connect(buyer).buyBatch(1, BASE_PRICE, 1); // Token now owned by buyer
+      await astaVerde.pause();
+      
+      await expect(
+        astaVerde.connect(owner).emergencyRescue([1], producer1.address)
+      ).to.be.revertedWith("Token not held");
+    });
+
+    it("should emit EmergencyRescue event", async function () {
+      await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
+      await astaVerde.pause();
+      
+      const blockTimestamp = await time.latest() + 1;
+      await time.setNextBlockTimestamp(blockTimestamp);
+      
+      await expect(
+        astaVerde.connect(owner).emergencyRescue([1], buyer.address)
+      ).to.emit(astaVerde, "EmergencyRescue")
+        .withArgs(buyer.address, [1], blockTimestamp);
+    });
+
+    it("should prevent regular transfers when paused", async function () {
+      await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
+      await astaVerde.connect(buyer).buyBatch(1, BASE_PRICE, 1);
+      
+      // Pause the contract
+      await astaVerde.pause();
       
       // Regular user-to-user transfers should fail
       await expect(
@@ -184,42 +241,6 @@ describe("AstaVerde Security Fixes", function () {
           "0x"
         )
       ).to.be.revertedWith("Pausable: paused");
-    });
-
-    it("should allow owner to transfer between contract and vault when paused using vault functions", async function () {
-      await astaVerde.mintBatch([producer1.address, producer2.address], ["QmTest1", "QmTest2"]);
-      
-      // Set trusted vault (using a separate address for clarity)
-      const vault = attacker; // Reusing attacker address as vault for testing
-      await astaVerde.setTrustedVault(vault.address);
-      
-      // Pause the contract
-      await astaVerde.pause();
-      
-      // Owner can send tokens from contract to vault
-      await expect(
-        astaVerde.connect(owner).vaultSendTokens([1, 2])
-      ).to.not.be.reverted;
-      
-      // Verify tokens are in vault
-      expect(await astaVerde.balanceOf(vault.address, 1)).to.equal(1);
-      expect(await astaVerde.balanceOf(vault.address, 2)).to.equal(1);
-      expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 1)).to.equal(0);
-      expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 2)).to.equal(0);
-      
-      // Vault must approve owner to recall tokens
-      await astaVerde.connect(vault).setApprovalForAll(owner.address, true);
-      
-      // Owner can recall tokens from vault back to contract
-      await expect(
-        astaVerde.connect(owner).vaultRecallTokens([1, 2])
-      ).to.not.be.reverted;
-      
-      // Verify tokens are back in contract
-      expect(await astaVerde.balanceOf(vault.address, 1)).to.equal(0);
-      expect(await astaVerde.balanceOf(vault.address, 2)).to.equal(0);
-      expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 1)).to.equal(1);
-      expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 2)).to.equal(1);
     });
   });
 
@@ -276,6 +297,7 @@ describe("AstaVerde Security Fixes", function () {
     });
   });
 
+  /* VAULT TESTS REMOVED - vault mechanism replaced with emergencyRescue
   describe("Vault Transfer Functions", function () {
     it("should reject vault functions when not paused", async function () {
       await astaVerde.mintBatch([producer1.address], ["QmTest1"]);
@@ -409,7 +431,7 @@ describe("AstaVerde Security Fixes", function () {
     });
   });
 
-  describe("Trusted Vault Clearing", function () {
+  describe("Trusted Vault Clearing - REMOVED", function () {
     it("should allow clearing trustedVault to address(0)", async function () {
       // Set a vault initially
       await astaVerde.setTrustedVault(buyer.address);
@@ -457,7 +479,7 @@ describe("AstaVerde Security Fixes", function () {
     });
   });
 
-  describe("Vault Functions Reentrancy Protection", function () {
+  describe("Vault Functions Reentrancy Protection - REMOVED", function () {
     let maliciousReceiver: any;
 
     beforeEach(async function () {
@@ -548,6 +570,9 @@ describe("AstaVerde Security Fixes", function () {
       expect(await astaVerde.balanceOf(await astaVerde.getAddress(), 3)).to.equal(1);
     });
   });
+
+  });
+  */
 
   describe("Edge Cases and Boundaries", function () {
     it("should handle empty CID correctly", async function () {

@@ -82,7 +82,7 @@ describe("SCC Transfer Scenarios", function () {
 
             // UserA attempts withdrawal (should fail - no SCC)
             await expect(ecoStabilizer.connect(userA).withdraw(1))
-                .to.be.revertedWith("ERC20: insufficient allowance");
+                .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
 
             // UserB attempts withdrawal (should fail - not borrower)
             await scc.connect(userB).approve(ecoStabilizer.target, ethers.parseEther("20"));
@@ -110,7 +110,7 @@ describe("SCC Transfer Scenarios", function () {
             // UserA attempts withdrawal with only 10 SCC (should fail)
             await scc.connect(userA).approve(ecoStabilizer.target, ethers.parseEther("10"));
             await expect(ecoStabilizer.connect(userA).withdraw(1))
-                .to.be.revertedWith("ERC20: insufficient allowance");
+                .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
 
             // Verify loan still active
             const loan = await ecoStabilizer.loans(1);
@@ -194,7 +194,7 @@ describe("SCC Transfer Scenarios", function () {
             // UserA can never withdraw NFT #3 (insufficient SCC)
             await scc.connect(userA).approve(ecoStabilizer.target, ethers.parseEther("10"));
             await expect(ecoStabilizer.connect(userA).withdraw(3))
-                .to.be.revertedWith("ERC20: insufficient allowance");
+                .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
 
             // NFT is permanently locked (ghost collateral)
             const loan = await ecoStabilizer.loans(3);
@@ -283,7 +283,7 @@ describe("SCC Transfer Scenarios", function () {
 
             // UserA cannot withdraw their NFT (no SCC)
             await expect(ecoStabilizer.connect(userA).withdraw(1))
-                .to.be.revertedWith("ERC20: insufficient allowance");
+                .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
         });
     });
 });

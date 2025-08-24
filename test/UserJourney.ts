@@ -66,22 +66,29 @@ describe("User Journey - Complete Lifecycle", function () {
 
             // Record initial balances
             const initialPlatformShare = await astaVerde.platformShareAccumulated();
-            const initialProducerBalance = await mockUSDC.balanceOf(producer1.address);
+            const initialProducerAccrued = await astaVerde.producerBalances(producer1.address);
 
             // User buys 1 NFT (tokenId 1)
             await mockUSDC.connect(user).approve(astaVerde.target, purchasePrice);
-            await expect(astaVerde.connect(user).buyBatch(1, purchasePrice, 1))
+            const tx = await astaVerde.connect(user).buyBatch(1, purchasePrice, 1);
+            const receipt = await tx.wait();
+            const block = await ethers.provider.getBlock(receipt.blockNumber);
+            await expect(tx)
                 .to.emit(astaVerde, "PartialBatchSold")
-                .withArgs(1, await time.latest(), 2); // 2 remaining
+                .withArgs(1, block.timestamp, 2); // 2 remaining
 
             // Verify NFT ownership
             expect(await astaVerde.balanceOf(user.address, 1)).to.equal(1);
 
-            // Verify payment split (30% platform, 70% producer)
+            // Verify payment split (30% platform, 70% accrued to producer)
             const platformFee = (purchasePrice * 30n) / 100n;
             const producerPayment = purchasePrice - platformFee;
             expect(await astaVerde.platformShareAccumulated()).to.equal(initialPlatformShare + platformFee);
-            expect(await mockUSDC.balanceOf(producer1.address)).to.equal(initialProducerBalance + producerPayment);
+            expect(await astaVerde.producerBalances(producer1.address)).to.equal(initialProducerAccrued + producerPayment);
+            
+            // Producer can claim their funds
+            await astaVerde.connect(producer1).claimProducerFunds();
+            expect(await mockUSDC.balanceOf(producer1.address)).to.equal(producerPayment);
 
             // Verify batch state
             const postPurchaseBatch = await astaVerde.getBatchInfo(1);
@@ -124,7 +131,7 @@ describe("User Journey - Complete Lifecycle", function () {
             await scc.connect(user).approve(ecoStabilizer.target, ethers.parseEther("5"));
             
             await expect(ecoStabilizer.connect(user).withdraw(1))
-                .to.be.revertedWith("ERC20: insufficient allowance");
+                .to.be.revertedWithCustomError(scc, "ERC20InsufficientAllowance");
 
             // Verify loan remains active
             const loanAfterFailedWithdraw = await ecoStabilizer.loans(1);
@@ -166,9 +173,12 @@ describe("User Journey - Complete Lifecycle", function () {
             const tokenBefore = await astaVerde.tokens(1);
             expect(tokenBefore.redeemed).to.be.false;
 
-            await expect(astaVerde.connect(user).redeemToken(1))
+            const redeemTx = await astaVerde.connect(user).redeemToken(1);
+            const redeemReceipt = await redeemTx.wait();
+            const redeemBlock = await ethers.provider.getBlock(redeemReceipt.blockNumber);
+            await expect(redeemTx)
                 .to.emit(astaVerde, "TokenRedeemed")
-                .withArgs(1, user.address, await time.latest());
+                .withArgs(1, user.address, redeemBlock.timestamp);
 
             // Verify NFT marked as redeemed
             const tokenAfter = await astaVerde.tokens(1);

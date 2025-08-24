@@ -339,20 +339,27 @@ describe("AstaVerde Logic and Behavior", function () {
             const totalCost = currentPrice * tokenAmount;
 
             const initialPlatformShare = await astaVerde.platformShareAccumulated();
-            const initialProducerBalance = await mockUSDC.balanceOf(admin.address);
 
             await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
             await astaVerde.connect(user1).buyBatch(batchID, totalCost, tokenAmount);
 
             const finalPlatformShare = await astaVerde.platformShareAccumulated();
-            const finalProducerBalance = await mockUSDC.balanceOf(admin.address);
+            const producerAccruedBalance = await astaVerde.producerBalances(admin.address);
 
             const platformSharePercentage = await astaVerde.platformSharePercentage();
             const expectedPlatformShare = (totalCost * platformSharePercentage) / 100n;
             const expectedProducerShare = totalCost - expectedPlatformShare;
 
             expect(finalPlatformShare - initialPlatformShare).to.equal(expectedPlatformShare);
+            expect(producerAccruedBalance).to.equal(expectedProducerShare);
+
+            // Verify producer can claim their funds
+            const initialProducerBalance = await mockUSDC.balanceOf(admin.address);
+            await astaVerde.connect(admin).claimProducerFunds();
+            const finalProducerBalance = await mockUSDC.balanceOf(admin.address);
+            
             expect(finalProducerBalance - initialProducerBalance).to.equal(expectedProducerShare);
+            expect(await astaVerde.producerBalances(admin.address)).to.equal(0);
         });
     });
 
@@ -676,14 +683,19 @@ describe("Platform Funds Withdrawal", function () {
             await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
             await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
 
-            // Check final balance
-            const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
+            // Check accrued balance (pull pattern - funds not transferred directly)
+            const accruedProducerBalance = await astaVerde.producerBalances(user2.address);
 
             // Calculate expected producer share
             const platformSharePercentage = await astaVerde.platformSharePercentage();
             const expectedProducerShare = (currentPrice * 2n * (100n - platformSharePercentage)) / 100n;
 
-            // Verify balance
+            // Verify accrued balance
+            expect(accruedProducerBalance).to.equal(expectedProducerShare);
+
+            // Now producer claims their funds
+            await astaVerde.connect(user2).claimProducerFunds();
+            const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
             expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
         });
 
@@ -704,15 +716,24 @@ describe("Platform Funds Withdrawal", function () {
             await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
             await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
 
-            // Check final balances
-            const finalProducer1Balance = await mockUSDC.balanceOf(user2.address);
-            const finalProducer2Balance = await mockUSDC.balanceOf(user3.address);
+            // Check accrued balances (pull pattern - funds not transferred directly)
+            const accruedProducer1Balance = await astaVerde.producerBalances(user2.address);
+            const accruedProducer2Balance = await astaVerde.producerBalances(user3.address);
 
             // Calculate expected producer share
             const platformSharePercentage = await astaVerde.platformSharePercentage();
             const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
 
-            // Verify balances
+            // Verify accrued balances
+            expect(accruedProducer1Balance).to.equal(expectedProducerShare);
+            expect(accruedProducer2Balance).to.equal(expectedProducerShare);
+
+            // Now producers claim their funds
+            await astaVerde.connect(user2).claimProducerFunds();
+            await astaVerde.connect(user3).claimProducerFunds();
+            
+            const finalProducer1Balance = await mockUSDC.balanceOf(user2.address);
+            const finalProducer2Balance = await mockUSDC.balanceOf(user3.address);
             expect(finalProducer1Balance).to.equal(initialProducer1Balance + expectedProducerShare);
             expect(finalProducer2Balance).to.equal(initialProducer2Balance + expectedProducerShare);
         });
@@ -732,17 +753,26 @@ describe("Platform Funds Withdrawal", function () {
             await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
             await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
 
-            // Check final balances
-            const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
+            // Check accrued balance (pull pattern - funds not transferred directly)
+            const accruedProducerBalance = await astaVerde.producerBalances(user2.address);
             const finalContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
 
             // Calculate expected producer share
             const platformSharePercentage = await astaVerde.platformSharePercentage();
             const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
+            const expectedPlatformShare = currentPrice - expectedProducerShare;
 
-            // Verify balances
+            // Verify accrued balance and contract holds all funds
+            expect(accruedProducerBalance).to.equal(expectedProducerShare);
+            expect(finalContractBalance).to.equal(initialContractBalance + currentPrice);
+
+            // Now producer claims their funds
+            await astaVerde.connect(user2).claimProducerFunds();
+            const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
+            const finalContractBalanceAfterClaim = await mockUSDC.balanceOf(await astaVerde.getAddress());
+            
             expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
-            expect(finalContractBalance).to.equal(initialContractBalance + currentPrice - expectedProducerShare);
+            expect(finalContractBalanceAfterClaim).to.equal(initialContractBalance + expectedPlatformShare);
         });
     }));
 
@@ -873,11 +903,12 @@ describe("Security Tests", function () {
 
         const platformSharePct = await astaVerde.platformSharePercentage();
         const platformShare1 = (totalCost1 * platformSharePct) / 100n;
+        const producerShare1 = totalCost1 - platformShare1;
 
-        // Contract now holds platformShare1 USDC
+        // Contract now holds platformShare1 + producer accrued balance (pull pattern)
         const contractAddr = await astaVerde.getAddress();
         const contractBalanceAfter1 = await mockUSDC.balanceOf(contractAddr);
-        expect(contractBalanceAfter1).to.equal(platformShare1);
+        expect(contractBalanceAfter1).to.equal(platformShare1 + producerShare1);
 
         // 2) Attempt attack with inflated usdcAmount but only approve totalCost2
         const unitPrice2 = await astaVerde.getCurrentBatchPrice(batchID);

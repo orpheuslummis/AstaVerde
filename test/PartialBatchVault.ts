@@ -27,11 +27,11 @@ describe("Partial Batch Vault Interactions", function () {
         const MINTER_ROLE = await scc.MINTER_ROLE();
         await scc.grantRole(MINTER_ROLE, ecoStabilizer.target);
 
-        // Fund users with USDC
-        await mockUSDC.mint(userA.address, ethers.parseUnits("1000", 6));
-        await mockUSDC.mint(userB.address, ethers.parseUnits("1000", 6));
-        await mockUSDC.mint(userC.address, ethers.parseUnits("1000", 6));
-        await mockUSDC.mint(userD.address, ethers.parseUnits("1000", 6));
+        // Fund users with USDC (increased to handle multiple purchases)
+        await mockUSDC.mint(userA.address, ethers.parseUnits("1500", 6));
+        await mockUSDC.mint(userB.address, ethers.parseUnits("1500", 6));
+        await mockUSDC.mint(userC.address, ethers.parseUnits("1500", 6));
+        await mockUSDC.mint(userD.address, ethers.parseUnits("1500", 6));
 
         // Mint large batch with 10 NFTs
         const producers = Array(10).fill(producer1.address);
@@ -170,9 +170,12 @@ describe("Partial Batch Vault Interactions", function () {
             const remainingPrice = furtherDecayedPrice * 3n; // NFTs 8,9,10
             await mockUSDC.connect(userB).approve(astaVerde.target, remainingPrice);
             
-            await expect(astaVerde.connect(userB).buyBatch(1, remainingPrice, 3))
+            const buyTx = await astaVerde.connect(userB).buyBatch(1, remainingPrice, 3);
+            const buyReceipt = await buyTx.wait();
+            const buyBlock = await ethers.provider.getBlock(buyReceipt.blockNumber);
+            await expect(buyTx)
                 .to.emit(astaVerde, "BatchSold")
-                .withArgs(1, await time.latest(), 3);
+                .withArgs(1, buyBlock.timestamp, 3);
 
             // Batch is now sold out
             const soldBatchInfo = await astaVerde.getBatchInfo(1);
@@ -201,9 +204,12 @@ describe("Partial Batch Vault Interactions", function () {
 
             // ========== 7. PARTIAL BATCH REDEMPTION ==========
             // UserB redeems NFT #4
-            await expect(astaVerde.connect(userB).redeemToken(4))
+            const redeemTx = await astaVerde.connect(userB).redeemToken(4);
+            const redeemReceipt = await redeemTx.wait();
+            const redeemBlock = await ethers.provider.getBlock(redeemReceipt.blockNumber);
+            await expect(redeemTx)
                 .to.emit(astaVerde, "TokenRedeemed")
-                .withArgs(4, userB.address, await time.latest());
+                .withArgs(4, userB.address, redeemBlock.timestamp);
 
             // UserB attempts to deposit redeemed #4
             await astaVerde.connect(userB).setApprovalForAll(ecoStabilizer.target, true);
