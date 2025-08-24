@@ -33,6 +33,13 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
  * - ReentrancyGuard on all external payment functions
  * - Emergency pause system for asset protection
  * - Multisig controls: pricing, pausing, minting, and fund recovery
+ * - Gas-bounded price updates via maxPriceUpdateIterations (prevents DoS)
+ * 
+ * GAS OPTIMIZATION & OPERATIONAL NOTES:
+ * - Price updates add ~100k-300k gas to buyBatch() calls (buyer pays)
+ * - Use larger batches (up to maxBatchSize=50) to minimize total batch count
+ * - Monitor PriceUpdateIterationLimitReached events for tuning
+ * - Iteration cap ensures bounded gas but may delay price adjustments (eventual consistency)
  */
 contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -42,6 +49,22 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     uint256 public constant SECONDS_IN_A_DAY = 86400;
     uint256 public constant PRICE_WINDOW = 90 days;
     uint256 public constant MAX_CID_LENGTH = 100;
+    
+    /**
+     * @notice Gas limit protection for price update iterations
+     * @dev Prevents unbounded loops in updateBasePrice() from causing DoS
+     * 
+     * OPERATIONAL GUIDELINES:
+     * - Default: 100 iterations (balanced for safety and accuracy)
+     * - Adjustment range: 50-100 for normal operations
+     * - Lower values (50-80): Reduce buyer gas costs, may delay price adjustments
+     * - Higher values (80-100): More accurate pricing, higher gas for buyers
+     * 
+     * MONITORING:
+     * - Watch for PriceUpdateIterationLimitReached events
+     * - Frequent events indicate need to increase limit or use larger batches
+     * - Buyer gas impact: ~100k-300k additional gas at 100 iterations
+     */
     uint256 public maxPriceUpdateIterations = 100;
 
     uint256 public platformSharePercentage;
@@ -260,6 +283,22 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         emit DailyPriceDecaySet(newDailyDecay);
     }
 
+    /**
+     * @notice Update the maximum iterations for price update calculations
+     * @dev Controls gas consumption in updateBasePrice() to prevent DoS
+     * 
+     * RECOMMENDED VALUES:
+     * - Production: 60-100 (start at 100, adjust based on gas costs)
+     * - High activity periods: Lower to 50-60 to reduce buyer gas
+     * - Low activity periods: Can increase to 100+ for better accuracy
+     * 
+     * OPERATIONAL NOTES:
+     * - Buyers pay the gas cost via buyBatch() calls
+     * - Lower values = eventual consistency (prices adjust over multiple txs)
+     * - Monitor PriceUpdateIterationLimitReached events for tuning
+     * 
+     * @param newLimit New iteration limit (1-1000)
+     */
     function setMaxPriceUpdateIterations(uint256 newLimit) external onlyOwner {
         require(newLimit > 0 && newLimit <= 1000, "Iteration limit must be between 1 and 1000");
         maxPriceUpdateIterations = newLimit;
@@ -350,14 +389,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     /**
      * @notice Purchase tokens from a specific batch using USDC
      * @dev Implements Dutch auction pricing with daily decay. Handles partial batch purchases.
-     * Excess USDC is refunded to the buyer.
-     * 
-     * PAYMENT FLOW:
-     * 1. Calculate total cost based on current batch price
-     * 2. Pull full usdcAmount from buyer (prevents refund siphon attacks)
-     * 3. Distribute payments: platform fee + producer payments
-     * 4. Refund any excess USDC to buyer
-     * 5. Transfer NFTs to buyer
+     * Pulls full usdcAmount, distributes to platform/producers, refunds excess.
      * 
      * @param batchID The batch identifier (1-based indexing)
      * @param usdcAmount Maximum USDC to spend (excess will be refunded)
@@ -634,7 +666,22 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     /**
      * @notice Update base price based on market activity
      * @dev Auto-adjusts: +10 USDC for quick sales (<2 days), -10 USDC for slow market (>4 days)
-     * Gas bounded by maxPriceUpdateIterations (default 100), only affects owner transactions
+     * 
+     * GAS CONSUMPTION:
+     * - Bounded by maxPriceUpdateIterations to prevent DoS
+     * - Typical: 100k-300k gas at 100 iterations
+     * - Worst case: ~2.3M gas with many storage writes
+     * - Called by mintBatch() (owner pays) and buyBatch() (buyer pays)
+     * 
+     * KNOWN TRADE-OFFS:
+     * - Iteration cap may cause "eventual consistency" in pricing
+     * - Prices may take multiple transactions to fully adjust
+     * - Buying 1 token from a batch excludes it from decrease calculations
+     * 
+     * OPERATIONAL STRATEGY:
+     * - Prefer larger batches (up to maxBatchSize) to reduce total batch count
+     * - Monitor PriceUpdateIterationLimitReached events
+     * - Adjust maxPriceUpdateIterations based on gas costs vs pricing accuracy
      */
     function updateBasePrice() private {
         uint256 currentTime = block.timestamp;
