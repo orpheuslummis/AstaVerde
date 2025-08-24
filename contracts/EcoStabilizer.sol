@@ -32,14 +32,13 @@ import "./IAstaVerde.sol";
  * - ReentrancyGuard on all state-changing functions
  * - Pausable for emergency situations
  * - Access control via Ownable for admin functions
- * - Gas-bounded view functions via maxScanRange to prevent DoS
+ * - Indexed view functions for predictable gas on reads
  * - CEI (Checks-Effects-Interactions) pattern throughout
  *
  * GAS OPTIMIZATION:
  * - Batch operations save ~75% gas vs sequential calls
  * - Target gas usage: <150k for deposit, <120k for withdraw
- * - Paginated view functions for large datasets
- * - maxScanRange limits prevent unbounded loops
+ * - Indexed view functions and pagination for large datasets
  *
  * INTEGRATION:
  * - Works with existing AstaVerde ERC-1155 NFTs
@@ -51,9 +50,6 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     /// @notice Fixed SCC issuance rate per NFT collateral (20 SCC with 18 decimals)
     /// @dev Eliminates oracle dependency by using fixed collateralization ratio
     uint256 public constant SCC_PER_ASSET = 20 * 1e18; // 20 SCC, 18 decimals
-
-    /// @notice Maximum allowed value for maxScanRange to prevent gas exhaustion attacks
-    uint256 public constant MAX_SCAN_CEILING = 50000; // Upper bound for maxScanRange to prevent DoS
 
     /// @notice Maximum items per paginated query to ensure bounded gas usage
     uint256 public constant MAX_PAGE_SIZE = 2000; // Maximum items per paginated query
@@ -83,10 +79,13 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     /// @dev tokenId → Loan structure containing borrower and status
     mapping(uint256 => Loan) public loans; // tokenId → Loan
 
-    /** GAS LIMITS **/
-    /// @notice Maximum token IDs to scan in view functions to prevent gas exhaustion
-    /// @dev Adjustable by owner, bounded by MAX_SCAN_CEILING
-    uint256 public maxScanRange = 10000; // Prevent gas bomb attacks on view functions
+    /** INDEXED STATE **/
+    /// @notice Per-user list of active loan token IDs
+    mapping(address => uint256[]) private userLoanIds;
+    /// @notice Index of token ID in a user's loan list (for O(1) removals)
+    mapping(address => mapping(uint256 => uint256)) private userLoanIndex;
+    /// @notice Total number of active loans across all users
+    uint256 public totalActiveLoans;
 
     /** EVENTS **/
     /// @notice Emitted when a user deposits an NFT and receives SCC
@@ -104,10 +103,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     /// @param tokenId The ID of the swept NFT
     event EmergencyNFTWithdrawn(address indexed to, uint256 indexed tokenId);
 
-    /// @notice Emitted when maxScanRange is updated
-    /// @param oldValue Previous maxScanRange value
-    /// @param newValue New maxScanRange value
-    event MaxScanRangeUpdated(uint256 oldValue, uint256 newValue);
+    // No additional events required for indexing
 
     /**
      * @notice Initialize the EcoStabilizer vault
@@ -120,6 +116,24 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
         require(_scc != address(0), "invalid scc");
         ecoAsset = IAstaVerde(_ecoAsset);
         scc = StabilizedCarbonCoin(_scc);
+    }
+
+    /*────────────────────────  INTERNAL: INDEX HELPERS  ────────────*/
+    function _addToUserIndex(address user, uint256 tokenId) internal {
+        userLoanIndex[user][tokenId] = userLoanIds[user].length;
+        userLoanIds[user].push(tokenId);
+    }
+
+    function _removeFromUserIndex(address user, uint256 tokenId) internal {
+        uint256 idx = userLoanIndex[user][tokenId];
+        uint256 lastIdx = userLoanIds[user].length - 1;
+        if (idx != lastIdx) {
+            uint256 moved = userLoanIds[user][lastIdx];
+            userLoanIds[user][idx] = moved;
+            userLoanIndex[user][moved] = idx;
+        }
+        userLoanIds[user].pop();
+        delete userLoanIndex[user][tokenId];
     }
 
     /*────────────────────────  CORE FUNCTIONS  ───────────────────────*/
@@ -144,6 +158,8 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
 
         // Update state first (CEI pattern)
         loans[tokenId] = Loan(msg.sender, true);
+        _addToUserIndex(msg.sender, tokenId);
+        totalActiveLoans += 1;
 
         // External interactions after state changes
         ecoAsset.safeTransferFrom(msg.sender, address(this), tokenId, 1, "");
@@ -178,7 +194,9 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
         require(loan.active && loan.borrower == msg.sender, "not borrower");
 
         // Update state first (CEI pattern)
-        loans[tokenId].active = false;
+        _removeFromUserIndex(loan.borrower, tokenId);
+        totalActiveLoans -= 1;
+        delete loans[tokenId];
 
         // Collect repayment then return collateral
         scc.transferFrom(msg.sender, address(this), SCC_PER_ASSET);
@@ -206,23 +224,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
         _unpause();
     }
 
-    /**
-     * @notice Update the maximum scan range for view functions
-     * @dev Prevents gas exhaustion attacks while allowing flexibility
-     *
-     * Recommended values:
-     * - 10000: Default, balances performance and safety
-     * - 5000: For high-activity periods to reduce gas
-     * - 20000: For comprehensive queries when gas is less concern
-     *
-     * @param _maxScanRange New maximum scan range (must be between 1 and MAX_SCAN_CEILING)
-     */
-    function setMaxScanRange(uint256 _maxScanRange) external onlyOwner {
-        require(_maxScanRange > 0 && _maxScanRange <= MAX_SCAN_CEILING, "range outside bounds");
-        uint256 oldValue = maxScanRange;
-        maxScanRange = _maxScanRange;
-        emit MaxScanRangeUpdated(oldValue, _maxScanRange);
-    }
+    // Removed: maxScanRange configuration and event; no longer needed with indices
 
     /**
      * @notice Recover unsolicited NFTs sent to the vault
@@ -244,60 +246,23 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     }
 
     /*────────────────────────  VIEW FUNCTIONS  ─────────────────────*/
-    /// @notice Get user's active loans by scanning the loans mapping
-    /// @dev This is a view function that may be gas-expensive for large token ranges
-    /// @param user The user address to check
-    /// @return Array of token IDs for active loans
-    function getUserLoans(address user) external view returns (uint256[] memory) {
-        uint256 maxTokenId = ecoAsset.lastTokenID();
-        uint256 scanLimit = maxTokenId > maxScanRange ? maxScanRange : maxTokenId;
-
-        // First pass: count active loans
-        uint256 count = 0;
-        for (uint256 i = 1; i <= scanLimit; i++) {
-            if (loans[i].active && loans[i].borrower == user) {
-                count++;
-            }
+    /// @notice Get user's active loans (O(k) copy from indexed storage)
+    function getUserLoans(address user) external view returns (uint256[] memory out) {
+        uint256 len = userLoanIds[user].length;
+        out = new uint256[](len);
+        for (uint256 i = 0; i < len; i++) {
+            out[i] = userLoanIds[user][i];
         }
-
-        // Second pass: collect loan token IDs
-        uint256[] memory userLoans = new uint256[](count);
-        uint256 index = 0;
-        for (uint256 i = 1; i <= scanLimit; i++) {
-            if (loans[i].active && loans[i].borrower == user) {
-                userLoans[index] = i;
-                index++;
-            }
-        }
-        return userLoans;
     }
 
-    /// @notice Get total count of active loans across all users
-    /// @dev This is a view function that may be gas-expensive for large token ranges
+    /// @notice Get total count of active loans across all users (O(1))
     function getTotalActiveLoans() external view returns (uint256) {
-        uint256 maxTokenId = ecoAsset.lastTokenID();
-        uint256 scanLimit = maxTokenId > maxScanRange ? maxScanRange : maxTokenId;
-        uint256 count = 0;
-        for (uint256 i = 1; i <= scanLimit; i++) {
-            if (loans[i].active) {
-                count++;
-            }
-        }
-        return count;
+        return totalActiveLoans;
     }
 
-    /// @notice Get user's loan count
-    /// @param user The user address to check
+    /// @notice Get user's loan count (O(1))
     function getUserLoanCount(address user) external view returns (uint256) {
-        uint256 maxTokenId = ecoAsset.lastTokenID();
-        uint256 scanLimit = maxTokenId > maxScanRange ? maxScanRange : maxTokenId;
-        uint256 count = 0;
-        for (uint256 i = 1; i <= scanLimit; i++) {
-            if (loans[i].active && loans[i].borrower == user) {
-                count++;
-            }
-        }
-        return count;
+        return userLoanIds[user].length;
     }
 
     /*────────────────────  BATCH OPERATIONS  ──────────────────────*/
@@ -324,6 +289,8 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
 
             // Record the loan
             loans[tokenId] = Loan({borrower: msg.sender, active: true});
+            _addToUserIndex(msg.sender, tokenId);
+            totalActiveLoans += 1;
 
             totalSCC += SCC_PER_ASSET;
 
@@ -362,7 +329,9 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
             require(loans[tokenId].active, "loan not active");
             require(loans[tokenId].borrower == msg.sender, "not borrower");
 
-            // Clear the loan
+            // Clear the loan via index removal and delete
+            _removeFromUserIndex(msg.sender, tokenId);
+            totalActiveLoans -= 1;
             delete loans[tokenId];
 
             emit Withdrawn(msg.sender, tokenId);
@@ -380,119 +349,29 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
         ecoAsset.safeBatchTransferFrom(address(this), msg.sender, tokenIds, amounts, "");
     }
 
-    /*────────────────────  PAGINATED VIEW FUNCTIONS  ──────────────*/
-
-    /// @notice Get user's active loans with pagination support
-    /// @param user The user address to check
-    /// @param startId The token ID to start scanning from (inclusive)
-    /// @param limit Maximum number of results to return (capped at MAX_PAGE_SIZE)
-    /// @return tokenIds Array of token IDs for active loans in range
-    /// @return nextStartId Next token ID to query from (0 if end reached)
-    function getUserLoansPaginated(
+    /*────────────────────  INDEXED VIEW FUNCTIONS  ───────────────*/
+    /// @notice Get user's active loans with offset/limit over indexed storage
+    /// @return tokenIds Slice of user's active loan IDs
+    /// @return nextOffset Next offset to continue from (0 if end reached)
+    function getUserLoansIndexed(
         address user,
-        uint256 startId,
+        uint256 offset,
         uint256 limit
-    ) external view returns (uint256[] memory tokenIds, uint256 nextStartId) {
-        require(startId > 0, "startId must be > 0");
+    ) external view returns (uint256[] memory tokenIds, uint256 nextOffset) {
         require(limit > 0 && limit <= MAX_PAGE_SIZE, "invalid limit");
-
-        uint256 maxTokenId = ecoAsset.lastTokenID();
-        if (startId > maxTokenId) {
+        uint256 len = userLoanIds[user].length;
+        if (offset >= len) {
             return (new uint256[](0), 0);
         }
-
-        uint256 endId = startId + limit - 1;
-        if (endId > maxTokenId) {
-            endId = maxTokenId;
+        uint256 end = offset + limit;
+        if (end > len) {
+            end = len;
         }
-
-        // First pass: count matching loans
-        uint256 count = 0;
-        for (uint256 i = startId; i <= endId; i++) {
-            if (loans[i].active && loans[i].borrower == user) {
-                count++;
-            }
+        uint256 size = end - offset;
+        tokenIds = new uint256[](size);
+        for (uint256 i = 0; i < size; i++) {
+            tokenIds[i] = userLoanIds[user][offset + i];
         }
-
-        // Second pass: collect matching loans
-        tokenIds = new uint256[](count);
-        uint256 index = 0;
-        for (uint256 i = startId; i <= endId; i++) {
-            if (loans[i].active && loans[i].borrower == user) {
-                tokenIds[index] = i;
-                index++;
-            }
-        }
-
-        // Set next start position
-        nextStartId = endId < maxTokenId ? endId + 1 : 0;
-    }
-
-    /// @notice Get total active loans count with pagination
-    /// @param startId The token ID to start scanning from (inclusive)
-    /// @param limit Maximum number of tokens to scan (capped at MAX_PAGE_SIZE)
-    /// @return count Number of active loans found in range
-    /// @return nextStartId Next token ID to query from (0 if end reached)
-    function getTotalActiveLoansPaginated(
-        uint256 startId,
-        uint256 limit
-    ) external view returns (uint256 count, uint256 nextStartId) {
-        require(startId > 0, "startId must be > 0");
-        require(limit > 0 && limit <= MAX_PAGE_SIZE, "invalid limit");
-
-        uint256 maxTokenId = ecoAsset.lastTokenID();
-        if (startId > maxTokenId) {
-            return (0, 0);
-        }
-
-        uint256 endId = startId + limit - 1;
-        if (endId > maxTokenId) {
-            endId = maxTokenId;
-        }
-
-        // Count active loans in range
-        for (uint256 i = startId; i <= endId; i++) {
-            if (loans[i].active) {
-                count++;
-            }
-        }
-
-        // Set next start position
-        nextStartId = endId < maxTokenId ? endId + 1 : 0;
-    }
-
-    /// @notice Get user's loan count with pagination
-    /// @param user The user address to check
-    /// @param startId The token ID to start scanning from (inclusive)
-    /// @param limit Maximum number of tokens to scan (capped at MAX_PAGE_SIZE)
-    /// @return count Number of user's active loans found in range
-    /// @return nextStartId Next token ID to query from (0 if end reached)
-    function getUserLoanCountPaginated(
-        address user,
-        uint256 startId,
-        uint256 limit
-    ) external view returns (uint256 count, uint256 nextStartId) {
-        require(startId > 0, "startId must be > 0");
-        require(limit > 0 && limit <= MAX_PAGE_SIZE, "invalid limit");
-
-        uint256 maxTokenId = ecoAsset.lastTokenID();
-        if (startId > maxTokenId) {
-            return (0, 0);
-        }
-
-        uint256 endId = startId + limit - 1;
-        if (endId > maxTokenId) {
-            endId = maxTokenId;
-        }
-
-        // Count user's active loans in range
-        for (uint256 i = startId; i <= endId; i++) {
-            if (loans[i].active && loans[i].borrower == user) {
-                count++;
-            }
-        }
-
-        // Set next start position
-        nextStartId = endId < maxTokenId ? endId + 1 : 0;
+        nextOffset = end < len ? end : 0;
     }
 }
