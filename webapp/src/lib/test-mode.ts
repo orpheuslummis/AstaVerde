@@ -8,8 +8,8 @@ export function isTestMode(): boolean {
 
   return (
     window.location.search.includes("testMode=true") ||
-        localStorage.getItem("e2e-testing") === "true" ||
-        (window as any).__PLAYWRIGHT_TEST__ === true
+    localStorage.getItem("e2e-testing") === "true" ||
+    (window as any).__PLAYWRIGHT_TEST__ === true
   );
 }
 
@@ -37,11 +37,11 @@ export function mockTransaction(tx: any) {
   // Return mock transaction hash
   return {
     hash:
-            "0x" +
-            Array(64)
-              .fill(0)
-              .map(() => Math.floor(Math.random() * 16).toString(16))
-              .join(""),
+      "0x" +
+      Array(64)
+        .fill(0)
+        .map(() => Math.floor(Math.random() * 16).toString(16))
+        .join(""),
     wait: async () => ({
       status: 1,
       blockNumber: Math.floor(Math.random() * 1000000),

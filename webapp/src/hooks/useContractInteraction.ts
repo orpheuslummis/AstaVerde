@@ -15,8 +15,8 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
   // Note: We avoid pre-creating simulate hooks for write functions to prevent
   // unintended eth_call noise on non-admin accounts. We simulate only inside execute().
 
-  const isReadOnlyFunction = READ_ONLY_FUNCTIONS.includes(functionName as typeof READ_ONLY_FUNCTIONS[number]);
-  const isWriteFunction = WRITE_FUNCTIONS.includes(functionName as typeof WRITE_FUNCTIONS[number]);
+  const isReadOnlyFunction = READ_ONLY_FUNCTIONS.includes(functionName as (typeof READ_ONLY_FUNCTIONS)[number]);
+  const isWriteFunction = WRITE_FUNCTIONS.includes(functionName as (typeof WRITE_FUNCTIONS)[number]);
 
   const { data: readData, refetch: refetchReadData } = useReadContract({
     ...contractConfig,
@@ -63,15 +63,7 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
         throw error;
       }
     },
-    [
-      publicClient,
-      walletClient,
-      contractConfig,
-      functionName,
-      isReadOnlyFunction,
-      isWriteFunction,
-      writeContractAsync,
-    ],
+    [publicClient, walletClient, contractConfig, functionName, isReadOnlyFunction, isWriteFunction, writeContractAsync],
   );
 
   const mintBatch = useCallback(
@@ -197,9 +189,9 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
         const err = error as { message?: string; code?: number; cause?: { code?: number } };
         if (
           err.message?.includes("User rejected") ||
-                    err.message?.includes("User denied") ||
-                    err.code === 4001 ||
-                    err.cause?.code === 4001
+          err.message?.includes("User denied") ||
+          err.code === 4001 ||
+          err.cause?.code === 4001
         ) {
           throw new Error("Transaction cancelled by user");
         }

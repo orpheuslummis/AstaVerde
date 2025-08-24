@@ -11,8 +11,8 @@ import type { VaultLoan } from "../../features/vault/types";
 
 export class VaultService {
   constructor(
-        private publicClient: PublicClient,
-        private walletClient: WalletClient | undefined,
+    private publicClient: PublicClient,
+    private walletClient: WalletClient | undefined,
   ) {}
 
   // Core vault operations

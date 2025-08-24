@@ -12,7 +12,11 @@ export function useIsProducer() {
   const { address, isConnected } = useAccount();
 
   // Check producer balance
-  const { data: producerBalance, isLoading, refetch } = useReadContract({
+  const {
+    data: producerBalance,
+    isLoading,
+    refetch,
+  } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "producerBalances",
     args: address ? [address] : undefined,

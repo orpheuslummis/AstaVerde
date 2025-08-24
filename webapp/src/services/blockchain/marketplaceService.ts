@@ -15,9 +15,9 @@ import type { BatchData, TokenData } from "../../features/marketplace/types";
 
 export class MarketplaceService {
   constructor(
-        private publicClient: PublicClient,
-        private walletClient: WalletClient | undefined,
-        private wagmiConfig: Config,
+    private publicClient: PublicClient,
+    private walletClient: WalletClient | undefined,
+    private wagmiConfig: Config,
   ) {}
 
   // Batch operations

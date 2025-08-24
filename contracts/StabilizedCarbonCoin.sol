@@ -9,27 +9,27 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * @author AstaVerde Team
  * @notice ERC-20 token representing debt against collateralized AstaVerde NFTs
  * @dev Mintable exclusively by EcoStabilizer vault with 1B supply cap
- * 
+ *
  * DEPLOYMENT:
  * - Deploy before EcoStabilizer vault
  * - Grant MINTER_ROLE to vault address after vault deployment
  * - Renounce DEFAULT_ADMIN_ROLE for immutable access control
  * - Supply cap of 1B SCC enforced on-chain
- * 
+ *
  * KEY MECHANICS:
  * - Fixed issuance: 20 SCC per collateralized NFT
  * - Exclusive minting: Only EcoStabilizer vault can mint
  * - Burn mechanisms: Direct burn() and approved burnFrom()
  * - No transfer fees: Standard ERC-20 transfers
  * - 18 decimals for standard DeFi compatibility
- * 
+ *
  * SECURITY:
  * - Role-based access control via OpenZeppelin AccessControl
  * - MINTER_ROLE restricted to single vault address
  * - Supply cap prevents unlimited inflation
  * - Zero address checks on all operations
  * - Amount validation to prevent zero-value operations
- * 
+ *
  * PRICE STABILITY:
  * - Arbitrage mechanism with AstaVerde primary market
  * - If 20 SCC < new NFT price: buy SCC, withdraw NFT, sell on primary
@@ -49,15 +49,15 @@ contract StabilizedCarbonCoin is ERC20, AccessControl {
     /**
      * @notice Initialize the StabilizedCarbonCoin token
      * @dev Sets up access control and optionally grants MINTER_ROLE to vault
-     * 
+     *
      * Deployment patterns:
      * 1. With vault address: Deploy SCC with vault address to grant MINTER_ROLE immediately
      * 2. Without vault (address(0)): Deploy SCC first, then grant MINTER_ROLE after vault deployment
-     * 
+     *
      * Post-deployment:
      * - Admin should grant MINTER_ROLE to vault if not done in constructor
      * - Admin should renounce DEFAULT_ADMIN_ROLE for immutable access control
-     * 
+     *
      * @param vault Address of the EcoStabilizer vault (or address(0) for later assignment)
      */
     constructor(address vault) ERC20("Stabilized Carbon Coin", "SCC") {
@@ -73,13 +73,13 @@ contract StabilizedCarbonCoin is ERC20, AccessControl {
     /**
      * @notice Mint new SCC tokens to a specified address
      * @dev Only callable by addresses with MINTER_ROLE (should be vault only)
-     * 
+     *
      * Requirements:
      * - Caller must have MINTER_ROLE
      * - Recipient cannot be zero address
      * - Amount must be greater than 0
      * - Total supply after minting cannot exceed MAX_SUPPLY
-     * 
+     *
      * @param to Address to receive the minted tokens
      * @param amount Number of tokens to mint (typically 20e18 per NFT)
      */
@@ -93,11 +93,11 @@ contract StabilizedCarbonCoin is ERC20, AccessControl {
     /**
      * @notice Burn SCC tokens from caller's balance
      * @dev Used by EcoStabilizer during NFT withdrawal process
-     * 
+     *
      * Requirements:
      * - Amount must be greater than 0
      * - Caller must have sufficient balance
-     * 
+     *
      * @param amount Number of tokens to burn
      */
     function burn(uint256 amount) external {
@@ -108,17 +108,17 @@ contract StabilizedCarbonCoin is ERC20, AccessControl {
     /**
      * @notice Burn SCC tokens from another address with approval
      * @dev Alternative burn mechanism using ERC-20 allowance pattern
-     * 
+     *
      * Requirements:
      * - Account cannot be zero address
      * - Amount must be greater than 0
      * - Caller must have sufficient allowance from account
      * - Account must have sufficient balance
-     * 
+     *
      * Usage:
      * - Can be used for delegated burning scenarios
      * - Useful for smart contract integrations
-     * 
+     *
      * @param account Address to burn tokens from
      * @param amount Number of tokens to burn
      */

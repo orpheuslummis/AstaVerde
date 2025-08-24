@@ -11,12 +11,12 @@ contract MaliciousProducer {
     receive() external payable {
         revert("MaliciousProducer: I refuse payments");
     }
-    
+
     // Fallback that also reverts
     fallback() external payable {
         revert("MaliciousProducer: I refuse payments");
     }
-    
+
     // Even if someone tries to call us as an ERC20 receiver
     function onERC20Received() external pure {
         revert("MaliciousProducer: I refuse ERC20");

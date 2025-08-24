@@ -17,37 +17,37 @@ import { getVaultForAsset } from "../utils/vaultRouting";
 import type { VaultLoan } from "../features/vault/types";
 
 export interface VaultHook {
-    // Core functionality
-    deposit: (tokenId: bigint) => Promise<void>;
-    withdraw: (tokenId: bigint) => Promise<void>;
-    // Backward-compatible alias maintained via frontend: calls withdraw
-    repayAndWithdraw: (tokenId: bigint) => Promise<void>;
+  // Core functionality
+  deposit: (tokenId: bigint) => Promise<void>;
+  withdraw: (tokenId: bigint) => Promise<void>;
+  // Backward-compatible alias maintained via frontend: calls withdraw
+  repayAndWithdraw: (tokenId: bigint) => Promise<void>;
 
-    // Batch operations (V2 only)
-    depositBatch: (tokenIds: bigint[]) => Promise<void>;
-    withdrawBatch: (tokenIds: bigint[]) => Promise<void>;
-    vaultVersion: "V1" | "V2" | null;
+  // Batch operations (V2 only)
+  depositBatch: (tokenIds: bigint[]) => Promise<void>;
+  withdrawBatch: (tokenIds: bigint[]) => Promise<void>;
+  vaultVersion: "V1" | "V2" | null;
 
-    // Read functions
-    getUserLoans: () => Promise<bigint[]>;
-    getTotalActiveLoans: () => Promise<bigint>;
-    getSccBalance: () => Promise<bigint>;
-    getSccAllowance: () => Promise<bigint>;
-    checkLoanStatus: (tokenId: bigint) => Promise<VaultLoan | null>;
-    getIsNftApproved: () => Promise<boolean>;
+  // Read functions
+  getUserLoans: () => Promise<bigint[]>;
+  getTotalActiveLoans: () => Promise<bigint>;
+  getSccBalance: () => Promise<bigint>;
+  getSccAllowance: () => Promise<bigint>;
+  checkLoanStatus: (tokenId: bigint) => Promise<VaultLoan | null>;
+  getIsNftApproved: () => Promise<boolean>;
 
-    // Approval functions
-    approveNFT: () => Promise<void>;
-    approveSCC: (amount?: bigint) => Promise<void>;
+  // Approval functions
+  approveNFT: () => Promise<void>;
+  approveSCC: (amount?: bigint) => Promise<void>;
 
-    // Status
-    isVaultAvailable: boolean;
-    isLoading: boolean;
-    error: string | null;
-    vaultError: VaultErrorState | null;
-    txStatus: TxStatus;
-    txHash?: string;
-    clearError: () => void;
+  // Status
+  isVaultAvailable: boolean;
+  isLoading: boolean;
+  error: string | null;
+  vaultError: VaultErrorState | null;
+  txStatus: TxStatus;
+  txHash?: string;
+  clearError: () => void;
 }
 
 const SCC_PER_ASSET = parseEther("20");
@@ -107,18 +107,14 @@ export function useVault(assetAddress?: string): VaultHook {
     if (!isVaultAvailable || !vaultConfig) {
       throw new Error("Vault contracts not configured");
     }
-    return assetAddress
-      ? getEcoStabilizerConfigForAsset(assetAddress)
-      : getEcoStabilizerContractConfig();
+    return assetAddress ? getEcoStabilizerConfigForAsset(assetAddress) : getEcoStabilizerContractConfig();
   }, [isVaultAvailable, vaultVersion, assetAddress, vaultConfig]);
 
   const getAssetContractConfig = useCallback(() => {
     if (!vaultConfig) {
       return astaverdeContractConfig;
     }
-    return assetAddress
-      ? getAstaVerdeConfigForAsset(assetAddress)
-      : astaverdeContractConfig;
+    return assetAddress ? getAstaVerdeConfigForAsset(assetAddress) : astaverdeContractConfig;
   }, [assetAddress, vaultConfig]);
 
   const getSccConfig = useCallback(() => {
@@ -140,9 +136,10 @@ export function useVault(assetAddress?: string): VaultHook {
   const { data: sccAllowance, refetch: refetchSccAllowance } = useReadContract({
     ...(isVaultAvailable ? getSccContractConfig() : { address: undefined, abi: [] }),
     functionName: "allowance",
-    args: address && isVaultAvailable && vaultConfig?.ecoStabilizerAddress
-      ? [address, vaultConfig.ecoStabilizerAddress]
-      : undefined,
+    args:
+      address && isVaultAvailable && vaultConfig?.ecoStabilizerAddress
+        ? [address, vaultConfig.ecoStabilizerAddress]
+        : undefined,
     query: { enabled: !!address && isVaultAvailable },
   });
 
@@ -166,9 +163,10 @@ export function useVault(assetAddress?: string): VaultHook {
   const { data: isNftApproved, refetch: refetchNftApproval } = useReadContract({
     ...getAssetContractConfig(),
     functionName: "isApprovedForAll",
-    args: address && isVaultAvailable && vaultConfig?.ecoStabilizerAddress
-      ? [address, vaultConfig.ecoStabilizerAddress]
-      : undefined,
+    args:
+      address && isVaultAvailable && vaultConfig?.ecoStabilizerAddress
+        ? [address, vaultConfig.ecoStabilizerAddress]
+        : undefined,
     query: { enabled: !!address && isVaultAvailable },
   });
 
@@ -682,23 +680,23 @@ export function useLoanStatus(tokenId: bigint) {
   const { data: loanData } = useReadContract(
     ENV.ECOSTABILIZER_ADDRESS && tokenId !== undefined
       ? {
-        ...getEcoStabilizerContractConfig(),
-        functionName: "loans",
-        args: [tokenId],
-      }
+          ...getEcoStabilizerContractConfig(),
+          functionName: "loans",
+          args: [tokenId],
+        }
       : {
-        address: undefined as unknown as `0x${string}`,
-        abi: [],
-        functionName: "loans",
-      },
+          address: undefined as unknown as `0x${string}`,
+          abi: [],
+          functionName: "loans",
+        },
   );
 
   const loan: VaultLoan | null = loanData
     ? {
-      tokenId,
-      borrower: (loanData as unknown[])[0] as string,
-      active: (loanData as unknown[])[1] as boolean,
-    }
+        tokenId,
+        borrower: (loanData as unknown[])[0] as string,
+        active: (loanData as unknown[])[1] as boolean,
+      }
     : null;
 
   return {

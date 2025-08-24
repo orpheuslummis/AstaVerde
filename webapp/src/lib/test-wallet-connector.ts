@@ -10,8 +10,8 @@ export function testWalletConnector() {
   // Only enable in test mode
   if (
     !process.env.NEXT_PUBLIC_TEST_MODE &&
-        typeof window !== "undefined" &&
-        !window.location.search.includes("testMode=true")
+    typeof window !== "undefined" &&
+    !window.location.search.includes("testMode=true")
   ) {
     return null;
   }
@@ -26,10 +26,7 @@ export function testWalletConnector() {
 
       // Actually execute transactions on real blockchain
       const provider = new ethers.JsonRpcProvider("http://localhost:8545");
-      const signer = new ethers.Wallet(
-        "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-        provider,
-      );
+      const signer = new ethers.Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", provider);
 
       // Store signer for transaction execution
       (window as any).__testSigner = signer;
@@ -76,34 +73,34 @@ export function testWalletConnector() {
           if (!signer) throw new Error("Test signer not initialized");
 
           switch (method) {
-          case "eth_sendTransaction": {
-            // Actually send the transaction
-            const tx = params[0];
-            const realTx = await signer.sendTransaction({
-              to: tx.to,
-              data: tx.data,
-              value: tx.value || 0,
-            });
+            case "eth_sendTransaction": {
+              // Actually send the transaction
+              const tx = params[0];
+              const realTx = await signer.sendTransaction({
+                to: tx.to,
+                data: tx.data,
+                value: tx.value || 0,
+              });
 
-            // Return real transaction hash
-            return realTx.hash;
-          }
+              // Return real transaction hash
+              return realTx.hash;
+            }
 
-          case "eth_call": {
-            // Forward to real provider
-            const provider = signer.provider;
-            return await provider.call(params[0]);
-          }
+            case "eth_call": {
+              // Forward to real provider
+              const provider = signer.provider;
+              return await provider.call(params[0]);
+            }
 
-          case "eth_getTransactionReceipt": {
-            // Get real receipt
-            const provider = signer.provider;
-            return await provider.getTransactionReceipt(params[0]);
-          }
+            case "eth_getTransactionReceipt": {
+              // Get real receipt
+              const provider = signer.provider;
+              return await provider.getTransactionReceipt(params[0]);
+            }
 
-          default:
-            // Handle other methods
-            return null;
+            default:
+              // Handle other methods
+              return null;
           }
         },
       };

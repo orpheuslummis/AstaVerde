@@ -42,14 +42,14 @@ contract MaliciousVaultReceiver is IERC1155Receiver {
         if (shouldReenter && tokenIdsToReenter.length > 0) {
             reentrancyAttempts++;
             shouldReenter = false; // Prevent infinite loop
-            
+
             // Try to reenter vaultSendTokens
             try astaVerde.vaultSendTokens(tokenIdsToReenter) {
                 // If successful, this would be a vulnerability
             } catch {
                 // Expected to fail due to nonReentrant
             }
-            
+
             // Try to reenter vaultRecallTokens
             try astaVerde.vaultRecallTokens(tokenIdsToReenter) {
                 // If successful, this would be a vulnerability
@@ -57,7 +57,7 @@ contract MaliciousVaultReceiver is IERC1155Receiver {
                 // Expected to fail due to nonReentrant
             }
         }
-        
+
         return this.onERC1155Received.selector;
     }
 
@@ -71,22 +71,22 @@ contract MaliciousVaultReceiver is IERC1155Receiver {
         if (shouldReenter && tokenIdsToReenter.length > 0) {
             reentrancyAttempts++;
             shouldReenter = false; // Prevent infinite loop
-            
+
             // Try to reenter vaultSendTokens
             try astaVerde.vaultSendTokens(tokenIdsToReenter) {
                 // If successful, this would be a vulnerability
             } catch {
                 // Expected to fail due to nonReentrant
             }
-            
+
             // Try to reenter vaultRecallTokens
             try astaVerde.vaultRecallTokens(tokenIdsToReenter) {
-                // If successful, this would be a vulnerability  
+                // If successful, this would be a vulnerability
             } catch {
                 // Expected to fail due to nonReentrant
             }
         }
-        
+
         return this.onERC1155BatchReceived.selector;
     }
 

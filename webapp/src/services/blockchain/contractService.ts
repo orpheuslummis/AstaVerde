@@ -4,8 +4,8 @@ import { READ_ONLY_FUNCTIONS, WRITE_FUNCTIONS } from "../../config/constants";
 
 export class ContractService {
   constructor(
-        private publicClient: PublicClient,
-        private walletClient: WalletClient | undefined,
+    private publicClient: PublicClient,
+    private walletClient: WalletClient | undefined,
   ) {}
 
   async readContract(config: ContractConfig, functionName: string, args?: unknown[]): Promise<unknown> {

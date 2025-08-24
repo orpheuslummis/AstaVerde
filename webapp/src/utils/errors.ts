@@ -1,38 +1,38 @@
 import { customToast } from "./customToast";
 
 export type VaultErrorType =
-    | "network"
-    | "insufficient-funds"
-    | "approval"
-    | "contract"
-    | "user-rejected"
-    | "gas"
-    | "unknown";
+  | "network"
+  | "insufficient-funds"
+  | "approval"
+  | "contract"
+  | "user-rejected"
+  | "gas"
+  | "unknown";
 
 export interface VaultErrorState {
-    type: VaultErrorType;
-    message: string;
-    action?: {
-        label: string;
-        handler: () => void | Promise<void>;
-    };
-    details?: string;
-    originalError?: unknown;
+  type: VaultErrorType;
+  message: string;
+  action?: {
+    label: string;
+    handler: () => void | Promise<void>;
+  };
+  details?: string;
+  originalError?: unknown;
 }
 
 export enum TxStatus {
-    IDLE = "idle",
-    SIGNING = "signing",
-    PENDING = "pending",
-    CONFIRMING = "confirming",
-    SUCCESS = "success",
-    ERROR = "error",
+  IDLE = "idle",
+  SIGNING = "signing",
+  PENDING = "pending",
+  CONFIRMING = "confirming",
+  SUCCESS = "success",
+  ERROR = "error",
 }
 
 export interface TransactionState {
-    status: TxStatus;
-    txHash?: string;
-    error?: VaultErrorState;
+  status: TxStatus;
+  txHash?: string;
+  error?: VaultErrorState;
 }
 
 /**
@@ -41,11 +41,11 @@ export interface TransactionState {
 export function parseVaultError(
   error: unknown,
   context?: {
-        operation?: "deposit" | "withdraw" | "approve" | "depositBatch" | "withdrawBatch";
-        approveSCC?: () => Promise<void>;
-        approveNFT?: () => Promise<void>;
-        retry?: () => void;
-    },
+    operation?: "deposit" | "withdraw" | "approve" | "depositBatch" | "withdrawBatch";
+    approveSCC?: () => Promise<void>;
+    approveNFT?: () => Promise<void>;
+    retry?: () => void;
+  },
 ): VaultErrorState {
   const errorMessage = error?.message || error?.reason || String(error);
   const errorString = errorMessage.toLowerCase();
@@ -53,8 +53,8 @@ export function parseVaultError(
   // User rejected transaction
   if (
     errorString.includes("user rejected") ||
-        errorString.includes("user denied") ||
-        errorString.includes("rejected the request")
+    errorString.includes("user denied") ||
+    errorString.includes("rejected the request")
   ) {
     return {
       type: "user-rejected",
@@ -67,7 +67,7 @@ export function parseVaultError(
   // Insufficient SCC balance for withdrawal
   if (
     errorString.includes("burn amount exceeds balance") ||
-        errorString.includes("erc20: burn amount exceeds balance")
+    errorString.includes("erc20: burn amount exceeds balance")
   ) {
     return {
       type: "insufficient-funds",
@@ -75,9 +75,9 @@ export function parseVaultError(
       details: "You need 20 SCC to withdraw this NFT. You can get SCC by depositing other NFTs into the vault.",
       action: context?.retry
         ? {
-          label: "Try Again",
-          handler: context.retry,
-        }
+            label: "Try Again",
+            handler: context.retry,
+          }
         : undefined,
       originalError: error,
     };
@@ -101,42 +101,39 @@ export function parseVaultError(
       details: "Please approve the vault to spend your SCC tokens first.",
       action: context?.approveSCC
         ? {
-          label: "Approve SCC",
-          handler: async () => {
-            try {
-              await context.approveSCC?.();
-              customToast.success("Approval initiated. Please confirm in your wallet.");
-            } catch {
-              customToast.error("Failed to initiate approval");
-            }
-          },
-        }
+            label: "Approve SCC",
+            handler: async () => {
+              try {
+                await context.approveSCC?.();
+                customToast.success("Approval initiated. Please confirm in your wallet.");
+              } catch {
+                customToast.error("Failed to initiate approval");
+              }
+            },
+          }
         : undefined,
       originalError: error,
     };
   }
 
   // NFT approval needed
-  if (
-    errorString.includes("erc1155: caller is not token owner or approved") ||
-        errorString.includes("not approved")
-  ) {
+  if (errorString.includes("erc1155: caller is not token owner or approved") || errorString.includes("not approved")) {
     return {
       type: "approval",
       message: "NFT Approval Required",
       details: "Please approve the vault to transfer your NFTs first.",
       action: context?.approveNFT
         ? {
-          label: "Approve NFTs",
-          handler: async () => {
-            try {
-              await context.approveNFT?.();
-              customToast.success("Approval initiated. Please confirm in your wallet.");
-            } catch {
-              customToast.error("Failed to initiate approval");
-            }
-          },
-        }
+            label: "Approve NFTs",
+            handler: async () => {
+              try {
+                await context.approveNFT?.();
+                customToast.success("Approval initiated. Please confirm in your wallet.");
+              } catch {
+                customToast.error("Failed to initiate approval");
+              }
+            },
+          }
         : undefined,
       originalError: error,
     };
@@ -195,9 +192,9 @@ export function parseVaultError(
   // Network errors
   if (
     error.code === "NETWORK_ERROR" ||
-        errorString.includes("timeout") ||
-        errorString.includes("network") ||
-        errorString.includes("fetch")
+    errorString.includes("timeout") ||
+    errorString.includes("network") ||
+    errorString.includes("fetch")
   ) {
     return {
       type: "network",
@@ -205,13 +202,13 @@ export function parseVaultError(
       details: "Please check your connection and try again.",
       action: context?.retry
         ? {
-          label: "Retry",
-          handler: context.retry,
-        }
+            label: "Retry",
+            handler: context.retry,
+          }
         : {
-          label: "Refresh Page",
-          handler: () => window.location.reload(),
-        },
+            label: "Refresh Page",
+            handler: () => window.location.reload(),
+          },
       originalError: error,
     };
   }
@@ -233,9 +230,9 @@ export function parseVaultError(
     details: error?.shortMessage || errorMessage || "An unexpected error occurred. Please try again.",
     action: context?.retry
       ? {
-        label: "Try Again",
-        handler: context.retry,
-      }
+          label: "Try Again",
+          handler: context.retry,
+        }
       : undefined,
     originalError: error,
   };
@@ -246,18 +243,18 @@ export function parseVaultError(
  */
 export function getTransactionStatusMessage(status: TxStatus): string {
   switch (status) {
-  case TxStatus.SIGNING:
-    return "Please sign the transaction in your wallet...";
-  case TxStatus.PENDING:
-    return "Transaction submitted. Waiting for confirmation...";
-  case TxStatus.CONFIRMING:
-    return "Transaction is being confirmed...";
-  case TxStatus.SUCCESS:
-    return "Transaction completed successfully!";
-  case TxStatus.ERROR:
-    return "Transaction failed";
-  default:
-    return "";
+    case TxStatus.SIGNING:
+      return "Please sign the transaction in your wallet...";
+    case TxStatus.PENDING:
+      return "Transaction submitted. Waiting for confirmation...";
+    case TxStatus.CONFIRMING:
+      return "Transaction is being confirmed...";
+    case TxStatus.SUCCESS:
+      return "Transaction completed successfully!";
+    case TxStatus.ERROR:
+      return "Transaction failed";
+    default:
+      return "";
   }
 }
 
@@ -266,11 +263,11 @@ export function getTransactionStatusMessage(status: TxStatus): string {
  */
 export function getExplorerUrl(txHash: string, chainId?: number): string {
   const baseExplorerUrl =
-        chainId === 8453
-          ? "https://basescan.org"
-          : chainId === 84532
-            ? "https://sepolia.basescan.org"
-            : "https://etherscan.io";
+    chainId === 8453
+      ? "https://basescan.org"
+      : chainId === 84532
+        ? "https://sepolia.basescan.org"
+        : "https://etherscan.io";
 
   return `${baseExplorerUrl}/tx/${txHash}`;
 }

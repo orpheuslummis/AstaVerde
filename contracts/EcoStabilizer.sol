@@ -14,33 +14,33 @@ import "./IAstaVerde.sol";
  * @author AstaVerde Team
  * @notice Enables 1:1 collateralization of AstaVerde NFTs for fixed SCC loans
  * @dev Non-fungible CDP system with no liquidation risk and fixed issuance rate
- * 
+ *
  * DEPLOYMENT:
  * - Deploy after AstaVerde (Phase 1) contract is live
  * - Deploy sequence: SCC token → EcoStabilizer → grant MINTER_ROLE → renounce admin
  * - SCC token address and AstaVerde address are immutable after deployment
  * - Owner should be a multisig wallet for production deployments
- * 
+ *
  * KEY MECHANICS:
  * - Fixed rate: Each NFT collateralizes exactly 20 SCC (no oracles needed)
  * - No liquidations: Users always reclaim their original NFT upon repayment
  * - Non-fungible CDPs: Each NFT maintains unique identity through loan lifecycle
  * - Redeemed protection: Only un-redeemed carbon offsets accepted as collateral
  * - Pull pattern: Prevents DoS attacks during batch operations
- * 
+ *
  * SECURITY:
  * - ReentrancyGuard on all state-changing functions
  * - Pausable for emergency situations
  * - Access control via Ownable for admin functions
  * - Gas-bounded view functions via maxScanRange to prevent DoS
  * - CEI (Checks-Effects-Interactions) pattern throughout
- * 
+ *
  * GAS OPTIMIZATION:
  * - Batch operations save ~75% gas vs sequential calls
  * - Target gas usage: <150k for deposit, <120k for withdraw
  * - Paginated view functions for large datasets
  * - maxScanRange limits prevent unbounded loops
- * 
+ *
  * INTEGRATION:
  * - Works with existing AstaVerde ERC-1155 NFTs
  * - SCC minting exclusive to this vault (enforced by MINTER_ROLE)
@@ -51,10 +51,10 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     /// @notice Fixed SCC issuance rate per NFT collateral (20 SCC with 18 decimals)
     /// @dev Eliminates oracle dependency by using fixed collateralization ratio
     uint256 public constant SCC_PER_ASSET = 20 * 1e18; // 20 SCC, 18 decimals
-    
+
     /// @notice Maximum allowed value for maxScanRange to prevent gas exhaustion attacks
     uint256 public constant MAX_SCAN_CEILING = 50000; // Upper bound for maxScanRange to prevent DoS
-    
+
     /// @notice Maximum items per paginated query to ensure bounded gas usage
     uint256 public constant MAX_PAGE_SIZE = 2000; // Maximum items per paginated query
 
@@ -62,7 +62,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     /// @notice Reference to the AstaVerde ERC-1155 contract for carbon offset NFTs
     /// @dev Set in constructor, cannot be changed after deployment
     IAstaVerde public immutable ecoAsset; // ERC1155 + token data
-    
+
     /// @notice Reference to the SCC ERC-20 token contract
     /// @dev This vault must have exclusive MINTER_ROLE on the SCC contract
     StabilizedCarbonCoin public immutable scc;
@@ -78,7 +78,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
         address borrower;
         bool active;
     }
-    
+
     /// @notice Mapping from token ID to loan information
     /// @dev tokenId → Loan structure containing borrower and status
     mapping(uint256 => Loan) public loans; // tokenId → Loan
@@ -93,17 +93,17 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     /// @param user The address depositing the NFT
     /// @param tokenId The ID of the deposited NFT
     event Deposited(address indexed user, uint256 indexed tokenId);
-    
+
     /// @notice Emitted when a user repays SCC and withdraws their NFT
     /// @param user The address withdrawing the NFT
     /// @param tokenId The ID of the withdrawn NFT
     event Withdrawn(address indexed user, uint256 indexed tokenId);
-    
+
     /// @notice Emitted when admin sweeps an unsolicited NFT
     /// @param to The address receiving the swept NFT
     /// @param tokenId The ID of the swept NFT
     event EmergencyNFTWithdrawn(address indexed to, uint256 indexed tokenId);
-    
+
     /// @notice Emitted when maxScanRange is updated
     /// @param oldValue Previous maxScanRange value
     /// @param newValue New maxScanRange value
@@ -123,17 +123,17 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     }
 
     /*────────────────────────  CORE FUNCTIONS  ───────────────────────*/
-    
+
     /**
      * @notice Deposit an AstaVerde NFT as collateral and receive 20 SCC
      * @dev Implements CEI pattern, checks redemption status, mints fixed SCC amount
-     * 
+     *
      * Requirements:
      * - Token must not have an active loan
      * - Caller must own the NFT
      * - NFT must not be redeemed (real-world carbon offset not claimed)
      * - Contract must not be paused
-     * 
+     *
      * @param tokenId The ID of the AstaVerde NFT to deposit
      */
     function deposit(uint256 tokenId) external nonReentrant whenNotPaused {
@@ -155,13 +155,13 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     /**
      * @notice Repay 20 SCC and withdraw your collateralized NFT
      * @dev Burns SCC from caller and returns the exact NFT originally deposited
-     * 
+     *
      * Requirements:
      * - Caller must be the original borrower
      * - Loan must be active
      * - Caller must have 20 SCC balance
      * - Contract must not be paused
-     * 
+     *
      * @param tokenId The ID of the NFT to withdraw
      */
     function withdraw(uint256 tokenId) external nonReentrant whenNotPaused {
@@ -189,7 +189,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     }
 
     /*────────────────────────  ADMIN  ───────────────────────────────*/
-    
+
     /**
      * @notice Pause all deposits and withdrawals
      * @dev Only callable by owner, typically for emergency situations
@@ -197,7 +197,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     function pause() external onlyOwner {
         _pause();
     }
-    
+
     /**
      * @notice Resume deposits and withdrawals after pause
      * @dev Only callable by owner after addressing pause reason
@@ -209,12 +209,12 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     /**
      * @notice Update the maximum scan range for view functions
      * @dev Prevents gas exhaustion attacks while allowing flexibility
-     * 
+     *
      * Recommended values:
      * - 10000: Default, balances performance and safety
      * - 5000: For high-activity periods to reduce gas
      * - 20000: For comprehensive queries when gas is less concern
-     * 
+     *
      * @param _maxScanRange New maximum scan range (must be between 1 and MAX_SCAN_CEILING)
      */
     function setMaxScanRange(uint256 _maxScanRange) external onlyOwner {
@@ -227,12 +227,12 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     /**
      * @notice Recover unsolicited NFTs sent to the vault
      * @dev Only for NFTs without active loans (prevents stealing collateral)
-     * 
+     *
      * Use cases:
      * - User accidentally sends NFT directly to vault
      * - Cleanup of test/abandoned NFTs
      * - Recovery from failed transactions
-     * 
+     *
      * @param tokenId The ID of the NFT to sweep
      * @param to The address to send the NFT to
      */

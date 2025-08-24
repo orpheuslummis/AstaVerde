@@ -2,10 +2,10 @@ import toast from "react-hot-toast";
 
 // Default durations for different toast types
 const TOAST_DURATIONS = {
-  success: 6000,    // 6 seconds for success messages
-  error: 10000,     // 10 seconds for errors (need more time to read)
-  info: 7000,       // 7 seconds for info
-  warning: 8000,    // 8 seconds for warnings
+  success: 6000, // 6 seconds for success messages
+  error: 10000, // 10 seconds for errors (need more time to read)
+  info: 7000, // 7 seconds for info
+  warning: 8000, // 8 seconds for warnings
   transaction: 12000, // 12 seconds for transaction-related messages
 };
 

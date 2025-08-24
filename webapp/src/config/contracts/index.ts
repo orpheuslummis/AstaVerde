@@ -39,16 +39,16 @@ export const contracts = {
   // Phase 2 Contracts (optional)
   ecoStabilizer: ENV.ECOSTABILIZER_ADDRESS
     ? ({
-      address: ENV.ECOSTABILIZER_ADDRESS as `0x${string}`,
-      abi: ecoStabilizerAbi.abi as Abi,
-    } as ContractConfig)
+        address: ENV.ECOSTABILIZER_ADDRESS as `0x${string}`,
+        abi: ecoStabilizerAbi.abi as Abi,
+      } as ContractConfig)
     : null,
 
   scc: ENV.SCC_ADDRESS
     ? ({
-      address: ENV.SCC_ADDRESS as `0x${string}`,
-      abi: stabilizedCarbonCoinAbi.abi as Abi,
-    } as ContractConfig)
+        address: ENV.SCC_ADDRESS as `0x${string}`,
+        abi: stabilizedCarbonCoinAbi.abi as Abi,
+      } as ContractConfig)
     : null,
 } as const;
 

@@ -6,9 +6,9 @@ import { customToast } from "../../../shared/utils/customToast";
 import type { BatchData, MarketplaceOperations } from "../types";
 
 export function useMarketplace(): MarketplaceOperations & {
-    isLoading: boolean;
-    error: string | null;
-    } {
+  isLoading: boolean;
+  error: string | null;
+} {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const publicClient = usePublicClient();

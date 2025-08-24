@@ -78,7 +78,6 @@ export const ecoStabilizerV11ContractConfig = {
   abi: ecoStabilizerAbi.abi as Abi,
 } as const;
 
-
 export const sccContractConfig = {
   address: ENV.SCC_ADDRESS as `0x${string}`,
   abi: stabilizedCarbonCoinAbi.abi as Abi,
@@ -117,7 +116,9 @@ export function getEcoStabilizerConfigForAsset(assetAddress: string) {
     return ecoStabilizerContractConfig;
   }
   // Return the appropriate config based on the vault address
-  return vault.ecoStabilizerAddress === ENV.ECOSTABILIZER_V11_ADDRESS ? ecoStabilizerV11ContractConfig : ecoStabilizerContractConfig;
+  return vault.ecoStabilizerAddress === ENV.ECOSTABILIZER_V11_ADDRESS
+    ? ecoStabilizerV11ContractConfig
+    : ecoStabilizerContractConfig;
 }
 
 export function getSccContractConfig() {

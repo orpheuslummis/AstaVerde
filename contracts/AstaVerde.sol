@@ -16,25 +16,25 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
  * @author AstaVerde Team
  * @notice ERC-1155 NFT marketplace for tokenized carbon offsets with Dutch auction pricing
  * @dev Batch-based minting with time-decaying prices and dynamic base price adjustments
- * 
+ *
  * DEPLOYMENT:
  * - Live on Base mainnet with canonical USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913)
  * - USDC token address is immutable (set in constructor, validated for 6 decimals)
  * - Owner MUST be a multisig wallet (e.g., 3-of-5 Gnosis Safe) for production
- * 
+ *
  * KEY MECHANICS:
  * - Dutch auction: Prices decrease 1 USDC daily from base price to 40 USDC floor
  * - Dynamic pricing: +10 USDC for sales <2 days, -10 USDC after 4 days stagnation
  * - Platform fee: 30% default (max 50%), remainder to carbon offset producers
  * - Redeemed tokens remain transferable for secondary markets
  * - Direct USDC transfers bypass accounting and cannot be recovered (use buyBatch only)
- * 
+ *
  * SECURITY:
  * - ReentrancyGuard on all external payment functions
  * - Emergency pause system for asset protection
  * - Multisig controls: pricing, pausing, minting, and fund recovery
  * - Gas-bounded price updates via maxPriceUpdateIterations (prevents DoS)
- * 
+ *
  * GAS OPTIMIZATION & OPERATIONAL NOTES:
  * - Price updates add ~100k-300k gas to buyBatch() calls (buyer pays)
  * - Use larger batches (up to maxBatchSize=50) to minimize total batch count
@@ -49,17 +49,17 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     uint256 public constant SECONDS_IN_A_DAY = 86400;
     uint256 public constant PRICE_WINDOW = 90 days;
     uint256 public constant MAX_CID_LENGTH = 100;
-    
+
     /**
      * @notice Gas limit protection for price update iterations
      * @dev Prevents unbounded loops in updateBasePrice() from causing DoS
-     * 
+     *
      * OPERATIONAL GUIDELINES:
      * - Default: 100 iterations (balanced for safety and accuracy)
      * - Adjustment range: 50-100 for normal operations
      * - Lower values (50-80): Reduce buyer gas costs, may delay price adjustments
      * - Higher values (80-100): More accurate pricing, higher gas for buyers
-     * 
+     *
      * MONITORING:
      * - Watch for PriceUpdateIterationLimitReached events
      * - Frequent events indicate need to increase limit or use larger batches
@@ -86,9 +86,9 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     uint256 public totalProducerBalances;
 
     struct TokenInfo {
-        address originalMinter;  // Who minted the token (always the owner/multisig)
+        address originalMinter; // Who minted the token (always the owner/multisig)
         uint256 tokenId;
-        address producer;        // Who produced the carbon offset (receives payment)
+        address producer; // Who produced the carbon offset (receives payment)
         string cid;
         bool redeemed;
     }
@@ -143,26 +143,26 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     /**
      * @notice Constructor for AstaVerde marketplace
      * @dev CRITICAL: The owner parameter MUST be a multisig wallet address for production deployments
-     * 
+     *
      * TOKEN IMMUTABILITY: The _usdcToken address is permanently set here and cannot be changed.
      * Production deployment uses canonical USDC which has no transfer fees.
-     * 
+     *
      * @param owner The address that will own the contract (MUST be multisig in production)
      * @param _usdcToken The USDC token contract address (must have 6 decimals, immutable after deployment)
      */
     constructor(address owner, IERC20 _usdcToken) ERC1155("ipfs://") Ownable(owner) {
         usdcToken = _usdcToken;
-        
+
         // Sanity check: ensure it's a contract
         require(address(_usdcToken).code.length > 0, "USDC address must be a contract");
-        
+
         // Verify token decimals strictly
         try IERC20Metadata(address(_usdcToken)).decimals() returns (uint8 decimals) {
             require(decimals == 6, "Token must have 6 decimals for USDC compatibility");
         } catch {
             revert("Token must support decimals()==6");
         }
-        
+
         platformSharePercentage = 30;
         maxBatchSize = 50;
         basePrice = 230 * USDC_PRECISION;
@@ -286,17 +286,17 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     /**
      * @notice Update the maximum iterations for price update calculations
      * @dev Controls gas consumption in updateBasePrice() to prevent DoS
-     * 
+     *
      * RECOMMENDED VALUES:
      * - Production: 60-100 (start at 100, adjust based on gas costs)
      * - High activity periods: Lower to 50-60 to reduce buyer gas
      * - Low activity periods: Can increase to 100+ for better accuracy
-     * 
+     *
      * OPERATIONAL NOTES:
      * - Buyers pay the gas cost via buyBatch() calls
      * - Lower values = eventual consistency (prices adjust over multiple txs)
      * - Monitor PriceUpdateIterationLimitReached events for tuning
-     * 
+     *
      * @param newLimit New iteration limit (1-1000)
      */
     function setMaxPriceUpdateIterations(uint256 newLimit) external onlyOwner {
@@ -310,7 +310,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
      * @dev Only owner can mint. Each token represents a unique carbon offset with metadata stored on IPFS.
      * Minting creates tokens owned by the contract itself for later sale via buyBatch().
      * The current basePrice is locked in as the starting price for this batch.
-     * 
+     *
      * @param producers Array of addresses that produced the carbon offsets (receive payment on sale)
      * @param cids Array of IPFS content identifiers for token metadata (must be ≤100 chars each)
      */
@@ -390,7 +390,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
      * @notice Purchase tokens from a specific batch using USDC
      * @dev Implements Dutch auction pricing with daily decay. Handles partial batch purchases.
      * Pulls full usdcAmount, distributes to platform/producers, refunds excess.
-     * 
+     *
      * @param batchID The batch identifier (1-based indexing)
      * @param usdcAmount Maximum USDC to spend (excess will be refunded)
      * @param tokenAmount Number of tokens to purchase from the batch
@@ -560,8 +560,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
         for (uint256 i = 0; i < batches[batchID - 1].tokenIds.length && counter < numberToBuy; i++) {
             uint256 tokenId = batches[batchID - 1].tokenIds[i];
-            // Check both balance AND that token is not redeemed
-            if (balanceOf(address(this), tokenId) > 0 && !tokens[tokenId].redeemed) {
+            if (balanceOf(address(this), tokenId) > 0) {
                 partialIds[counter] = tokenId;
                 counter++;
             }
@@ -623,11 +622,11 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     function claimProducerFunds() external nonReentrant {
         uint256 amount = producerBalances[msg.sender];
         require(amount > 0, "No funds to claim");
-        
+
         // Update state before transfer (CEI pattern)
         producerBalances[msg.sender] = 0;
         totalProducerBalances -= amount;
-        
+
         // Transfer funds
         usdcToken.safeTransfer(msg.sender, amount);
         emit ProducerPaymentClaimed(msg.sender, amount);
@@ -651,33 +650,33 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
      */
     function recoverSurplusUSDC(address to) external onlyOwner nonReentrant {
         require(to != address(0), "Address must not be zero");
-        
+
         uint256 contractBalance = usdcToken.balanceOf(address(this));
         uint256 accountedBalance = platformShareAccumulated + totalProducerBalances;
-        
+
         require(contractBalance > accountedBalance, "No surplus to recover");
-        
+
         uint256 surplus = contractBalance - accountedBalance;
         usdcToken.safeTransfer(to, surplus);
-        
+
         emit SurplusUSDCRecovered(to, surplus);
     }
 
     /**
      * @notice Update base price based on market activity
      * @dev Auto-adjusts: +10 USDC for quick sales (<2 days), -10 USDC for slow market (>4 days)
-     * 
+     *
      * GAS CONSUMPTION:
      * - Bounded by maxPriceUpdateIterations to prevent DoS
      * - Typical: 100k-300k gas at 100 iterations
      * - Worst case: ~2.3M gas with many storage writes
      * - Called by mintBatch() (owner pays) and buyBatch() (buyer pays)
-     * 
+     *
      * KNOWN TRADE-OFFS:
      * - Iteration cap may cause "eventual consistency" in pricing
      * - Prices may take multiple transactions to fully adjust
      * - Buying 1 token from a batch excludes it from decrease calculations
-     * 
+     *
      * OPERATIONAL STRATEGY:
      * - Prefer larger batches (up to maxBatchSize) to reduce total batch count
      * - Monitor PriceUpdateIterationLimitReached events
