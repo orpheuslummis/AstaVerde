@@ -67,7 +67,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **EcoStabilizerV2.sol** - Phase 2: Enhanced vault with batch operations support
 - **IAstaVerde.sol** - Phase 2: Interface extending IERC1155 for vault integration
 - **MockUSDC.sol** - Testing utility
-- **AnotherERC20.sol** - Additional testing utility
 
 ### Phase 1 Contract Architecture (Live)
 
