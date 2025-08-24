@@ -1,4 +1,14 @@
-## Coexistence Plan: V1 + V1.1 with Two Vaults, One SCC (Concise)
+## Archived – Coexistence Plan: V1 + V1.1 with Two Vaults, One SCC (Concise)
+
+Decision (2025-08-24)
+
+- We will not have coexistence between v1 and v1.1.
+- We will deploy a new AstaVerde version together with a new stablecoin and EcoStabilizer vault.
+- Frontend routing and envs will target the new stack only.
+
+This ticket is archived for historical reference only.
+
+---
 
 Why
 
@@ -64,3 +74,5 @@ Checklist
 - [ ] Primary market UI points to AstaVerde v1.1 only
 - [ ] Webapp env configured for V1/V1.1 + both vaults + SCC
 - [ ] Per‑token vault routing implemented in frontend
+
+
