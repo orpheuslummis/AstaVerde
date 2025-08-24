@@ -11,7 +11,6 @@ This directory contains all smart contracts for the AstaVerde ecosystem, includi
 | **EcoStabilizer.sol**        | Vault     | Phase 2 | 🚀 New  | NFT collateralization vault                       |
 | **IAstaVerde.sol**           | Interface | Phase 2 | 🚀 New  | Interface for vault-marketplace integration       |
 | MockUSDC.sol                 | Mock      | Testing | 🧪 Test | USDC mock for development                         |
-| AnotherERC20.sol             | Mock      | Testing | 🧪 Test | Additional ERC-20 for testing                     |
 
 ## 🏪 Phase 1: AstaVerde Marketplace
 
@@ -291,7 +290,6 @@ function mintBatch(address[] calldata producers, string[] calldata cids)
 ### Mock Contracts
 
 - **MockUSDC.sol**: Simplified USDC with minting for tests
-- **AnotherERC20.sol**: Additional ERC-20 for edge case testing
 
 ### Test Coverage
 

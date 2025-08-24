@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 /**
  * @title IAstaVerde Interface
- * @notice Interface for Phase 2 vault integration with the existing Phase 1 AstaVerde contract
  * @dev Extends IERC1155 to provide access to AstaVerde-specific functions needed by EcoStabilizer vault
  *
  * This interface enables the vault contract to:
