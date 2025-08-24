@@ -131,6 +131,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const mintBatch = useContractInteraction(astaverdeContractConfig, "mintBatch").execute;
   const setPriceDelta = useContractInteraction(astaverdeContractConfig, "setPriceDelta").execute;
   const setDailyPriceDecay = useContractInteraction(astaverdeContractConfig, "setDailyPriceDecay").execute;
+  const setMaxPriceUpdateIterations = useContractInteraction(astaverdeContractConfig, "setMaxPriceUpdateIterations").execute;
+  const recoverSurplusUSDC = useContractInteraction(astaverdeContractConfig, "recoverSurplusUSDC").execute;
 
   const adminControls = useMemo(
     () => ({
@@ -214,6 +216,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
       },
+      setMaxPriceUpdateIterations: async (limit: bigint) => {
+        try {
+          const txHash = await setMaxPriceUpdateIterations(limit);
+          console.log("Set Max Price Update Iterations transaction hash:", txHash);
+          customToast.success("Max price update iterations updated successfully");
+          return txHash;
+        } catch (error) {
+          console.error("Error setting max price update iterations:", error);
+          customToast.error("Failed to update max price update iterations");
+          throw error;
+        }
+      },
+      recoverSurplusUSDC: async (to: string) => {
+        try {
+          const txHash = await recoverSurplusUSDC(to);
+          console.log("Recover Surplus USDC transaction hash:", txHash);
+          customToast.success("Surplus USDC recovered successfully");
+          return txHash;
+        } catch (error) {
+          console.error("Error recovering surplus USDC:", error);
+          customToast.error("Failed to recover surplus USDC");
+          throw error;
+        }
+      },
     }),
     [
       isAdmin,
@@ -232,6 +258,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       refetchBatches,
       setPriceDelta,
       setDailyPriceDecay,
+      setMaxPriceUpdateIterations,
+      recoverSurplusUSDC,
     ],
   );
 

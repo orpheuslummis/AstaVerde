@@ -84,6 +84,8 @@ export type ContractError = Error | null;
 export interface AdminControls {
     setPriceDelta: (amount: bigint) => Promise<string>;
     setDailyPriceDecay: (amount: bigint) => Promise<string>;
+    setMaxPriceUpdateIterations: (limit: bigint) => Promise<string>;
+    recoverSurplusUSDC: (to: string) => Promise<string>;
     pauseContract: () => Promise<string>;
     unpauseContract: () => Promise<string>;
     claimPlatformFunds: (recipient: string) => Promise<string>;

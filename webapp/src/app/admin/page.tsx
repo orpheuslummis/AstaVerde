@@ -10,6 +10,7 @@ import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import { astaverdeContractConfig } from "../../lib/contracts";
 import { customToast } from "../../utils/customToast";
+import { MaxPriceUpdateIterationsControl, RecoverSurplusUSDCControl } from "./GasOptimizationControls";
 
 function AdminControls() {
     const { isAdmin } = useAppContext();
@@ -33,8 +34,9 @@ function AdminControls() {
                 <PlatformPercentageControl />
                 <MaxBatchSizeControl />
                 <DailyPriceDecayControl />
-                <PriceAdjustDeltaControl
-                />
+                <PriceAdjustDeltaControl />
+                <MaxPriceUpdateIterationsControl />
+                <RecoverSurplusUSDCControl />
             </div>
         </Connected>
     );
@@ -404,6 +406,11 @@ function PlatformPercentageControl() {
 
     const handleSetPlatformSharePercentage = async () => {
         if (platformSharePercentage) {
+            const percentage = Number(platformSharePercentage);
+            if (percentage < 0 || percentage > 50) {
+                customToast.error("Platform share percentage must be between 0 and 50");
+                return;
+            }
             try {
                 await adminControls.setPlatformSharePercentage(platformSharePercentage);
                 customToast.success("Platform share percentage updated successfully");
@@ -422,7 +429,7 @@ function PlatformPercentageControl() {
                     type="number"
                     value={platformSharePercentage}
                     onChange={(e) => setPlatformSharePercentage(e.target.value)}
-                    placeholder="Enter Platform Share Percentage (0-100)"
+                    placeholder="Enter Platform Share Percentage (0-50)"
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 
                              focus:ring-2 focus:ring-emerald-500 focus:border-transparent
                              dark:border-gray-600 dark:bg-gray-700 dark:text-white 

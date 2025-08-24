@@ -8,6 +8,7 @@ import { formatUnits } from "viem";
 import { useAccount, useBalance, useBlockNumber } from "wagmi";
 import { ENV } from "../config/environment";
 import { getUsdcContractConfig, getSccContractConfig } from "../lib/contracts";
+import { useIsProducer } from "../hooks/useIsProducer";
 
 interface HeaderProps {
     links: readonly { readonly name: string; readonly url: string }[];
@@ -15,6 +16,7 @@ interface HeaderProps {
 
 export function Header({ links }: HeaderProps) {
     const { address, isConnected } = useAccount();
+    const { isProducer, producerBalance } = useIsProducer();
     const usdcConfig = getUsdcContractConfig();
     const { data: usdcBalance, isLoading: isBalanceDataLoading, refetch: refetchUsdcBalance } = useBalance({
         address,
@@ -86,42 +88,69 @@ export function Header({ links }: HeaderProps) {
 
             <nav className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center flex-grow`}>
                 <ul className="flex flex-col lg:flex-row lg:space-x-2 space-y-2 lg:space-y-0 items-center lg:justify-center flex-grow">
-                    {links.map((link) => (
-                        <li key={link.url} className="lg:mr-4">
-                            <span
-                                className={`group hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
-                                    pathname === link.url ? "bg-white/20 dark:bg-gray-700" : ""
-                                }`}
-                            >
-                                {link.name === "My Eco Assets" ? (
-                                    <button
-                                        type="button"
-                                        className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 ${
-                                            pathname === link.url ? "text-white dark:text-white" : ""
-                                        } ${isConnected ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            if (isConnected) {
-                                                router.push("/mytokens");
-                                            }
-                                        }}
-                                        disabled={!isConnected}
-                                    >
-                                        {link.name}
-                                    </button>
-                                ) : (
-                                    <Link href={link.url}>
-                                        <span
+                    {links.map((link, index) => (
+                        <>
+                            <li key={link.url} className="lg:mr-4">
+                                <span
+                                    className={`group hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
+                                        pathname === link.url ? "bg-white/20 dark:bg-gray-700" : ""
+                                    }`}
+                                >
+                                    {link.name === "My Eco Assets" ? (
+                                        <button
+                                            type="button"
                                             className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 ${
                                                 pathname === link.url ? "text-white dark:text-white" : ""
-                                            }`}
+                                            } ${isConnected ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                if (isConnected) {
+                                                    router.push("/mytokens");
+                                                }
+                                            }}
+                                            disabled={!isConnected}
                                         >
                                             {link.name}
-                                        </span>
-                                    </Link>
-                                )}
-                            </span>
-                        </li>
+                                        </button>
+                                    ) : (
+                                        <Link href={link.url}>
+                                            <span
+                                                className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 ${
+                                                    pathname === link.url ? "text-white dark:text-white" : ""
+                                                }`}
+                                            >
+                                                {link.name}
+                                            </span>
+                                        </Link>
+                                    )}
+                                </span>
+                            </li>
+                            {/* Show Producer Dashboard after My Eco Assets if user is a producer */}
+                            {link.name === "My Eco Assets" && isProducer && (
+                                <li key="producer-dashboard" className="lg:mr-4">
+                                    <span
+                                        className={`group hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
+                                            pathname === "/producer" ? "bg-white/20 dark:bg-gray-700" : ""
+                                        }`}
+                                    >
+                                        <Link href="/producer">
+                                            <span
+                                                className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 flex items-center gap-1 ${
+                                                    pathname === "/producer" ? "text-white dark:text-white" : ""
+                                                }`}
+                                            >
+                                                <span>💰</span> Producer Dashboard
+                                                {producerBalance && producerBalance > 0n && (
+                                                    <span className="ml-1 bg-emerald-500 text-white text-xs rounded-full px-2 py-0.5">
+                                                        {formatUnits(producerBalance, 6)}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </Link>
+                                    </span>
+                                </li>
+                            )}
+                        </>
                     ))}
                     {isConnected && (
                         <>
