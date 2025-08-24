@@ -65,9 +65,9 @@ npm run test:all
 
 1. Open Cypress UI:
 
-    ```bash
-    npm run test:wallet:open
-    ```
+   ```bash
+   npm run test:wallet:open
+   ```
 
 2. Select a test file to run
 3. Watch tests execute in real-time
@@ -124,23 +124,23 @@ Uses Hardhat's default test wallet:
 ### Common Issues
 
 1. **"MetaMask not found"**
-    - Ensure Cypress is running with Synpress plugins
-    - Check `cypress.config.js` includes synpress setup
+   - Ensure Cypress is running with Synpress plugins
+   - Check `cypress.config.js` includes synpress setup
 
 2. **"Transaction failed"**
-    - Verify Hardhat node is running
-    - Check test wallet has sufficient USDC
-    - Ensure contracts are deployed
+   - Verify Hardhat node is running
+   - Check test wallet has sufficient USDC
+   - Ensure contracts are deployed
 
 3. **"Modal blocking clicks"**
-    - Verify `OnboardingModal.tsx` has test bypass
-    - Check localStorage is set correctly
-    - Try manual dismissal as fallback
+   - Verify `OnboardingModal.tsx` has test bypass
+   - Check localStorage is set correctly
+   - Try manual dismissal as fallback
 
 4. **"Tests timeout"**
-    - Increase timeouts in `cypress.config.js`
-    - Check network connection to local node
-    - Verify webapp is running
+   - Increase timeouts in `cypress.config.js`
+   - Check network connection to local node
+   - Verify webapp is running
 
 ### Debug Mode
 
@@ -182,31 +182,31 @@ name: E2E Tests
 on: [push, pull_request]
 
 jobs:
-    test:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v3
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-            - name: Setup Node
-              uses: actions/setup-node@v3
-              with:
-                  node-version: "18"
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
 
-            - name: Install dependencies
-              run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Install browsers
-              run: npx playwright install chromium
+      - name: Install browsers
+        run: npx playwright install chromium
 
-            - name: Run Playwright tests
-              run: npm run test:e2e
+      - name: Run Playwright tests
+        run: npm run test:e2e
 
-            - name: Run wallet tests (optional)
-              if: github.ref == 'refs/heads/main'
-              run: |
-                  npm run dev &
-                  sleep 10
-                  npm run test:wallet
+      - name: Run wallet tests (optional)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          npm run dev &
+          sleep 10
+          npm run test:wallet
 ```
 
 ## Best Practices

@@ -11,22 +11,22 @@ For rapid development and CI testing without real wallet overhead.
 ### Setup
 
 1. **Added E2E Event Listener** (`src/contexts/WalletContext.tsx`):
-    - Listens for `e2e-connect` event to trigger wallet connection
-    - No MetaMask required
+   - Listens for `e2e-connect` event to trigger wallet connection
+   - No MetaMask required
 
 2. **Mock Connector** (`src/lib/mock-connector.ts`):
-    - Provides simulated wallet functionality
-    - Returns hardhat account #0 by default
-    - Handles basic eth methods
+   - Provides simulated wallet functionality
+   - Returns hardhat account #0 by default
+   - Handles basic eth methods
 
 3. **Wagmi Config** (`src/config/wagmi.ts`):
-    - Detects E2E mode via URL param or localStorage
-    - Injects mock connector when in E2E mode
+   - Detects E2E mode via URL param or localStorage
+   - Injects mock connector when in E2E mode
 
 4. **Test Helpers** (`e2e/helpers/mock-wallet-connection.ts`):
-    - `setupAndConnectWallet()` - Complete setup and connection
-    - `getUSDCBalance()` - Read balance from UI
-    - `waitForWalletConnection()` - Wait for connection state
+   - `setupAndConnectWallet()` - Complete setup and connection
+   - `getUSDCBalance()` - Read balance from UI
+   - `waitForWalletConnection()` - Wait for connection state
 
 ### Usage
 
@@ -35,16 +35,16 @@ import { test, expect } from "@playwright/test";
 import { setupAndConnectWallet, getUSDCBalance } from "../helpers/mock-wallet-connection";
 
 test("user can view balance when connected", async ({ page }) => {
-    // Connect mock wallet
-    await setupAndConnectWallet(page);
+  // Connect mock wallet
+  await setupAndConnectWallet(page);
 
-    // Verify connection
-    const balance = await getUSDCBalance(page);
-    expect(balance).toBeDefined();
+  // Verify connection
+  const balance = await getUSDCBalance(page);
+  expect(balance).toBeDefined();
 
-    // Navigate while connected
-    await page.click('text="My Eco Assets"');
-    await expect(page).toHaveURL(/.*\/mytokens/);
+  // Navigate while connected
+  await page.click('text="My Eco Assets"');
+  await expect(page).toHaveURL(/.*\/mytokens/);
 });
 ```
 
@@ -75,32 +75,32 @@ For comprehensive wallet testing with MetaMask.
 ### Setup
 
 1. **Synpress Config** (`e2e/synpress/cypress.config.js`):
-    - MetaMask extension loading
-    - Private key import
-    - Network configuration
+   - MetaMask extension loading
+   - Private key import
+   - Network configuration
 
 2. **Test Structure** (`e2e/tests/wallet/`):
-    - Purchase flows
-    - Vault operations
-    - Approval management
+   - Purchase flows
+   - Vault operations
+   - Approval management
 
 ### Usage
 
 ```javascript
 // e2e/tests/wallet/01-purchase.wallet.spec.ts
 describe("NFT Purchase with MetaMask", () => {
-    it("should complete purchase flow", () => {
-        cy.setupMetamask(PRIVATE_KEY, "localhost", true);
-        cy.visit("http://localhost:3000");
-        cy.acceptMetamaskAccess();
+  it("should complete purchase flow", () => {
+    cy.setupMetamask(PRIVATE_KEY, "localhost", true);
+    cy.visit("http://localhost:3000");
+    cy.acceptMetamaskAccess();
 
-        // Purchase flow
-        cy.get('[data-testid="buy-button"]').click();
-        cy.confirmMetamaskTransaction();
+    // Purchase flow
+    cy.get('[data-testid="buy-button"]').click();
+    cy.confirmMetamaskTransaction();
 
-        // Verify ownership
-        cy.get('[data-testid="my-tokens"]').should("contain", "Batch #1");
-    });
+    // Verify ownership
+    cy.get('[data-testid="my-tokens"]').should("contain", "Batch #1");
+  });
 });
 ```
 
@@ -117,21 +117,21 @@ describe("NFT Purchase with MetaMask", () => {
 ```yaml
 # .github/workflows/e2e.yml
 jobs:
-    e2e-fast:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 22
-            - run: npm run test:e2e:mock
+  e2e-fast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run test:e2e:mock
 
-    e2e-wallet:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 18 # Required for Synpress v3
-            - run: npm run test:e2e:wallet
+  e2e-wallet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18 # Required for Synpress v3
+      - run: npm run test:e2e:wallet
 ```
 
 ## Test Organization

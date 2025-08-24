@@ -11,29 +11,29 @@ The wallet-connected E2E tests have been implemented but require adjustments for
 #### Covered Features:
 
 1. **Browse Marketplace** ✅
-    - Display available batches
-    - Show Dutch auction prices
-    - Show availability counts
-    - Handle sold out state
+   - Display available batches
+   - Show Dutch auction prices
+   - Show availability counts
+   - Handle sold out state
 
 2. **NFT Purchase Flow** ✅
-    - Connect wallet
-    - Display USDC balance
-    - Single NFT purchase
-    - Bulk NFT purchase (3+ tokens)
-    - USDC approval handling
-    - Transaction confirmation
-    - Update batch availability
+   - Connect wallet
+   - Display USDC balance
+   - Single NFT purchase
+   - Bulk NFT purchase (3+ tokens)
+   - USDC approval handling
+   - Transaction confirmation
+   - Update batch availability
 
 3. **Dutch Auction Pricing** ✅
-    - Price validation (40-300 USDC range)
-    - Daily decay tracking ($1/day)
-    - Floor price enforcement (40 USDC)
-    - Base price adjustments
+   - Price validation (40-300 USDC range)
+   - Daily decay tracking ($1/day)
+   - Floor price enforcement (40 USDC)
+   - Base price adjustments
 
 4. **Platform Commission** ✅
-    - 30% platform share calculation
-    - 70% producer share validation
+   - 30% platform share calculation
+   - 70% producer share validation
 
 #### Missing/Incomplete:
 
@@ -47,32 +47,32 @@ The wallet-connected E2E tests have been implemented but require adjustments for
 #### Covered Features:
 
 1. **Vault Deposit** ✅
-    - Check NFT eligibility
-    - Reject redeemed NFTs
-    - NFT approval (SetApprovalForAll)
-    - Deposit transaction
-    - Receive 20 SCC
-    - Update token status to "vaulted"
+   - Check NFT eligibility
+   - Reject redeemed NFTs
+   - NFT approval (SetApprovalForAll)
+   - Deposit transaction
+   - Receive 20 SCC
+   - Update token status to "vaulted"
 
 2. **Vault Withdrawal** ✅
-    - Check SCC balance (need 20)
-    - SCC approval
-    - Withdrawal transaction
-    - Burn 20 SCC
-    - Return NFT to user
-    - Update token status
+   - Check SCC balance (need 20)
+   - SCC approval
+   - Withdrawal transaction
+   - Burn 20 SCC
+   - Return NFT to user
+   - Update token status
 
 3. **Vault Security** ✅
-    - Redeemed NFT protection
-    - No liquidation guarantee
-    - Fixed 20 SCC rate
-    - Access control verification
+   - Redeemed NFT protection
+   - No liquidation guarantee
+   - Fixed 20 SCC rate
+   - Access control verification
 
 4. **Vault Statistics** ✅
-    - Total vaulted count
-    - SCC in circulation
-    - User SCC balance
-    - Loan-to-value calculations
+   - Total vaulted count
+   - SCC in circulation
+   - User SCC balance
+   - Loan-to-value calculations
 
 #### Missing/Incomplete:
 
@@ -86,13 +86,13 @@ The wallet-connected E2E tests have been implemented but require adjustments for
 #### Covered:
 
 1. **Complete User Journey** ✅
-    - Connect wallet → Purchase → Deposit → Withdraw
-    - State consistency across phases
-    - Balance updates throughout
+   - Connect wallet → Purchase → Deposit → Withdraw
+   - State consistency across phases
+   - Balance updates throughout
 
 2. **Token State Management** ✅
-    - Available → Owned → Vaulted → Withdrawn
-    - Redeemed state protection
+   - Available → Owned → Vaulted → Withdrawn
+   - Redeemed state protection
 
 #### Missing:
 

@@ -53,19 +53,19 @@ npm run test:wallet
 The test suite structure is correct and will work when run in a compatible environment:
 
 1. **Wallet Connection Test** (`wallet-connect.cy.js`)
-    - Connects MetaMask to dApp
-    - Verifies wallet address display
-    - Checks USDC balance
+   - Connects MetaMask to dApp
+   - Verifies wallet address display
+   - Checks USDC balance
 
 2. **Purchase Test** (`purchase.cy.js`)
-    - Tests single NFT purchase
-    - Tests bulk purchase (5 NFTs)
-    - Verifies USDC spending and NFT receipt
+   - Tests single NFT purchase
+   - Tests bulk purchase (5 NFTs)
+   - Verifies USDC spending and NFT receipt
 
 3. **Vault Test** (`vault.cy.js`)
-    - Deposits NFT for 20 SCC
-    - Withdraws NFT by repaying 20 SCC
-    - Validates redeemed NFT restrictions
+   - Deposits NFT for 20 SCC
+   - Withdraws NFT by repaying 20 SCC
+   - Validates redeemed NFT restrictions
 
 ## Next Steps
 

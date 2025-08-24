@@ -11,8 +11,8 @@ const testHandler = () => {
   console.log("✓ Event received!");
 };
 
-window.addEventListener('astaverde:refetch', testHandler);
-window.dispatchEvent(new Event('astaverde:refetch'));
+window.addEventListener("astaverde:refetch", testHandler);
+window.dispatchEvent(new Event("astaverde:refetch"));
 
 setTimeout(() => {
   if (eventReceived) {
@@ -20,27 +20,27 @@ setTimeout(() => {
   } else {
     console.log("✗ Test 1 failed: Event not received");
   }
-  
+
   // Cleanup
-  window.removeEventListener('astaverde:refetch', testHandler);
-  
+  window.removeEventListener("astaverde:refetch", testHandler);
+
   // Test 2: Check if cleanup works
   console.log("\nTest 2: Checking event listener cleanup...");
   eventReceived = false;
-  window.dispatchEvent(new Event('astaverde:refetch'));
-  
+  window.dispatchEvent(new Event("astaverde:refetch"));
+
   setTimeout(() => {
     if (!eventReceived) {
       console.log("✓ Test 2 passed: Event listener properly removed");
     } else {
       console.log("✗ Test 2 failed: Event listener not removed");
     }
-    
+
     // Test 3: Check current listeners
     console.log("\nTest 3: Checking active listeners...");
-    if (typeof getEventListeners !== 'undefined') {
+    if (typeof getEventListeners !== "undefined") {
       const listeners = getEventListeners(window);
-      const refetchListeners = listeners['astaverde:refetch'] || [];
+      const refetchListeners = listeners["astaverde:refetch"] || [];
       console.log(`Active 'astaverde:refetch' listeners: ${refetchListeners.length}`);
       if (refetchListeners.length > 0) {
         console.log("Note: There are active listeners, likely from React components");
@@ -48,7 +48,7 @@ setTimeout(() => {
     } else {
       console.log("Note: getEventListeners not available in this environment");
     }
-    
+
     console.log("\n✅ Event cleanup implementation test complete!");
     console.log("Summary:");
     console.log("- Event dispatch: Working");
