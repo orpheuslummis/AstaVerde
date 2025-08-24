@@ -1,8 +1,11 @@
 # Ticket 108: MEDIUM - AstaVerde USDC Fee-on-Transfer Token Vulnerability
 
 ## Status: OPEN
+
 ## Severity: MEDIUM
+
 ## Component: contracts/AstaVerde.sol
+
 ## Function: buyBatch()
 
 ## Issue Description
@@ -40,23 +43,23 @@ usdcToken.safeTransferFrom(msg.sender, address(this), usdcAmount);
 ### For Testnet/Development
 
 ```solidity
-function buyBatch(uint256 batchID, uint256 usdcAmount, uint256 tokenAmount) 
+function buyBatch(uint256 batchID, uint256 usdcAmount, uint256 tokenAmount)
     external whenNotPaused nonReentrant {
     // ... existing checks ...
-    
+
     // Add balance delta verification for non-mainnet
     uint256 balanceBefore = usdcToken.balanceOf(address(this));
     usdcToken.safeTransferFrom(msg.sender, address(this), usdcAmount);
     uint256 balanceAfter = usdcToken.balanceOf(address(this));
-    
+
     // Only enforce on non-mainnet (use deployment flag)
     if (!isMainnet) {
         require(
-            balanceAfter - balanceBefore == usdcAmount, 
+            balanceAfter - balanceBefore == usdcAmount,
             "Fee-on-transfer tokens not supported"
         );
     }
-    
+
     // ... rest of function ...
 }
 ```
@@ -68,7 +71,7 @@ function buyBatch(uint256 batchID, uint256 usdcAmount, uint256 tokenAmount)
 constructor(address _usdcToken, ...) {
     // Mainnet Base USDC
     require(
-        _usdcToken == 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913, 
+        _usdcToken == 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
         "Invalid USDC address"
     );
     usdcToken = IERC20(_usdcToken);
@@ -85,18 +88,18 @@ constructor(address _usdcToken, ...) {
 ## Test Requirements
 
 1. **Mock Fee-on-Transfer Token Test**
-   - Create mock token that takes 1% fee
-   - Verify buyBatch reverts with balance check
-   - Verify accounting remains correct
+    - Create mock token that takes 1% fee
+    - Verify buyBatch reverts with balance check
+    - Verify accounting remains correct
 
 2. **Canonical USDC Test**
-   - Ensure no regression with standard USDC
-   - Gas cost comparison with/without check
+    - Ensure no regression with standard USDC
+    - Gas cost comparison with/without check
 
 3. **Edge Cases**
-   - Zero amount transfers
-   - Exact balance scenarios
-   - Reentrancy with balance checks
+    - Zero amount transfers
+    - Exact balance scenarios
+    - Reentrancy with balance checks
 
 ## Implementation Checklist
 

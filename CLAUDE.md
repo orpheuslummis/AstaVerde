@@ -2,7 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-
 ## Development Commands
 
 ### Building and Compilation
@@ -43,9 +42,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Webapp Commands
 
 - Webapp commands should be run from the `webapp/` directory:
-  - `cd webapp && npm run dev` - Starts Next.js development server
-  - `cd webapp && npm run build` - Builds webapp for production
-  - `cd webapp && npm install` - Installs webapp dependencies
+    - `cd webapp && npm run dev` - Starts Next.js development server
+    - `cd webapp && npm run build` - Builds webapp for production
+    - `cd webapp && npm install` - Installs webapp dependencies
 
 ### Development Utilities
 
@@ -154,7 +153,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Vault enables fixed 20 SCC loans against individual NFTs (no liquidations)
 - When testing locally, use `npm run task:mint:local` to create test NFTs
 - Base network is production target, Sepolia for testing
-
 
 ## Dependency Management & Security
 

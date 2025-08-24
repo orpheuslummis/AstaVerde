@@ -109,29 +109,29 @@ import type { BatchCardProps } from "../features/marketplace/types";
 ## 🚀 Benefits
 
 1. **Better Code Organization**
-    - Clear separation between Phase 1 and Phase 2
-    - Feature-based modules for scalability
-    - Logical grouping of related code
+   - Clear separation between Phase 1 and Phase 2
+   - Feature-based modules for scalability
+   - Logical grouping of related code
 
 2. **Improved Developer Experience**
-    - Easier to find and navigate code
-    - Better IntelliSense and autocomplete
-    - Cleaner import statements
+   - Easier to find and navigate code
+   - Better IntelliSense and autocomplete
+   - Cleaner import statements
 
 3. **Enhanced Maintainability**
-    - Single responsibility principle
-    - Separation of concerns
-    - Easier to test individual components
+   - Single responsibility principle
+   - Separation of concerns
+   - Easier to test individual components
 
 4. **Scalability**
-    - Easy to add new features
-    - Clear patterns to follow
-    - Modular architecture
+   - Easy to add new features
+   - Clear patterns to follow
+   - Modular architecture
 
 5. **Type Safety**
-    - Types colocated with features
-    - Better type inference
-    - Reduced type-related bugs
+   - Types colocated with features
+   - Better type inference
+   - Reduced type-related bugs
 
 ## 📝 Documentation
 

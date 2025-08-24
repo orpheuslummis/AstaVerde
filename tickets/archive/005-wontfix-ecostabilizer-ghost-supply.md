@@ -12,12 +12,12 @@ Users can burn SCC tokens without withdrawing their NFT collateral, creating "gh
 
 ## Scope Decision (MVP)
 
-- SSC plan excludes abandoned‑loan forfeiture/recovery for MVP (scope control).  
+- SSC plan excludes abandoned‑loan forfeiture/recovery for MVP (scope control).
 - Risk is acknowledged and accepted for MVP; UI must communicate clearly to users before deposit.
 
 Rationale excerpts from SSC_PLAN v0.3:
 
-- "No treasury LP, no abandoned‑loan forfeiture mechanism in MVP."  
+- "No treasury LP, no abandoned‑loan forfeiture mechanism in MVP."
 - Orphaned collateral risk is an "Accepted risk" for MVP; mitigation is strong UX warnings and basic metrics.
 
 ## Current Issue
@@ -77,11 +77,9 @@ function adminRecoverOrphaned(uint256 tokenId, address to) external onlyOwner {
 
 ## MVP Actions (tracking only)
 
-- Add prominent UI warning/confirmation before deposit about orphaned‑collateral risk.  
+- Add prominent UI warning/confirmation before deposit about orphaned‑collateral risk.
 - Track basic metric in client: count loans where borrower SCC balance appears insufficient to repay (best‑effort UX signal).
 
 ## Archival Note
 
 This ticket is archived as "won't fix (MVP)" to reflect scope boundaries. Re‑open for post‑MVP planning if scope changes.
-
-

@@ -7,20 +7,23 @@
 ## Issue Type: Economic / DoS Protection Trade-off
 
 ## Description
+
 The `maxPriceUpdateIterations` limit in the `updateBasePrice()` function can cause incomplete price adjustments, leading to pricing inconsistencies. While this prevents DoS attacks, it creates an "eventual consistency" model that could be exploited through timing attacks.
 
 ## Location
+
 - File: `contracts/AstaVerde.sol`
 - Function: `updateBasePrice()`
 - Lines: 686-762
 - Configuration: `maxPriceUpdateIterations` (line 68)
 
 ## Current Implementation
+
 ```solidity
 uint256 public maxPriceUpdateIterations = 100; // Line 68
 
 function updateBasePrice() private {
-    // ... 
+    // ...
     for (uint256 i = batches.length; i > 0; i--) {
         // Check iteration limit to prevent DoS
         if (iterations >= maxPriceUpdateIterations) {
@@ -38,11 +41,13 @@ function updateBasePrice() private {
 ## Problems
 
 ### 1. Incomplete Price Adjustments
+
 - If there are more batches than `maxPriceUpdateIterations`, some batches won't be evaluated
 - Price decreases may not account for all unsold inventory
 - Price increases may miss recent quick sales
 
 ### 2. Timing Attack Vector
+
 ```
 Scenario:
 1. System has 150 batches, iteration limit is 100
@@ -54,18 +59,22 @@ Scenario:
 ```
 
 ### 3. Eventual Consistency Issues
+
 - Price adjustments happen gradually over multiple transactions
 - Different users see different "true" prices depending on timing
 - Makes price discovery unpredictable
 
 ## Impact
+
 - **Economic**: Incorrect pricing can lead to arbitrage opportunities
 - **Fairness**: Sophisticated users can exploit timing for better prices
 - **UX**: Price volatility between transactions is confusing
 - **Gas**: Buyers pay unpredictable gas costs (100k-300k extra)
 
 ## Current Mitigation
+
 The contract emits `PriceUpdateIterationLimitReached` events when limit is hit, but:
+
 - No automatic adjustment mechanism
 - Requires manual monitoring
 - No user visibility into whether full update occurred
@@ -73,12 +82,13 @@ The contract emits `PriceUpdateIterationLimitReached` events when limit is hit, 
 ## Recommended Fixes
 
 ### Option 1: Separate Price Oracle
+
 ```solidity
 // Maintain a separate price state updated by owner/keeper
 mapping(uint256 => uint256) public batchPriceOverrides;
 bool public useOraclePrice;
 
-function updatePricesOffchain(uint256[] calldata batchIds, uint256[] calldata prices) 
+function updatePricesOffchain(uint256[] calldata batchIds, uint256[] calldata prices)
     external onlyOwner {
     for (uint256 i = 0; i < batchIds.length; i++) {
         batchPriceOverrides[batchIds[i]] = prices[i];
@@ -87,6 +97,7 @@ function updatePricesOffchain(uint256[] calldata batchIds, uint256[] calldata pr
 ```
 
 ### Option 2: Checkpoint System
+
 ```solidity
 struct PriceCheckpoint {
     uint256 timestamp;
@@ -104,11 +115,13 @@ function updateBasePrice() private {
 ```
 
 ### Option 3: Reduce Batch Creation
+
 - Increase `maxBatchSize` to reduce total batch count
 - Implement batch merging for unsold inventory
 - Archive old completed batches
 
 ### Option 4: Gas Optimization
+
 ```solidity
 // Cache batch data in memory to reduce SLOAD operations
 struct CachedBatch {
@@ -122,19 +135,23 @@ struct CachedBatch {
 ```
 
 ## Configuration Recommendations
+
 Based on usage patterns:
+
 - Low activity: Set to 50-80 (faster, less accurate)
 - Normal activity: Keep at 100 (balanced)
 - High activity: Increase to 150-200 (more accurate, higher gas)
 - Many batches: Consider architectural changes
 
 ## Testing Required
+
 - Benchmark gas usage at different iteration limits
 - Test price consistency with >100 batches
 - Timing attack simulation
 - Price convergence analysis
 
 ## References
+
 - Lines 729-734: Iteration limit check
 - Line 732: `PriceUpdateIterationLimitReached` event
 - Gas analysis: 100k-300k additional gas per buyer

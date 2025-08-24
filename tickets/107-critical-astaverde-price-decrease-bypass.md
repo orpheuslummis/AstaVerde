@@ -1,8 +1,11 @@
 # Ticket 107: CRITICAL - AstaVerde Price Decrease Bypass via Single Token Purchase
 
 ## Status: OPEN
+
 ## Severity: CRITICAL
+
 ## Component: contracts/AstaVerde.sol
+
 ## Function: updateBasePrice()
 
 ## Issue Description
@@ -82,18 +85,18 @@ if (
 ## Test Requirements
 
 1. **Attack Simulation Test**
-   - Create multiple batches
-   - Simulate attacker buying 1 token from each
-   - Verify price decrease is NOT prevented with fix
-   - Verify price decrease IS prevented without fix
+    - Create multiple batches
+    - Simulate attacker buying 1 token from each
+    - Verify price decrease is NOT prevented with fix
+    - Verify price decrease IS prevented without fix
 
 2. **Threshold Behavior Test**
-   - Test with batches at various sold percentages (90%, 95%, 99% remaining)
-   - Ensure reasonable decrease behavior
+    - Test with batches at various sold percentages (90%, 95%, 99% remaining)
+    - Ensure reasonable decrease behavior
 
 3. **Gas Cost Analysis**
-   - Verify fix doesn't significantly increase gas costs
-   - Ensure iteration limits still effective
+    - Verify fix doesn't significantly increase gas costs
+    - Ensure iteration limits still effective
 
 ## Implementation Checklist
 

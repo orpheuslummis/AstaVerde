@@ -9,24 +9,24 @@ Welcome! This comprehensive guide will help you test the new EcoStabilizer vault
 1. Install MetaMask browser extension from [metamask.io](https://metamask.io)
 2. Create or import a wallet
 3. **Add Base Sepolia Network** - Click "Add Network" and use these settings:
-   - Network Name: `Base Sepolia`
-   - RPC URL: `https://sepolia.base.org`
-   - Chain ID: `84532`
-   - Currency Symbol: `ETH`
-   - Explorer: `https://sepolia.basescan.org`
+    - Network Name: `Base Sepolia`
+    - RPC URL: `https://sepolia.base.org`
+    - Chain ID: `84532`
+    - Currency Symbol: `ETH`
+    - Explorer: `https://sepolia.basescan.org`
 
 ### 2. Get Test Funds
 
 You'll need test ETH for transactions and test USDC for purchases:
 
 1. **Get Test ETH** (for gas fees):
-   - Visit: https://www.alchemy.com/faucets/base-sepolia
-   - Enter your wallet address
-   - Receive 0.1 ETH (enough for many transactions)
+    - Visit: https://www.alchemy.com/faucets/base-sepolia
+    - Enter your wallet address
+    - Receive 0.1 ETH (enough for many transactions)
 
 2. **Get Test USDC** (optional, for buying NFTs):
-   - Will be provided separately if needed for testing
-   - Contact support if you need test USDC
+    - Will be provided separately if needed for testing
+    - Contact support if you need test USDC
 
 ### 3. Access the Test App
 
@@ -37,6 +37,7 @@ Connect your wallet when prompted. Make sure you're on Base Sepolia network!
 ## 📋 What You're Testing
 
 The **EcoStabilizer Vault** allows users to:
+
 - **Deposit** carbon offset NFTs to receive 20 SCC tokens (loan)
 - **Withdraw** their exact NFT by repaying 20 SCC tokens
 
@@ -52,10 +53,10 @@ Think of it like a pawn shop for NFTs - you get an instant loan and can always g
 2. Find an NFT you own that shows "Deposit" button
 3. Click "Deposit"
 4. Approve the transaction in MetaMask (2 transactions: approval + deposit)
-5. **Expected Result**: 
-   - NFT shows "In Vault" status
-   - Your SCC balance increases by 20
-   - "Withdraw" button appears
+5. **Expected Result**:
+    - NFT shows "In Vault" status
+    - Your SCC balance increases by 20
+    - "Withdraw" button appears
 
 ### Scenario 2: Basic Withdrawal ✅
 
@@ -66,9 +67,9 @@ Think of it like a pawn shop for NFTs - you get an instant loan and can always g
 3. Click "Withdraw"
 4. Approve the transaction in MetaMask (may be 2 transactions)
 5. **Expected Result**:
-   - NFT returns to your wallet
-   - 20 SCC deducted from balance
-   - "Deposit" button reappears
+    - NFT returns to your wallet
+    - 20 SCC deducted from balance
+    - "Deposit" button reappears
 
 ### Scenario 3: Redeemed NFT Protection ❌
 
@@ -84,9 +85,9 @@ Think of it like a pawn shop for NFTs - you get an instant loan and can always g
 
 1. Ensure you have less than 20 SCC
 2. Try to withdraw a vaulted NFT
-3. **Expected Result**: 
-   - Button shows "Need 20 SCC" or similar
-   - Transaction should not proceed
+3. **Expected Result**:
+    - Button shows "Need 20 SCC" or similar
+    - Transaction should not proceed
 
 ---
 
@@ -105,12 +106,14 @@ Use this checklist to systematically test all features. Check off items as you c
 ### Core Functionality Tests
 
 #### 1. NFT Display
+
 - [ ] **My Tokens page loads** → Shows owned NFTs
 - [ ] **NFT metadata displays** → Title, image, carbon credits visible
 - [ ] **Vault status shows** → "Deposit" or "In Vault" status clear
 - [ ] **SCC balance visible** → Header shows current SCC balance
 
 #### 2. Deposit Flow
+
 - [ ] **Deposit button enabled** → For unredeemed NFTs only
 - [ ] **Approval request** → MetaMask prompts for NFT approval
 - [ ] **Deposit transaction** → Second transaction for actual deposit
@@ -120,6 +123,7 @@ Use this checklist to systematically test all features. Check off items as you c
 - [ ] **Withdraw button appears** → Replaces deposit button
 
 #### 3. Withdraw Flow
+
 - [ ] **Withdraw button enabled** → When user has 20+ SCC
 - [ ] **SCC approval** → Prompts if not pre-approved
 - [ ] **Withdraw transaction** → Burns SCC and returns NFT
@@ -131,16 +135,19 @@ Use this checklist to systematically test all features. Check off items as you c
 ### Error Handling Tests
 
 #### 4. Redeemed NFT Protection
+
 - [ ] **No deposit option** → Redeemed NFTs have no vault button
 - [ ] **Clear indication** → Shows "Redeemed" status
 - [ ] **Tooltip/help text** → Explains why not eligible
 
 #### 5. Insufficient Balance
+
 - [ ] **Withdraw disabled** → When SCC < 20
 - [ ] **Clear message** → "Need 20 SCC" or similar
 - [ ] **Balance shown** → Current SCC balance visible
 
 #### 6. Transaction Failures
+
 - [ ] **User rejection** → Canceling in MetaMask handled gracefully
 - [ ] **Network errors** → Timeout/failure messages are clear
 - [ ] **Retry option** → Can attempt transaction again
@@ -148,18 +155,21 @@ Use this checklist to systematically test all features. Check off items as you c
 ### UI/UX Tests
 
 #### 7. Visual Feedback
+
 - [ ] **Loading states** → Spinners during transactions
 - [ ] **Disabled states** → Buttons properly disabled when processing
 - [ ] **Success indicators** → Green checkmarks or success toasts
 - [ ] **Error styling** → Red text/borders for errors
 
 #### 8. Responsiveness
+
 - [ ] **Mobile view** → Works on phone-sized screens
 - [ ] **Tablet view** → Proper layout on tablets
 - [ ] **Desktop view** → Full experience on desktop
 - [ ] **Touch interactions** → Buttons work on touch devices
 
 #### 9. Navigation
+
 - [ ] **Page transitions** → Smooth navigation between pages
 - [ ] **Back button** → Browser back works correctly
 - [ ] **Refresh handling** → State persists after refresh
@@ -168,16 +178,19 @@ Use this checklist to systematically test all features. Check off items as you c
 ### Edge Cases
 
 #### 10. Rapid Actions
+
 - [ ] **Double-click prevention** → Can't submit twice
 - [ ] **Quick navigation** → Leaving page during transaction
 - [ ] **Multiple tabs** → Having app open in multiple tabs
 
 #### 11. Wallet Switching
+
 - [ ] **Account change** → App updates when switching accounts
 - [ ] **Network change** → Warning when wrong network
 - [ ] **Disconnect/reconnect** → Handles wallet disconnection
 
 #### 12. Data Edge Cases
+
 - [ ] **0 NFTs owned** → Appropriate empty state
 - [ ] **Many NFTs** → Pagination or scrolling works
 - [ ] **Mixed states** → Some vaulted, some not, some redeemed
@@ -185,6 +198,7 @@ Use this checklist to systematically test all features. Check off items as you c
 ### Multi-Wallet Testing
 
 #### 13. Wallet Compatibility
+
 - [ ] **MetaMask** → Full functionality
 - [ ] **WalletConnect** → Mobile wallets work
 - [ ] **Coinbase Wallet** → If supported
@@ -193,12 +207,14 @@ Use this checklist to systematically test all features. Check off items as you c
 ### Performance Tests
 
 #### 14. Load Times
+
 - [ ] **Initial load** → Under 5 seconds
 - [ ] **NFT loading** → Images load within 3 seconds
 - [ ] **Transaction speed** → Reasonable confirmation times
 - [ ] **No memory leaks** → App remains responsive
 
 #### 15. Gas Optimization
+
 - [ ] **Deposit gas** → Under 200k gas units
 - [ ] **Withdraw gas** → Under 150k gas units
 - [ ] **Gas estimates** → Shown before confirmation
@@ -232,6 +248,7 @@ If something doesn't work as expected:
 ```
 
 ### Where to Report
+
 - Email: [Contact email]
 - Or use the feedback form in the app
 
@@ -240,21 +257,25 @@ If something doesn't work as expected:
 ## ❓ Common Issues & Solutions
 
 ### "Transaction Failed"
+
 - ✅ Check you have enough ETH for gas (need ~0.01 ETH)
 - ✅ Make sure you're on Base Sepolia network
 - ✅ Try refreshing the page
 
 ### "Can't see my NFTs"
+
 - ✅ Confirm wallet is connected
 - ✅ Check you're on the correct network
 - ✅ Refresh the page or reconnect wallet
 
 ### "Deposit button disabled"
+
 - ✅ NFT might be redeemed (check status)
 - ✅ Transaction might be pending (wait a moment)
 - ✅ Check browser console for errors (F12)
 
 ### "Withdraw button shows 'Need 20 SCC'"
+
 - ✅ You need exactly 20 SCC to withdraw
 - ✅ Deposit another NFT to get more SCC
 - ✅ Or request test SCC from support
@@ -264,25 +285,29 @@ If something doesn't work as expected:
 ## 📊 Test Results Summary
 
 ### Pass/Fail Totals
-- **Passed**: ___ / 50
-- **Failed**: ___ / 50
-- **Blocked**: ___ / 50
-- **Not Tested**: ___ / 50
+
+- **Passed**: \_\_\_ / 50
+- **Failed**: \_\_\_ / 50
+- **Blocked**: \_\_\_ / 50
+- **Not Tested**: \_\_\_ / 50
 
 ### Critical Issues Found
-1. ________________________________
-2. ________________________________
-3. ________________________________
+
+1. ***
+2. ***
+3. ***
 
 ### Minor Issues Found
-1. ________________________________
-2. ________________________________
-3. ________________________________
+
+1. ***
+2. ***
+3. ***
 
 ### Suggestions for Improvement
-1. ________________________________
-2. ________________________________
-3. ________________________________
+
+1. ***
+2. ***
+3. ***
 
 ## 📝 Additional Notes
 
@@ -290,17 +315,19 @@ _Space for any additional observations, questions, or feedback:_
 
 ---
 
-**Tester Name**: _______________
-**Date**: _______________
-**Wallet Address**: _______________
-**Browser/Device**: _______________
+**Tester Name**: ******\_\_\_******
+**Date**: ******\_\_\_******
+**Wallet Address**: ******\_\_\_******
+**Browser/Device**: ******\_\_\_******
 
 ---
 
 ## 🎯 Success Metrics & Definition of Done
 
 ### Success Metrics
+
 A successful test means:
+
 - ✅ You can deposit an unredeemed NFT
 - ✅ You receive exactly 20 SCC tokens
 - ✅ You can withdraw your NFT by repaying 20 SCC
@@ -308,7 +335,9 @@ A successful test means:
 - ✅ Error messages are clear and helpful
 
 ### Definition of Done
+
 The vault system is ready for production when:
+
 - [ ] All core functionality tests pass
 - [ ] No critical bugs found
 - [ ] Error messages are clear and helpful

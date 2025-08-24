@@ -128,25 +128,25 @@ For CI/CD pipelines:
 # GitHub Actions example
 - name: Setup
   run: |
-      npm ci
-      npx playwright install chromium
-      npm run synpress:build
+    npm ci
+    npx playwright install chromium
+    npm run synpress:build
 
 - name: Start services
   run: |
-      npx hardhat node &
-      npm run dev &
-      sleep 10
+    npx hardhat node &
+    npm run dev &
+    sleep 10
 
 - name: Deploy and seed
   run: |
-      npx hardhat deploy --network localhost
-      npx hardhat run scripts/dev-environment.js --network localhost
+    npx hardhat deploy --network localhost
+    npx hardhat run scripts/dev-environment.js --network localhost
 
 - name: Run wallet tests
   run: npm run test:wallet
   env:
-      HEADLESS: false # MetaMask requires headed mode
+    HEADLESS: false # MetaMask requires headed mode
 ```
 
 ## Advanced Configuration
@@ -166,10 +166,10 @@ Edit network configuration:
 
 ```typescript
 await metamask.addNetwork({
-    name: "Base Sepolia",
-    rpcUrl: "https://sepolia.base.org",
-    chainId: 84532,
-    symbol: "ETH",
+  name: "Base Sepolia",
+  rpcUrl: "https://sepolia.base.org",
+  chainId: 84532,
+  symbol: "ETH",
 });
 ```
 

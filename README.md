@@ -94,21 +94,23 @@ The EcoStabilizer vault system is deployed on Base Sepolia testnet for client te
 ### For Developers
 
 1. **Deploy Contracts to Testnet**:
-   ```bash
-   npm run deploy:testnet
-   ```
+
+    ```bash
+    npm run deploy:testnet
+    ```
 
 2. **Configure Webapp**:
-   ```bash
-   cd webapp
-   cp .env.example .env.local
-   # Edit .env.local with testnet addresses
-   ```
+
+    ```bash
+    cd webapp
+    cp .env.example .env.local
+    # Edit .env.local with testnet addresses
+    ```
 
 3. **Deploy to Vercel**:
-   ```bash
-   vercel --prod
-   ```
+    ```bash
+    vercel --prod
+    ```
 
 See [QA_GUIDE.md](./QA_GUIDE.md) for detailed testing instructions.
 

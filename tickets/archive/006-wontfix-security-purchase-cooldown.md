@@ -15,7 +15,7 @@ Original proposal suggested a per‑address purchase cooldown to mitigate potent
 ## Scope Decision (MVP)
 
 - Per `SSC_PLAN.md` v0.3, the Vault (Phase 2) is deployed alongside the already‑live `AstaVerde` contract — no changes to `AstaVerde` are in scope:
-  > Vault is deployed alongside the already‑live `AstaVerde` contract (address passed in constructor — no changes to the original code).
+    > Vault is deployed alongside the already‑live `AstaVerde` contract (address passed in constructor — no changes to the original code).
 - Therefore, modifying `AstaVerde` to add a per‑address cooldown is out of scope for the MVP.
 - The Phase 1 design intentionally accepts buyer‑agnostic price adjustments as part of organic price discovery.
 
@@ -36,5 +36,3 @@ This ticket is archived as "won't fix (MVP)" to reflect scope boundaries and the
 ## Original Proposal (for reference)
 
 Implement a per‑address cooldown between batch purchases (or per‑address quick‑sale limits). Note: if adjustable on‑chain, the cooldown cannot be declared `constant`; use a mutable state variable with a setter and event.
-
-

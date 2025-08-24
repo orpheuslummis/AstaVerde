@@ -1,7 +1,9 @@
 # Ticket 109: SUMMARY - External Security Audit Findings Tracker
 
 ## Status: TRACKING
+
 ## Date: 2025-08-24
+
 ## Source: External Security Review
 
 ## Overview
@@ -13,47 +15,48 @@ This ticket tracks all findings from the external security audit of AstaVerde co
 ### ✅ Tracked Issues
 
 1. **#107 - Price Decrease Bypass** (NEW - CRITICAL)
-   - Single token purchase prevents price decreases
-   - Economic manipulation vulnerability
-   - **Status**: OPEN - Requires immediate fix
+    - Single token purchase prevents price decreases
+    - Economic manipulation vulnerability
+    - **Status**: OPEN - Requires immediate fix
 
-2. **#103 - SCC Role Management** (EXISTING - CRITICAL)  
-   - DEFAULT_ADMIN_ROLE must be renounced properly
-   - Can brick system if done incorrectly
-   - **Status**: OPEN - Requires deployment procedure
+2. **#103 - SCC Role Management** (EXISTING - CRITICAL)
+    - DEFAULT_ADMIN_ROLE must be renounced properly
+    - Can brick system if done incorrectly
+    - **Status**: OPEN - Requires deployment procedure
 
 ## Medium Severity Findings
 
 ### ✅ Tracked Issues
 
 1. **#108 - USDC Fee-on-Transfer** (NEW - MEDIUM)
-   - No balance delta verification
-   - Could break accounting with non-canonical tokens
-   - **Status**: OPEN - Should fix for testnet
+    - No balance delta verification
+    - Could break accounting with non-canonical tokens
+    - **Status**: OPEN - Should fix for testnet
 
 2. **#104 - Price Update Gas DoS** (EXISTING - MEDIUM)
-   - Already tracked and partially mitigated
-   - maxPriceUpdateIterations implemented
-   - **Status**: OPEN - Monitor post-deployment
+    - Already tracked and partially mitigated
+    - maxPriceUpdateIterations implemented
+    - **Status**: OPEN - Monitor post-deployment
 
 ### ✅ Acceptable/Documented
 
 1. **Admin Sweep Function** (EcoStabilizer)
-   - Properly restricted, necessary feature
-   - Cannot sweep active loans
-   - **Status**: ACCEPTABLE - Keep as-is
+    - Properly restricted, necessary feature
+    - Cannot sweep active loans
+    - **Status**: ACCEPTABLE - Keep as-is
 
 ## Low Severity Findings
 
 ### ✅ All Acceptable
 
 1. **Remainder Distribution**: First producer gets <1 USDC remainder - minimal impact
-2. **Timestamp Manipulation**: 15s drift negligible for daily boundaries  
+2. **Timestamp Manipulation**: 15s drift negligible for daily boundaries
 3. **Parameter Centralization**: Mitigated by multisig requirement
 
 ## Positive Security Features Confirmed
 
 ✅ **Well Implemented**:
+
 - Reentrancy protection (nonReentrant modifier)
 - CEI pattern throughout
 - Pull payments for producers
@@ -93,7 +96,7 @@ This ticket tracks all findings from the external security audit of AstaVerde co
 [ ] Fix #108 - USDC balance check (testnet)
 [ ] Setup multisig wallets
 
-# Deployment sequence  
+# Deployment sequence
 [ ] Deploy StabilizedCarbonCoin
 [ ] Deploy EcoStabilizer with SCC address
 [ ] Grant MINTER_ROLE to EcoStabilizer
@@ -117,6 +120,7 @@ This ticket tracks all findings from the external security audit of AstaVerde co
 ## Recommendation
 
 **DO NOT DEPLOY TO MAINNET** until:
+
 1. Ticket #107 (price manipulation) is fixed and tested
 2. Ticket #103 deployment procedure is bulletproof
 3. Ticket #108 protection is added for testnet

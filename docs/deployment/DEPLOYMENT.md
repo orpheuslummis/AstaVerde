@@ -136,6 +136,7 @@ The deployment script:
 ### Overview
 
 QA deployments support testing of:
+
 - Single vault configuration (standard)
 - Dual-vault configuration (V1 + V1.1 marketplaces sharing single SCC)
 
@@ -442,6 +443,7 @@ await tx2.wait();
 ### Post-Deployment Verification
 
 #### Contract Verification
+
 - [ ] **SCC deployed**: Address saved and verified on BaseScan
 - [ ] **EcoStabilizer deployed**: Address saved and verified on BaseScan
 - [ ] **Role configuration**: Vault has exclusive MINTER_ROLE on SCC
@@ -449,6 +451,7 @@ await tx2.wait();
 - [ ] **Pause test**: Pause functionality tested then unpaused
 
 #### Integration Testing
+
 - [ ] **Small deposit**: Test with minimal amount (e.g., 1 NFT)
 - [ ] **SCC minting**: Verify 20 SCC minted per deposit
 - [ ] **Withdraw flow**: Complete withdrawal successfully
@@ -456,6 +459,7 @@ await tx2.wait();
 - [ ] **Redeemed check**: Verify redeemed NFTs cannot be deposited
 
 #### Webapp Configuration
+
 - [ ] **Update addresses**: Add deployed addresses to `webapp/.env.local`
 - [ ] **Rebuild webapp**: `cd webapp && npm run build`
 - [ ] **Deploy webapp**: Update production webapp deployment
@@ -547,6 +551,7 @@ npx hardhat run scripts/test-interaction.js --network [network]
 **⚠️ Security Reminder**: Always verify contract addresses and test thoroughly on Sepolia before mainnet deployment. The EcoStabilizer system is immutable once deployed.
 
 **💡 Pro Tips**:
+
 - Use hardware wallet for deployment
 - Save all deployment artifacts securely
 - Consider time-delayed announcement
@@ -554,6 +559,6 @@ npx hardhat run scripts/test-interaction.js --network [network]
 
 ---
 
-*Last Updated: 2025-01-23*
-*Branch: ssc-clean*
-*Version: Phase 2 Implementation (Vault System)*
+_Last Updated: 2025-01-23_
+_Branch: ssc-clean_
+_Version: Phase 2 Implementation (Vault System)_

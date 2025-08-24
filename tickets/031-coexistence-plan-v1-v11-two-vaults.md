@@ -16,21 +16,21 @@ What (Architecture)
 
 How (Steps)
 
-1) Deploy AstaVerde v1.1 (current hardened code)
-2) Deploy SCC (or reuse existing)
-3) Deploy Vault‑V1 (bind v1) and Vault‑V11 (bind v1.1)
-4) Grant SCC `MINTER_ROLE` to both vaults; renounce SCC admin
-5) Set `trustedVault` on v1 (if available) and v1.1
-6) Freeze new batches on v1; mint on v1.1
-7) Update frontend routing and envs; ship
+1. Deploy AstaVerde v1.1 (current hardened code)
+2. Deploy SCC (or reuse existing)
+3. Deploy Vault‑V1 (bind v1) and Vault‑V11 (bind v1.1)
+4. Grant SCC `MINTER_ROLE` to both vaults; renounce SCC admin
+5. Set `trustedVault` on v1 (if available) and v1.1
+6. Freeze new batches on v1; mint on v1.1
+7. Update frontend routing and envs; ship
 
 Frontend routing (minimal)
 
 ```ts
 export function getVaultForAsset(assetAddress: `0x${string}`) {
-  return assetAddress.toLowerCase() === process.env.NEXT_PUBLIC_ASTAVERDE_V1!.toLowerCase()
-    ? (process.env.NEXT_PUBLIC_ECOSTABILIZER_V1 as `0x${string}`)
-    : (process.env.NEXT_PUBLIC_ECOSTABILIZER_V11 as `0x${string}`);
+    return assetAddress.toLowerCase() === process.env.NEXT_PUBLIC_ASTAVERDE_V1!.toLowerCase()
+        ? (process.env.NEXT_PUBLIC_ECOSTABILIZER_V1 as `0x${string}`)
+        : (process.env.NEXT_PUBLIC_ECOSTABILIZER_V11 as `0x${string}`);
 }
 ```
 
@@ -64,5 +64,3 @@ Checklist
 - [ ] Primary market UI points to AstaVerde v1.1 only
 - [ ] Webapp env configured for V1/V1.1 + both vaults + SCC
 - [ ] Per‑token vault routing implemented in frontend
-
-

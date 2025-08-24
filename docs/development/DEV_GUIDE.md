@@ -26,6 +26,7 @@ astaverde/
 ```
 
 ### Generated Directories (git-ignored)
+
 - `artifacts/` - Compilation artifacts
 - `cache/` - Hardhat cache
 - `types/` - TypeScript type definitions
@@ -35,6 +36,7 @@ astaverde/
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+ and npm
 - Git
 - MetaMask or compatible wallet (for webapp testing)
@@ -100,6 +102,7 @@ npm run type-check
 ```
 
 ### Key Webapp Features
+
 - **Wallet Integration**: ConnectKit for multi-wallet support
 - **Contract Interaction**: Wagmi hooks for blockchain calls
 - **State Management**: TanStack Query for caching
@@ -110,6 +113,7 @@ npm run type-check
 ### Environment Variables
 
 **.env (root)**
+
 ```bash
 # Deployment
 PRIVATE_KEY=0xac09...  # Deployer private key
@@ -122,6 +126,7 @@ SCC_ADDR=0x...        # SCC token address
 ```
 
 **webapp/.env.local**
+
 ```bash
 # Chain selection
 NEXT_PUBLIC_CHAIN=localhost  # or baseSepolia, base
@@ -137,6 +142,7 @@ NEXT_PUBLIC_IPFS_GATEWAY=https://gateway.pinata.cloud
 ### Network Configuration
 
 Supported networks configured in `hardhat.config.ts`:
+
 - **localhost**: Local Hardhat node
 - **baseSepolia**: Base testnet
 - **base**: Base mainnet
@@ -144,6 +150,7 @@ Supported networks configured in `hardhat.config.ts`:
 ## 📦 Module Guidelines
 
 ### Smart Contracts
+
 - Solidity 0.8.27 with optimizer enabled
 - Use OpenZeppelin contracts where applicable
 - Follow checks-effects-interactions pattern
@@ -151,6 +158,7 @@ Supported networks configured in `hardhat.config.ts`:
 - Gas optimization targets: <165k deposit, <120k withdraw
 
 ### Testing
+
 - Place tests in `test/` directory
 - Use TypeScript for type safety
 - Follow AAA pattern (Arrange, Act, Assert)
@@ -158,6 +166,7 @@ Supported networks configured in `hardhat.config.ts`:
 - Cover edge cases and security scenarios
 
 ### Frontend
+
 - Use Next.js App Router (not Pages)
 - Implement proper loading and error states
 - Follow React best practices and hooks rules
@@ -165,6 +174,7 @@ Supported networks configured in `hardhat.config.ts`:
 - Handle wallet disconnection gracefully
 
 ### Scripts
+
 - Place in `scripts/` for utilities
 - Use `tasks/` for Hardhat tasks
 - Include help text and examples
@@ -174,6 +184,7 @@ Supported networks configured in `hardhat.config.ts`:
 ## 🔄 Git Workflow
 
 ### Branch Strategy
+
 - `main` - Production-ready code
 - `develop` - Integration branch
 - `feature/*` - New features
@@ -181,6 +192,7 @@ Supported networks configured in `hardhat.config.ts`:
 - `test/*` - Test implementations
 
 ### Commit Convention
+
 ```bash
 type: subject
 
@@ -195,6 +207,7 @@ type: subject
 ```
 
 ### Pre-commit Checks
+
 ```bash
 npm run lint          # Lint all code
 npm run prettier:check # Check formatting
@@ -222,6 +235,7 @@ npm run build:all     # Verify builds
 ### Updating Contract Interfaces
 
 After contract changes:
+
 ```bash
 npm run compile  # Regenerates ABIs and types
 # ABIs are auto-copied to webapp/src/config/
@@ -230,6 +244,7 @@ npm run compile  # Regenerates ABIs and types
 ## 🐛 Debugging
 
 ### Contract Debugging
+
 ```bash
 # Run specific test
 npx hardhat test test/EcoStabilizer.ts
@@ -243,31 +258,35 @@ console.log("Value:", value);
 ```
 
 ### Webapp Debugging
+
 ```javascript
 // Enable debug mode in browser console
-localStorage.setItem('DEBUG', 'true');
+localStorage.setItem("DEBUG", "true");
 
 // Check wallet connection
-window.ethereum.selectedAddress
+window.ethereum.selectedAddress;
 
 // Verify contract deployment
-await provider.getCode(contractAddress)
+await provider.getCode(contractAddress);
 ```
 
 ### Common Issues
 
 **Issue**: "Cannot find module"
+
 ```bash
 npm run clean && npm install
 ```
 
 **Issue**: "Nonce too high"
+
 ```bash
 npx hardhat clean
 # Restart Hardhat node
 ```
 
 **Issue**: "Gas estimation failed"
+
 - Check contract is deployed
 - Verify correct network
 - Ensure sufficient balance
@@ -275,12 +294,14 @@ npx hardhat clean
 ## 📊 Performance Guidelines
 
 ### Gas Targets
+
 - Mint batch: <500k gas
 - Buy NFT: <250k gas
 - Vault deposit: <165k gas
 - Vault withdraw: <120k gas
 
 ### Frontend Performance
+
 - Lighthouse score: >90
 - Initial load: <3s
 - Time to interactive: <2s

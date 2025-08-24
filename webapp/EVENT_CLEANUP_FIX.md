@@ -3,6 +3,7 @@
 ## Issue #036: Memory Leak Prevention
 
 ### Problem
+
 Custom event listeners for `astaverde:refetch` were being added but potentially not cleaned up properly, which could cause memory leaks in long-running sessions.
 
 ### Solution Implemented
@@ -46,14 +47,18 @@ Custom event listeners for `astaverde:refetch` were being added but potentially 
 
 ```typescript
 // Using the generic hook
-import { useGlobalEvent } from '@/hooks/useGlobalEvent';
+import { useGlobalEvent } from "@/hooks/useGlobalEvent";
 
-useGlobalEvent('custom:event', (event) => {
-  console.log('Event received:', event);
-}, []);
+useGlobalEvent(
+  "custom:event",
+  (event) => {
+    console.log("Event received:", event);
+  },
+  [],
+);
 
 // Using the specialized refetch hook
-import { useAstaVerdeRefetch } from '@/hooks/useGlobalEvent';
+import { useAstaVerdeRefetch } from "@/hooks/useGlobalEvent";
 
 useAstaVerdeRefetch(() => {
   // Handle refetch
@@ -61,7 +66,7 @@ useAstaVerdeRefetch(() => {
 }, [refetchData]);
 
 // Dispatching the event
-import { dispatchRefetch } from '@/hooks/useGlobalEvent';
+import { dispatchRefetch } from "@/hooks/useGlobalEvent";
 
 const handleSuccess = () => {
   // ... success logic
@@ -72,6 +77,7 @@ const handleSuccess = () => {
 ### Testing
 
 A test script is provided at `webapp/test-event-cleanup.js` that can be run in the browser console to verify:
+
 1. Event dispatch works correctly
 2. Event listeners are properly removed
 3. No memory leaks occur

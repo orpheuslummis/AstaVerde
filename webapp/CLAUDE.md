@@ -6,14 +6,13 @@ This file provides guidance to Claude Code when working with the AstaVerde webap
 
 The webapp is a Next.js 14 application using TypeScript, Tailwind CSS, and Web3 integration via wagmi/viem. It serves as the frontend for the AstaVerde carbon offset NFT marketplace with producer dashboard and admin controls.
 
-
 ## Linting and Formatting
 
 ```bash
 # Check for issues
 npm run lint
 
-# Fix auto-fixable issues  
+# Fix auto-fixable issues
 npm run lint:fix
 
 # TypeScript check
@@ -64,6 +63,7 @@ npm run test:wallet      # Synpress wallet tests
 ## Environment Variables
 
 Required in `webapp/.env.local`:
+
 ```
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
 NEXT_PUBLIC_CHAIN_ID=84532  # Base Sepolia
@@ -74,6 +74,7 @@ NEXT_PUBLIC_USDC_DECIMALS=6
 ## Contract Integration
 
 ### Updated Features
+
 - `claimProducerFunds()` - Producer payment claims
 - `getProducerBalance()` - Check claimable balance
 - `setMaxPriceUpdateIterations()` - Gas optimization control
@@ -81,15 +82,16 @@ NEXT_PUBLIC_USDC_DECIMALS=6
 - `producerBalances` mapping - Track accrued payments
 
 ### Key Patterns
+
 ```typescript
 // Producer detection
-import { useIsProducer } from '@/hooks/useIsProducer';
+import { useIsProducer } from "@/hooks/useIsProducer";
 
 // Contract interaction
-import { useContractInteraction } from '@/hooks/useContractInteraction';
+import { useContractInteraction } from "@/hooks/useContractInteraction";
 
 // Toast notifications
-import { customToast } from '@/utils/customToast';
+import { customToast } from "@/utils/customToast";
 ```
 
 ## Before Committing
