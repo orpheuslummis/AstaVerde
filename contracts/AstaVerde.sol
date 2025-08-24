@@ -45,6 +45,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     using SafeERC20 for IERC20;
 
     IERC20 public immutable usdcToken;
+    address public constant BASE_MAINNET_USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     uint256 constant USDC_PRECISION = 1e6;
     uint256 public constant SECONDS_IN_A_DAY = 86400;
     uint256 public constant PRICE_WINDOW = 90 days;
@@ -161,6 +162,11 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             require(decimals == 6, "Token must have 6 decimals for USDC compatibility");
         } catch {
             revert("Token must support decimals()==6");
+        }
+
+        // Enforce canonical USDC address on Base mainnet
+        if (block.chainid == 8453) {
+            require(address(_usdcToken) == BASE_MAINNET_USDC, "Invalid USDC address for Base mainnet");
         }
 
         platformSharePercentage = 30;
