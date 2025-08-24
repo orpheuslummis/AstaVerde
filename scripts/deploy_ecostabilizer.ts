@@ -210,11 +210,9 @@ async function main() {
 
         // Check vault constants
         const sccPerAsset = await ecoStabilizer.SCC_PER_ASSET();
-        const maxScanRange = await ecoStabilizer.maxScanRange();
 
         console.log("🔍 Vault configuration:");
         console.log("- SCC per asset:", ethers.formatEther(sccPerAsset));
-        console.log("- Max scan range:", maxScanRange.toString());
 
         // Critical security verification
         const MINTER_ROLE = await scc.MINTER_ROLE();
@@ -262,7 +260,6 @@ async function main() {
     const sccPerAsset = await ecoStabilizer.SCC_PER_ASSET();
     const sccDecimals = await scc.decimals();
     const maxSupply = await scc.MAX_SUPPLY();
-    const maxScanRange = await ecoStabilizer.maxScanRange();
 
     const deploymentInfo = {
         network: {
@@ -284,7 +281,7 @@ async function main() {
             SCC_PER_ASSET: ethers.formatEther(sccPerAsset),
             SCC_DECIMALS: sccDecimals.toString(),
             MAX_SUPPLY: ethers.formatEther(maxSupply),
-            MAX_SCAN_RANGE: maxScanRange.toString(),
+            // maxScanRange removed in indexed design
         },
         security: {
             deployerRolesRenounced: true,
