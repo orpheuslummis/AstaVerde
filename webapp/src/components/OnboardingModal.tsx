@@ -1,6 +1,6 @@
 "use client";
 
-import { CurrencyDollarIcon, InformationCircleIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { CurrencyDollarIcon, InformationCircleIcon, ShieldCheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 
 export function OnboardingModal() {
@@ -8,15 +8,15 @@ export function OnboardingModal() {
 
   useEffect(() => {
     // Skip modal in test environments
-    const isTestEnvironment = 
+    const isTestEnvironment =
       typeof window !== "undefined" && (
-        window.Cypress || 
+        window.Cypress ||
         (window as unknown as { __PLAYWRIGHT__?: boolean }).__PLAYWRIGHT__ || // Add Playwright detection
-        process.env.NODE_ENV === 'test' ||
+        process.env.NODE_ENV === "test" ||
         localStorage.getItem("e2e-testing") === "true" ||
         localStorage.getItem("skipOnboarding") === "true"
       );
-    
+
     if (isTestEnvironment) {
       setShowModal(false);
     } else {
@@ -34,7 +34,7 @@ export function OnboardingModal() {
   if (!showModal) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4"
       data-fixed-overlay="true"
       suppressHydrationWarning
@@ -57,26 +57,26 @@ export function OnboardingModal() {
                 {
                   icon: <ShieldCheckIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "Web3 Powered Security",
-                  description: "AstaVerde operates on secure blockchain technology. Connect your crypto wallet to participate and ensure the safety of your transactions."
+                  description: "AstaVerde operates on secure blockchain technology. Connect your crypto wallet to participate and ensure the safety of your transactions.",
                 },
                 {
                   icon: <CurrencyDollarIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "USDC Transactions",
                   description: "We use Base native USDC for all transactions. Ensure your wallet is compatible and funded.",
-                  link: { text: "Learn more about Base and USDC", href: "#" }
+                  link: { text: "Learn more about Base and USDC", href: "#" },
                 },
                 {
                   icon: <InformationCircleIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "Understanding Eco Assets",
                   description: "Eco Assets represent real environmental impact. Once redeemed, they're recorded in your wallet and lose their tradable value.",
-                  link: { text: "Explore Eco Assets", href: "#" }
+                  link: { text: "Explore Eco Assets", href: "#" },
                 },
                 {
                   icon: <ShieldCheckIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "Your Responsibilities",
                   description: "Trading Eco Assets may have tax implications. You're responsible for complying with local regulations.",
-                  link: { text: "Read our Terms of Service", href: "#" }
-                }
+                  link: { text: "Read our Terms of Service", href: "#" },
+                },
               ].map((item, index) => (
                 <section key={index} className="flex items-start space-x-4 bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md">
                   {item.icon}

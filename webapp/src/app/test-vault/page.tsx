@@ -20,9 +20,9 @@ export default function TestVaultPage() {
 
   const checkApproval = async () => {
     if (!publicClient || !address) return;
-    
+
     addLog("Checking NFT approval for vault...");
-    
+
     try {
       const isApproved = await publicClient.readContract({
         address: ASTAVERDE_ADDRESS,
@@ -30,7 +30,7 @@ export default function TestVaultPage() {
         functionName: "isApprovedForAll",
         args: [address, VAULT_ADDRESS],
       });
-      
+
       addLog(`NFT approval status: ${isApproved ? "✅ Approved" : "❌ Not approved"}`);
       return isApproved;
     } catch (error) {
@@ -41,9 +41,9 @@ export default function TestVaultPage() {
 
   const approveVault = async () => {
     if (!walletClient || !address) return;
-    
+
     addLog("Approving vault for NFTs...");
-    
+
     try {
       const hash = await walletClient.writeContract({
         address: ASTAVERDE_ADDRESS,
@@ -52,9 +52,9 @@ export default function TestVaultPage() {
         args: [VAULT_ADDRESS, true],
         account: address,
       });
-      
+
       addLog(`Approval tx sent: ${hash}`);
-      
+
       if (publicClient) {
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
         addLog(`✅ Approval confirmed in block ${receipt.blockNumber}`);
@@ -66,9 +66,9 @@ export default function TestVaultPage() {
 
   const checkBalance = async () => {
     if (!publicClient || !address) return;
-    
+
     addLog("Checking NFT balances...");
-    
+
     try {
       for (let tokenId = 1; tokenId <= 3; tokenId++) {
         const balance = await publicClient.readContract({
@@ -77,7 +77,7 @@ export default function TestVaultPage() {
           functionName: "balanceOf",
           args: [address, BigInt(tokenId)],
         }) as bigint;
-        
+
         if (balance > 0n) {
           addLog(`Token #${tokenId}: ${balance} owned`);
         }
@@ -89,19 +89,19 @@ export default function TestVaultPage() {
 
   const depositToken = async (tokenId: number) => {
     if (!walletClient || !publicClient || !address) return;
-    
+
     addLog(`Attempting to deposit token #${tokenId}...`);
-    
+
     // First check if approved
     const isApproved = await checkApproval();
     if (!isApproved) {
       addLog("Need to approve vault first!");
       await approveVault();
     }
-    
+
     try {
       addLog(`Calling vault.deposit(${tokenId})...`);
-      
+
       const hash = await walletClient.writeContract({
         address: VAULT_ADDRESS,
         abi: ecoStabilizerAbi.abi,
@@ -109,13 +109,13 @@ export default function TestVaultPage() {
         args: [BigInt(tokenId)],
         account: address,
       });
-      
+
       addLog(`Deposit tx sent: ${hash}`);
-      
+
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       addLog(`✅ Deposit confirmed in block ${receipt.blockNumber}`);
       addLog("Successfully deposited! You should have received 20 SCC.");
-      
+
     } catch (error) {
       addLog(`❌ Deposit error: ${error.message}`);
       if (error.cause) {
@@ -127,35 +127,35 @@ export default function TestVaultPage() {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Test Vault Operations</h1>
-      
+
       <div className="mb-4">
         <p>Wallet: {address || "Not connected"}</p>
         <p>Vault: {VAULT_ADDRESS}</p>
       </div>
 
       <div className="flex gap-2 mb-4">
-        <button 
+        <button
           onClick={checkBalance}
           className="px-4 py-2 bg-blue-500 text-white rounded"
         >
           Check NFT Balance
         </button>
-        
-        <button 
+
+        <button
           onClick={checkApproval}
           className="px-4 py-2 bg-yellow-500 text-white rounded"
         >
           Check Approval
         </button>
-        
-        <button 
+
+        <button
           onClick={approveVault}
           className="px-4 py-2 bg-green-500 text-white rounded"
         >
           Approve Vault
         </button>
-        
-        <button 
+
+        <button
           onClick={() => depositToken(2)}
           className="px-4 py-2 bg-purple-500 text-white rounded"
         >

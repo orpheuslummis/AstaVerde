@@ -23,7 +23,7 @@ export default function SimpleApprovePage() {
     try {
       // Build the transaction manually
       const amount = parseUnits("100", 6);
-      
+
       // Encode the function call
       const functionSelector = "0x095ea7b3";
       const spenderPadded = ASTAVERDE_ADDRESS.slice(2).padStart(64, "0");
@@ -33,7 +33,7 @@ export default function SimpleApprovePage() {
       console.log("Transaction data:", {
         to: USDC_ADDRESS,
         from: address,
-        data: data
+        data: data,
       });
 
       // Send the transaction directly
@@ -43,12 +43,12 @@ export default function SimpleApprovePage() {
           from: address,
           to: USDC_ADDRESS,
           data: data,
-          gas: "0x30000" // 196608 in decimal
-        }]
+          gas: "0x30000", // 196608 in decimal
+        }],
       });
 
       setStatus(`Transaction sent: ${txHash}`);
-      
+
       // Wait for confirmation
       let receipt = null;
       let attempts = 0;
@@ -56,7 +56,7 @@ export default function SimpleApprovePage() {
         await new Promise(resolve => setTimeout(resolve, 1000));
         receipt = await window.ethereum.request({
           method: "eth_getTransactionReceipt",
-          params: [txHash]
+          params: [txHash],
         });
         attempts++;
       }
@@ -76,14 +76,14 @@ export default function SimpleApprovePage() {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Simple Approve Test</h1>
-      
+
       <div className="mb-4">
         <p>Wallet: {address || "Not connected"}</p>
         <p>USDC: {USDC_ADDRESS}</p>
         <p>Spender: {ASTAVERDE_ADDRESS}</p>
       </div>
 
-      <button 
+      <button
         onClick={testApprove}
         className="px-4 py-2 bg-green-500 text-white rounded mb-4"
         disabled={!address}

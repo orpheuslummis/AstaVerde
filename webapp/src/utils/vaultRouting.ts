@@ -21,7 +21,7 @@ export const VAULT_CONFIGS: Record<string, VaultConfig> = {
 
 export function getVaultForAsset(assetAddress: string): VaultConfig | null {
   const normalizedAddress = assetAddress.toLowerCase();
-  
+
   if (!normalizedAddress || normalizedAddress === "0x0") {
     return null;
   }
@@ -29,11 +29,11 @@ export function getVaultForAsset(assetAddress: string): VaultConfig | null {
   if (normalizedAddress === ENV.ASTAVERDE_ADDRESS?.toLowerCase()) {
     return VAULT_CONFIGS.V1;
   }
-  
+
   if (normalizedAddress === ENV.ASTAVERDE_V11_ADDRESS?.toLowerCase()) {
     return VAULT_CONFIGS.V11;
   }
-  
+
   return null;
 }
 

@@ -101,14 +101,14 @@ export default function DebugApprovePage() {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Debug Approve Transaction</h1>
-      
+
       <div className="mb-4">
         <p>Wallet: {address || "Not connected"}</p>
         <p>USDC: {USDC_ADDRESS}</p>
         <p>AstaVerde: {ASTAVERDE_ADDRESS}</p>
       </div>
 
-      <button 
+      <button
         onClick={testApprove}
         className="px-4 py-2 bg-blue-500 text-white rounded mb-4"
         disabled={!walletClient}

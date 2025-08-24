@@ -1,15 +1,14 @@
-'use client';
+"use client";
 
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { astaverdeContractConfig } from '@/lib/contracts';
-import { formatUnits } from 'viem';
-import { useState, useEffect } from 'react';
-import { customToast } from '@/utils/customToast';
-import { useRouter } from 'next/navigation';
-import { useIsProducer } from '@/hooks/useIsProducer';
-import Loader from '@/components/Loader';
-
-const USDC_DECIMALS = 6;
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { astaverdeContractConfig } from "@/lib/contracts";
+import { formatUnits } from "viem";
+import { useState, useEffect } from "react";
+import { customToast } from "@/utils/customToast";
+import { useRouter } from "next/navigation";
+import { useIsProducer } from "@/hooks/useIsProducer";
+import Loader from "@/components/Loader";
+import { ENV } from "@/config/environment";
 
 export default function ProducerDashboard() {
   const router = useRouter();
@@ -20,13 +19,13 @@ export default function ProducerDashboard() {
   // Get total producer balances for context
   const { data: totalProducerBalances } = useReadContract({
     ...astaverdeContractConfig,
-    functionName: 'totalProducerBalances',
+    functionName: "totalProducerBalances",
   });
 
   // Get platform share accumulated for comparison
   const { data: platformShareAccumulated } = useReadContract({
     ...astaverdeContractConfig,
-    functionName: 'platformShareAccumulated',
+    functionName: "platformShareAccumulated",
   });
 
   // Write contract for claiming funds
@@ -40,15 +39,15 @@ export default function ProducerDashboard() {
   // Redirect non-producers
   useEffect(() => {
     if (!isCheckingProducer && isConnected && !isProducer) {
-      customToast.error('This page is only accessible to producers');
-      router.push('/');
+      customToast.error("This page is only accessible to producers");
+      router.push("/");
     }
   }, [isCheckingProducer, isConnected, isProducer, router]);
 
   // Handle successful claim
   useEffect(() => {
     if (isSuccess && isClaiming) {
-      customToast.success('Funds claimed successfully!');
+      customToast.success("Funds claimed successfully!");
       setIsClaiming(false);
       refetchProducerStatus();
     }
@@ -57,14 +56,14 @@ export default function ProducerDashboard() {
   // Handle claim errors
   useEffect(() => {
     if (error) {
-      customToast.error(error.message || 'Failed to claim funds');
+      customToast.error(error.message || "Failed to claim funds");
       setIsClaiming(false);
     }
   }, [error]);
 
   const handleClaimFunds = async () => {
     if (!producerBalance || producerBalance === 0n) {
-      customToast.error('No funds to claim');
+      customToast.error("No funds to claim");
       return;
     }
 
@@ -72,12 +71,12 @@ export default function ProducerDashboard() {
       setIsClaiming(true);
       writeContract({
         ...astaverdeContractConfig,
-        functionName: 'claimProducerFunds',
+        functionName: "claimProducerFunds",
         args: [],
       });
     } catch (err) {
-      console.error('Error claiming funds:', err);
-      customToast.error('Failed to initiate claim');
+      console.error("Error claiming funds:", err);
+      customToast.error("Failed to initiate claim");
       setIsClaiming(false);
     }
   };
@@ -115,21 +114,21 @@ export default function ProducerDashboard() {
     );
   }
 
-  const formattedBalance = producerBalance ? formatUnits(producerBalance as bigint, USDC_DECIMALS) : '0';
-  const formattedTotalProducer = totalProducerBalances ? formatUnits(totalProducerBalances as bigint, USDC_DECIMALS) : '0';
-  const formattedPlatform = platformShareAccumulated ? formatUnits(platformShareAccumulated as bigint, USDC_DECIMALS) : '0';
+  const formattedBalance = producerBalance ? formatUnits(producerBalance as bigint, ENV.USDC_DECIMALS) : "0";
+  const formattedTotalProducer = totalProducerBalances ? formatUnits(totalProducerBalances as bigint, ENV.USDC_DECIMALS) : "0";
+  const formattedPlatform = platformShareAccumulated ? formatUnits(platformShareAccumulated as bigint, ENV.USDC_DECIMALS) : "0";
 
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold mb-8 text-center">Producer Dashboard</h1>
-        
+
         {/* Main Balance Card */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
           <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-200">
             Your Claimable Balance
           </h2>
-          
+
           <div className="flex items-center justify-between mb-8">
             <div>
               <p className="text-5xl font-bold text-emerald-600 dark:text-emerald-400">
@@ -139,23 +138,23 @@ export default function ProducerDashboard() {
                 Available for withdrawal
               </p>
             </div>
-            
+
             <button
               onClick={handleClaimFunds}
               disabled={!producerBalance || (producerBalance as bigint) === 0n || isPending || isConfirming}
               className={`px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200
                 ${producerBalance && (producerBalance as bigint) > 0n && !isPending && !isConfirming
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
-                  : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                }`}
+      ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+      : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+    }`}
             >
               {isPending || isConfirming ? (
                 <span className="flex items-center gap-2">
                   <Loader />
-                  {isConfirming ? 'Confirming...' : 'Processing...'}
+                  {isConfirming ? "Confirming..." : "Processing..."}
                 </span>
               ) : (
-                'Claim Funds'
+                "Claim Funds"
               )}
             </button>
           </div>
@@ -167,10 +166,10 @@ export default function ProducerDashboard() {
                 Your share of total producer balances
               </p>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                <div 
+                <div
                   className="bg-emerald-600 dark:bg-emerald-400 h-3 rounded-full transition-all duration-500"
-                  style={{ 
-                    width: `${Math.min(100, (Number(producerBalance) / Number(totalProducerBalances)) * 100)}%` 
+                  style={{
+                    width: `${Math.min(100, (Number(producerBalance) / Number(totalProducerBalances)) * 100)}%`,
                   }}
                 />
               </div>
@@ -241,7 +240,7 @@ export default function ProducerDashboard() {
 
         {/* Connected Wallet Info */}
         <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-          Connected as: {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Not connected'}
+          Connected as: {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Not connected"}
         </div>
       </div>
     </div>

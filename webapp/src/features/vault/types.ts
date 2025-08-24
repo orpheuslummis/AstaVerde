@@ -13,8 +13,8 @@ export interface VaultStats {
 }
 
 export interface VaultTransaction {
-    type: 'deposit' | 'withdraw' | 'approve';
-    status: 'pending' | 'success' | 'error';
+    type: "deposit" | "withdraw" | "approve";
+    status: "pending" | "success" | "error";
     hash?: string;
     error?: string;
 }

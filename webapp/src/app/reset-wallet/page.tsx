@@ -8,11 +8,11 @@ export default function ResetWalletPage() {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Fix MetaMask Nonce Issue</h1>
-      
+
       <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
         <p className="font-bold mb-2">⚠️ MetaMask Nonce Out of Sync</p>
         <p className="mb-4">Your MetaMask wallet&apos;s transaction count is out of sync with the local Hardhat node.</p>
-        
+
         <p className="font-bold mb-2">To fix this issue:</p>
         <ol className="list-decimal list-inside space-y-2">
           <li>Open MetaMask</li>
@@ -22,7 +22,7 @@ export default function ResetWalletPage() {
           <li>Click &quot;Clear&quot; button</li>
           <li>Confirm the action</li>
         </ol>
-        
+
         <p className="mt-4 font-bold">Alternative method:</p>
         <ol className="list-decimal list-inside space-y-2">
           <li>Open MetaMask</li>

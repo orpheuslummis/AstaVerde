@@ -12,30 +12,30 @@ const ERC20_ABI = [
   {
     inputs: [
       { name: "spender", type: "address" },
-      { name: "amount", type: "uint256" }
+      { name: "amount", type: "uint256" },
     ],
     name: "approve",
     outputs: [{ name: "", type: "bool" }],
     stateMutability: "nonpayable",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [{ name: "account", type: "address" }],
     name: "balanceOf",
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
-    type: "function"
+    type: "function",
   },
   {
     inputs: [
       { name: "owner", type: "address" },
-      { name: "spender", type: "address" }
+      { name: "spender", type: "address" },
     ],
     name: "allowance",
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
-    type: "function"
-  }
+    type: "function",
+  },
 ];
 
 export default function TestPage() {
@@ -48,7 +48,7 @@ export default function TestPage() {
 
   const checkBalance = async () => {
     if (!publicClient || !address) return;
-    
+
     try {
       const bal = await publicClient.readContract({
         address: USDC_ADDRESS,
@@ -65,7 +65,7 @@ export default function TestPage() {
 
   const checkAllowance = async () => {
     if (!publicClient || !address) return;
-    
+
     try {
       const allow = await publicClient.readContract({
         address: USDC_ADDRESS,
@@ -82,12 +82,12 @@ export default function TestPage() {
 
   const testApprove = async () => {
     if (!walletClient || !address) return;
-    
+
     setStatus("Approving...");
-    
+
     try {
       const amount = parseUnits("1000", 6);
-      
+
       const hash = await walletClient.writeContract({
         address: USDC_ADDRESS,
         abi: ERC20_ABI,
@@ -95,9 +95,9 @@ export default function TestPage() {
         args: [ASTAVERDE_ADDRESS, amount],
         account: address,
       });
-      
+
       setStatus(`Transaction sent: ${hash}`);
-      
+
       if (publicClient) {
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
         setStatus(`Success! Block: ${receipt.blockNumber}`);
@@ -112,7 +112,7 @@ export default function TestPage() {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Contract Test Page</h1>
-      
+
       <div className="mb-4">
         <p>Connected: {address || "Not connected"}</p>
         <p>USDC Address: {USDC_ADDRESS}</p>
@@ -125,21 +125,21 @@ export default function TestPage() {
       </div>
 
       <div className="flex gap-4 mb-4">
-        <button 
+        <button
           onClick={checkBalance}
           className="px-4 py-2 bg-blue-500 text-white rounded"
         >
           Check Balance
         </button>
-        
-        <button 
+
+        <button
           onClick={checkAllowance}
           className="px-4 py-2 bg-green-500 text-white rounded"
         >
           Check Allowance
         </button>
-        
-        <button 
+
+        <button
           onClick={testApprove}
           className="px-4 py-2 bg-purple-500 text-white rounded"
         >

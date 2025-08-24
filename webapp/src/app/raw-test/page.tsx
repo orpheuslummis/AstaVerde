@@ -23,7 +23,7 @@ export default function RawTestPage() {
       const spender = "000000000000000000000000a51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0";
       // Encode amount (1000 USDC = 1000000000 in 6 decimals)
       const amount = "000000000000000000000000000000000000000000000000000000003b9aca00";
-      
+
       const data = functionSelector + spender + amount;
 
       const txParams = {
@@ -79,20 +79,20 @@ export default function RawTestPage() {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Raw Transaction Test</h1>
-      
+
       <div className="mb-4">
         <p>Connected: {address || "Not connected"}</p>
       </div>
 
       <div className="flex gap-4 mb-4">
-        <button 
+        <button
           onClick={testEthCall}
           className="px-4 py-2 bg-blue-500 text-white rounded"
         >
           Test eth_call (Balance)
         </button>
-        
-        <button 
+
+        <button
           onClick={testRawApprove}
           className="px-4 py-2 bg-red-500 text-white rounded"
         >

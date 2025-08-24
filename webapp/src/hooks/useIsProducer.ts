@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useAccount, useReadContract } from 'wagmi';
-import { astaverdeContractConfig } from '@/lib/contracts';
-import { useMemo } from 'react';
+import { useAccount, useReadContract } from "wagmi";
+import { astaverdeContractConfig } from "@/lib/contracts";
+import { useMemo } from "react";
 
 /**
  * Hook to determine if the connected wallet is a producer
@@ -14,7 +14,7 @@ export function useIsProducer() {
   // Check producer balance
   const { data: producerBalance, isLoading, refetch } = useReadContract({
     ...astaverdeContractConfig,
-    functionName: 'producerBalances',
+    functionName: "producerBalances",
     args: address ? [address] : undefined,
     query: {
       enabled: isConnected && !!address,

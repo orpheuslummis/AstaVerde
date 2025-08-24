@@ -59,6 +59,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
         !error?.message?.includes("User denied") &&
         !error?.cause?.name?.includes("UserRejected")
       ) {
+        // eslint-disable-next-line no-console
         console.error("Error in approve and buy process:", error);
       }
     }

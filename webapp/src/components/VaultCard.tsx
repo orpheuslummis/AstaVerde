@@ -23,10 +23,10 @@ interface VaultCardProps {
 
 export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCompact = true, assetAddress }: VaultCardProps) {
   const { address } = useAccount();
-  
+
   // Determine asset address - default to V1 if not provided
   const effectiveAssetAddress = assetAddress || ENV.ASTAVERDE_ADDRESS;
-  
+
   const {
     deposit,
     withdraw,
@@ -72,6 +72,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
 
         setLoanData(data as [string, boolean]);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Error fetching loan data:", error);
       } finally {
         setIsLoadingLoan(false);
@@ -79,7 +80,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     };
 
     fetchLoanData();
-  }, [tokenIdStr, isVaultAvailable]);
+  }, [tokenIdStr, isVaultAvailable, effectiveAssetAddress]);
 
   const loanInfo = loanData;
   const isInVault = loanInfo ? loanInfo[1] : false;
@@ -98,6 +99,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         setSccAllowance(allowance);
         setIsApproved(allowance >= parseEther("20"));
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Error fetching SCC balance/allowance:", error);
       }
     };
@@ -113,6 +115,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         const approved = await getIsNftApproved();
         setIsNftApproved(approved);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Error checking NFT approval:", error);
       }
     };
@@ -155,6 +158,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         setSccBalance(newBalance);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Deposit error:", error);
       // Check if user cancelled the transaction
       if (error?.message?.includes("User rejected") || error?.message?.includes("User denied")) {
@@ -213,6 +217,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         setSccBalance(newBalance);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Withdraw error:", error);
       // Check if user cancelled the transaction
       if (error?.message?.includes("User rejected") || error?.message?.includes("User denied")) {
@@ -275,7 +280,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         <button
           onClick={handleWithdraw}
           disabled={isWithdrawLoading || vaultLoading || sccBalance < parseEther("20")}
-          className="px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 
+          className="px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400
                    text-white text-xs rounded-md transition-colors min-w-[100px]"
           title={
             sccBalance < parseEther("20") ? "You need 20 SCC to withdraw" : "Withdraw NFT from vault (requires 20 SCC)"
@@ -296,7 +301,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       <button
         onClick={handleDeposit}
         disabled={isDepositLoading || vaultLoading}
-        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 
+        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400
                  text-white text-xs rounded-md transition-colors min-w-[100px]"
         title="Deposit NFT to vault to earn 20 SCC"
       >
@@ -312,7 +317,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         <h3 className="font-semibold text-gray-900 dark:text-white">Vault Operations</h3>
         {isInVault && (
           <span
-            className="px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 
+            className="px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-800
                          dark:bg-emerald-900 dark:text-emerald-200 rounded-full"
           >
             In Vault
@@ -360,7 +365,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
               data-testid="withdraw-button"
               onClick={handleWithdraw}
               disabled={isWithdrawLoading || vaultLoading || showTxStatus || sccBalance < parseEther("20")}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg 
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg
                        hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed
                        transition-colors duration-200"
             >
@@ -388,7 +393,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
             data-testid="deposit-button"
             onClick={handleDeposit}
             disabled={isDepositLoading || vaultLoading || showTxStatus}
-            className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg 
+            className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg
                      hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed
                      transition-colors duration-200"
           >

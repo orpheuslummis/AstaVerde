@@ -6,10 +6,10 @@ export { useBatchOperations } from "./hooks/useBatchOperations";
 
 // Types
 export type {
-    BatchCardProps,
-    TokenData,
-    TokenMetadata,
-    BatchData,
-    RedeemTokensButtonProps,
-    MarketplaceOperations,
+  BatchCardProps,
+  TokenData,
+  TokenMetadata,
+  BatchData,
+  RedeemTokensButtonProps,
+  MarketplaceOperations,
 } from "./types";

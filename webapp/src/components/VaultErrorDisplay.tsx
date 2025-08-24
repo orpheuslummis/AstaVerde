@@ -1,6 +1,6 @@
-import React from 'react';
-import { VaultErrorState } from '../utils/errors';
-import { ExclamationTriangleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import React from "react";
+import { VaultErrorState } from "../utils/errors";
+import { ExclamationTriangleIcon, XCircleIcon } from "@heroicons/react/24/outline";
 
 interface VaultErrorDisplayProps {
   error: VaultErrorState;
@@ -10,41 +10,41 @@ interface VaultErrorDisplayProps {
 export function VaultErrorDisplay({ error, onDismiss }: VaultErrorDisplayProps) {
   const getErrorIcon = () => {
     switch (error.type) {
-      case 'user-rejected':
-        return <XCircleIcon className="h-5 w-5 text-yellow-600" />;
-      case 'network':
-      case 'gas':
-      case 'insufficient-funds':
-        return <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />;
-      default:
-        return <XCircleIcon className="h-5 w-5 text-red-600" />;
+    case "user-rejected":
+      return <XCircleIcon className="h-5 w-5 text-yellow-600" />;
+    case "network":
+    case "gas":
+    case "insufficient-funds":
+      return <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />;
+    default:
+      return <XCircleIcon className="h-5 w-5 text-red-600" />;
     }
   };
 
   const getErrorColorClasses = () => {
     switch (error.type) {
-      case 'user-rejected':
-        return {
-          container: 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800',
-          title: 'text-yellow-800 dark:text-yellow-200',
-          details: 'text-yellow-700 dark:text-yellow-300',
-          button: 'bg-yellow-600 hover:bg-yellow-700 text-white',
-        };
-      case 'network':
-      case 'gas':
-        return {
-          container: 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800',
-          title: 'text-orange-800 dark:text-orange-200',
-          details: 'text-orange-700 dark:text-orange-300',
-          button: 'bg-orange-600 hover:bg-orange-700 text-white',
-        };
-      default:
-        return {
-          container: 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800',
-          title: 'text-red-800 dark:text-red-200',
-          details: 'text-red-700 dark:text-red-300',
-          button: 'bg-red-600 hover:bg-red-700 text-white',
-        };
+    case "user-rejected":
+      return {
+        container: "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800",
+        title: "text-yellow-800 dark:text-yellow-200",
+        details: "text-yellow-700 dark:text-yellow-300",
+        button: "bg-yellow-600 hover:bg-yellow-700 text-white",
+      };
+    case "network":
+    case "gas":
+      return {
+        container: "bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800",
+        title: "text-orange-800 dark:text-orange-200",
+        details: "text-orange-700 dark:text-orange-300",
+        button: "bg-orange-600 hover:bg-orange-700 text-white",
+      };
+    default:
+      return {
+        container: "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800",
+        title: "text-red-800 dark:text-red-200",
+        details: "text-red-700 dark:text-red-300",
+        button: "bg-red-600 hover:bg-red-700 text-white",
+      };
     }
   };
 
@@ -76,7 +76,7 @@ export function VaultErrorDisplay({ error, onDismiss }: VaultErrorDisplayProps) 
         {onDismiss && (
           <button
             onClick={onDismiss}
-            className="ml-3 flex-shrink-0 inline-flex text-gray-400 hover:text-gray-500 
+            className="ml-3 flex-shrink-0 inline-flex text-gray-400 hover:text-gray-500
                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             <span className="sr-only">Dismiss</span>
@@ -95,13 +95,13 @@ interface CompactErrorDisplayProps {
 export function CompactErrorDisplay({ error }: CompactErrorDisplayProps) {
   const getErrorColorClasses = () => {
     switch (error.type) {
-      case 'user-rejected':
-        return 'text-yellow-600 dark:text-yellow-400';
-      case 'network':
-      case 'gas':
-        return 'text-orange-600 dark:text-orange-400';
-      default:
-        return 'text-red-600 dark:text-red-400';
+    case "user-rejected":
+      return "text-yellow-600 dark:text-yellow-400";
+    case "network":
+    case "gas":
+      return "text-orange-600 dark:text-orange-400";
+    default:
+      return "text-red-600 dark:text-red-400";
     }
   };
 

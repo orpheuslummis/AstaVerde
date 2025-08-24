@@ -32,15 +32,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   });
 
   const fetchBatches = useCallback(async () => {
-    console.log("Fetching batches...");
     if (!getLastBatchID || !getBatchInfo) {
-      console.log("Contract interaction hooks not ready yet");
       return;
     }
 
     try {
       const lastBatchID = await getLastBatchID();
-      console.log("Last Batch ID from contract:", lastBatchID?.toString() || "undefined");
 
       if (lastBatchID !== undefined && lastBatchID > 0n) {
         const batchPromises = [];
@@ -48,10 +45,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           batchPromises.push(getBatchInfo(i));
         }
         const batchesInfo = await Promise.all(batchPromises);
-        console.log("Raw batch info:", batchesInfo);
 
         const processedBatches = batchesInfo.map((batchInfo) => {
-          console.log(`Raw batch info:`, batchInfo);
           const [batchId, tokenIds, creationTime, price, remainingTokens] = batchInfo;
           return new Batch(
             BigInt(batchId),
@@ -62,13 +57,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           );
         });
 
-        console.log("Processed batches:", processedBatches);
         setBatches(processedBatches);
       } else {
-        console.log("No batches found or lastBatchID is 0");
         setBatches([]);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Error fetching batches:", error);
       // Don't show toast on initial load failures
       if (batches.length > 0) {
@@ -81,6 +75,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       await fetchBatches();
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Error refetching batches:", error);
       customToast.error("Failed to update batch information");
     }
@@ -107,9 +102,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  useEffect(() => {
-    console.log("Batches state updated:", batches);
-  }, [batches]);
 
   const { execute: pauseContract } = useContractInteraction(astaverdeContractConfig, "pause");
   const { execute: unpauseContract } = useContractInteraction(astaverdeContractConfig, "unpause");
@@ -138,28 +130,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     () => ({
       pauseContract: async () => {
         if (!isAdmin || !address) {
-          console.log("Not authorized to pause contract");
           return;
         }
         try {
           const txHash = await pauseContract();
-          console.log("Pause contract transaction hash:", txHash);
           return txHash;
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error("Error pausing contract:", error);
           throw error;
         }
       },
       unpauseContract: async () => {
         if (!isAdmin || !address) {
-          console.log("Not authorized to unpause contract");
           return;
         }
         try {
           const txHash = await unpauseContract();
-          console.log("Unpause contract transaction hash:", txHash);
           return txHash;
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error("Error unpausing contract:", error);
           throw error;
         }
@@ -174,9 +164,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateBasePrice: async () => {
         try {
           const txHash = await updateBasePrice();
-          console.log("Update base price transaction hash:", txHash);
           return txHash;
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error("Error updating base price:", error);
           throw error;
         }
@@ -184,10 +174,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       mintBatch: async (producers: string[], cids: string[]) => {
         try {
           const txHash = await mintBatch(producers, cids);
-          console.log("Mint batch transaction hash:", txHash);
           await refetchBatches();
           return txHash;
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error("Error minting batch:", error);
           throw error;
         }
@@ -195,10 +185,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setPriceDelta: async (priceDelta: bigint) => {
         try {
           const txHash = await setPriceDelta(priceDelta);
-          console.log("Set Price Delta transaction hash:", txHash);
           customToast.success("Price delta updated successfully");
           return txHash;
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error("Error setting price delta:", error);
           customToast.error("Failed to update price delta");
           throw error;
@@ -207,10 +197,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setDailyPriceDecay: async (amount: bigint) => {
         try {
           const txHash = await setDailyPriceDecay(amount);
-          console.log("Set Daily Price Decay transaction hash:", txHash);
           customToast.success("Daily price decay updated successfully");
           return txHash;
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error("Error setting daily price decay:", error);
           customToast.error("Failed to update daily price decay");
           throw error;
@@ -219,10 +209,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setMaxPriceUpdateIterations: async (limit: bigint) => {
         try {
           const txHash = await setMaxPriceUpdateIterations(limit);
-          console.log("Set Max Price Update Iterations transaction hash:", txHash);
           customToast.success("Max price update iterations updated successfully");
           return txHash;
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error("Error setting max price update iterations:", error);
           customToast.error("Failed to update max price update iterations");
           throw error;
@@ -231,10 +221,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       recoverSurplusUSDC: async (to: string) => {
         try {
           const txHash = await recoverSurplusUSDC(to);
-          console.log("Recover Surplus USDC transaction hash:", txHash);
           customToast.success("Surplus USDC recovered successfully");
           return txHash;
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error("Error recovering surplus USDC:", error);
           customToast.error("Failed to recover surplus USDC");
           throw error;

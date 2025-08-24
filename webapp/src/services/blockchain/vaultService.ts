@@ -1,248 +1,249 @@
 import type { PublicClient, WalletClient } from "viem";
 import { parseEther } from "viem";
 import {
-    getAstaVerdeContract,
-    getEcoStabilizerContract,
-    getSccContract,
-    isVaultAvailable,
+  getAstaVerdeContract,
+  getEcoStabilizerContract,
+  getSccContract,
+  isVaultAvailable,
 } from "../../config/contracts";
 import { SCC_PER_ASSET } from "../../config/constants";
 import type { VaultLoan } from "../../features/vault/types";
 
 export class VaultService {
-    constructor(
+  constructor(
         private publicClient: PublicClient,
         private walletClient: WalletClient | undefined,
-    ) {}
+  ) {}
 
-    // Core vault operations
-    async deposit(tokenId: bigint): Promise<`0x${string}`> {
-        if (!this.walletClient) {
-            throw new Error("Wallet not connected");
-        }
-
-        if (!isVaultAvailable()) {
-            throw new Error("Vault contracts not available");
-        }
-
-        // Check NFT approval first
-        await this.ensureNftApproval();
-
-        const vaultContract = getEcoStabilizerContract();
-        const { request } = await this.publicClient.simulateContract({
-            ...vaultContract,
-            functionName: "deposit",
-            args: [tokenId],
-            account: this.walletClient!.account,
-        });
-
-        return this.walletClient.writeContract(request);
+  // Core vault operations
+  async deposit(tokenId: bigint): Promise<`0x${string}`> {
+    if (!this.walletClient) {
+      throw new Error("Wallet not connected");
     }
 
-    async withdraw(tokenId: bigint): Promise<`0x${string}`> {
-        if (!this.walletClient) {
-            throw new Error("Wallet not connected");
-        }
-
-        if (!isVaultAvailable()) {
-            throw new Error("Vault contracts not available");
-        }
-
-        // Check SCC approval and balance
-        await this.ensureSccApproval(SCC_PER_ASSET);
-
-        const vaultContract = getEcoStabilizerContract();
-        const { request } = await this.publicClient.simulateContract({
-            ...vaultContract,
-            functionName: "withdraw",
-            args: [tokenId],
-            account: this.walletClient!.account,
-        });
-
-        return this.walletClient.writeContract(request);
+    if (!isVaultAvailable()) {
+      throw new Error("Vault contracts not available");
     }
 
-    async repayAndWithdraw(tokenId: bigint): Promise<`0x${string}`> {
-        if (!this.walletClient) {
-            throw new Error("Wallet not connected");
-        }
+    // Check NFT approval first
+    await this.ensureNftApproval();
 
-        if (!isVaultAvailable()) {
-            throw new Error("Vault contracts not available");
-        }
+    const vaultContract = getEcoStabilizerContract();
+    const { request } = await this.publicClient.simulateContract({
+      ...vaultContract,
+      functionName: "deposit",
+      args: [tokenId],
+      account: this.walletClient!.account,
+    });
 
-        // Backward-compatible alias to withdraw. Ensure SCC approval
-        await this.ensureSccApproval(SCC_PER_ASSET);
+    return this.walletClient.writeContract(request);
+  }
 
-        const vaultContract = getEcoStabilizerContract();
-        const { request } = await this.publicClient.simulateContract({
-            ...vaultContract,
-            functionName: "withdraw",
-            args: [tokenId],
-            account: this.walletClient!.account,
-        });
-
-        return this.walletClient.writeContract(request);
+  async withdraw(tokenId: bigint): Promise<`0x${string}`> {
+    if (!this.walletClient) {
+      throw new Error("Wallet not connected");
     }
 
-    // Read operations
-    async getUserLoans(userAddress: string): Promise<bigint[]> {
-        if (!isVaultAvailable()) {
-            return [];
-        }
-
-        const vaultContract = getEcoStabilizerContract();
-        const loans = await this.publicClient.readContract({
-            ...vaultContract,
-            functionName: "getUserLoans",
-            args: [userAddress],
-        });
-
-        return (loans as bigint[]) || [];
+    if (!isVaultAvailable()) {
+      throw new Error("Vault contracts not available");
     }
 
-    async getTotalActiveLoans(): Promise<bigint> {
-        if (!isVaultAvailable()) {
-            return 0n;
-        }
+    // Check SCC approval and balance
+    await this.ensureSccApproval(SCC_PER_ASSET);
 
-        const vaultContract = getEcoStabilizerContract();
-        const total = await this.publicClient.readContract({
-            ...vaultContract,
-            functionName: "getTotalActiveLoans",
-        });
+    const vaultContract = getEcoStabilizerContract();
+    const { request } = await this.publicClient.simulateContract({
+      ...vaultContract,
+      functionName: "withdraw",
+      args: [tokenId],
+      account: this.walletClient!.account,
+    });
 
-        return (total as bigint) || 0n;
+    return this.walletClient.writeContract(request);
+  }
+
+  async repayAndWithdraw(tokenId: bigint): Promise<`0x${string}`> {
+    if (!this.walletClient) {
+      throw new Error("Wallet not connected");
     }
 
-    async getLoanStatus(tokenId: bigint): Promise<VaultLoan | null> {
-        if (!isVaultAvailable()) {
-            return null;
-        }
-
-        try {
-            const vaultContract = getEcoStabilizerContract();
-            const loanData = await this.publicClient.readContract({
-                ...vaultContract,
-                functionName: "loans",
-                args: [tokenId],
-            });
-
-            if (!Array.isArray(loanData) || loanData.length < 2) {
-                return null;
-            }
-
-            return {
-                tokenId,
-                borrower: loanData[0] as string,
-                active: loanData[1] as boolean,
-            };
-        } catch (error) {
-            console.error("Error fetching loan status:", error);
-            return null;
-        }
+    if (!isVaultAvailable()) {
+      throw new Error("Vault contracts not available");
     }
 
-    async getSccBalance(address: string): Promise<bigint> {
-        if (!isVaultAvailable()) {
-            return 0n;
-        }
+    // Backward-compatible alias to withdraw. Ensure SCC approval
+    await this.ensureSccApproval(SCC_PER_ASSET);
 
-        const sccContract = getSccContract();
-        const balance = await this.publicClient.readContract({
-            ...sccContract,
-            functionName: "balanceOf",
-            args: [address],
-        });
+    const vaultContract = getEcoStabilizerContract();
+    const { request } = await this.publicClient.simulateContract({
+      ...vaultContract,
+      functionName: "withdraw",
+      args: [tokenId],
+      account: this.walletClient!.account,
+    });
 
-        return (balance as bigint) || 0n;
+    return this.walletClient.writeContract(request);
+  }
+
+  // Read operations
+  async getUserLoans(userAddress: string): Promise<bigint[]> {
+    if (!isVaultAvailable()) {
+      return [];
     }
 
-    async getSccAllowance(owner: string, spender: string): Promise<bigint> {
-        if (!isVaultAvailable()) {
-            return 0n;
-        }
+    const vaultContract = getEcoStabilizerContract();
+    const loans = await this.publicClient.readContract({
+      ...vaultContract,
+      functionName: "getUserLoans",
+      args: [userAddress],
+    });
 
-        const sccContract = getSccContract();
-        const allowance = await this.publicClient.readContract({
-            ...sccContract,
-            functionName: "allowance",
-            args: [owner, spender],
-        });
+    return (loans as bigint[]) || [];
+  }
 
-        return (allowance as bigint) || 0n;
+  async getTotalActiveLoans(): Promise<bigint> {
+    if (!isVaultAvailable()) {
+      return 0n;
     }
 
-    // Approval operations
-    async approveNft(): Promise<`0x${string}`> {
-        if (!this.walletClient) {
-            throw new Error("Wallet not connected");
-        }
+    const vaultContract = getEcoStabilizerContract();
+    const total = await this.publicClient.readContract({
+      ...vaultContract,
+      functionName: "getTotalActiveLoans",
+    });
 
-        const astaverdeContract = getAstaVerdeContract();
-        const vaultContract = getEcoStabilizerContract();
+    return (total as bigint) || 0n;
+  }
 
-        const { request } = await this.publicClient.simulateContract({
-            ...astaverdeContract,
-            functionName: "setApprovalForAll",
-            args: [vaultContract.address, true],
-            account: this.walletClient!.account,
-        });
-
-        return this.walletClient.writeContract(request);
+  async getLoanStatus(tokenId: bigint): Promise<VaultLoan | null> {
+    if (!isVaultAvailable()) {
+      return null;
     }
 
-    async approveScc(amount: bigint = SCC_PER_ASSET): Promise<`0x${string}`> {
-        if (!this.walletClient) {
-            throw new Error("Wallet not connected");
-        }
+    try {
+      const vaultContract = getEcoStabilizerContract();
+      const loanData = await this.publicClient.readContract({
+        ...vaultContract,
+        functionName: "loans",
+        args: [tokenId],
+      });
 
-        const sccContract = getSccContract();
-        const vaultContract = getEcoStabilizerContract();
+      if (!Array.isArray(loanData) || loanData.length < 2) {
+        return null;
+      }
 
-        const { request } = await this.publicClient.simulateContract({
-            ...sccContract,
-            functionName: "approve",
-            args: [vaultContract.address, amount],
-            account: this.walletClient!.account,
-        });
+      return {
+        tokenId,
+        borrower: loanData[0] as string,
+        active: loanData[1] as boolean,
+      };
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Error fetching loan status:", error);
+      return null;
+    }
+  }
 
-        return this.walletClient.writeContract(request);
+  async getSccBalance(address: string): Promise<bigint> {
+    if (!isVaultAvailable()) {
+      return 0n;
     }
 
-    // Helper methods
-    private async ensureNftApproval(): Promise<void> {
-        if (!this.walletClient) return;
+    const sccContract = getSccContract();
+    const balance = await this.publicClient.readContract({
+      ...sccContract,
+      functionName: "balanceOf",
+      args: [address],
+    });
 
-        const astaverdeContract = getAstaVerdeContract();
-        const vaultContract = getEcoStabilizerContract();
+    return (balance as bigint) || 0n;
+  }
 
-        const isApproved = (await this.publicClient.readContract({
-            ...astaverdeContract,
-            functionName: "isApprovedForAll",
-            args: [this.walletClient!.account!.address, vaultContract.address],
-        })) as boolean;
-
-        if (!isApproved) {
-            const approveTx = await this.approveNft();
-            await this.publicClient.waitForTransactionReceipt({ hash: approveTx });
-        }
+  async getSccAllowance(owner: string, spender: string): Promise<bigint> {
+    if (!isVaultAvailable()) {
+      return 0n;
     }
 
-    private async ensureSccApproval(amount: bigint): Promise<void> {
-        if (!this.walletClient) return;
+    const sccContract = getSccContract();
+    const allowance = await this.publicClient.readContract({
+      ...sccContract,
+      functionName: "allowance",
+      args: [owner, spender],
+    });
 
-        const vaultContract = getEcoStabilizerContract();
-        const allowance = await this.getSccAllowance(this.walletClient!.account!.address, vaultContract.address);
+    return (allowance as bigint) || 0n;
+  }
 
-        if (allowance < amount) {
-            const approveTx = await this.approveScc(amount);
-            await this.publicClient.waitForTransactionReceipt({ hash: approveTx });
-        }
+  // Approval operations
+  async approveNft(): Promise<`0x${string}`> {
+    if (!this.walletClient) {
+      throw new Error("Wallet not connected");
     }
 
-    // Check if vault is available
-    static isAvailable(): boolean {
-        return isVaultAvailable();
+    const astaverdeContract = getAstaVerdeContract();
+    const vaultContract = getEcoStabilizerContract();
+
+    const { request } = await this.publicClient.simulateContract({
+      ...astaverdeContract,
+      functionName: "setApprovalForAll",
+      args: [vaultContract.address, true],
+      account: this.walletClient!.account,
+    });
+
+    return this.walletClient.writeContract(request);
+  }
+
+  async approveScc(amount: bigint = SCC_PER_ASSET): Promise<`0x${string}`> {
+    if (!this.walletClient) {
+      throw new Error("Wallet not connected");
     }
+
+    const sccContract = getSccContract();
+    const vaultContract = getEcoStabilizerContract();
+
+    const { request } = await this.publicClient.simulateContract({
+      ...sccContract,
+      functionName: "approve",
+      args: [vaultContract.address, amount],
+      account: this.walletClient!.account,
+    });
+
+    return this.walletClient.writeContract(request);
+  }
+
+  // Helper methods
+  private async ensureNftApproval(): Promise<void> {
+    if (!this.walletClient) return;
+
+    const astaverdeContract = getAstaVerdeContract();
+    const vaultContract = getEcoStabilizerContract();
+
+    const isApproved = (await this.publicClient.readContract({
+      ...astaverdeContract,
+      functionName: "isApprovedForAll",
+      args: [this.walletClient!.account!.address, vaultContract.address],
+    })) as boolean;
+
+    if (!isApproved) {
+      const approveTx = await this.approveNft();
+      await this.publicClient.waitForTransactionReceipt({ hash: approveTx });
+    }
+  }
+
+  private async ensureSccApproval(amount: bigint): Promise<void> {
+    if (!this.walletClient) return;
+
+    const vaultContract = getEcoStabilizerContract();
+    const allowance = await this.getSccAllowance(this.walletClient!.account!.address, vaultContract.address);
+
+    if (allowance < amount) {
+      const approveTx = await this.approveScc(amount);
+      await this.publicClient.waitForTransactionReceipt({ hash: approveTx });
+    }
+  }
+
+  // Check if vault is available
+  static isAvailable(): boolean {
+    return isVaultAvailable();
+  }
 }
