@@ -444,7 +444,7 @@
     },
     {
       "inputs": [],
-      "name": "maxScanRange",
+      "name": "totalActiveLoans",
       "outputs": [
         {
           "internalType": "uint256",
@@ -590,7 +590,7 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "_maxScanRange",
+          "name": "offset",
           "type": "uint256"
         }
       ],
