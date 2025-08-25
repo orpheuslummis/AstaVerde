@@ -647,8 +647,8 @@ describe("Integration & End-to-End Testing", function () {
                 await astaVerde.connect(user1).redeemToken(1);
 
                 // Verify token is marked as redeemed
-                const tokenInfo = await astaVerde.tokens(1);
-                expect(tokenInfo[4]).to.be.true; // redeemed flag
+                const isRedeemed = await astaVerde.isRedeemed(1);
+                expect(isRedeemed).to.be.true; // redeemed flag
 
                 // Should not be able to deposit redeemed NFT
                 await astaVerde.connect(user1).setApprovalForAll(ecoStabilizer.target, true);
@@ -1434,8 +1434,8 @@ describe("Integration & End-to-End Testing", function () {
 
                 // ========== 7. REDEMPTION PHASE ==========
                 // User redeems NFT for carbon offset
-                const tokenBefore = await astaVerde.tokens(1);
-                expect(tokenBefore.redeemed).to.be.false;
+                const beforeRedeemed = await astaVerde.isRedeemed(1);
+                expect(beforeRedeemed).to.be.false;
 
                 const redeemTx = await astaVerde.connect(user).redeemToken(1);
                 const redeemReceipt = await redeemTx.wait();
@@ -1445,8 +1445,8 @@ describe("Integration & End-to-End Testing", function () {
                     .withArgs(1, user.address, redeemBlock.timestamp);
 
                 // Verify NFT marked as redeemed
-                const tokenAfter = await astaVerde.tokens(1);
-                expect(tokenAfter.redeemed).to.be.true;
+                const afterRedeemed = await astaVerde.isRedeemed(1);
+                expect(afterRedeemed).to.be.true;
 
                 // User still owns the NFT (redeemed NFTs remain transferable)
                 expect(await astaVerde.balanceOf(user.address, 1)).to.equal(1);

@@ -609,8 +609,8 @@ describe("Token Redemption", function () {
             .withArgs(tokenId, user1.address, anyValue);
 
         // Check if the token is marked as redeemed
-        const tokenInfo = await astaVerde.tokens(tokenId);
-        expect(tokenInfo.redeemed).to.be.true;
+        const isRedeemed = await astaVerde.isRedeemed(tokenId);
+        expect(isRedeemed).to.be.true;
 
         // Attempt to redeem again should fail
         await expect(astaVerde.connect(user1).redeemToken(tokenId)).to.be.revertedWith("Token already redeemed");

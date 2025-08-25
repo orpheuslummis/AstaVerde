@@ -924,8 +924,8 @@ describe("EcoStabilizer - Comprehensive Test Suite", function () {
             const { ecoStabilizer, astaVerde, scc, user1 } = await loadFixture(deployEcoStabilizerFixture);
 
             // Verify token is not redeemed
-            const tokenInfo = await astaVerde.tokens(1);
-            expect(tokenInfo[4]).to.be.false; // redeemed field should be false
+            const redeemed = await astaVerde.isRedeemed(1);
+            expect(redeemed).to.be.false; // redeemed should be false
 
             // Approve vault to transfer NFT
             await astaVerde.connect(user1).setApprovalForAll(ecoStabilizer.target, true);
