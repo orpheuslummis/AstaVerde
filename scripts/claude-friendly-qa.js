@@ -113,8 +113,7 @@ async function runPhase1Tests(contracts, users) {
         const redeemReceipt = await redeemTx.wait();
         results.gasUsage.nftRedemption = redeemReceipt.gasUsed;
 
-        const tokenInfo = await astaVerde.tokens(phase1TokenId);
-        const isRedeemed = tokenInfo[4];
+        const isRedeemed = await astaVerde.isRedeemed(phase1TokenId);
         console.log(`   ✅ NFT redeemed: ${isRedeemed}, gas: ${redeemReceipt.gasUsed}`);
         results.nftRedemption = isRedeemed;
     } catch (error) {

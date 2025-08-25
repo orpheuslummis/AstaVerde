@@ -71,8 +71,8 @@ async function scenarioHappyPath(contracts) {
     console.log("Step 5: User redeems NFT");
     await astaVerde.connect(user1).redeemToken(1);
 
-    const tokenInfo = await astaVerde.tokens(1);
-    if (!tokenInfo[4]) {
+    const isRedeemed = await astaVerde.isRedeemed(1);
+    if (!isRedeemed) {
         throw new Error("NFT not marked as redeemed");
     }
     console.log("  ✓ NFT #1 redeemed successfully");
@@ -100,8 +100,8 @@ async function scenarioRedeemedRejection(contracts) {
     console.log("Step 2: Redeem NFT first");
     await astaVerde.connect(user1).redeemToken(tokenId);
 
-    const tokenInfo = await astaVerde.tokens(tokenId);
-    if (!tokenInfo[4]) {
+    const isRedeemed = await astaVerde.isRedeemed(tokenId);
+    if (!isRedeemed) {
         throw new Error("NFT should be redeemed");
     }
     console.log(`  ✓ NFT #${tokenId} redeemed`);

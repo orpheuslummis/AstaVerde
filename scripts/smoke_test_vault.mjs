@@ -27,7 +27,7 @@ const VAULT_ABI = [
 const ASTAVER_ABI = [
     "function balanceOf(address account, uint256 id) view returns (uint256)",
     "function setApprovalForAll(address operator, bool approved)",
-    "function tokens(uint256) view returns (address owner, uint256 tokenId, address producer, string cid, bool redeemed)",
+    "function isRedeemed(uint256 tokenId) view returns (bool)",
     "function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data)",
 ];
 
@@ -90,13 +90,13 @@ async function main() {
     // Check tokenId 1 (common test token)
     let testTokenId = 1n;
     let nftBalance = 0n;
-    let tokenInfo;
+    let redeemed;
 
     try {
         nftBalance = await astaVerde.balanceOf(signer.address, testTokenId);
-        tokenInfo = await astaVerde.tokens(testTokenId);
+        redeemed = await astaVerde.isRedeemed(testTokenId);
         console.log(`NFT ${testTokenId} balance:`, nftBalance.toString());
-        console.log(`NFT ${testTokenId} info:`, tokenInfo);
+        console.log(`NFT ${testTokenId} redeemed:`, redeemed);
     } catch (error) {
         console.log(`NFT ${testTokenId} not available:`, error.message);
     }
@@ -108,7 +108,7 @@ async function main() {
     }
 
     // Test 4: Functional deposit test (if NFT available and not redeemed)
-    if (nftBalance > 0n && !tokenInfo[4]) { // tokenInfo[4] is redeemed flag
+    if (nftBalance > 0n && !redeemed) {
         console.log("\n📋 Test 4: Testing deposit functionality...");
 
         // Check initial SCC balance

@@ -39,8 +39,8 @@ async function displayAccountInfo(signer, contracts) {
         try {
             const balance = await astaVerde.balanceOf(signer.address, i);
             if (balance > 0n) {
-                const tokenInfo = await astaVerde.tokens(i);
-                const status = tokenInfo[4] ? "REDEEMED" : "ACTIVE";
+                const redeemed = await astaVerde.isRedeemed(i);
+                const status = redeemed ? "REDEEMED" : "ACTIVE";
                 console.log(`  Token #${i}: ${balance.toString()} (${status})`);
             }
         } catch (e) {
@@ -278,8 +278,8 @@ async function testRedeemNFT(user, contracts) {
         try {
             const balance = await astaVerde.balanceOf(user.address, i);
             if (balance > 0n) {
-                const tokenInfo = await astaVerde.tokens(i);
-                const status = tokenInfo[4] ? "REDEEMED" : "ACTIVE";
+                const redeemed = await astaVerde.isRedeemed(i);
+                const status = redeemed ? "REDEEMED" : "ACTIVE";
                 console.log(`  Token #${i}: ${status}`);
                 if (!tokenInfo[4]) ownedTokens.push(i);
             }
@@ -327,7 +327,7 @@ async function testDepositNFT(user, contracts) {
         try {
             const balance = await astaVerde.balanceOf(user.address, i);
             if (balance > 0n) {
-                const tokenInfo = await astaVerde.tokens(i);
+                const redeemed = await astaVerde.isRedeemed(i);
                 const loanInfo = await vault.loans(i);
 
                 if (!tokenInfo[4] && !loanInfo[1]) {
@@ -480,8 +480,8 @@ async function testDepositRedeemedNFT(user, contracts) {
         try {
             const balance = await astaVerde.balanceOf(user.address, i);
             if (balance > 0n) {
-                const tokenInfo = await astaVerde.tokens(i);
-                if (tokenInfo[4]) {
+                const redeemed = await astaVerde.isRedeemed(i);
+                if (redeemed) {
                     // redeemed
                     console.log(`  Token #${i}: REDEEMED`);
                     redeemedTokens.push(i);

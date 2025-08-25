@@ -204,8 +204,8 @@ async function runUserFlow() {
             logSuccess("Token redeemed");
 
             // Check if token is redeemed
-            const tokenInfo = await astaverde.tokens(tokenId);
-            logInfo("Token redeemed status", tokenInfo.redeemed ? "Yes" : "No");
+            const isRedeemed = await astaverde.isRedeemed(tokenId);
+            logInfo("Token redeemed status", isRedeemed ? "Yes" : "No");
         }
 
         // Final Summary
