@@ -1,19 +1,11 @@
 import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import { parseEther } from "viem";
 import { useAccount, usePublicClient, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import {
-  getEcoStabilizerContractConfig,
-  getSccContractConfig,
-  astaverdeContractConfig,
-  getAstaVerdeConfigForAsset,
-  getEcoStabilizerConfigForAsset,
-  detectVaultVersion,
-} from "../lib/contracts";
+import { getEcoStabilizerContractConfig, getSccContractConfig, astaverdeContractConfig, detectVaultVersion } from "../lib/contracts";
 import { customToast } from "../shared/utils/customToast";
 import { ENV } from "../config/environment";
 import { VAULT_GAS_LIMITS } from "../config/constants";
 import { parseVaultError, TxStatus, VaultErrorState } from "../utils/errors";
-import { getVaultForAsset } from "../utils/vaultRouting";
 import type { VaultLoan } from "../features/vault/types";
 
 export interface VaultHook {
@@ -52,7 +44,7 @@ export interface VaultHook {
 
 const SCC_PER_ASSET = parseEther("20");
 
-export function useVault(assetAddress?: string): VaultHook {
+export function useVault(): VaultHook {
   const { address } = useAccount();
   const publicClient = usePublicClient();
   const [isLoading, setIsLoading] = useState(false);
@@ -62,18 +54,8 @@ export function useVault(assetAddress?: string): VaultHook {
   const [paginatedLoans, setPaginatedLoans] = useState<bigint[]>([]);
   const [vaultVersion, setVaultVersion] = useState<"V1" | "V2" | null>(null);
 
-  // Determine which vault configuration to use based on asset address
-  const vaultConfig = useMemo(() => {
-    if (assetAddress) {
-      return getVaultForAsset(assetAddress);
-    }
-    // Default to V1 if no asset address provided
-    return {
-      astaVerdeAddress: ENV.ASTAVERDE_ADDRESS as `0x${string}`,
-      ecoStabilizerAddress: ENV.ECOSTABILIZER_ADDRESS as `0x${string}`,
-      version: "V1" as const,
-    };
-  }, [assetAddress]);
+  // Single-system: vault address is configured in ENV
+  const vaultAddress = ENV.ECOSTABILIZER_ADDRESS as `0x${string}`;
 
   const { writeContract, data: hash, isPending: isTransactionPending } = useWriteContract();
   const {
@@ -87,35 +69,32 @@ export function useVault(assetAddress?: string): VaultHook {
 
   // Check if vault contracts are available
   const isVaultAvailable = useMemo(() => {
-    return !!(vaultConfig && vaultConfig.ecoStabilizerAddress && ENV.SCC_ADDRESS);
-  }, [vaultConfig]);
+    return !!(vaultAddress && ENV.SCC_ADDRESS);
+  }, [vaultAddress]);
 
   // Detect vault version on mount
   useEffect(() => {
     const detectVersion = async () => {
-      if (publicClient && isVaultAvailable && vaultConfig?.ecoStabilizerAddress) {
+      if (publicClient && isVaultAvailable && vaultAddress) {
         // For now, detect version on the configured vault address
         const version = await detectVaultVersion(publicClient);
         setVaultVersion(version);
       }
     };
     detectVersion();
-  }, [publicClient, isVaultAvailable, vaultConfig]);
+  }, [publicClient, isVaultAvailable, vaultAddress]);
 
   // Get contract configs safely
   const getVaultContractConfig = useCallback(() => {
-    if (!isVaultAvailable || !vaultConfig) {
+    if (!isVaultAvailable || !vaultAddress) {
       throw new Error("Vault contracts not configured");
     }
-    return assetAddress ? getEcoStabilizerConfigForAsset(assetAddress) : getEcoStabilizerContractConfig();
-  }, [isVaultAvailable, vaultVersion, assetAddress, vaultConfig]);
+    return getEcoStabilizerContractConfig();
+  }, [isVaultAvailable, vaultAddress]);
 
   const getAssetContractConfig = useCallback(() => {
-    if (!vaultConfig) {
-      return astaverdeContractConfig;
-    }
-    return assetAddress ? getAstaVerdeConfigForAsset(assetAddress) : astaverdeContractConfig;
-  }, [assetAddress, vaultConfig]);
+    return astaverdeContractConfig;
+  }, []);
 
   const getSccConfig = useCallback(() => {
     if (!ENV.SCC_ADDRESS) {
@@ -137,8 +116,8 @@ export function useVault(assetAddress?: string): VaultHook {
     ...(isVaultAvailable ? getSccContractConfig() : { address: undefined, abi: [] }),
     functionName: "allowance",
     args:
-      address && isVaultAvailable && vaultConfig?.ecoStabilizerAddress
-        ? [address, vaultConfig.ecoStabilizerAddress]
+      address && isVaultAvailable && vaultAddress
+        ? [address, vaultAddress]
         : undefined,
     query: { enabled: !!address && isVaultAvailable },
   });
@@ -164,8 +143,8 @@ export function useVault(assetAddress?: string): VaultHook {
     ...getAssetContractConfig(),
     functionName: "isApprovedForAll",
     args:
-      address && isVaultAvailable && vaultConfig?.ecoStabilizerAddress
-        ? [address, vaultConfig.ecoStabilizerAddress]
+      address && isVaultAvailable && vaultAddress
+        ? [address, vaultAddress]
         : undefined,
     query: { enabled: !!address && isVaultAvailable },
   });

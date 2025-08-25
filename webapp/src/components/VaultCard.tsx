@@ -7,7 +7,7 @@ import { readContract } from "wagmi/actions";
 import { wagmiConfig } from "../config/wagmi";
 import { dispatchRefetch } from "../hooks/useGlobalEvent";
 import { useVault } from "../hooks/useVault";
-import { getEcoStabilizerConfigForAsset } from "../lib/contracts";
+import { getEcoStabilizerContractConfig } from "../lib/contracts";
 import { customToast } from "../shared/utils/customToast";
 import { getTransactionStatusMessage, TxStatus } from "../utils/errors";
 import { ENV } from "../config/environment";
@@ -18,14 +18,12 @@ interface VaultCardProps {
   isRedeemed: boolean;
   onActionComplete?: () => void;
   isCompact?: boolean;
-  assetAddress?: string;
 }
 
-export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCompact = true, assetAddress }: VaultCardProps) {
+export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCompact = true }: VaultCardProps) {
   const { address } = useAccount();
 
-  // Determine asset address - default to V1 if not provided
-  const effectiveAssetAddress = assetAddress || ENV.ASTAVERDE_ADDRESS;
+  // Single-system: use configured addresses only
 
   const {
     deposit,
@@ -41,7 +39,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     txStatus,
     txHash,
     clearError,
-  } = useVault(effectiveAssetAddress);
+  } = useVault();
 
   const [isDepositLoading, setIsDepositLoading] = useState(false);
   const [isWithdrawLoading, setIsWithdrawLoading] = useState(false);
@@ -62,7 +60,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     const fetchLoanData = async () => {
       setIsLoadingLoan(true);
       try {
-        const contractConfig = getEcoStabilizerConfigForAsset(effectiveAssetAddress);
+        const contractConfig = getEcoStabilizerContractConfig();
 
         const data = await readContract(wagmiConfig, {
           ...contractConfig,
@@ -80,7 +78,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     };
 
     fetchLoanData();
-  }, [tokenIdStr, isVaultAvailable, effectiveAssetAddress]);
+  }, [tokenIdStr, isVaultAvailable]);
 
   const loanInfo = loanData;
   const isInVault = loanInfo ? loanInfo[1] : false;

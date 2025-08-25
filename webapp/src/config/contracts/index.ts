@@ -54,13 +54,7 @@ export const contracts = {
 
 // Helper functions for contract access
 export function getAstaVerdeContract(): ContractConfig {
-  // Use V1.1 marketplace if available, otherwise fall back to V1
-  if (ENV.ASTAVERDE_V11_ADDRESS) {
-    return {
-      address: ENV.ASTAVERDE_V11_ADDRESS as `0x${string}`,
-      abi: astaverdeAbi.abi as Abi,
-    } as ContractConfig;
-  }
+  // Single-system: always use the configured marketplace address
   return contracts.astaverde;
 }
 

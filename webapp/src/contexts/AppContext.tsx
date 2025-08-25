@@ -18,10 +18,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { execute: getLastBatchID } = useContractInteraction(astaverdeContractConfig, "lastBatchID");
   const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
 
-  const { } = useReadContract({
+  // Prime ABI/types; data not used directly here
+  useReadContract({
     ...astaverdeContractConfig,
     functionName: "lastBatchID",
-  }) as { data: bigint | undefined };
+  });
 
   // Note: Removed useReadContracts as it was causing BigInt serialization issues
   // and the data wasn't being used. Batches are fetched via fetchBatches() instead.
