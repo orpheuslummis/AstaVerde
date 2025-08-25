@@ -153,8 +153,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     function deposit(uint256 tokenId) external nonReentrant whenNotPaused {
         require(!loans[tokenId].active, "loan active");
         require(ecoAsset.balanceOf(msg.sender, tokenId) > 0, "not token owner");
-        (, , , , bool redeemed) = ecoAsset.tokens(tokenId);
-        require(!redeemed, "redeemed asset");
+        require(!ecoAsset.isRedeemed(tokenId), "redeemed asset");
 
         // Update state first (CEI pattern)
         loans[tokenId] = Loan(msg.sender, true);
@@ -284,8 +283,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
             // Check each token
             require(!loans[tokenId].active, "loan active");
             require(ecoAsset.balanceOf(msg.sender, tokenId) > 0, "not token owner");
-            (, , , , bool redeemed) = ecoAsset.tokens(tokenId);
-            require(!redeemed, "redeemed asset");
+            require(!ecoAsset.isRedeemed(tokenId), "redeemed asset");
 
             // Record the loan
             loans[tokenId] = Loan({borrower: msg.sender, active: true});

@@ -593,6 +593,17 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     }
 
     /**
+     * @notice Check if a token has been redeemed
+     * @param tokenId The ID of the token to check
+     * @return Whether the token has been redeemed
+     * @dev Provides a stable interface that doesn't depend on internal struct layout
+     */
+    function isRedeemed(uint256 tokenId) external view returns (bool) {
+        require(tokenId > 0 && tokenId <= lastTokenID, "Token does not exist");
+        return tokens[tokenId].redeemed;
+    }
+
+    /**
      * @notice Recover accidentally sent ERC20 tokens (excluding USDC)
      * @dev USDC recovery blocked here to maintain accounting integrity.
      * Use recoverSurplusUSDC() to recover accidentally sent USDC.
