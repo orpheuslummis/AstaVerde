@@ -4,12 +4,13 @@ import { ConnectKitButton } from "connectkit";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useBalance, useBlockNumber } from "wagmi";
 import { ENV } from "../config/environment";
 import { getUsdcContractConfig, getSccContractConfig } from "../lib/contracts";
 import { useIsProducer } from "../hooks/useIsProducer";
+import { useDebounce } from "../hooks/useDebounce";
 
 interface HeaderProps {
     links: readonly { readonly name: string; readonly url: string }[];
@@ -42,16 +43,20 @@ export function Header({ links }: HeaderProps) {
   });
 
   // Watch new blocks to keep balances fresh after on-chain actions
+  // Use debouncing to avoid excessive refetches
   const { data: blockNumber } = useBlockNumber({
     watch: true,
     query: { enabled: isConnected },
   });
 
+  // Debounce block number changes by 5 seconds to reduce refetch frequency
+  const debouncedBlockNumber = useDebounce(blockNumber, 5000);
+
   useEffect(() => {
-    if (!isConnected || !blockNumber) return;
+    if (!isConnected || !debouncedBlockNumber) return;
     void refetchUsdcBalance();
     if (sccConfig) void refetchSccBalance();
-  }, [blockNumber, isConnected, sccConfig, refetchUsdcBalance, refetchSccBalance]);
+  }, [debouncedBlockNumber, isConnected, sccConfig, refetchUsdcBalance, refetchSccBalance]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -90,8 +95,8 @@ export function Header({ links }: HeaderProps) {
       <nav className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center flex-grow`}>
         <ul className="flex flex-col lg:flex-row lg:space-x-2 space-y-2 lg:space-y-0 items-center lg:justify-center flex-grow">
           {links.map((link, index) => (
-            <>
-              <li key={link.url} className="lg:mr-4">
+            <React.Fragment key={link.url}>
+              <li className="lg:mr-4">
                 <span
                   className={`group hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
                     pathname === link.url ? "bg-white/20 dark:bg-gray-700" : ""
@@ -151,7 +156,7 @@ export function Header({ links }: HeaderProps) {
                   </span>
                 </li>
               )}
-            </>
+            </React.Fragment>
           ))}
           {isConnected && (
             <>

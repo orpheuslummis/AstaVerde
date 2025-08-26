@@ -44,7 +44,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
   const handleBuyClick = async () => {
     if (batch.itemsLeft === 0n || isSoldOut) return;
     try {
-      await handleApproveAndBuy(BigInt(tokenAmount), totalPrice);
+      await handleApproveAndBuy(BigInt(tokenAmount));
       // Immediately refresh the batches after successful purchase
       await refetchBatches();
       dispatchRefetch();
@@ -107,7 +107,17 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
             </div>
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
               <ShoppingCartIcon className="w-4 h-4 mr-1" />
-              <span>{isSoldOut ? "Sold Out" : `${batch.itemsLeft} left`}</span>
+              <span>
+                {isSoldOut
+                  ? "Sold Out"
+                  : `${batch.itemsLeft} of ${batch.tokenIds.length} available`}
+              </span>
+            </div>
+            <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div
+                className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(Number(batch.itemsLeft) / batch.tokenIds.length) * 100}%` }}
+              />
             </div>
           </div>
         </Link>
@@ -181,7 +191,7 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
             <div>
               <h3 className="text-sm font-semibold dark:text-white">Batch Details</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {batch.itemsLeft.toString()} token{Number(batch.itemsLeft) !== 1 ? "s" : ""} available
+                {batch.itemsLeft.toString()} of {batch.tokenIds.length} token{batch.tokenIds.length !== 1 ? "s" : ""} available
               </p>
             </div>
             <Link

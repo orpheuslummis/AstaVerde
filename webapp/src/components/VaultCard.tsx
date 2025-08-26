@@ -155,6 +155,11 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         const newBalance = await getSccBalance();
         setSccBalance(newBalance);
       }
+      
+      // Refresh the token list to show the NFT is now in the vault
+      if (onActionComplete) {
+        await onActionComplete();
+      }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Deposit error:", error);
@@ -214,6 +219,11 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         const newBalance = await getSccBalance();
         setSccBalance(newBalance);
       }
+      
+      // Refresh the token list to show the NFT is now available
+      if (onActionComplete) {
+        await onActionComplete();
+      }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Withdraw error:", error);
@@ -261,10 +271,6 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       return <CompactErrorDisplay error={vaultError} />;
     }
 
-    if (showTxStatus) {
-      return <span className="text-xs text-blue-600">{txStatusMessage}</span>;
-    }
-
     if (isRedeemed) {
       return <span className="text-xs text-gray-500">Redeemed</span>;
     }
@@ -286,7 +292,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         >
           {isWithdrawLoading
             ? transactionStep || "Processing..."
-            : vaultLoading
+            : vaultLoading && txStatus !== TxStatus.IDLE && txStatus !== TxStatus.ERROR
               ? "..."
               : sccBalance < parseEther("20")
                 ? "Need 20 SCC"
@@ -298,12 +304,16 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     return (
       <button
         onClick={handleDeposit}
-        disabled={isDepositLoading || vaultLoading}
+        disabled={isDepositLoading || (vaultLoading && txStatus !== TxStatus.IDLE && txStatus !== TxStatus.ERROR)}
         className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400
                  text-white text-xs rounded-md transition-colors min-w-[100px]"
         title="Deposit NFT to vault to earn 20 SCC"
       >
-        {isDepositLoading ? transactionStep || "Processing..." : vaultLoading ? "..." : "Deposit"}
+        {isDepositLoading
+          ? transactionStep || "Processing..."
+          : vaultLoading && txStatus !== TxStatus.IDLE && txStatus !== TxStatus.ERROR
+            ? "..."
+            : "Deposit"}
       </button>
     );
   }
