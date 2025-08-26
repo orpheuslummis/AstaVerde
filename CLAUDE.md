@@ -21,10 +21,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run qa:fast` - Fast critical path testing (~450ms)
 - `npm run qa:full` - Comprehensive testing with detailed reports
 
-### Manual QA Environment (Complete Local Dev)
+### Development Environments
 
-- `npm run dev:complete` - **One command: All testing scenarios combined**
-- `npm run start` - Alias for dev:complete
+#### Local Development (Port 3000)
+- `npm run dev:local` - Starts complete local stack (Hardhat node + contracts + webapp)
+  - Starts Hardhat node on port 8545
+  - Deploys contracts via hardhat-deploy
+  - Configures webapp with contract addresses
+  - Starts webapp on port 3000
+  - Uses simplified `scripts/start-local.js`
+
+#### Base Sepolia Testing (Port 3002)
+- `npm run dev:sepolia` - Webapp connected to Base Sepolia testnet
+- Requires contracts deployed via `npm run deploy:testnet`
+- Configure addresses in `webapp/.env.sepolia`
 
 ### Linting and Formatting
 
@@ -54,27 +64,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-### Project Phases
+### Project Versions
 
-**Phase 1 (Complete)** - Carbon offset NFT marketplace with Dutch auction pricing on Base mainnet
-**Phase 2 (Implementation Complete)** - EcoStabilizer Vault system for NFT collateralization
+**v1 (Released 2024-11-15)** - Carbon offset NFT marketplace with Dutch auction pricing on Base mainnet
+**v2 (Released 2025-08-25)** - Added EcoStabilizer Vault system for NFT collateralization and producer payment improvements
 
 ### Smart Contracts
 
-- **AstaVerde.sol** - Phase 1: Main ERC-1155 contract (deployed, unchanged in Phase 2)
-- **StabilizedCarbonCoin.sol** - Phase 2: ERC-20 debt token with MINTER_ROLE exclusively for vault
-- **EcoStabilizer.sol** - Phase 2: Vault contract enabling 1:1 NFT collateralization for 20 SCC loans
-- **IAstaVerde.sol** - Phase 2: Interface extending IERC1155 for vault integration
+- **AstaVerde.sol** - v1: Main ERC-1155 contract (deployed, enhanced in v2 with producer payment system)
+- **StabilizedCarbonCoin.sol** - v2: ERC-20 debt token with MINTER_ROLE exclusively for vault
+- **EcoStabilizer.sol** - v2: Vault contract enabling 1:1 NFT collateralization for 20 SCC loans
+- **IAstaVerde.sol** - v2: Interface extending IERC1155 for vault integration
 - **MockUSDC.sol** - Testing utility
 
-### Phase 1 Contract Architecture (Live)
+### v1 Contract Architecture (Live, Enhanced in v2)
 
 - ERC-1155 batch-efficient NFT operations
 - Dutch auction: starts at base price, decreases 1 USDC daily until 40 USDC floor
 - Base price adjusts: +10 USDC for quick sales (within 2 days), -10 USDC after 4 days stagnation
-- Platform commission: 30% default, remainder to producers
+- Platform commission: 30% default, remainder to producers (v2: via pull-payment system)
 
-### Phase 2 Vault Architecture (Implementation Complete)
+### v2 Vault Architecture (Released)
 
 - **Non-fungible CDPs**: Each EcoAsset NFT = unique collateral for distinct 20 SCC loan
 - **Fixed issuance rate**: SCC_PER_ASSET = 20 \* 1e18 (eliminates oracle dependency)
@@ -101,8 +111,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Deployment Architecture
 
 - Uses `hardhat-deploy` for deterministic deployments
-- Phase 1: AstaVerde deployed and live on Base mainnet
-- Phase 2: Deploy SCC → EcoStabilizer → grant MINTER_ROLE → renounce admin roles
+- v1: AstaVerde deployed and live on Base mainnet
+- v2: Deploy SCC → EcoStabilizer → grant MINTER_ROLE → renounce admin roles
 - Contract artifacts automatically copied to webapp config during compilation
 - Multi-network deployment with verification on Base explorers
 
@@ -111,23 +121,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Contract events monitored via scripts in `scripts/events/`
 - Batch minting utilities for carbon offset data
 - IPFS content uploading via Web3.Storage integration
-- Gas targets for Phase 2: <150k deposit, <120k withdraw
+- Gas targets for v2 vault: <150k deposit, <120k withdraw
 
 ### Testing Strategy
 
 **Test Suite Structure:**
 
-- `AstaVerde.test.ts` - Phase 1 marketplace functionality
+- `AstaVerde.test.ts` - v1 marketplace functionality and v2 enhancements
 - `EcoStabilizer.test.ts` - Core vault operations (deposit, withdraw, admin functions)
 - `StabilizedCarbonCoin.test.ts` - SCC token functionality and security
-- `Integration.test.ts` - Cross-phase interaction testing
+- `Integration.test.ts` - Cross-contract interaction testing
 - `AstaVerdeCoverageGaps.test.ts` - Coverage gap testing
 - `DirectTransferRecovery.ts` - Direct NFT transfer handling
 
 **Test Documentation:**
 
 - `TESTING_GUIDE.md` - Comprehensive testing methodology
-- `INTEGRATION_TESTING.md` - Phase integration testing strategy
+- `INTEGRATION_TESTING.md` - Integration testing strategy
 - `README.md` - Test suite overview
 
 **Coverage Analysis:**
@@ -136,23 +146,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Gas usage analysis with hardhat-gas-reporter
 - Security-focused edge case testing
 
-### Phase 2 Implementation Requirements
+### v2 Implementation Details
 
-- IAstaVerde interface must inherit from IERC1155 for proper compilation
+- IAstaVerde interface inherits from IERC1155 for proper compilation
 - Vault deployment references existing AstaVerde contract address
 - SCC minting exclusively controlled by vault (no other minters)
 - Admin functions: pause/unpause, emergency NFT sweep for unsolicited transfers
+- Producer pull-payment system prevents marketplace disruption
 
 ## Special Notes
 
-- **Phase 1 is live and unchanged** - AstaVerde contract deployed on Base mainnet
-- **Phase 2 current focus** - Implementing vault system per SSC_PLAN.md specifications
-- **Phase 2 changes uncommitted** - Use `git status` and `git diff` to see current vault implementation progress
+- **v1 deployed on Base mainnet** - Original marketplace functionality
+- **v2 released 2025-08-25** - Vault system and producer payment improvements complete
+- Vault implementation details in `docs/SSC_PLAN.md`
 - Always run `npm run compile` after contract changes to update webapp configs
 - Only un-redeemed EcoAssets can be deposited as vault collateral (enforced on-chain)
 - Vault enables fixed 20 SCC loans against individual NFTs (no liquidations)
-- When testing locally, use `npm run task:mint:local` to create test NFTs
+- When testing locally, use `node scripts/mint-local-batch.js` to create test NFTs
 - Base network is production target, Sepolia for testing
+
+## Development Setup
+
+The project uses a simplified local development setup:
+
+- **Local**: `npm run dev:local` - Complete local stack on port 3000 (node on 8545)
+- **Sepolia**: `npm run dev:sepolia` - Base Sepolia testnet on port 3002
+
+Each environment uses its own configuration file (`.env.local` and `.env.sepolia`).
 
 ## Dependency Management & Security
 
@@ -169,4 +189,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Dependencies are pinned to specific secure versions
 - Regular security audits via `npm audit` show acceptable risk levels
 
-- The developer takes care of running the local dev stack themselves, so don't run it.
+## Quick Start for Development
+
+To start the complete local development environment:
+```bash
+npm run dev:local
+```
+
+This single command:
+1. Starts a Hardhat node on port 8545
+2. Deploys all contracts using hardhat-deploy
+3. Updates webapp configuration with contract addresses
+4. Starts the webapp on port 3000
+5. Shows all test accounts and instructions
+
+## Version History
+
+- **v2 (2025-08-25)**: Added EcoStabilizer vault, producer pull-payment system, gas optimizations
+- **v1 (2024-11-15)**: Initial release with NFT marketplace and Dutch auction pricing

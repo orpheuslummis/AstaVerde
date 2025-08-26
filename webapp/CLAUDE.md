@@ -45,31 +45,44 @@ webapp/
 ## Development Commands
 
 ```bash
-# Development
-npm run dev
+# Development (from webapp/ directory)
+npm run dev              # Start webapp (connects to .env.local config)
+npm run dev:turbo        # Start with Turbo mode
 
 # Build
-npm run build
+npm run build            # Production build
 
 # Linting
-npm run lint
-npm run lint:fix
+npm run lint             # Check for issues
+npm run lint:fix         # Auto-fix issues
 
-# Testing
-npm run test:e2e         # Playwright tests
-npm run test:wallet      # Synpress wallet tests
+# From root directory - Full environments:
+npm run dev:local        # Local stack (port 3000/3001)
+npm run dev:sepolia      # Sepolia stack (port 3002)
+npm run dev:both         # Both simultaneously
 ```
 
 ## Environment Variables
 
-Required in `webapp/.env.local`:
+### Local Development (`webapp/.env.local`)
+Generated automatically by `npm run dev:local`. Contains:
+- Local contract addresses (deployed to Hardhat node)
+- Chain selection: `local`
+- Demo API keys
 
+### Sepolia Testing (`webapp/.env.sepolia`)
+Configure manually after deploying contracts:
 ```
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
-NEXT_PUBLIC_CHAIN_ID=84532  # Base Sepolia
-NEXT_PUBLIC_INFURA_KEY=your_infura_key
-NEXT_PUBLIC_USDC_DECIMALS=6
+NEXT_PUBLIC_CHAIN_SELECTION=base_sepolia
+NEXT_PUBLIC_ASTAVERDE_ADDRESS=0x...      # From deployment
+NEXT_PUBLIC_ECOSTABILIZER_ADDRESS=0x...  # From deployment
+NEXT_PUBLIC_SCC_ADDRESS=0x...            # From deployment
+NEXT_PUBLIC_USDC_ADDRESS=0x...           # From deployment
+NEXT_PUBLIC_ALCHEMY_API_KEY=your_key
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_id
 ```
+
+Each environment uses its own config file - no switching needed.
 
 ## Contract Integration
 
