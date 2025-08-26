@@ -41,3 +41,4 @@ webapp/webapp/
 
 # Temporary test files
 webapp/test-wallet-flow.js
+webapp/.env.sepolia
