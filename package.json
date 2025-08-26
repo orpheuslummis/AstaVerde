@@ -42,6 +42,7 @@
         "lodash": "^4.17.21",
         "mocha": "^10.2.0",
         "nodemon": "^3.1.0",
+        "npm-run-all": "^4.1.5",
         "oxc": "^1.0.1",
         "prettier": "^3.1.0",
         "prettier-plugin-solidity": "^1.2.0",
@@ -79,9 +80,14 @@
         "qa:status": "cross-env TS_NODE_TRANSPILE_ONLY=true npx hardhat run scripts/status-check.js",
         "qa:fast": "cross-env TS_NODE_TRANSPILE_ONLY=true npx hardhat run scripts/fast-qa.js",
         "qa:full": "cross-env TS_NODE_TRANSPILE_ONLY=true npx hardhat run scripts/claude-friendly-qa.js --network localhost",
-        "dev:complete": "cross-env SCENARIO=complete node -r ts-node/register/transpile-only scripts/dev-environment.js",
-        "deploy:testnet": "hardhat deploy --network base-sepolia",
-        "deploy:mainnet": "hardhat deploy --network base-mainnet"
+        "validate:abis": "node scripts/validate-abis.js",
+        "dev:local": "node scripts/start-local.js",
+        "dev:local:stop": "node scripts/stop-local.js",
+        "dev:local:seed": "cross-env TS_NODE_TRANSPILE_ONLY=true npx hardhat run scripts/seed-local.js --network localhost",
+        "dev:sepolia": "node scripts/dev-sepolia.js",
+        "deploy:testnet": "node scripts/deploy-with-validation.js --network base-sepolia",
+        "deploy:mainnet": "node scripts/deploy-with-validation.js --network base-mainnet",
+        "deploy:safe": "node scripts/deploy-with-validation.js"
     },
     "dependencies": {
         "@openzeppelin/contracts": "^5.0.0",
