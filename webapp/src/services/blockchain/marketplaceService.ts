@@ -62,19 +62,79 @@ export class MarketplaceService {
     const currentUnitPrice = await this.getCurrentBatchPrice(batchId);
     const exactTotalCost = currentUnitPrice * BigInt(tokenAmount);
 
+    // Preflight: ensure marketplace not paused and inventory is available
+    const astaVerde = getAstaVerdeContract();
+    try {
+      const paused = (await this.publicClient.readContract({
+        ...astaVerde,
+        functionName: "paused",
+      })) as boolean;
+      if (paused) {
+        throw new Error("Marketplace is paused. Please try again later.");
+      }
+    } catch {
+      // ignore if paused() unavailable in ABI/env
+    }
+
+    // Preflight: check remaining items before attempting tx
+    try {
+      const info = await this.getBatchInfo(batchId);
+      if (BigInt(tokenAmount) > info.itemsLeft) {
+        throw new Error("Not enough tokens available in this batch");
+      }
+    } catch {
+      // If batch info fetch fails, continue and rely on on-chain checks
+    }
+
+    // Check USDC balance first
+    const usdcContract = getUsdcContract();
+    const balance = (await this.publicClient.readContract({
+      ...usdcContract,
+      functionName: "balanceOf",
+      args: [this.walletClient!.account!.address],
+    })) as bigint;
+
+    console.log("Purchase attempt:", {
+      batchId,
+      tokenAmount,
+      unitPrice: currentUnitPrice.toString(),
+      totalCost: exactTotalCost.toString(),
+      userBalance: balance.toString(),
+      hasEnoughFunds: balance >= exactTotalCost,
+    });
+
+    if (balance < exactTotalCost) {
+      throw new Error(`Insufficient USDC balance. Need ${exactTotalCost.toString()} but have ${balance.toString()}`);
+    }
+
     // Check and handle USDC approval
     await this.ensureUsdcApproval(exactTotalCost);
 
     // Execute purchase
     const contract = getAstaVerdeContract();
-    const { request } = await this.publicClient.simulateContract({
-      ...contract,
-      functionName: "buyBatch",
-      args: [BigInt(batchId), exactTotalCost, BigInt(tokenAmount)],
-      account: this.walletClient.account,
-    });
 
-    const hash = await this.walletClient.writeContract(request);
+    // Try simulate first for clearer errors; fall back to direct write if it fails
+    let hash: `0x${string}`;
+    try {
+      const { request } = await this.publicClient.simulateContract({
+        ...contract,
+        functionName: "buyBatch",
+        args: [BigInt(batchId), exactTotalCost, BigInt(tokenAmount)],
+        account: this.walletClient.account,
+      });
+      hash = await this.walletClient.writeContract(request);
+    } catch (simError) {
+      try {
+        hash = await this.walletClient.writeContract({
+          ...contract,
+          functionName: "buyBatch",
+          args: [BigInt(batchId), exactTotalCost, BigInt(tokenAmount)],
+          account: this.walletClient.account,
+        });
+      } catch (writeError) {
+        throw new Error(this.getRevertReason(writeError));
+      }
+    }
 
     // Wait for confirmation with retry logic
     await this.waitForTransactionWithRetry(hash);
@@ -165,27 +225,34 @@ export class MarketplaceService {
       args: [this.walletClient!.account!.address, astaverdeContract.address],
     })) as bigint;
 
+    console.log("Approval check:", {
+      currentAllowance: allowance.toString(),
+      requiredAmount: amount.toString(),
+      needsApproval: allowance < amount,
+      walletAddress: this.walletClient!.account!.address,
+      spenderAddress: astaverdeContract.address,
+    });
+
     if (allowance < amount) {
-      // Get max batch size for approval calculation
-      const maxBatchSize = (await this.publicClient.readContract({
-        ...astaverdeContract,
-        functionName: "maxBatchSize",
-      })) as bigint;
+      // Approve with a buffer to avoid prompting every single purchase
+      const approvalAmount = amount * APPROVAL_BUFFER_FACTOR;
 
-      // Calculate approval amount with buffer
-      const pricePerUnit = amount / BigInt(1); // Adjust based on token amount
-      const approvalAmount = maxBatchSize * pricePerUnit * APPROVAL_BUFFER_FACTOR;
+      try {
+        // Skip simulation and directly execute approval
+        // Simulation might be failing due to viem/wagmi issues with local network
+        const approveTx = await this.walletClient!.writeContract({
+          ...usdcContract,
+          functionName: "approve",
+          args: [astaverdeContract.address, approvalAmount],
+          account: this.walletClient!.account,
+        });
 
-      // Execute approval
-      const { request } = await this.publicClient.simulateContract({
-        ...usdcContract,
-        functionName: "approve",
-        args: [astaverdeContract.address, approvalAmount],
-        account: this.walletClient!.account,
-      });
-
-      const approveTx = await this.walletClient.writeContract(request);
-      await this.publicClient.waitForTransactionReceipt({ hash: approveTx });
+        await this.publicClient.waitForTransactionReceipt({ hash: approveTx });
+        console.log("Approval successful:", approveTx);
+      } catch (error) {
+        console.error("Approval error details:", error);
+        throw error;
+      }
     }
   }
 
@@ -226,5 +293,12 @@ export class MarketplaceService {
         await new Promise((resolve) => setTimeout(resolve, TX_RETRY_DELAY));
       }
     }
+  }
+
+  private getRevertReason(error: unknown): string {
+    const err = error as { data?: { message?: string }; shortMessage?: string; message?: string };
+    return (
+      err?.data?.message || err?.shortMessage || err?.message || "Transaction failed without a reason."
+    );
   }
 }

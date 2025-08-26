@@ -66,23 +66,13 @@ export async function fetchJsonFromIpfsWithFallback(
 
   // For local development, return mock metadata instead of trying external gateways
   if (ENV.CHAIN_SELECTION === "local") {
-    // eslint-disable-next-line no-console
-    console.log(`Local development mode: returning mock metadata for ${cid}`);
 
     // Generate different mock data based on the CID to simulate variety
-    const mockNumber = cid.includes("Vault")
-      ? "V"
-      : cid.includes("Test3")
-        ? "3"
-        : cid.includes("Test2")
-          ? "2"
-          : cid.includes("Test1")
-            ? "1"
-            : cid.includes("Batch3")
-              ? "3"
-              : cid.includes("Batch2")
-                ? "2"
-                : "1";
+    // Extract the actual number from CIDs like QmTest1, QmTest2, QmVault1, etc.
+    const extractedNumber = cid.match(/(\d+)$/)?.[1] || "1";
+    const isVault = cid.includes("Vault");
+    const isExtra = cid.includes("Extra");
+    const mockNumber = isVault ? "V" : extractedNumber;
 
     // Create different visual patterns for variety
     const patterns = {
@@ -146,14 +136,16 @@ export async function fetchJsonFromIpfsWithFallback(
                 <circle cx="200" cy="200" r="80" fill="white" opacity="0.2"/>
                 <text x="50%" y="45%" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle" opacity="0.9">CO2</text>
                 <text x="50%" y="58%" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="white" text-anchor="middle" dominant-baseline="middle" opacity="0.8">OFFSET</text>
-                <text x="50%" y="70%" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">#${mockNumber}</text>
+                <text x="50%" y="70%" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">#${isVault ? `V-${extractedNumber}` : isExtra ? `E-${extractedNumber}` : extractedNumber}</text>
             </svg>
         `;
     // Properly encode the SVG string to handle UTF-8 characters
     const svgImage = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
 
+    const tokenId = isVault ? `V-${extractedNumber}` : isExtra ? `E-${extractedNumber}` : extractedNumber;
+
     const mockData = {
-      name: `Carbon Offset #${mockNumber}`,
+      name: `Carbon Offset #${tokenId}`,
       description:
         "Test carbon offset NFT for local development. This represents verified carbon credits from renewable energy projects.",
       image: svgImage,
@@ -161,7 +153,7 @@ export async function fetchJsonFromIpfsWithFallback(
       external_url: `https://example.com/token/${cid}`,
       attributes: [
         { trait_type: "Type", value: "Carbon Offset" },
-        { trait_type: "Batch", value: mockNumber },
+        { trait_type: "Token ID", value: tokenId },
         { trait_type: "Status", value: "Active" },
       ],
     };
