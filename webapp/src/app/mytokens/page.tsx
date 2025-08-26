@@ -54,17 +54,24 @@ export default function MyTokensPage() {
     depositBatch,
     approveNFT,
     getSccBalance,
+    getIsNftApproved,
     isVaultAvailable,
     vaultVersion,
   } = useVault();
 
+  // Memoize the token IDs to prevent unnecessary re-renders
+  const allTokenIds = useMemo(() => {
+    const uniqueIds = new Set([...tokens, ...vaultedTokens]);
+    return Array.from(uniqueIds);
+  }, [tokens, vaultedTokens]);
+
   // Fetch metadata when tokens change
   useEffect(() => {
-    const allTokenIds = [...tokens, ...vaultedTokens];
     if (allTokenIds.length > 0) {
       fetchMetadata(allTokenIds);
     }
-  }, [tokens, vaultedTokens, fetchMetadata]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allTokenIds]); // Removed fetchMetadata from deps to prevent infinite loop
 
   // Fetch SCC balance
   useEffect(() => {
@@ -101,9 +108,16 @@ export default function MyTokensPage() {
     setBulkDepositProgress({ current: 0, total: tokenIds.length });
 
     try {
-      await approveNFT();
+      // Check if NFTs are already approved
+      const isApproved = await getIsNftApproved();
 
-      if (vaultVersion === "V2") {
+      if (!isApproved) {
+        // Need approval first; approveNFT waits for receipt and refetch
+        await approveNFT();
+      }
+
+      // Treat unknown version as V2 (single-system contracts ship V2)
+      if (vaultVersion === "V2" || vaultVersion === null) {
         setBulkDepositProgress({ current: tokenIds.length, total: tokenIds.length });
         await depositBatch(tokenIds);
       } else {
@@ -139,7 +153,7 @@ export default function MyTokensPage() {
       setIsBulkDepositing(false);
       setBulkDepositProgress({ current: 0, total: 0 });
     }
-  }, [deposit, approveNFT, fetchTokens, depositBatch, vaultVersion]);
+  }, [deposit, approveNFT, fetchTokens, depositBatch, vaultVersion, getIsNftApproved]);
 
   // Handle individual deposit
   const handleIndividualDeposit = useCallback((tokenId: bigint) => {

@@ -28,13 +28,13 @@ export function useTokenData(): TokenData {
   const { astaverdeContractConfig } = useAppContext();
   const { getUserLoans, isVaultAvailable } = useVault();
 
-  const { execute: getTokensOfOwner } = useContractInteraction(
+  const { execute: getBalanceOf } = useContractInteraction(
     astaverdeContractConfig,
     "balanceOf",
   );
-  const { execute: getTokenInfo } = useContractInteraction(
+  const { execute: getIsRedeemed } = useContractInteraction(
     astaverdeContractConfig,
-    "tokens",
+    "isRedeemed",
   );
   const { execute: getLastTokenID } = useContractInteraction(
     astaverdeContractConfig,
@@ -50,7 +50,10 @@ export function useTokenData(): TokenData {
   );
 
   const fetchTokens = useCallback(async () => {
-    if (!address) return;
+    if (!address) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -89,30 +92,49 @@ export function useTokenData(): TokenData {
       }
       setBatchData(batchMap);
 
-      // Fetch user tokens and balances
+      // Fetch user tokens and balances in parallel
       const userTokens: bigint[] = [];
       const balances: Record<string, bigint> = {};
       const status: Record<string, boolean> = {};
 
+      // Create array of token IDs to fetch
+      const tokenIds: bigint[] = [];
       for (let i = 1n; i <= lastTokenID; i++) {
-        const balance = await getTokensOfOwner(address, i) as bigint;
+        tokenIds.push(i);
+      }
+
+      // Fetch all balances in parallel
+      const balancePromises = tokenIds.map(tokenId =>
+        getBalanceOf(address, tokenId).then(balance => ({ tokenId, balance: balance as bigint })),
+      );
+      const balanceResults = await Promise.all(balancePromises);
+
+      // Process results
+      for (const { tokenId, balance } of balanceResults) {
         if (balance && balance > 0n) {
           // Add token instances based on balance
           for (let j = 0n; j < balance; j++) {
-            userTokens.push(i);
+            userTokens.push(tokenId);
           }
-          balances[i.toString()] = balance;
+          balances[tokenId.toString()] = balance;
         }
       }
 
       setTokens(userTokens);
       setTokenBalances(balances);
 
-      // Fetch redeem status for unique tokens
+      // Fetch redeem status for unique tokens in parallel
       const uniqueTokenIds = Array.from(new Set(userTokens));
-      for (const tokenId of uniqueTokenIds) {
-        const tokenInfo = await getTokenInfo(tokenId) as any;
-        status[tokenId.toString()] = tokenInfo[4];
+      const statusPromises = uniqueTokenIds.map(tokenId =>
+        getIsRedeemed(tokenId).then(isRedeemed => ({
+          tokenId,
+          isRedeemed: isRedeemed as boolean,
+        })),
+      );
+      const statusResults = await Promise.all(statusPromises);
+
+      for (const { tokenId, isRedeemed } of statusResults) {
+        status[tokenId.toString()] = isRedeemed;
       }
 
       // Fetch vault information if available
@@ -121,11 +143,22 @@ export function useTokenData(): TokenData {
           const vaultLoans = await getUserLoans();
           setVaultedTokens(vaultLoans);
 
-          // Get redeem status for vaulted tokens
-          for (const vaultTokenId of vaultLoans) {
-            if (!status[vaultTokenId.toString()]) {
-              const tokenInfo = await getTokenInfo(vaultTokenId) as any;
-              status[vaultTokenId.toString()] = tokenInfo[4];
+          // Get redeem status for vaulted tokens in parallel
+          const vaultTokensToCheck = vaultLoans.filter(
+            vaultTokenId => !status[vaultTokenId.toString()],
+          );
+
+          if (vaultTokensToCheck.length > 0) {
+            const vaultStatusPromises = vaultTokensToCheck.map(tokenId =>
+              getIsRedeemed(tokenId).then(isRedeemed => ({
+                tokenId,
+                isRedeemed: isRedeemed as boolean,
+              })),
+            );
+            const vaultStatusResults = await Promise.all(vaultStatusPromises);
+
+            for (const { tokenId, isRedeemed } of vaultStatusResults) {
+              status[tokenId.toString()] = isRedeemed;
             }
           }
         } catch (vaultError) {
@@ -142,8 +175,8 @@ export function useTokenData(): TokenData {
     }
   }, [
     address,
-    getTokensOfOwner,
-    getTokenInfo,
+    getBalanceOf,
+    getIsRedeemed,
     getLastTokenID,
     getLastBatchID,
     getBatchInfo,
@@ -153,7 +186,8 @@ export function useTokenData(): TokenData {
 
   useEffect(() => {
     fetchTokens();
-  }, [fetchTokens]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]); // Only re-fetch when address changes
 
   return {
     tokens,
