@@ -15,7 +15,14 @@ export const GlobalLoadingProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(false);
+    // Wait for Next.js hydration and initial render
+    if (typeof window !== "undefined") {
+      // Small delay to ensure components are mounted
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   return (

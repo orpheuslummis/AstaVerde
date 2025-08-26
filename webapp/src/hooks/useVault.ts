@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseEther } from "viem";
 import { useAccount, usePublicClient, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { getEcoStabilizerContractConfig, getSccContractConfig, astaverdeContractConfig, detectVaultVersion } from "../lib/contracts";
@@ -6,6 +6,7 @@ import { customToast } from "../shared/utils/customToast";
 import { ENV } from "../config/environment";
 import { VAULT_GAS_LIMITS } from "../config/constants";
 import { parseVaultError, TxStatus, VaultErrorState } from "../utils/errors";
+import { dispatchRefetch } from "./useGlobalEvent";
 import type { VaultLoan } from "../features/vault/types";
 
 export interface VaultHook {
@@ -45,26 +46,29 @@ export interface VaultHook {
 const SCC_PER_ASSET = parseEther("20");
 
 export function useVault(): VaultHook {
-  const { address } = useAccount();
   const publicClient = usePublicClient();
+  const { address } = useAccount();
+
+  // State
+  const [vaultVersion, setVaultVersion] = useState<"V1" | "V2" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [vaultError, setVaultError] = useState<VaultErrorState | null>(null);
   const [txStatus, setTxStatus] = useState<TxStatus>(TxStatus.IDLE);
   const [paginatedLoans, setPaginatedLoans] = useState<bigint[]>([]);
-  const [vaultVersion, setVaultVersion] = useState<"V1" | "V2" | null>(null);
 
-  // Single-system: vault address is configured in ENV
-  const vaultAddress = ENV.ECOSTABILIZER_ADDRESS as `0x${string}`;
+  const vaultAddress = ENV.ECOSTABILIZER_ADDRESS;
 
-  const { writeContract, data: hash, isPending: isTransactionPending } = useWriteContract();
+  // Transaction management
+  const { writeContractAsync } = useWriteContract();
+  const [currentTxHash, setCurrentTxHash] = useState<`0x${string}` | undefined>();
+  
   const {
     isLoading: isConfirming,
     isSuccess: isConfirmed,
     error: txError,
   } = useWaitForTransactionReceipt({
-    hash,
-    query: { enabled: !!hash },
+    hash: currentTxHash,
   });
 
   // Check if vault contracts are available
@@ -76,7 +80,6 @@ export function useVault(): VaultHook {
   useEffect(() => {
     const detectVersion = async () => {
       if (publicClient && isVaultAvailable && vaultAddress) {
-        // For now, detect version on the configured vault address
         const version = await detectVaultVersion(publicClient);
         setVaultVersion(version);
       }
@@ -108,27 +111,23 @@ export function useVault(): VaultHook {
     ...(isVaultAvailable ? getSccContractConfig() : { address: undefined, abi: [] }),
     functionName: "balanceOf",
     args: address ? [address] : undefined,
-    query: { enabled: !!address && isVaultAvailable },
+    query: { enabled: isVaultAvailable && !!address },
   });
 
-  // Read user's SCC allowance to vault
+  // Read SCC allowance for vault
   const { data: sccAllowance, refetch: refetchSccAllowance } = useReadContract({
     ...(isVaultAvailable ? getSccContractConfig() : { address: undefined, abi: [] }),
     functionName: "allowance",
-    args:
-      address && isVaultAvailable && vaultAddress
-        ? [address, vaultAddress]
-        : undefined,
-    query: { enabled: !!address && isVaultAvailable },
+    args: address && vaultAddress ? [address, vaultAddress] : undefined,
+    query: { enabled: isVaultAvailable && !!address && !!vaultAddress },
   });
 
-  // Read user's loans - disabled in favor of paginated version
-  // Keeping this for backward compatibility but not using it
-  const { data: userLoansData } = useReadContract({
+  // Read user's loans directly (non-paginated version)
+  const { data: userLoansData, refetch: refetchUserLoans } = useReadContract({
     ...(isVaultAvailable ? getEcoStabilizerContractConfig() : { address: undefined, abi: [] }),
     functionName: "getUserLoans",
     args: address ? [address] : undefined,
-    query: { enabled: false }, // Disabled - using paginated version instead
+    query: { enabled: isVaultAvailable && !!address },
   });
 
   // Read total active loans
@@ -146,53 +145,28 @@ export function useVault(): VaultHook {
       address && isVaultAvailable && vaultAddress
         ? [address, vaultAddress]
         : undefined,
-    query: { enabled: !!address && isVaultAvailable },
+    query: { enabled: !!address && isVaultAvailable && !!vaultAddress },
   });
 
-  // Clear error state
+  // Clear error
   const clearError = useCallback(() => {
     setError(null);
     setVaultError(null);
-    setTxStatus(TxStatus.IDLE);
   }, []);
 
-  // Handle transaction status changes
-  useEffect(() => {
-    if (isTransactionPending) {
-      setTxStatus(TxStatus.SIGNING);
-    } else if (isConfirming) {
-      setTxStatus(TxStatus.CONFIRMING);
+  // Refresh all contract data
+  const refreshContractData = useCallback(async () => {
+    if (isVaultAvailable && address) {
+      await Promise.all([
+        refetchSccBalance(),
+        refetchSccAllowance(),
+        refetchUserLoans(),
+        refetchNftApproval(),
+      ]);
     }
-  }, [isTransactionPending, isConfirming]);
+  }, [isVaultAvailable, address, refetchSccBalance, refetchSccAllowance, refetchUserLoans, refetchNftApproval]);
 
-  // Declare refreshContractData ref (will be properly assigned later)
-  const refreshContractDataRef = useRef<() => Promise<void>>(() => Promise.resolve());
-
-  // Handle transaction success/error states
-  useEffect(() => {
-    if (isConfirmed && hash) {
-      setTxStatus(TxStatus.SUCCESS);
-      customToast.success("Transaction confirmed successfully!");
-      setIsLoading(false);
-      setError(null);
-      setVaultError(null);
-      // Refresh all data after successful transaction
-      refreshContractDataRef.current();
-      // Reset status after delay
-      setTimeout(() => setTxStatus(TxStatus.IDLE), 1500);
-    }
-    if (txError && hash) {
-      setTxStatus(TxStatus.ERROR);
-      const errorMessage = txError?.message || "Transaction failed";
-      setError(errorMessage);
-      const parsedError = parseVaultError(txError);
-      setVaultError(parsedError);
-      customToast.error(parsedError.message);
-      setIsLoading(false);
-    }
-  }, [isConfirmed, txError, hash]);
-
-  // Core vault functions
+  // Core vault functions with proper async handling
   const deposit = useCallback(
     async (tokenId: bigint) => {
       if (!address || !isVaultAvailable) {
@@ -203,20 +177,32 @@ export function useVault(): VaultHook {
         setIsLoading(true);
         setError(null);
         setVaultError(null);
-        setTxStatus(TxStatus.IDLE);
+        setTxStatus(TxStatus.SIGNING);
 
         const vaultContractConfig = getVaultContractConfig();
 
         customToast.info("Depositing NFT to vault...");
-        setTxStatus(TxStatus.SIGNING);
 
-        writeContract({
+        const hash = await writeContractAsync({
           ...vaultContractConfig,
           functionName: "deposit",
           args: [tokenId],
         });
 
-        // Success toast will be shown in useEffect when transaction is confirmed
+        setCurrentTxHash(hash);
+        setTxStatus(TxStatus.CONFIRMING);
+        
+        // Wait for transaction receipt
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+        
+        if (receipt?.status === 'success') {
+          setTxStatus(TxStatus.SUCCESS);
+          customToast.success("NFT successfully deposited!");
+          await refreshContractData();
+          dispatchRefetch();
+        } else {
+          throw new Error("Transaction failed");
+        }
       } catch (err) {
         const parsedError = parseVaultError(err, {
           operation: "deposit",
@@ -227,11 +213,13 @@ export function useVault(): VaultHook {
         setVaultError(parsedError);
         setTxStatus(TxStatus.ERROR);
         customToast.error(parsedError.message);
-        setIsLoading(false);
         throw err;
+      } finally {
+        setIsLoading(false);
+        setCurrentTxHash(undefined);
       }
     },
-    [address, isVaultAvailable, getVaultContractConfig, writeContract, approveNFT],
+    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
   );
 
   const withdraw = useCallback(
@@ -244,12 +232,11 @@ export function useVault(): VaultHook {
         setIsLoading(true);
         setError(null);
         setVaultError(null);
-        setTxStatus(TxStatus.IDLE);
+        setTxStatus(TxStatus.SIGNING);
 
         const vaultConfig = getVaultContractConfig();
 
         customToast.info("Withdrawing NFT from vault...");
-        setTxStatus(TxStatus.SIGNING);
 
         let gasLimit: bigint | undefined;
         try {
@@ -266,14 +253,27 @@ export function useVault(): VaultHook {
           gasLimit = VAULT_GAS_LIMITS.WITHDRAW;
         }
 
-        writeContract({
+        const hash = await writeContractAsync({
           ...vaultConfig,
           functionName: "withdraw",
           args: [tokenId],
           ...(gasLimit ? { gas: gasLimit } : {}),
         });
 
-        // Success toast will be shown in useEffect when transaction is confirmed
+        setCurrentTxHash(hash);
+        setTxStatus(TxStatus.CONFIRMING);
+        
+        // Wait for transaction receipt
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+        
+        if (receipt?.status === 'success') {
+          setTxStatus(TxStatus.SUCCESS);
+          customToast.success("NFT successfully withdrawn!");
+          await refreshContractData();
+          dispatchRefetch();
+        } else {
+          throw new Error("Transaction failed");
+        }
       } catch (err) {
         const parsedError = parseVaultError(err, {
           operation: "withdraw",
@@ -284,14 +284,16 @@ export function useVault(): VaultHook {
         setVaultError(parsedError);
         setTxStatus(TxStatus.ERROR);
         customToast.error(parsedError.message);
-        setIsLoading(false);
         throw err;
+      } finally {
+        setIsLoading(false);
+        setCurrentTxHash(undefined);
       }
     },
-    [address, isVaultAvailable, getVaultContractConfig, writeContract, approveSCC, publicClient],
+    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
   );
 
-  // Batch deposit function (V2 only)
+  // Batch operations
   const depositBatch = useCallback(
     async (tokenIds: bigint[]) => {
       if (!address || !isVaultAvailable) {
@@ -299,45 +301,51 @@ export function useVault(): VaultHook {
       }
 
       if (vaultVersion !== "V2") {
-        throw new Error("Batch operations not available - check contract deployment");
+        throw new Error("Batch operations only available in V2");
       }
 
       try {
         setIsLoading(true);
         setError(null);
         setVaultError(null);
-        setTxStatus(TxStatus.IDLE);
+        setTxStatus(TxStatus.SIGNING);
 
         const vaultConfig = getVaultContractConfig();
 
-        customToast.info(`Depositing ${tokenIds.length} NFTs to vault in a single transaction...`);
-        setTxStatus(TxStatus.SIGNING);
+        customToast.info(`Depositing ${tokenIds.length} NFTs to vault...`);
 
-        writeContract({
+        const hash = await writeContractAsync({
           ...vaultConfig,
           functionName: "depositBatch",
           args: [tokenIds],
         });
 
-        // Success toast will be shown in useEffect when transaction is confirmed
+        setCurrentTxHash(hash);
+        setTxStatus(TxStatus.CONFIRMING);
+        
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+        
+        if (receipt?.status === 'success') {
+          setTxStatus(TxStatus.SUCCESS);
+          customToast.success(`Successfully deposited ${tokenIds.length} NFTs!`);
+          await refreshContractData();
+          dispatchRefetch();
+        } else {
+          throw new Error("Transaction failed");
+        }
       } catch (err) {
-        const parsedError = parseVaultError(err, {
-          operation: "depositBatch",
-          approveNFT: async () => approveNFT(),
-          retry: () => depositBatch(tokenIds),
-        });
-        setError((err as Error)?.message || "Failed to deposit NFTs");
-        setVaultError(parsedError);
+        setError((err as Error)?.message || "Failed to deposit batch");
         setTxStatus(TxStatus.ERROR);
-        customToast.error(parsedError.message);
-        setIsLoading(false);
+        customToast.error("Batch deposit failed");
         throw err;
+      } finally {
+        setIsLoading(false);
+        setCurrentTxHash(undefined);
       }
     },
-    [address, isVaultAvailable, vaultVersion, getVaultContractConfig, writeContract, approveNFT],
+    [address, isVaultAvailable, vaultVersion, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
   );
 
-  // Batch withdraw function (V2 only)
   const withdrawBatch = useCallback(
     async (tokenIds: bigint[]) => {
       if (!address || !isVaultAvailable) {
@@ -345,61 +353,52 @@ export function useVault(): VaultHook {
       }
 
       if (vaultVersion !== "V2") {
-        throw new Error("Batch operations not available - check contract deployment");
+        throw new Error("Batch operations only available in V2");
       }
 
       try {
         setIsLoading(true);
         setError(null);
         setVaultError(null);
-        setTxStatus(TxStatus.IDLE);
+        setTxStatus(TxStatus.SIGNING);
 
         const vaultConfig = getVaultContractConfig();
 
-        customToast.info(`Withdrawing ${tokenIds.length} NFTs from vault in a single transaction...`);
-        setTxStatus(TxStatus.SIGNING);
+        customToast.info(`Withdrawing ${tokenIds.length} NFTs from vault...`);
 
-        let gasLimit: bigint | undefined;
-        try {
-          if (publicClient && address) {
-            const estimate = await publicClient.estimateContractGas({
-              ...vaultConfig,
-              functionName: "withdrawBatch",
-              args: [tokenIds],
-              account: address,
-            });
-            gasLimit = (estimate * 150n) / 100n; // add 50% buffer
-          }
-        } catch {
-          // Estimate gas for batch (roughly 60k per token for V2)
-          gasLimit = BigInt(60000 * tokenIds.length);
-        }
-
-        writeContract({
+        const hash = await writeContractAsync({
           ...vaultConfig,
           functionName: "withdrawBatch",
           args: [tokenIds],
-          ...(gasLimit ? { gas: gasLimit } : {}),
         });
 
-        // Success toast will be shown in useEffect when transaction is confirmed
+        setCurrentTxHash(hash);
+        setTxStatus(TxStatus.CONFIRMING);
+        
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+        
+        if (receipt?.status === 'success') {
+          setTxStatus(TxStatus.SUCCESS);
+          customToast.success(`Successfully withdrew ${tokenIds.length} NFTs!`);
+          await refreshContractData();
+          dispatchRefetch();
+        } else {
+          throw new Error("Transaction failed");
+        }
       } catch (err) {
-        const parsedError = parseVaultError(err, {
-          operation: "withdrawBatch",
-          approveSCC: async () => approveSCC(BigInt(tokenIds.length) * SCC_PER_ASSET),
-          retry: () => withdrawBatch(tokenIds),
-        });
-        setError((err as Error)?.message || "Failed to withdraw NFTs");
-        setVaultError(parsedError);
+        setError((err as Error)?.message || "Failed to withdraw batch");
         setTxStatus(TxStatus.ERROR);
-        customToast.error(parsedError.message);
-        setIsLoading(false);
+        customToast.error("Batch withdrawal failed");
         throw err;
+      } finally {
+        setIsLoading(false);
+        setCurrentTxHash(undefined);
       }
     },
-    [address, isVaultAvailable, vaultVersion, getVaultContractConfig, writeContract, publicClient, approveSCC],
+    [address, isVaultAvailable, vaultVersion, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
   );
 
+  // Backward-compatible alias for repayAndWithdraw
   const repayAndWithdraw = useCallback(
     async (tokenId: bigint) => {
       if (!address || !isVaultAvailable) {
@@ -410,12 +409,11 @@ export function useVault(): VaultHook {
         setIsLoading(true);
         setError(null);
         setVaultError(null);
-        setTxStatus(TxStatus.IDLE);
+        setTxStatus(TxStatus.SIGNING);
 
         const vaultConfig = getVaultContractConfig();
 
         customToast.info("Repaying 20 SCC and withdrawing NFT...");
-        setTxStatus(TxStatus.SIGNING);
 
         let gasLimit: bigint | undefined;
         try {
@@ -432,14 +430,26 @@ export function useVault(): VaultHook {
           gasLimit = VAULT_GAS_LIMITS.WITHDRAW;
         }
 
-        writeContract({
+        const hash = await writeContractAsync({
           ...vaultConfig,
           functionName: "withdraw",
           args: [tokenId],
           ...(gasLimit ? { gas: gasLimit } : {}),
         });
 
-        // Success toast will be shown in useEffect when transaction is confirmed
+        setCurrentTxHash(hash);
+        setTxStatus(TxStatus.CONFIRMING);
+        
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+        
+        if (receipt?.status === 'success') {
+          setTxStatus(TxStatus.SUCCESS);
+          customToast.success("NFT successfully withdrawn!");
+          await refreshContractData();
+          dispatchRefetch();
+        } else {
+          throw new Error("Transaction failed");
+        }
       } catch (err) {
         const parsedError = parseVaultError(err, {
           operation: "withdraw",
@@ -450,11 +460,13 @@ export function useVault(): VaultHook {
         setVaultError(parsedError);
         setTxStatus(TxStatus.ERROR);
         customToast.error(parsedError.message);
-        setIsLoading(false);
         throw err;
+      } finally {
+        setIsLoading(false);
+        setCurrentTxHash(undefined);
       }
     },
-    [address, isVaultAvailable, getVaultContractConfig, writeContract, approveSCC, publicClient],
+    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
   );
 
   // Approval functions
@@ -467,23 +479,41 @@ export function useVault(): VaultHook {
       setIsLoading(true);
       setError(null);
 
-      customToast.info("Initiating NFT approval transaction...");
+      customToast.info("Approving NFT transfers...");
 
-      writeContract({
+      // Resolve operator from current vault config to avoid ENV drift
+      const vaultConfig = getVaultContractConfig();
+      const operator = vaultConfig.address as `0x${string}`;
+
+      // Prevent accidental self-approval (will revert onchain)
+      if (operator.toLowerCase() === address.toLowerCase()) {
+        throw new Error("Invalid operator: cannot approve your own address");
+      }
+
+      const hash = await writeContractAsync({
         ...astaverdeContractConfig,
         functionName: "setApprovalForAll",
-        args: [ENV.ECOSTABILIZER_ADDRESS as `0x${string}`, true],
+        args: [operator, true],
+        account: address,
       });
 
-      // Success handling moved to useEffect above
+      const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+      
+      if (receipt?.status === 'success') {
+        await refetchNftApproval();
+        customToast.success("NFT approval granted!");
+      } else {
+        throw new Error("Approval failed");
+      }
     } catch (err) {
       const errorMessage = (err as Error)?.message || "Failed to approve NFT transfers";
       setError(errorMessage);
       customToast.error(errorMessage);
-      setIsLoading(false);
       throw err;
+    } finally {
+      setIsLoading(false);
     }
-  }, [address, isVaultAvailable, writeContract]);
+  }, [address, isVaultAvailable, writeContractAsync, publicClient, refetchNftApproval, getVaultContractConfig]);
 
   const approveSCC = useCallback(
     async (amount: bigint = SCC_PER_ASSET) => {
@@ -497,97 +527,51 @@ export function useVault(): VaultHook {
 
         const sccConfig = getSccConfig();
 
-        customToast.info("Initiating SCC approval transaction...");
+        customToast.info("Approving SCC transfers...");
 
-        writeContract({
+        const hash = await writeContractAsync({
           ...sccConfig,
           functionName: "approve",
           args: [ENV.ECOSTABILIZER_ADDRESS as `0x${string}`, amount],
         });
 
-        // Success handling moved to useEffect above
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+        
+        if (receipt?.status === 'success') {
+          await refetchSccAllowance();
+          customToast.success("SCC approval granted!");
+        } else {
+          throw new Error("Approval failed");
+        }
       } catch (err) {
         const errorMessage = (err as Error)?.message || "Failed to approve SCC";
         setError(errorMessage);
         customToast.error(errorMessage);
-        setIsLoading(false);
         throw err;
+      } finally {
+        setIsLoading(false);
       }
     },
-    [address, isVaultAvailable, getSccConfig, writeContract],
+    [address, isVaultAvailable, getSccConfig, writeContractAsync, publicClient, refetchSccAllowance],
   );
-
-  // Fetch paginated loans
-  const fetchPaginatedLoans = useCallback(async (): Promise<bigint[]> => {
-    if (!address || !isVaultAvailable || !publicClient) {
-      return [];
-    }
-
-    try {
-      const loans: bigint[] = [];
-      let startId = 1n;
-      const pageSize = 2000n; // MAX_PAGE_SIZE from contract
-
-      let hasMore = true;
-      while (hasMore) {
-        const result = await publicClient.readContract({
-          ...getVaultContractConfig(),
-          functionName: "getUserLoansPaginated",
-          args: [address, startId, pageSize],
-        });
-
-        const { tokenIds, nextStartId } = result as { tokenIds: bigint[]; nextStartId: bigint };
-        loans.push(...tokenIds);
-
-        if (nextStartId === 0n) {
-          hasMore = false;
-        } else {
-          startId = nextStartId;
-        }
-      }
-
-      setPaginatedLoans(loans);
-      return loans;
-    } catch (err) {
-      console.error("Error fetching user loans:", err);
-      // Fallback to non-paginated if paginated fails (e.g., old contract)
-      const fallbackLoans = (userLoansData as bigint[]) || [];
-      setPaginatedLoans(fallbackLoans);
-      return fallbackLoans;
-    }
-  }, [address, isVaultAvailable, publicClient, getVaultContractConfig, userLoansData]);
-
-  // Refresh all contract data
-  const refreshContractData = useCallback(async () => {
-    if (isVaultAvailable && address) {
-      await Promise.all([
-        refetchSccBalance(),
-        refetchSccAllowance(),
-        fetchPaginatedLoans(), // Use paginated fetch instead of refetchUserLoans
-        refetchNftApproval(),
-      ]);
-    }
-  }, [isVaultAvailable, address, refetchSccBalance, refetchSccAllowance, fetchPaginatedLoans, refetchNftApproval]);
-
-  // Assign to ref for use in effects
-  refreshContractDataRef.current = refreshContractData;
-
-  // Initialize paginated loans on mount and when address changes
-  useEffect(() => {
-    if (address && isVaultAvailable) {
-      fetchPaginatedLoans();
-    }
-  }, [address, isVaultAvailable, fetchPaginatedLoans]);
 
   // Read functions
   const getUserLoans = useCallback(async (): Promise<bigint[]> => {
-    // If we have cached paginated loans, return them
-    if (paginatedLoans.length > 0) {
-      return paginatedLoans;
+    // Prefer a fresh on-demand read to avoid cross-hook staleness during batch flows
+    try {
+      if (publicClient && address && isVaultAvailable) {
+        const loans = await publicClient.readContract({
+          ...getVaultContractConfig(),
+          functionName: "getUserLoans",
+          args: [address],
+        });
+        return loans as bigint[];
+      }
+    } catch {
+      // fall back to cached data below
     }
-    // Otherwise fetch them
-    return fetchPaginatedLoans();
-  }, [paginatedLoans, fetchPaginatedLoans]);
+    return (userLoansData as bigint[]) || [];
+  }, [publicClient, address, isVaultAvailable, getVaultContractConfig, userLoansData]);
 
   const getTotalActiveLoans = useCallback(async (): Promise<bigint> => {
     return (totalActiveLoansData as bigint) || 0n;
@@ -607,30 +591,17 @@ export function useVault(): VaultHook {
 
   const checkLoanStatus = useCallback(
     async (_tokenId: bigint): Promise<VaultLoan | null> => {
-      if (!isVaultAvailable) {
-        return null;
-      }
-
-      try {
-        // This would need to be called separately with useReadContract
-        // For now, we'll return null - the actual implementation should use
-        // a separate useReadContract hook for each tokenId when needed
-        return null;
-      } catch (err) {
-        console.error("Error checking loan status:", err);
-        return null;
-      }
+      // Would need implementation
+      return null;
     },
-    [isVaultAvailable],
+    [],
   );
 
   return {
-    // Core functionality
+    // Core functions
     deposit,
     withdraw,
     repayAndWithdraw,
-
-    // Batch operations (V2 only)
     depositBatch,
     withdrawBatch,
     vaultVersion,
@@ -649,42 +620,11 @@ export function useVault(): VaultHook {
 
     // Status
     isVaultAvailable,
-    isLoading: isLoading || isTransactionPending || isConfirming,
+    isLoading: isLoading || isConfirming,
     error,
     vaultError,
     txStatus,
-    txHash: hash,
+    txHash: currentTxHash,
     clearError,
-  };
-}
-
-// Helper hook for checking individual loan status
-export function useLoanStatus(tokenId: bigint) {
-  const { data: loanData } = useReadContract(
-    ENV.ECOSTABILIZER_ADDRESS && tokenId !== undefined
-      ? {
-        ...getEcoStabilizerContractConfig(),
-        functionName: "loans",
-        args: [tokenId],
-      }
-      : {
-        address: undefined as unknown as `0x${string}`,
-        abi: [],
-        functionName: "loans",
-      },
-  );
-
-  const loan: VaultLoan | null = loanData
-    ? {
-      tokenId,
-      borrower: (loanData as unknown[])[0] as string,
-      active: (loanData as unknown[])[1] as boolean,
-    }
-    : null;
-
-  return {
-    loan,
-    isInVault: loan?.active || false,
-    borrower: loan?.borrower || null,
   };
 }

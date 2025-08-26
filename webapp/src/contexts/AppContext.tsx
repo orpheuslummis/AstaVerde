@@ -1,5 +1,5 @@
 import type React from "react";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useReadContract } from "wagmi";
 import { useContractInteraction } from "../hooks/useContractInteraction";
 import { useAstaVerdeRefetch } from "../hooks/useGlobalEvent";
@@ -14,6 +14,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { address } = useAccount();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const hasLoadedBatchesRef = useRef(false);
 
   const { execute: getLastBatchID } = useContractInteraction(astaverdeContractConfig, "lastBatchID");
   const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
@@ -59,18 +60,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
 
         setBatches(processedBatches);
+        hasLoadedBatchesRef.current = true;
       } else {
         setBatches([]);
+        hasLoadedBatchesRef.current = true;
       }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Error fetching batches:", error);
       // Don't show toast on initial load failures
-      if (batches.length > 0) {
+      if (hasLoadedBatchesRef.current) {
         customToast.error("Failed to fetch batches");
       }
     }
-  }, [getLastBatchID, getBatchInfo, batches.length]);
+  }, [getLastBatchID, getBatchInfo]);
 
   const refetchBatches = useCallback(async () => {
     try {

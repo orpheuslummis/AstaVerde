@@ -30,22 +30,25 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   }, [connectError]);
 
   const connectWallet = useCallback(async () => {
+    // Try each connector
     for (const connector of connectors) {
       try {
-        await connect({ connector });
-        // The connection attempt has been made, but we need to check the result
-        // We can use a short timeout to allow for the connection state to update
-        await new Promise(resolve => setTimeout(resolve, 100));
-        if (isConnected && address) {
+        const result = await connect({ connector });
+        // Check if connection was successful
+        if (result) {
           return true;
         }
       } catch (error) {
+        // Log error but continue to next connector
+        console.warn(`Failed to connect with ${connector.name}:`, error);
         // Continue to next connector
       }
     }
 
+    // If no connectors worked, show error
+    customToast.error("Failed to connect wallet. Please try again.");
     return false;
-  }, [connect, connectors, isConnected, address]);
+  }, [connect, connectors]);
 
   // E2E test helper: Listen for e2e-connect event to trigger wallet connection
   useEffect(() => {
