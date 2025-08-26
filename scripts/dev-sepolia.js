@@ -112,22 +112,22 @@ class SepoliaDevEnvironment {
   async startWebapp() {
     console.log(`\n🚀 Starting webapp on port ${this.webappPort}...`);
     
-    // Copy .env.sepolia to .env.local temporarily
     const envSepoliaPath = path.join(__dirname, "../webapp/.env.sepolia");
-    const envLocalPath = path.join(__dirname, "../webapp/.env.local");
-    const envBackupPath = path.join(__dirname, "../webapp/.env.local.backup");
     
-    // Backup existing .env.local if it exists
-    if (fs.existsSync(envLocalPath)) {
-      fs.copyFileSync(envLocalPath, envBackupPath);
-      console.log("   Backed up existing .env.local");
-    }
+    // Load Sepolia env vars directly without modifying files
+    const envContent = fs.readFileSync(envSepoliaPath, "utf8");
+    const envVars = {};
     
-    // Copy sepolia config
-    fs.copyFileSync(envSepoliaPath, envLocalPath);
-    console.log("   Using Sepolia configuration");
+    envContent.split("\n").forEach(line => {
+      if (line && !line.startsWith("#")) {
+        const [key, value] = line.split("=");
+        if (key && value) {
+          envVars[key.trim()] = value.trim();
+        }
+      }
+    });
 
-    // Start Next.js on specified port
+    // Start Next.js on specified port with Sepolia environment
     this.webappProcess = spawn(
       "npm",
       ["run", "dev", "--", "-p", this.webappPort.toString()],
@@ -136,6 +136,7 @@ class SepoliaDevEnvironment {
         stdio: "inherit",
         env: {
           ...process.env,
+          ...envVars, // Inject Sepolia env vars directly
           PORT: this.webappPort.toString(),
         }
       }
@@ -144,14 +145,6 @@ class SepoliaDevEnvironment {
     // Handle cleanup
     const cleanup = () => {
       console.log("\n🧹 Cleaning up...");
-      
-      // Restore original .env.local if we backed it up
-      if (fs.existsSync(envBackupPath)) {
-        fs.copyFileSync(envBackupPath, envLocalPath);
-        fs.unlinkSync(envBackupPath);
-        console.log("   Restored original .env.local");
-      }
-      
       if (this.webappProcess) {
         this.webappProcess.kill();
       }
