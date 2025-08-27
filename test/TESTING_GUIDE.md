@@ -231,7 +231,7 @@ Before deploying to production, ensure:
 - `INTEGRATION_TESTING.md` - Detailed Phase 1↔2 integration analysis
 - `README.md` - Test suite overview and execution guide
 - `../SSC_PLAN.md` - Implementation specification
-- `../CLAUDE.md` - Development commands and architecture
+- `../AGENTS.md` - Development commands and architecture
 
 ## 💡 Testing Philosophy
 

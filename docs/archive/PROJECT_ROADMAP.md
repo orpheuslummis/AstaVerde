@@ -220,7 +220,7 @@ npm run verify:deploy
 - [Tickets Directory](/tickets/)
 - [Technical Spec (SSC_PLAN.md)](SSC_PLAN.md)
 - [Testing Guide](test/TESTING_GUIDE.md)
-- [Development Guide](CLAUDE.md)
+- [Agents Guide](../../AGENTS.md)
 - [Contract Docs](contracts/README.md)
 
 ---

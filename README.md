@@ -12,12 +12,12 @@ Carbon offset NFT marketplace with Dutch auction pricing and collateralized lend
 
 ## 📚 Documentation
 
-- **[Development Guide](./docs/development/DEV_GUIDE.md)** - Setup, structure, and workflow
-- **[Testing Guide](./docs/development/TESTING.md)** - Comprehensive testing documentation
-- **[Deployment Guide](./docs/deployment/DEPLOYMENT.md)** - Production deployment and checklist
-- **[QA Testing Guide](./docs/qa/QA_TESTING.md)** - QA testing guide and checklist
+- **[Agents Guide](./AGENTS.md)** - Canonical instructions for AI assistants and contributors
+- **[Development Guide](./docs/DEV_GUIDE.md)** - Setup, structure, and workflow
+- **[Testing Guide](./docs/TESTING.md)** - Comprehensive testing documentation
+- **[Deployment Guide](./docs/DEPLOYMENT.md)** - Production deployment and checklist
+- **[QA Testing Guide](./docs/QA_TESTING.md)** - QA testing guide and checklist
 - **[SSC Plan](./docs/SSC_PLAN.md)** - v2 vault technical specification
-- **[Claude Instructions](./CLAUDE.md)** - AI assistant configuration
 
 ## Architecture
 
@@ -61,13 +61,13 @@ npm run deploy:testnet    # Deploy to Base Sepolia
 npm run deploy:mainnet    # Deploy to Base mainnet
 ```
 
-See [CLAUDE.md](CLAUDE.md) for complete command reference.
+See [AGENTS.md](AGENTS.md) for the complete command reference and workflows.
 
 ## Documentation
 
-- [CLAUDE.md](CLAUDE.md) - Development guide and commands
+- [AGENTS.md](AGENTS.md) - Canonical guide for agents and developer workflows
 - [SSC_PLAN.md](docs/SSC_PLAN.md) - v2 vault specification
-- [DEPLOYMENT.md](docs/deployment/DEPLOYMENT.md) - Deployment instructions
+- [DEPLOYMENT.md](docs/DEPLOYMENT.md) - Deployment instructions
 - [contracts/README.md](contracts/README.md) - Contract specifications
 - [test/TESTING_GUIDE.md](test/TESTING_GUIDE.md) - Testing documentation
 
@@ -85,7 +85,7 @@ The EcoStabilizer vault system is deployed on Base Sepolia testnet for client te
 
 ### For Testers
 
-- **[QA Testing Guide](./docs/qa/QA_TESTING.md)** - Complete guide for testing the vault system
+- **[QA Testing Guide](./docs/QA_TESTING.md)** - Complete guide for testing the vault system
 - **Test URL**: [Vercel deployment URL - to be provided]
 - **Network**: Base Sepolia (testnet)
 
@@ -110,7 +110,7 @@ The EcoStabilizer vault system is deployed on Base Sepolia testnet for client te
     vercel --prod
     ```
 
-See [QA Testing Guide](./docs/qa/QA_TESTING.md) for detailed testing instructions.
+See [QA Testing Guide](./docs/QA_TESTING.md) for detailed testing instructions.
 
 ## License
 
