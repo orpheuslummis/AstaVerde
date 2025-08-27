@@ -10,7 +10,6 @@ export interface AdminControls {
   setAuctionDayThresholds: (increase: string, decrease: string) => Promise<void>;
   setPlatformSharePercentage: (percentage: string) => Promise<void>;
   setURI: (uri: string) => Promise<void>;
-  updateBasePrice: () => Promise<string>;
   mintBatch: (producers: string[], cids: string[]) => Promise<string>;
 }
 

@@ -31,22 +31,16 @@ export const READ_ONLY_FUNCTIONS = [
   "platformShareAccumulated",
   "basePrice",
   "priceFloor",
-  "priceDelta",
-  "priceDecreaseRate",
   "dayIncreaseThreshold",
   "dayDecreaseThreshold",
-  "lastPriceChangeTime",
-  "pricingInfo",
   "maxBatchSize",
   "platformSharePercentage",
   "supportsInterface",
-  "tokenOfOwnerByIndex",
   "dailyPriceDecay",
   "priceAdjustDelta",
 ] as const;
 
 export const WRITE_FUNCTIONS = [
-  "updateBasePrice",
   "mintBatch",
   "buyBatch",
   "redeemToken",

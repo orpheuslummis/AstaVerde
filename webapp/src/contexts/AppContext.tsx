@@ -120,7 +120,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     "setPlatformSharePercentage",
   ).execute;
   const claimPlatformFunds = useContractInteraction(astaverdeContractConfig, "claimPlatformFunds").execute;
-  const updateBasePrice = useContractInteraction(astaverdeContractConfig, "updateBasePrice").execute;
+  // Note: updateBasePrice is private in the contract and not exposed via ABI; do not attempt to call it from UI
   const getCurrentBatchPrice = useContractInteraction(astaverdeContractConfig, "getCurrentBatchPrice").execute;
   const buyBatch = useContractInteraction(astaverdeContractConfig, "buyBatch").execute;
   const redeemToken = useContractInteraction(astaverdeContractConfig, "redeemToken").execute;
@@ -165,16 +165,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setAuctionDayThresholds,
       setPlatformSharePercentage,
       claimPlatformFunds,
-      updateBasePrice: async () => {
-        try {
-          const txHash = await updateBasePrice();
-          return txHash;
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error("Error updating base price:", error);
-          throw error;
-        }
-      },
+      // No public updateBasePrice admin action; base price adjusts internally during mint/buy
       mintBatch: async (producers: string[], cids: string[]) => {
         try {
           const txHash = await mintBatch(producers, cids);
@@ -247,7 +238,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setAuctionDayThresholds,
       setPlatformSharePercentage,
       claimPlatformFunds,
-      updateBasePrice,
       mintBatch,
       refetchBatches,
       setPriceDelta,
@@ -266,7 +256,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [address, contractOwner]);
 
   const { execute: balanceOf } = useContractInteraction(astaverdeContractConfig, "balanceOf");
-  const { execute: tokenOfOwnerByIndex } = useContractInteraction(astaverdeContractConfig, "tokenOfOwnerByIndex");
 
   const contextValue = useMemo(
     () => ({
@@ -281,11 +270,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       getCurrentBatchPrice,
       buyBatch,
       redeemToken,
-      updateBasePrice: adminControls.updateBasePrice,
+      // updateBasePrice is intentionally omitted
       getBatchInfo,
       isAdmin,
       balanceOf,
-      tokenOfOwnerByIndex,
     }),
     [
       batches,
@@ -299,7 +287,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       getBatchInfo,
       isAdmin,
       balanceOf,
-      tokenOfOwnerByIndex,
     ],
   );
 

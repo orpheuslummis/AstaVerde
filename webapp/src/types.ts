@@ -33,7 +33,6 @@ export interface AppContextType {
   getCurrentBatchPrice: (batchId: number) => Promise<bigint>;
   buyBatch: (batchId: number, usdcAmount: bigint, tokenAmount: number) => Promise<string>;
   redeemToken: (tokenId: bigint) => Promise<string>;
-  updateBasePrice: () => Promise<string>;
   getBatchInfo: (batchId: number) => Promise<BatchInfoProps["batchData"]>;
   isAdmin: boolean;
 }
@@ -95,6 +94,5 @@ export interface AdminControls {
   setAuctionDayThresholds: (increase: string, decrease: string) => Promise<void>;
   setPlatformSharePercentage: (percentage: string) => Promise<void>;
   setURI: (uri: string) => Promise<void>;
-  updateBasePrice: () => Promise<string>;
   mintBatch: (producers: string[], cids: string[]) => Promise<string>;
 }
