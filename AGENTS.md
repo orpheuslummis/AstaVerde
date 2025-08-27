@@ -95,6 +95,15 @@ This repository uses Hardhat (contracts), a Next.js webapp, and helper scripts. 
 - For local flows, prefer `npm run dev:local` over ad‑hoc node/hardhat commands.
 - When touching deployment, prefer `deploy-with-validation.js` scripts over raw Hardhat CLI.
 
+## Tickets
+
+- Active vs archived: Active tickets live in `tickets/`. Completed tickets move to `tickets/archive/`. Location is the status; no extra tracker.
+- Working a ticket: Read and verify the issue, implement or confirm fixed, run tests, then archive on completion.
+- Move commands: If fixed without code changes: `mv tickets/XXX-*.md tickets/archive/XXX-fixed-*.md`. For won’t fix: `mv ... tickets/archive/XXX-wontfix-*.md`.
+- Naming: `XXX-category-description.md` where `XXX` is three digits. Categories: `security`, `enhancement`, `refactor`, `cleanup`, `doc`, `test`.
+- Priority field: Look for `**Priority**:` with values `CRITICAL` (security/slippage/MEV), `HIGH` (major functionality/UX), `MEDIUM`, `LOW`.
+- Focus areas: Security validations, user‑facing errors/UX, and code quality/cleanup.
+
 ## What Changed vs CLAUDE.md
 
 - Webapp config now uses `src/config/environment.ts` and `src/config/constants.ts`; `src/app.config.ts` is deprecated.
