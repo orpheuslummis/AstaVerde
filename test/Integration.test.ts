@@ -877,9 +877,14 @@ describe("Integration & End-to-End Testing", function () {
                 await Promise.all(deposits);
 
                 // Test view functions with distributed load
-                const user1Loans = await ecoStabilizer.getUserLoans(user1.address);
-                const user2Loans = await ecoStabilizer.getUserLoans(user2.address);
-                const user3Loans = await ecoStabilizer.getUserLoans(user3.address);
+                const user1LoansRaw = await ecoStabilizer.getUserLoans(user1.address);
+                const user2LoansRaw = await ecoStabilizer.getUserLoans(user2.address);
+                const user3LoansRaw = await ecoStabilizer.getUserLoans(user3.address);
+
+                // Normalize to numbers to avoid bigint/number comparison issues
+                const user1Loans = user1LoansRaw.map((x: any) => Number(x));
+                const user2Loans = user2LoansRaw.map((x: any) => Number(x));
+                const user3Loans = user3LoansRaw.map((x: any) => Number(x));
 
                 // Each user should have 10 loans (every 3rd token)
                 expect(user1Loans.length).to.equal(10);
