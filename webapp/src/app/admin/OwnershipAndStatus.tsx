@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useAccount, useReadContract } from "wagmi";
-import { formatUnits } from "viem";
+import { formatUSDCWithUnit } from "@/shared/utils/format";
 import { ENV } from "@/config/environment";
 import {
   getAstaVerdeContract,
@@ -93,7 +93,7 @@ export function ContractStatus() {
         <div className="mt-3">
           <div className="font-semibold">Platform Funds</div>
           <div>
-            Accrued: {typeof platformFunds === "bigint" ? formatUnits(platformFunds, ENV.USDC_DECIMALS) : "…"} USDC
+            Accrued: {typeof platformFunds === "bigint" ? formatUSDCWithUnit(platformFunds) : "…"}
           </div>
         </div>
         <div className="mt-3">
@@ -180,4 +180,3 @@ export function OwnershipTransfer() {
     </Card>
   );
 }
-

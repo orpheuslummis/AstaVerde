@@ -9,11 +9,14 @@ import { ENV } from "../../config/environment";
 import { Connected } from "../../components/Connected";
 import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
+import { useAdminDashboardEvents } from "../../hooks/useAdminEvents";
 import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
 import { customToast } from "../../utils/customToast";
 import { MaxPriceUpdateIterationsControl, RecoverSurplusUSDCControl } from "./GasOptimizationControls";
+import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { ContractStatus, OwnershipTransfer } from "./OwnershipAndStatus";
 import { TabNav } from "./TabNav";
+import { formatUSDC, formatUSDCPerDay, formatUSDCWithUnit } from "@/shared/utils/format";
 
 const MintBatch = dynamic(() => import("./MintBatch"), {
   ssr: false,
@@ -22,6 +25,7 @@ const MintBatch = dynamic(() => import("./MintBatch"), {
 
 function AdminControls() {
   const { isAdmin } = useAppContext();
+  const { stats, batchUsageHistory, highlightGasControl } = useAdminDashboardEvents();
 
   if (!isAdmin) {
     return <div>You do not have permission to access this page.</div>;
@@ -30,22 +34,87 @@ function AdminControls() {
   return (
     <Connected>
       <h2 className="text-2xl my-10 mx-10 text-emerald-800 dark:text-emerald-300">Admin Controls</h2>
+
+      {/* Event Statistics Dashboard */}
+      {(stats.totalIterationWarnings > 0 || stats.totalBatchesMarkedUsed > 0 || stats.totalSurplusRecoveries > 0) && (
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 mx-6 mb-6">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Event Activity</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+            {stats.totalIterationWarnings > 0 && (
+              <div className="bg-yellow-100 dark:bg-yellow-900/30 rounded-lg p-3">
+                <p className="text-yellow-800 dark:text-yellow-300">
+                  <span className="font-semibold">{stats.totalIterationWarnings}</span> Iteration Warnings
+                </p>
+              </div>
+            )}
+            {stats.totalBatchesMarkedUsed > 0 && (
+              <div className="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-3">
+                <p className="text-blue-800 dark:text-blue-300">
+                  <span className="font-semibold">{stats.totalBatchesMarkedUsed}</span> Batches Used in Price Decrease
+                </p>
+              </div>
+            )}
+            {stats.totalSurplusRecoveries > 0 && (
+              <div className="bg-green-100 dark:bg-green-900/30 rounded-lg p-3">
+                <p className="text-green-800 dark:text-green-300">
+                  <span className="font-semibold">{stats.totalSurplusRecoveries}</span> Surplus Recoveries
+                </p>
+              </div>
+            )}
+            {stats.totalSurplusRecovered > 0n && (
+              <div className="bg-purple-100 dark:bg-purple-900/30 rounded-lg p-3">
+                <p className="text-purple-800 dark:text-purple-300">
+                  <span className="font-semibold">{formatUSDC(stats.totalSurplusRecovered)}</span> USDC Recovered
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Status & Operations */}
+      <h3 className="px-6 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Status & Operations</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
         <ContractStatus />
-        <OwnershipTransfer />
+        <PauseContractControl />
       </div>
+
+      {/* Funds */}
+      <h3 className="px-6 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Funds</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
         <ClaimPlatformFunds />
-        <PauseContractControl />
-        <PriceFloorControl />
+        <RecoverSurplusUSDCControl />
+      </div>
+
+      {/* Pricing & Fees */}
+      <h3 className="px-6 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Pricing & Fees</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
         <BasePriceControl />
-        <AuctionTimeThresholdsControl />
-        <PlatformPercentageControl />
-        <MaxBatchSizeControl />
+        <PriceFloorControl />
         <DailyPriceDecayControl />
         <PriceAdjustDeltaControl />
-        <MaxPriceUpdateIterationsControl />
-        <RecoverSurplusUSDCControl />
+        <PlatformPercentageControl />
+        <AuctionTimeThresholdsControl />
+      </div>
+
+      {/* Capacity & Gas */}
+      <h3 className="px-6 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Capacity & Gas</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+        <MaxBatchSizeControl />
+        <CollapsibleSection
+          title="Advanced: Gas Optimization"
+          subtitle="Controls iteration cap for price updates. Most can leave default (100)."
+          defaultOpen={false}
+          forceOpen={highlightGasControl}
+        >
+          <MaxPriceUpdateIterationsControl />
+        </CollapsibleSection>
+      </div>
+
+      {/* Ownership (QA/Test) & Utilities */}
+      <h3 className="px-6 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Ownership & Test Utilities</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+        <OwnershipTransfer />
         <MintUSDCControl />
       </div>
     </Connected>
@@ -222,7 +291,7 @@ function ClaimPlatformFunds() {
       <div className="flex flex-col gap-4">
         {typeof platformFunds === "bigint" && (
           <div className="text-gray-600 dark:text-gray-300">
-                        Available Funds: {formatUnits(platformFunds, ENV.USDC_DECIMALS)} USDC
+            Available Funds: {formatUSDCWithUnit(platformFunds)}
           </div>
         )}
         <button
@@ -294,7 +363,7 @@ function PriceFloorControl() {
       </div>
       {typeof currentValue === "bigint" && (
         <div className="text-gray-600 dark:text-gray-300 mt-4">
-                    Current Price Floor: {formatUnits(currentValue, ENV.USDC_DECIMALS)} USDC
+          Current Price Floor: {formatUSDCWithUnit(currentValue)}
         </div>
       )}
     </ControlContainer>
@@ -351,10 +420,7 @@ function BasePriceControl() {
       </div>
       {typeof currentBasePrice === "bigint" && (
         <div className="text-gray-600 dark:text-gray-300 mt-4">
-                    Current Base Price: {Number(formatUnits(currentBasePrice, ENV.USDC_DECIMALS)).toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 6,
-          })} USDC
+          Current Base Price: {formatUSDCWithUnit(currentBasePrice)}
         </div>
       )}
     </ControlContainer>
@@ -615,7 +681,7 @@ function DailyPriceDecayControl() {
       </div>
       {typeof currentValue === "bigint" && (
         <div className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-                    Current: {formatUnits(currentValue, ENV.USDC_DECIMALS)} USDC/day
+          Current: {formatUSDCPerDay(currentValue)}
         </div>
       )}
     </ControlContainer>
@@ -678,7 +744,7 @@ function PriceAdjustDeltaControl() {
       </div>
       {typeof currentValue === "bigint" && (
         <div className="text-gray-600 dark:text-gray-300 mt-4">
-                    Current Price Adjustment Delta: {formatUnits(currentValue, ENV.USDC_DECIMALS)} USDC
+          Current Price Adjustment Delta: {formatUSDCWithUnit(currentValue)}
         </div>
       )}
     </ControlContainer>
