@@ -18,9 +18,9 @@ const args = process.argv.slice(2);
 const networkIndex = args.findIndex((arg) => arg === "--network");
 const network = networkIndex !== -1 && args[networkIndex + 1] ? args[networkIndex + 1] : "localhost";
 
-// Load base env, then local, then network-specific with override
+// Load base env, then allow local to override, then network-specific with override
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: true });
 const candidates = [`.env.${network}`, `.env.${network.split("-").pop()}`];
 for (const file of candidates) {
     const full = path.resolve(process.cwd(), file);

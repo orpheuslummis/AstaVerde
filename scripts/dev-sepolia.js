@@ -24,8 +24,8 @@ class SepoliaDevEnvironment {
         try {
             // Load root env files so we can map RPC_API_KEY → NEXT_PUBLIC_ALCHEMY_API_KEY
             dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-            dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
-            dotenv.config({ path: path.resolve(process.cwd(), ".env.sepolia") });
+            dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: true });
+            dotenv.config({ path: path.resolve(process.cwd(), ".env.sepolia"), override: true });
 
             // Check if .env.sepolia exists
             await this.checkSepoliaConfig();
@@ -144,9 +144,14 @@ class SepoliaDevEnvironment {
         if (resolvedAlchemyKey) {
             forcedEnv.NEXT_PUBLIC_ALCHEMY_API_KEY = resolvedAlchemyKey;
         }
-        // WalletConnect is optional for dev; only set if provided
-        if (!envVars.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID && process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID) {
+        // WalletConnect is optional for dev. Explicitly set it so .env.local values (e.g., "demo") don't leak in.
+        // Priority: webapp/.env.sepolia -> process.env -> else blank to disable WC.
+        if (envVars.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID) {
+            forcedEnv.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID = envVars.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID;
+        } else if (process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID) {
             forcedEnv.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID;
+        } else {
+            forcedEnv.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID = ""; // disable WC on Sepolia if not configured
         }
 
         // Start Next.js on specified port with Sepolia environment and forced overrides

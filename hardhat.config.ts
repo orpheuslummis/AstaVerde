@@ -5,11 +5,9 @@ import type { HardhatUserConfig } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
 
-// Load public environment variables
+// Load base env first, then allow .env.local to override
 dotenvConfig({ path: resolve(process.cwd(), ".env") });
-
-// Load private environment variables
-dotenvConfig({ path: resolve(process.cwd(), ".env.local") });
+dotenvConfig({ path: resolve(process.cwd(), ".env.local"), override: true });
 
 const mnemonic: string | undefined = process.env.MNEMONIC;
 const privateKey: string | undefined = process.env.PRIVATE_KEY;
