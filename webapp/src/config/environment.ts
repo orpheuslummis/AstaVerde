@@ -33,7 +33,6 @@ export function validateEnvironment(): void {
     "ECOSTABILIZER_ADDRESS",
     "SCC_ADDRESS",
     "ALCHEMY_API_KEY",
-    "WALLET_CONNECT_PROJECT_ID",
   ];
 
   const missing = required.filter((key) => !ENV[key as keyof typeof ENV]);
@@ -45,4 +44,13 @@ export function validateEnvironment(): void {
   }
 
   // All addresses are required in the single-system setup
+}
+
+// Helper: whether WalletConnect can be enabled
+export function hasWalletConnectProjectId(): boolean {
+  const id = (ENV.WALLET_CONNECT_PROJECT_ID || "").trim();
+  // Treat placeholder values (e.g., "demo") or malformed IDs as not configured.
+  // WalletConnect Cloud project IDs are 32 hex chars.
+  const isValidHex32 = /^[0-9a-fA-F]{32}$/.test(id);
+  return isValidHex32;
 }

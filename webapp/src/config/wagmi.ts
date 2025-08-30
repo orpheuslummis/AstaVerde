@@ -1,7 +1,8 @@
 import { getDefaultConfig } from "connectkit";
 import { createConfig, http } from "wagmi";
+import { injected } from "wagmi/connectors";
 import { getConfiguredChains, isLocalDevelopment } from "./chains";
-import { ENV } from "./environment";
+import { ENV, hasWalletConnectProjectId } from "./environment";
 import { mockConnector } from "../lib/mock-connector";
 
 // Get chains for configuration
@@ -14,16 +15,22 @@ const isE2EMode =
 
 // Configure wallet connection
 // For local development, don't use WalletConnect to avoid connection errors
+const hasWC = hasWalletConnectProjectId();
 const baseConfig = isLocalDevelopment()
-  ? {
+  ? ({
     appName: "Asta Verde",
     chains,
-  }
-  : {
-    appName: "Asta Verde",
-    walletConnectProjectId: ENV.WALLET_CONNECT_PROJECT_ID,
-    chains,
-  };
+  } as const)
+  : (hasWC
+    ? ({
+      appName: "Asta Verde",
+      walletConnectProjectId: ENV.WALLET_CONNECT_PROJECT_ID,
+      chains,
+    } as const)
+    : ({
+      appName: "Asta Verde",
+      chains,
+    } as const));
 
 // Create wagmi config with explicit transports
 let wagmiConfig: ReturnType<typeof createConfig>;
@@ -51,12 +58,33 @@ if (isE2EMode && isLocalDevelopment()) {
     },
   });
 } else {
-  // Normal mode: Use default config (filter out Coinbase)
-  const defaultConfig = getDefaultConfig(baseConfig as Parameters<typeof getDefaultConfig>[0]);
-  wagmiConfig = createConfig({
-    ...defaultConfig,
-    connectors: (defaultConfig.connectors || []).filter((c) => c?.id !== "coinbaseWallet"),
-  });
+  // Normal mode (~Sepolia/Mainnet)
+  if (hasWC) {
+    // Use ConnectKit defaults when a valid WC project ID exists
+    const defaultConfig = getDefaultConfig(baseConfig as Parameters<typeof getDefaultConfig>[0]);
+    wagmiConfig = createConfig({
+      ...defaultConfig,
+      // Filter out Coinbase; keep WC + Injected
+      connectors: (defaultConfig.connectors || []).filter((c) => c?.id !== "coinbaseWallet"),
+    });
+  } else {
+    // No WC project ID: build a minimal, stable connector set to avoid WC runtime errors
+    // Use only Injected connector; explicitly force HTTP transports.
+    wagmiConfig = createConfig({
+      chains,
+      connectors: [injected()],
+      transports: chains.reduce((acc, chain) => {
+        const url = chain.rpcUrls?.default?.http?.[0];
+        acc[chain.id] = http(url);
+        return acc;
+      }, {} as Record<number, ReturnType<typeof http>>),
+    });
+    if (typeof window !== "undefined") {
+      console.warn(
+        "WalletConnect disabled: set NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID to enable QR connections.",
+      );
+    }
+  }
 }
 
 export { wagmiConfig };
