@@ -181,9 +181,6 @@ await ethereum.request({
 ### Useful Scripts
 
 ```bash
-# Check deployment status
-node scripts/check-deployed.js
-
 # Verify contract state
 node scripts/verify-vault.js
 

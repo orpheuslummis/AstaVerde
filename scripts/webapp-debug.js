@@ -103,7 +103,7 @@ async function runWebappWithLogging() {
         },
         {
             pattern: /Contract.*not found/i,
-            suggestion: "📋 Contract not deployed. Run 'node scripts/deploy-local-qa.js' first.",
+            suggestion: "📋 Contract not deployed. Run 'npm run dev:local' to deploy contracts first.",
         },
         {
             pattern: /Failed to compile/i,

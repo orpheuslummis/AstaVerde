@@ -6,7 +6,6 @@ This directory contains development, testing, and QA utilities for the AstaVerde
 
 | Script                  | Purpose                                | Usage                               |
 | ----------------------- | -------------------------------------- | ----------------------------------- |
-| `deploy-local-qa.js`    | Complete QA environment setup          | `node scripts/deploy-local-qa.js`   |
 | `start-local-node.js`   | Automated Hardhat node + deployment    | `node scripts/start-local-node.js`  |
 | `manual-qa-flows.js`    | Interactive manual testing interface   | `node scripts/manual-qa-flows.js`   |
 | `qa-scenarios.js`       | Automated QA scenario validation       | `node scripts/qa-scenarios.js`      |
@@ -17,21 +16,6 @@ This directory contains development, testing, and QA utilities for the AstaVerde
 | `smoke_test_vault.mjs`  | Vault functionality smoke test         | `node scripts/smoke_test_vault.mjs` |
 
 ## 🚀 Local Development Setup
-
-### Full QA Environment Setup
-
-```bash
-# Setup complete testing environment with funded accounts
-node scripts/deploy-local-qa.js
-```
-
-**What it does:**
-
-- Deploys all contracts (MockUSDC, AstaVerde, SCC, EcoStabilizer)
-- Sets up proper roles and permissions
-- Creates funded test accounts (100k USDC each)
-- Mints test NFTs and pre-purchases some for immediate testing
-- Outputs all contract addresses for webapp integration
 
 ### Automated Node + Deployment
 
