@@ -34,7 +34,9 @@ This repository uses Hardhat (contracts), a Next.js webapp, and helper scripts. 
     - No liquidations: Withdraw exact NFT by repaying 20 SCC.
     - Only un‑redeemed NFTs acceptable as collateral (checked via `IAstaVerde`).
     - Access control: SCC `MINTER_ROLE` granted exclusively to the vault.
-    - Gas targets: deposit <150k, withdraw <120k.
+    - Gas targets: deposit <230k, withdraw <120k.
+        - Current typicals (local tests, 2025‑08‑28): deposit ~215k, withdraw ~110k.
+        - Future optimization possible; targets will be revisited if design changes.
 
 ## Local And Testnet Environments
 

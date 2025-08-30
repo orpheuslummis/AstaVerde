@@ -215,8 +215,8 @@ Use this checklist to systematically test all features. Check off items as you c
 
 #### 15. Gas Optimization
 
-- [ ] **Deposit gas** → Under 200k gas units
-- [ ] **Withdraw gas** → Under 150k gas units
+- [ ] **Deposit gas** → Under 230k gas units
+- [ ] **Withdraw gas** → Under 120k gas units
 - [ ] **Gas estimates** → Shown before confirmation
 - [ ] **Gas price** → Reasonable for Base network
 

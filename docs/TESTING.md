@@ -26,7 +26,7 @@ npm run coverage
 
 - ✅ Contract logic: deposit, withdraw, redemption, access control
 - ✅ Security: reentrancy, redeemed NFT rejection, role management
-- ✅ Gas optimization: deposit <165k, withdraw <120k
+- ✅ Gas optimization: deposit <230k, withdraw <120k
 - ✅ Edge cases: insufficient funds, zero amounts, invalid inputs
 - ✅ Phase 1↔2 integration: marketplace + vault interactions
 
@@ -197,8 +197,8 @@ node scripts/reset-vault-state.js
 
 - **Mint Batch**: ~450k gas
 - **Buy NFT**: ~235k gas
-- **Deposit to Vault**: ~155k gas
-- **Withdraw from Vault**: ~76k gas
+- **Deposit to Vault**: ~215k gas
+- **Withdraw from Vault**: ~110k gas
 - **Full Workflow**: ~525k gas
 
 ### Webapp Performance

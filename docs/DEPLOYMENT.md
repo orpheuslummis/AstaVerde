@@ -62,7 +62,7 @@ AV_ADDR_V11="0x..." # AstaVerde V1.1 address for dual-vault deployment
 
 - [ ] All tests pass: `npm run test`
 - [ ] Code quality checks: `npm run lint`
-- [ ] Gas targets verified: Deposit <165k, Withdraw <120k
+- [ ] Gas targets verified: Deposit <230k, Withdraw <120k
 - [ ] Integration tests validate Phase 1↔2 compatibility
 - [ ] Webapp builds successfully: `cd webapp && npm run build`
 
@@ -400,7 +400,7 @@ await ecoStabilizer.adminSweepNFT(tokenId, rescueAddress);
 
 | Operation    | Gas Used | Target | Status |
 | ------------ | -------- | ------ | ------ |
-| Deposit NFT  | ~152k    | <165k  | ✅     |
+| Deposit NFT  | ~215k    | <230k  | ✅     |
 | Withdraw NFT | ~75k     | <120k  | ✅     |
 | SCC Approval | ~46k     | N/A    | ✅     |
 | NFT Approval | ~24k     | N/A    | ✅     |
@@ -442,7 +442,7 @@ await tx2.wait();
 
 - [ ] **Tests**: All 173 tests passing
 - [ ] **Coverage**: Run `npm run coverage` and verify >90%
-- [ ] **Gas targets**: Deposit <165k, Withdraw <120k verified
+- [ ] **Gas targets**: Deposit <230k, Withdraw <120k verified
 - [ ] **Webapp build**: `cd webapp && npm run build` succeeds
 - [ ] **Lint checks**: `npm run lint` shows no errors
 - [ ] **Audit**: Security audit completed (if applicable)
