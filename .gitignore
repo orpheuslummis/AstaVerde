@@ -43,7 +43,9 @@ webapp/webapp/
 webapp/test-wallet-flow.js
 webapp/.env.sepolia
 webapp/.env.mainnet
-webapp/.env
+# Intentionally tracked public webapp env
+# (contains only NEXT_PUBLIC_* values)
+# webapp/.env is versioned on purpose
 
 # Root Sepolia env (contains secrets) — keep out of git
 .env.sepolia
