@@ -1,16 +1,24 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect } from "react";
-import { formatUnits, parseUnits } from "viem";
+import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
+import { formatUnits, parseUnits, isAddress } from "viem";
 import { useAccount, useReadContract } from "wagmi";
 import { ENV } from "../../config/environment";
 import { Connected } from "../../components/Connected";
 import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
-import { getAstaVerdeContract } from "../../config/contracts";
+import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
 import { customToast } from "../../utils/customToast";
 import { MaxPriceUpdateIterationsControl, RecoverSurplusUSDCControl } from "./GasOptimizationControls";
+import { ContractStatus, OwnershipTransfer } from "./OwnershipAndStatus";
+import { TabNav } from "./TabNav";
+
+const MintBatch = dynamic(() => import("./MintBatch"), {
+  ssr: false,
+  loading: () => <div className="p-6">Loading Mint…</div>,
+});
 
 function AdminControls() {
   const { isAdmin } = useAppContext();
@@ -22,9 +30,10 @@ function AdminControls() {
   return (
     <Connected>
       <h2 className="text-2xl my-10 mx-10 text-emerald-800 dark:text-emerald-300">Admin Controls</h2>
-      <Link href="/mint" className="btn btn-primary mx-6 mb-4 inline-block">
-                Go to Minting Page
-      </Link>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+        <ContractStatus />
+        <OwnershipTransfer />
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
         <ClaimPlatformFunds />
         <PauseContractControl />
@@ -37,17 +46,97 @@ function AdminControls() {
         <PriceAdjustDeltaControl />
         <MaxPriceUpdateIterationsControl />
         <RecoverSurplusUSDCControl />
+        <MintUSDCControl />
       </div>
     </Connected>
   );
 }
 
-function ControlContainer({ children, title }: { children: React.ReactNode; title: string }) {
+function MintUSDCControl() {
+  const { isAdmin } = useAppContext();
+  const { address } = useAccount();
+  const [to, setTo] = useState<string>(address ?? "");
+  const [amount, setAmount] = useState<string>("1000");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isTestEnv = ENV.CHAIN_SELECTION === "base_sepolia" || ENV.CHAIN_SELECTION === "local";
+  const usdcContractConfig = getUsdcContract();
+  const { execute } = useContractInteraction(usdcContractConfig, "mint");
+
+  const onMint = async () => {
+    if (!isTestEnv) return;
+    if (!to || !isAddress(to)) {
+      customToast.error("Enter a valid recipient address");
+      return;
+    }
+    if (!amount || Number(amount) <= 0) {
+      customToast.error("Enter a positive amount");
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      const value = parseUnits(amount, ENV.USDC_DECIMALS);
+      await execute(to, value);
+      customToast.success(`Minted ${amount} USDC to ${to.slice(0, 6)}…${to.slice(-4)}`);
+    } catch (err) {
+      console.error("Mint USDC error:", err);
+      customToast.error("Mint failed. Are you on Base Sepolia/local?");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="card bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
-      <h2 className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{title}</h2>
-      {children}
-    </div>
+    <ControlContainer title="Mint Testnet USDC" id="mint-usdc">
+      {!isTestEnv ? (
+        <div className="text-sm text-amber-600 dark:text-amber-400">
+          Hidden on mainnet. Switch to Base Sepolia or local to use the test faucet.
+        </div>
+      ) : !isAdmin ? (
+        <div className="text-sm text-gray-500">Admin only.</div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Calls MockUSDC.mint on {ENV.CHAIN_SELECTION.replace("_", " ")} (decimals {ENV.USDC_DECIMALS}).
+          </div>
+          <input
+            type="text"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            placeholder="Recipient address (0x…)"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          />
+          <div className="flex gap-2">
+            <input
+              type="number"
+              min="0"
+              step="0.000001"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Amount (USDC)"
+              className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={onMint}
+              disabled={!isTestEnv || isSubmitting}
+            >
+              {isSubmitting ? "Minting…" : "Mint"}
+            </button>
+          </div>
+        </div>
+      )}
+    </ControlContainer>
+  );
+}
+
+function ControlContainer({ children, title, id }: { children: React.ReactNode; title: string; id?: string }) {
+  return (
+    <section id={id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{title}</h2>
+      <div className="mt-4 space-y-4">{children}</div>
+    </section>
   );
 }
 
@@ -61,6 +150,7 @@ function PauseContractControl() {
 
   const handlePause = async () => {
     try {
+      if (!window.confirm("Pause the marketplace? Buyers will be unable to purchase during pause.")) return;
       await adminControls.pauseContract();
       customToast.success("Contract paused successfully");
       refetchIsContractPaused();
@@ -72,6 +162,7 @@ function PauseContractControl() {
 
   const handleUnpause = async () => {
     try {
+      if (!window.confirm("Unpause the marketplace and resume operations?")) return;
       await adminControls.unpauseContract();
       customToast.success("Contract unpaused successfully");
       refetchIsContractPaused();
@@ -595,5 +686,12 @@ function PriceAdjustDeltaControl() {
 }
 
 export default function Page() {
-  return <AdminControls />;
+  const params = useSearchParams();
+  const activeTab = (params.get("tab") ?? "controls").toString();
+  return (
+    <div className="pb-4">
+      <TabNav />
+      {activeTab === "mint" ? <MintBatch /> : <AdminControls />}
+    </div>
+  );
 }

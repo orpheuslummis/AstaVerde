@@ -44,7 +44,7 @@ export default function Page({ params }: { params: BatchParams }) {
           functionName: "getBatchInfo",
           args: [BigInt(params.id)],
         });
-        console.log("Batch info from contract:", batchInfo);
+        // Debug removed; keep UI quiet in dev
         setBatchData(batchInfo as BatchData);
         setIsLoading(false);
       } catch (err) {

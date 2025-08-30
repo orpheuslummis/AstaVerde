@@ -4,7 +4,7 @@ import { ConnectKitButton } from "connectkit";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useBalance, useBlockNumber } from "wagmi";
 import { ENV } from "../config/environment";
@@ -59,12 +59,40 @@ export function Header({ links }: HeaderProps) {
   }, [debouncedBlockNumber, isConnected, sccConfig, refetchUsdcBalance, refetchSccBalance]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
   const toggleMenu = () => {
     setIsMenuOpen((prev) => !prev);
   };
+
+  // Keep a CSS var with the current header height so the toast container
+  // (and any other overlays) can offset from the top bar.
+  useEffect(() => {
+    const el = headerRef.current;
+    const setVar = () => {
+      const height = el?.offsetHeight ?? 64;
+      // Set on :root to make it available app-wide
+      document.documentElement.style.setProperty("--header-height", `${height}px`);
+    };
+    setVar();
+    // Update on resize
+    window.addEventListener("resize", setVar);
+    return () => window.removeEventListener("resize", setVar);
+  }, []);
+
+  // Recalculate when the mobile menu opens/closes (height changes)
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    // Next paint to capture expanded height
+    const id = requestAnimationFrame(() => {
+      const height = el.offsetHeight || 64;
+      document.documentElement.style.setProperty("--header-height", `${height}px`);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isMenuOpen]);
 
   const usdcBalanceFormatted = useMemo(() => {
     if (!usdcBalance) return "0";
@@ -77,7 +105,7 @@ export function Header({ links }: HeaderProps) {
   }, [sccBalance]);
 
   return (
-    <header className="w-full flex items-center justify-between bg-primary dark:bg-gray-800 p-4 shadow-md">
+    <header ref={headerRef} className="w-full flex items-center justify-between bg-primary dark:bg-gray-800 p-4 shadow-md">
       <div className="flex items-center flex-shrink-0">
         <button
           className="lg:hidden text-white dark:text-gray-200 text-2xl px-4 py-2"

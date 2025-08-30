@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { useAppContext } from "../contexts/AppContext";
 import { useContractInteraction } from "../hooks/useContractInteraction";
 import { fetchJsonFromIpfsWithFallback, resolveIpfsUriToUrl } from "../utils/ipfsHelper";
+import { getTokenPlaceholderImageUrl } from "../utils/placeholderImage";
 
 interface TokenMetadata {
     name: string;
@@ -61,9 +62,6 @@ export default function TokenCard({
         setTokenData(metadataResult.data);
         if (metadataResult.data.image) {
           setResolvedImageUrl(resolveIpfsUriToUrl(metadataResult.data.image, metadataResult.gateway));
-        } else {
-          // eslint-disable-next-line no-console
-          console.warn(`Token ${tokenId} metadata loaded but has no image URI.`);
         }
       } else {
         throw new Error(`Failed to load metadata for ${contractTokenURI} from any gateway.`);
@@ -87,24 +85,30 @@ export default function TokenCard({
     }
   }, [onSelect, tokenId, isSelected, isRedeemed]);
 
+  const fallbackImage = useMemo(() => getTokenPlaceholderImageUrl(tokenId.toString()), [tokenId]);
+
   const cardContent = (
     <>
       {error ? (
         <p className="text-red-500 dark:text-red-400 p-4">{error}</p>
-      ) : tokenData && resolvedImageUrl ? (
+      ) : tokenData && (resolvedImageUrl || fallbackImage) ? (
         <>
           <div className="relative w-full aspect-square">
             <Image
-              src={resolvedImageUrl}
+              src={resolvedImageUrl || fallbackImage}
               alt={tokenData.name || `Token ${tokenId}`}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover rounded-t-lg"
               onError={() => {
                 // eslint-disable-next-line no-console
-                console.error(`Failed to load image: ${resolvedImageUrl}`);
-                setError(`Failed to load image for token ${tokenId}.`);
-                setResolvedImageUrl(null);
+                console.error(`Failed to load image: ${resolvedImageUrl || fallbackImage}`);
+                if (resolvedImageUrl) {
+                  // Fall back to placeholder if remote image fails
+                  setResolvedImageUrl(null);
+                } else {
+                  setError(`Failed to load image for token ${tokenId}.`);
+                }
               }}
             />
             {isMyTokensPage && (
@@ -123,22 +127,6 @@ export default function TokenCard({
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
                 {tokenData.description}
-              </p>
-            </div>
-          )}
-        </>
-      ) : tokenData && !resolvedImageUrl && !error ? (
-        <>
-          <div className="relative w-full aspect-square shimmer dark:bg-gray-700 rounded-t-lg">
-            {/* Placeholder for no image or image resolving state */}
-          </div>
-          {!isCompact && (
-            <div className="p-4">
-              <h2 className="text-lg font-semibold mb-2 truncate dark:text-white">
-                {tokenData.name || `Token ${tokenId}`}
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
-                {tokenData.description} (Image not available)
               </p>
             </div>
           )}

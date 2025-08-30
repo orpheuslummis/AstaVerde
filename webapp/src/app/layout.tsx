@@ -33,6 +33,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Toaster
             position="top-center"
             gutter={8}
+            // Push toasts below the top bar using a CSS variable
+            containerStyle={{
+              top: "calc(var(--header-height, 64px) + 8px)",
+            }}
             toastOptions={{
               duration: 7000,
               // Minimal, readable default styling

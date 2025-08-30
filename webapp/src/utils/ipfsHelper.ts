@@ -13,10 +13,13 @@ export interface TokenMetadata {
   image: File | null;
 }
 
+let cachedW3Client: unknown | null = null;
 export async function initializeWeb3StorageClient() {
   try {
+    if (cachedW3Client) return cachedW3Client;
     const { create } = await import("@web3-storage/w3up-client");
-    return await create();
+    cachedW3Client = await create();
+    return cachedW3Client;
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error("Failed to load Web3Storage client:", error);
@@ -165,8 +168,6 @@ export async function fetchJsonFromIpfsWithFallback(
     const response = await fetch(`${ENV.IPFS_GATEWAY_URL}${cid}`);
     if (response.ok) {
       const data = await response.json();
-      // eslint-disable-next-line no-console
-      console.log(`Primary gateway fetch SUCCEEDED for ${cid} using ${ENV.IPFS_GATEWAY_URL}`);
       return { data, gateway: ENV.IPFS_GATEWAY_URL };
     }
     // eslint-disable-next-line no-console
@@ -181,12 +182,12 @@ export async function fetchJsonFromIpfsWithFallback(
     const web3StorageGatewayUrl = `${WEB3_STORAGE_GATEWAY_PREFIX}${cid}${WEB3_STORAGE_GATEWAY_SUFFIX}`;
     try {
       // eslint-disable-next-line no-console
-      console.log(`Attempting web3.storage gateway for ${cid} to ${web3StorageGatewayUrl}`);
+      console.debug?.(`Attempting web3.storage gateway for ${cid} to ${web3StorageGatewayUrl}`);
       const response = await fetch(web3StorageGatewayUrl);
       if (response.ok) {
         const data = await response.json();
         // eslint-disable-next-line no-console
-        console.log(`web3.storage gateway fetch SUCCEEDED for ${cid} using ${web3StorageGatewayUrl}`);
+        console.debug?.(`web3.storage gateway fetch SUCCEEDED for ${cid} using ${web3StorageGatewayUrl}`);
         // For image resolution, we need a base URL that works with simple suffix concatenation for ipfs:// uris in metadata
         // So we pass back a generic representation of the successful gateway type or a known working public gateway for that host.
         // In this case, dweb.link can also resolve these CIDs if w3s.link works, and is easier for image URL construction.
@@ -207,12 +208,10 @@ export async function fetchJsonFromIpfsWithFallback(
   // Try fallback gateway (third attempt)
   try {
     // eslint-disable-next-line no-console
-    console.log(`Attempting fallback for ${cid} to ${FALLBACK_IPFS_GATEWAY_URL}`);
+    console.debug?.(`Attempting fallback for ${cid} to ${FALLBACK_IPFS_GATEWAY_URL}`);
     const response = await fetch(`${FALLBACK_IPFS_GATEWAY_URL}${cid}`);
     if (response.ok) {
       const data = await response.json();
-      // eslint-disable-next-line no-console
-      console.log(`Fallback gateway fetch SUCCEEDED for ${cid} using ${FALLBACK_IPFS_GATEWAY_URL}`);
       return { data, gateway: FALLBACK_IPFS_GATEWAY_URL };
     }
     // eslint-disable-next-line no-console

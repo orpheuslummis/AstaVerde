@@ -33,7 +33,11 @@ export const contracts = {
 
   usdc: {
     address: ENV.USDC_ADDRESS as `0x${string}`,
-    abi: ENV.CHAIN_SELECTION === "local" ? extendedERC20Abi : erc20Abi,
+    // Allow mint() on local and Base Sepolia (MockUSDC)
+    abi:
+      ENV.CHAIN_SELECTION === "local" || ENV.CHAIN_SELECTION === "base_sepolia"
+        ? (extendedERC20Abi as unknown as Abi)
+        : erc20Abi,
   } as ContractConfig,
 
   // Phase 2 Contracts (optional)

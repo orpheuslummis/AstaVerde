@@ -70,7 +70,6 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
 
   const mintBatch = useCallback(
     async (producers: string[], cids: string[]) => {
-      console.log("mintBatch called with producers:", producers, "and cids:", cids);
       return execute(producers, cids);
     },
     [execute],
@@ -102,8 +101,6 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
           functionName: "lastTokenID",
         });
 
-        console.log("Last Token ID:", lastTokenID);
-
         const batchSize = 500; // Adjust based on your needs and RPC provider limits
         const batches = Math.ceil(Number(lastTokenID) / batchSize);
         const ownedTokens: number[] = [];
@@ -130,7 +127,6 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
           });
         }
 
-        console.log("Owned tokens:", ownedTokens);
         return ownedTokens;
       } catch (error) {
         console.error("Error in getTokensOfOwner:", error);
@@ -152,8 +148,6 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
           functionName: "getCurrentBatchPrice",
           args: [BigInt(batchId)],
         });
-
-        console.log(`Current price for batch ${batchId}:`, price);
         return price;
       } catch (error) {
         console.error("Error in getCurrentBatchPrice:", error);
@@ -180,9 +174,7 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
         if (!walletClient) {
           throw new Error("Wallet not connected");
         }
-        console.log("Redeeming token:", tokenId);
         const result = await execute(tokenId);
-        console.log("Redeem token result:", result);
         return result;
       } catch (error) {
         console.error("Error in redeemToken:", error);
@@ -207,14 +199,12 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
 
   const getBatchInfo = useCallback(
     async (batchId: number) => {
-      console.log(`Fetching info for batch ${batchId}`);
       try {
         if (!publicClient) {
           throw new Error("Public client is not available");
         }
 
         const result = await execute(batchId);
-        console.log(`Raw batch ${batchId} info:`, result);
 
         if (Array.isArray(result) && result.length === 5) {
           return result;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BatchCard } from "../components/BatchCard";
 import { useAppContext } from "../contexts/AppContext";
 import Loader from "../components/Loader";
@@ -11,14 +11,23 @@ function BatchListing() {
   const [currentPage, setCurrentPage] = useState(1);
   const batchesPerPage = 8;
 
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const fetchBatches = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setIsLoading(true);
     try {
       await refetchBatches();
     } catch (error) {
       console.error("Failed to fetch batches:", error);
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) setIsLoading(false);
     }
   }, [refetchBatches]);
 

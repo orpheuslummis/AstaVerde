@@ -37,6 +37,11 @@ export function getPlaceholderImageUrl(id: string, tokenCount: string): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
+export function getTokenPlaceholderImageUrl(tokenId: string): string {
+  const svg = generateTokenPlaceholderSVG(tokenId);
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
 function generatePlaceholderSVG(id: string, tokenCount: string): string {
   const idNum = Number.parseInt(id, 10);
   const tokenCountNum = Number.parseInt(tokenCount, 10);
@@ -78,6 +83,32 @@ function generatePlaceholderSVG(id: string, tokenCount: string): string {
       ${generateElements(elementCount, idNum)}
       <rect x="10" y="10" width="280" height="180" fill="none" stroke="white" stroke-width="2" rx="10" ry="10" />
       <text x="150" y="190" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle">Batch ${id}</text>
+    </svg>
+  `;
+}
+
+function generateTokenPlaceholderSVG(id: string): string {
+  const idNum = Number.parseInt(id, 10);
+  const hue1 = (idNum * 131.508) % 360;
+  const hue2 = ((idNum << 4) * 211.508) % 360;
+  const hue3 = ((idNum << 2) * 173.508) % 360;
+  const saturation = 75 + (idNum % 20);
+  const lightness = 55 + ((idNum >> 2) % 25);
+
+  const path = _generateFractalPath(idNum, 3, Math.PI / 3);
+
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+      <defs>
+        <linearGradient id="gradTok${idNum}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:hsl(${hue1},${saturation}%,${lightness}%);stop-opacity:1" />
+          <stop offset="100%" style="stop-color:hsl(${hue2},${saturation}%,${lightness}%);stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#gradTok${idNum})" />
+      <path d="${path}" stroke="rgba(255,255,255,0.5)" stroke-width="2" fill="none"/>
+      <circle cx="200" cy="200" r="140" fill="hsla(${hue3},70%,60%,0.2)" />
+      <text x="200" y="210" font-family="Arial, sans-serif" font-size="28" fill="white" text-anchor="middle">Token ${id}</text>
     </svg>
   `;
 }
