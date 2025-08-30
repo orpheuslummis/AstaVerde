@@ -11,6 +11,7 @@ import { ENV } from "../config/environment";
 import { getUsdcContract, getSccContract } from "../config/contracts";
 import { useIsProducer } from "../hooks/useIsProducer";
 import { useDebounce } from "../hooks/useDebounce";
+import { useAppContext } from "../contexts/AppContext";
 
 interface HeaderProps {
     links: readonly { readonly name: string; readonly url: string }[];
@@ -19,6 +20,7 @@ interface HeaderProps {
 export function Header({ links }: HeaderProps) {
   const { address, isConnected } = useAccount();
   const { isProducer, producerBalance } = useIsProducer();
+  const { isAdmin } = useAppContext();
   const usdcConfig = getUsdcContract();
   const { data: usdcBalance, isLoading: isBalanceDataLoading, refetch: refetchUsdcBalance } = useBalance({
     address,
@@ -179,6 +181,26 @@ export function Header({ links }: HeaderProps) {
                             {formatUnits(producerBalance, 6)}
                           </span>
                         )}
+                      </span>
+                    </Link>
+                  </span>
+                </li>
+              )}
+              {/* Show Admin link if the connected user is admin */}
+              {link.name === "About" && isAdmin && (
+                <li key="admin-link" className="lg:mr-4">
+                  <span
+                    className={`group hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
+                      pathname === "/admin" ? "bg-white/20 dark:bg-gray-700" : ""
+                    }`}
+                  >
+                    <Link href="/admin">
+                      <span
+                        className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 flex items-center gap-1 ${
+                          pathname === "/admin" ? "text-white dark:text-white" : ""
+                        }`}
+                      >
+                        <span>🛡️</span> Admin
                       </span>
                     </Link>
                   </span>
