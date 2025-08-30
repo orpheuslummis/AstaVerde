@@ -7,7 +7,8 @@ export { useBatchOperations } from "./hooks/useBatchOperations";
 // Types
 export type {
   BatchCardProps,
-  TokenData,
+  TokenDataTuple,
+  TokenDataObj,
   TokenMetadata,
   BatchData,
   RedeemTokensButtonProps,

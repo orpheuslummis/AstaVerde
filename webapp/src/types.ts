@@ -47,10 +47,11 @@ export interface WalletContextType {
 }
 
 export interface TokenData {
-  0: bigint; // Token ID
-  1: string; // Producer
-  2: string; // CID
-  3: boolean; // Is redeemed
+  0: string;  // Original minter (address)
+  1: bigint;  // Token ID
+  2: string;  // Producer (address)
+  3: string;  // CID (string)
+  4: boolean; // Redeemed
 }
 
 export interface BatchInfoProps {

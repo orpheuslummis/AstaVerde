@@ -11,7 +11,7 @@ import {
   TX_RETRY_DELAY,
 } from "../../config/constants";
 import { ENV } from "../../config/environment";
-import type { BatchData, TokenData } from "../../features/marketplace/types";
+import type { BatchData, TokenDataObj, TokenDataTuple } from "../../features/marketplace/types";
 
 export class MarketplaceService {
   constructor(
@@ -196,7 +196,7 @@ export class MarketplaceService {
     return this.walletClient.writeContract(request);
   }
 
-  async getTokenInfo(tokenId: bigint): Promise<TokenData> {
+  async getTokenInfo(tokenId: bigint): Promise<TokenDataObj> {
     const contract = getAstaVerdeContract();
     const result = await this.publicClient.readContract({
       ...contract,
@@ -204,11 +204,18 @@ export class MarketplaceService {
       args: [tokenId],
     });
 
-    if (!Array.isArray(result) || result.length !== 4) {
+    if (!Array.isArray(result) || result.length !== 5) {
       throw new Error(`Invalid token data format for token ${tokenId}`);
     }
 
-    return result as unknown as TokenData;
+    const [originalMinter, id, producer, cid, redeemed] = result as TokenDataTuple;
+    return {
+      originalMinter,
+      tokenId: BigInt(id),
+      producer,
+      cid,
+      redeemed,
+    } satisfies TokenDataObj;
   }
 
   // Helper methods

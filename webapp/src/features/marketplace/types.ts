@@ -6,11 +6,17 @@ export interface BatchCardProps {
   isSoldOut: boolean;
 }
 
-export interface TokenData {
-  0: bigint; // Token ID
-  1: string; // Producer
-  2: string; // CID
-  3: boolean; // Is redeemed
+// Canonical return type for AstaVerde.tokens(uint256)
+// [originalMinter, tokenId, producer, cid, redeemed]
+export type TokenDataTuple = [string, bigint, string, string, boolean];
+
+// Preferred structured shape used by services/UI
+export interface TokenDataObj {
+  originalMinter: string;
+  tokenId: bigint;
+  producer: string;
+  cid: string;
+  redeemed: boolean;
 }
 
 export interface TokenMetadata {
