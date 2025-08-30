@@ -55,26 +55,30 @@ export default function Page({ params }: { params: { id: bigint } }) {
     try {
       const astaverdeContractConfig = getAstaVerdeContract();
       console.log(`Fetching token data for ID: ${params.id} using contract: ${astaverdeContractConfig.address}`);
-      const contractData = (await publicClient.readContract({
-        ...astaverdeContractConfig,
-        functionName: "tokens",
-        args: [params.id],
-      })) as ContractTokenDataTuple; // Use the updated interface
 
-      console.log("Raw tokenContractData from contract:", JSON.stringify(contractData, bigIntReplacer));
+      // v2-only API: read producer, cid, redeemed separately
+      const [producer, rawCid, isRedeemed] = (await Promise.all([
+        publicClient.readContract({
+          ...astaverdeContractConfig,
+          functionName: "getTokenProducer",
+          args: [params.id],
+        }),
+        publicClient.readContract({
+          ...astaverdeContractConfig,
+          functionName: "getTokenCid",
+          args: [params.id],
+        }),
+        publicClient.readContract({
+          ...astaverdeContractConfig,
+          functionName: "isRedeemed",
+          args: [params.id],
+        }),
+      ])) as [string, string, boolean];
 
-      // Check based on producer address, as tokenId might be 0 if not minted but owner is set
-      if (!contractData || contractData[2] === "0x0000000000000000000000000000000000000000") {
-        // Assuming producer address (index 2) being zero address means token doesn't exist or is invalid.
-        // contractData[0] is owner, contractData[1] is tokenId.
-        // For a non-existent token, the getter usually returns default zero values for all fields.
-        // If tokenId (contractData[1]) is 0, it indicates it's not a valid/minted token.
-        // Or if owner (contractData[0]) is zero address.
-        // A more robust check might involve checking if tokenId is 0 (contractData[1] === 0n)
+      if (!producer || producer === "0x0000000000000000000000000000000000000000") {
         throw new Error("Token does not exist or has no valid producer.");
       }
 
-      const rawCid = contractData[3]; // CID is at index 3
       console.log("Extracted rawCid:", rawCid);
       console.log("Type of rawCid:", typeof rawCid);
 
@@ -106,10 +110,10 @@ export default function Page({ params }: { params: { id: bigint } }) {
       }
 
       setTokenDisplay({
-        id: params.id, // or contractData[1] which should be the same
-        producerAddress: contractData[2], // Producer is at index 2
-        metadataCid: metadataCidUri, // Use the full URI
-        isRedeemed: contractData[4], // Redeemed is at index 4
+        id: params.id,
+        producerAddress: producer,
+        metadataCid: metadataCidUri,
+        isRedeemed,
         name: metadata.name,
         description: metadata.description,
         imageUrl: resolvedImageUrl,

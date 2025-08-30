@@ -75,12 +75,12 @@ async function main() {
             // Check who produced these tokens
             if (tokenIds.length > 0) {
                 const firstTokenId = tokenIds[0];
-                const tokenInfo = await astaVerde.tokens(firstTokenId);
-                console.log(`     Producer: ${tokenInfo.producer}`);
+                const producer = await astaVerde.getTokenProducer(firstTokenId);
+                console.log(`     Producer: ${producer}`);
 
                 // Match producer to account name
                 for (let j = 0; j < signers.length; j++) {
-                    if (signers[j].address.toLowerCase() === tokenInfo.producer.toLowerCase()) {
+                    if (signers[j].address.toLowerCase() === producer.toLowerCase()) {
                         console.log(`     Producer Name: ${accountNames[j] || `Account #${j}`}`);
                         break;
                     }

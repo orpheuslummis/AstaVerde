@@ -198,20 +198,28 @@ export class MarketplaceService {
 
   async getTokenInfo(tokenId: bigint): Promise<TokenDataObj> {
     const contract = getAstaVerdeContract();
-    const result = await this.publicClient.readContract({
-      ...contract,
-      functionName: "tokens",
-      args: [tokenId],
+
+    // v2-only API: compose from dedicated getters
+    const [producerRes, cidRes, redeemedRes] = await multicall(this.wagmiConfig, {
+      contracts: [
+        { ...contract, functionName: "getTokenProducer", args: [tokenId] },
+        { ...contract, functionName: "getTokenCid", args: [tokenId] },
+        { ...contract, functionName: "isRedeemed", args: [tokenId] },
+      ] as any[],
+      allowFailure: false,
     });
 
-    if (!Array.isArray(result) || result.length !== 5) {
-      throw new Error(`Invalid token data format for token ${tokenId}`);
+    const producer = producerRes as unknown as string;
+    const cid = cidRes as unknown as string;
+    const redeemed = redeemedRes as unknown as boolean;
+
+    if (!producer || producer === "0x0000000000000000000000000000000000000000") {
+      throw new Error(`Token ${tokenId} does not exist or has no valid producer`);
     }
 
-    const [originalMinter, id, producer, cid, redeemed] = result as TokenDataTuple;
     return {
-      originalMinter,
-      tokenId: BigInt(id),
+      originalMinter: "0x0000000000000000000000000000000000000000", // v2: not exposed via public API
+      tokenId,
       producer,
       cid,
       redeemed,

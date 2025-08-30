@@ -236,10 +236,7 @@ describe("AstaVerde Coverage Gaps", function () {
         it("Should allow valid setBasePrice adjustments", async function () {
             const newBase = 250 * USDC_PRECISION;
 
-            await expect(astaVerde.connect(owner).setBasePrice(newBase)).to.emit(
-                astaVerde,
-                "BasePriceForNewBatchesAdjusted",
-            );
+            await expect(astaVerde.connect(owner).setBasePrice(newBase)).to.emit(astaVerde, "BasePriceAdjusted");
 
             expect(await astaVerde.basePrice()).to.equal(newBase);
         });

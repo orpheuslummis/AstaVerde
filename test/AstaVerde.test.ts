@@ -497,8 +497,8 @@ describe("Adjustable Parameters", function () {
         const newBasePrice = ethers.parseUnits("200", 6);
 
         await expect(astaVerde.connect(admin).setBasePrice(newBasePrice))
-            .to.emit(astaVerde, "BasePriceForNewBatchesAdjusted")
-            .withArgs(newBasePrice, anyValue, anyValue, anyValue);
+            .to.emit(astaVerde, "BasePriceAdjusted")
+            .withArgs(newBasePrice, anyValue, false);
 
         expect(await astaVerde.basePrice()).to.equal(newBasePrice);
     });
