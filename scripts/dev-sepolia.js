@@ -9,6 +9,7 @@
 const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const dotenv = require("dotenv");
 
 class SepoliaDevEnvironment {
     constructor() {
@@ -21,6 +22,11 @@ class SepoliaDevEnvironment {
         console.log("=".repeat(60));
 
         try {
+            // Load root env files so we can map RPC_API_KEY → NEXT_PUBLIC_ALCHEMY_API_KEY
+            dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+            dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+            dotenv.config({ path: path.resolve(process.cwd(), ".env.sepolia") });
+
             // Check if .env.sepolia exists
             await this.checkSepoliaConfig();
 
@@ -124,13 +130,33 @@ class SepoliaDevEnvironment {
             }
         });
 
-        // Start Next.js on specified port with Sepolia environment
+        // Ensure correct chain + RPC for Sepolia regardless of .env.local overrides
+        const forcedEnv = {
+            NEXT_PUBLIC_CHAIN_SELECTION: "base_sepolia",
+        };
+
+        // Resolve public Alchemy key in priority order
+        // 1) webapp/.env.sepolia NEXT_PUBLIC_ALCHEMY_API_KEY
+        // 2) root .env.sepolia RPC_API_KEY
+        // 3) existing process env NEXT_PUBLIC_ALCHEMY_API_KEY
+        const resolvedAlchemyKey =
+            envVars.NEXT_PUBLIC_ALCHEMY_API_KEY || process.env.RPC_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
+        if (resolvedAlchemyKey) {
+            forcedEnv.NEXT_PUBLIC_ALCHEMY_API_KEY = resolvedAlchemyKey;
+        }
+        // WalletConnect is optional for dev; only set if provided
+        if (!envVars.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID && process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID) {
+            forcedEnv.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID;
+        }
+
+        // Start Next.js on specified port with Sepolia environment and forced overrides
         this.webappProcess = spawn("npm", ["run", "dev", "--", "-p", this.webappPort.toString()], {
             cwd: path.join(__dirname, "../webapp"),
             stdio: "inherit",
             env: {
                 ...process.env,
                 ...envVars, // Inject Sepolia env vars directly
+                ...forcedEnv, // Force chain selection and optional keys
                 PORT: this.webappPort.toString(),
             },
         });

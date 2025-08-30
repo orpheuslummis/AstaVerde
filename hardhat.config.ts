@@ -15,6 +15,9 @@ const mnemonic: string | undefined = process.env.MNEMONIC;
 const privateKey: string | undefined = process.env.PRIVATE_KEY;
 const rpcApiKey: string | undefined = process.env.RPC_API_KEY;
 const ownerAddress: string | undefined = process.env.OWNER_ADDRESS;
+// Optional direct RPC URL overrides (prefer these in CI or when rate-limited)
+const BASE_MAINNET_RPC_URL: string | undefined = process.env.BASE_MAINNET_RPC_URL;
+const BASE_SEPOLIA_RPC_URL: string | undefined = process.env.BASE_SEPOLIA_RPC_URL;
 
 const chainIds = {
     hardhat: 31337,
@@ -29,10 +32,10 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
             jsonRpcUrl = "http://localhost:8545";
             break;
         case "base-mainnet":
-            jsonRpcUrl = `https://base-mainnet.g.alchemy.com/v2/${rpcApiKey}`;
+            jsonRpcUrl = BASE_MAINNET_RPC_URL || `https://base-mainnet.g.alchemy.com/v2/${rpcApiKey}`;
             break;
         case "base-sepolia":
-            jsonRpcUrl = `https://base-sepolia.g.alchemy.com/v2/${rpcApiKey}`;
+            jsonRpcUrl = BASE_SEPOLIA_RPC_URL || `https://base-sepolia.g.alchemy.com/v2/${rpcApiKey}`;
             break;
         default:
             jsonRpcUrl = "";

@@ -11,14 +11,58 @@
 const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const dotenv = require("dotenv");
 
 // Parse command line arguments
 const args = process.argv.slice(2);
 const networkIndex = args.findIndex((arg) => arg === "--network");
 const network = networkIndex !== -1 && args[networkIndex + 1] ? args[networkIndex + 1] : "localhost";
 
+// Load base env, then local, then network-specific with override
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+const candidates = [`.env.${network}`, `.env.${network.split("-").pop()}`];
+for (const file of candidates) {
+    const full = path.resolve(process.cwd(), file);
+    if (fs.existsSync(full)) {
+        dotenv.config({ path: full, override: true });
+        break;
+    }
+}
+
 console.log(`🚀 Starting deployment process for network: ${network}`);
 console.log("═".repeat(60));
+
+// Preflight: RPC configuration sanity checks for non-local networks
+if (network !== "localhost" && network !== "hardhat") {
+    const env = process.env;
+    const isBaseSepolia = network === "base-sepolia";
+    const isBaseMainnet = network === "base-mainnet" || network === "base";
+    const haveDirectUrl =
+        (isBaseSepolia && !!env.BASE_SEPOLIA_RPC_URL) || (isBaseMainnet && !!env.BASE_MAINNET_RPC_URL);
+    const apiKey = env.RPC_API_KEY || "";
+
+    if (!haveDirectUrl) {
+        // Using the Alchemy templated URL; ensure the key is not the demo key
+        if (!apiKey || /^demo$/i.test(apiKey)) {
+            console.error(
+                "\n❌ RPC misconfiguration: Using 'demo' or missing RPC_API_KEY will trigger 429 Too Many Requests on Alchemy."
+            );
+            if (isBaseSepolia) {
+                console.error(
+                    "   Set BASE_SEPOLIA_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key."
+                );
+                console.error("   Example: export BASE_SEPOLIA_RPC_URL=https://<provider>/<path>\n");
+            } else if (isBaseMainnet) {
+                console.error(
+                    "   Set BASE_MAINNET_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key."
+                );
+                console.error("   Example: export BASE_MAINNET_RPC_URL=https://<provider>/<path>\n");
+            }
+            process.exit(1);
+        }
+    }
+}
 
 // Step 1: Clean and compile contracts
 console.log("\n📦 Step 1: Cleaning and compiling contracts...");

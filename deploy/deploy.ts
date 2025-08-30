@@ -117,6 +117,20 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
             : "N/A",
     });
 
+    const waitForCode = async (address: string, label: string) => {
+        const maxMs = 30000;
+        const start = Date.now();
+        let attempts = 0;
+        while (Date.now() - start < maxMs) {
+            const code = await provider.getCode(address);
+            if (code && code !== "0x") return true;
+            attempts += 1;
+            await new Promise((r) => setTimeout(r, 1000));
+        }
+        console.warn(`Timed out waiting for code at ${label} ${address}`);
+        return false;
+    };
+
     const deployContract = async (contractName: string, args: unknown[]) => {
         console.log(`Deploying ${contractName}...`);
         console.log("Constructor arguments:", args);
@@ -149,6 +163,9 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
             });
 
             console.log(`${contractName} deployed at:`, result.address);
+
+            // Ensure the node exposes bytecode before making static calls (some RPCs lag)
+            await waitForCode(result.address, contractName);
 
             if (contractName === "AstaVerde") {
                 const contract = await hre.ethers.getContractAt(contractName, result.address);
@@ -184,10 +201,16 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
             }
 
             if (contractName === "MockUSDC") {
-                const contract = await hre.ethers.getContractAt(contractName, result.address);
-                console.log("\nVerifying MockUSDC contract state:");
-                console.log(`- Total Supply: ${await contract.totalSupply()}`);
-                console.log(`- Decimals: ${await contract.decimals()}`);
+                try {
+                    const contract = await hre.ethers.getContractAt(contractName, result.address);
+                    console.log("\nVerifying MockUSDC contract state:");
+                    const ts = await contract.totalSupply();
+                    console.log(`- Total Supply: ${ts.toString()}`);
+                    console.log(`- Decimals: ${await contract.decimals()}`);
+                } catch (e: any) {
+                    console.warn("Verification note (MockUSDC): read failed; continuing. Details:");
+                    console.warn(e?.message || e);
+                }
             }
 
             if (network.name !== "hardhat" && network.name !== "localhost") {
