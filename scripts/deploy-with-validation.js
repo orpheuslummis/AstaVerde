@@ -46,16 +46,16 @@ if (network !== "localhost" && network !== "hardhat") {
         // Using the Alchemy templated URL; ensure the key is not the demo key
         if (!apiKey || /^demo$/i.test(apiKey)) {
             console.error(
-                "\n❌ RPC misconfiguration: Using 'demo' or missing RPC_API_KEY will trigger 429 Too Many Requests on Alchemy."
+                "\n❌ RPC misconfiguration: Using 'demo' or missing RPC_API_KEY will trigger 429 Too Many Requests on Alchemy.",
             );
             if (isBaseSepolia) {
                 console.error(
-                    "   Set BASE_SEPOLIA_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key."
+                    "   Set BASE_SEPOLIA_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key.",
                 );
                 console.error("   Example: export BASE_SEPOLIA_RPC_URL=https://<provider>/<path>\n");
             } else if (isBaseMainnet) {
                 console.error(
-                    "   Set BASE_MAINNET_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key."
+                    "   Set BASE_MAINNET_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key.",
                 );
                 console.error("   Example: export BASE_MAINNET_RPC_URL=https://<provider>/<path>\n");
             }

@@ -28,12 +28,13 @@ The contract is ready for QA on Base Sepolia. Provide the deployed addresses bel
 - Network: Base Sepolia (chainId 84532)
 - Webapp: Local option via `npm run dev:sepolia` (runs on port 3002)
 - Required addresses (fill in after deployment):
-  - AstaVerde: <TBD>
-  - EcoStabilizer: <TBD>
-  - SCC (StabilizedCarbonCoin): <TBD>
-  - USDC (6 decimals): <TBD>
+    - AstaVerde: <TBD>
+    - EcoStabilizer: <TBD>
+    - SCC (StabilizedCarbonCoin): <TBD>
+    - USDC (6 decimals): <TBD>
 
 Notes:
+
 - On Base mainnet, AstaVerde enforces the canonical USDC address. On testnets, only `decimals()==6` is enforced.
 - The repository includes `npm run deploy:testnet` and `scripts/dev-sepolia.js` to assist setup.
 
@@ -41,43 +42,50 @@ Notes:
 
 ## Security Improvements Requiring QA
 
-1) Refund Handling Vulnerability — FIXED
+1. Refund Handling Vulnerability — FIXED
+
 - What changed: `buyBatch` pulls the full declared `usdcAmount` from the buyer, then refunds any excess from the same funds before transferring NFTs. Platform and producer balances are never used to fund refunds.
 - How to test:
-  - Over-approve and over-send (e.g., approve/send 1000 USDC for a 100 USDC purchase). Expect an automatic refund of 900 USDC; platform + producer accounting should equal the actual sale amount.
-  - Under-approve while sending a larger `usdcAmount` (e.g., approve 100 USDC but pass `usdcAmount=1000`). Expect a revert due to insufficient allowance (error wording may vary by token implementation).
+    - Over-approve and over-send (e.g., approve/send 1000 USDC for a 100 USDC purchase). Expect an automatic refund of 900 USDC; platform + producer accounting should equal the actual sale amount.
+    - Under-approve while sending a larger `usdcAmount` (e.g., approve 100 USDC but pass `usdcAmount=1000`). Expect a revert due to insufficient allowance (error wording may vary by token implementation).
 
-2) Producer Payment Disruption — FIXED
+2. Producer Payment Disruption — FIXED
+
 - What changed: Producer funds accrue in `producerBalances` and are claimed via `claimProducerFunds()`; purchases never depend on producer wallet behavior.
 - How to test:
-  - Buy across multiple producers; verify each producer’s balance via webapp `/producer` or `getProducerBalance(address)`.
-  - Claim as each producer; balances reset individually; other producers unaffected.
+    - Buy across multiple producers; verify each producer’s balance via webapp `/producer` or `getProducerBalance(address)`.
+    - Claim as each producer; balances reset individually; other producers unaffected.
 
-3) Old-Batch Arithmetic Reverts — FIXED
+3. Old-Batch Arithmetic Reverts — FIXED
+
 - What changed: `getCurrentBatchPrice()` clamps to `priceFloor` when daily decay would underflow the starting price.
 - How to test:
-  - Local: advance time 200+ days and assert floor price; purchase succeeds.
-  - On Sepolia, this behavior is covered by unit tests; deep backdating isn’t feasible on live testnets.
+    - Local: advance time 200+ days and assert floor price; purchase succeeds.
+    - On Sepolia, this behavior is covered by unit tests; deep backdating isn’t feasible on live testnets.
 
-4) Gas Cost Scalability — FIXED
+4. Gas Cost Scalability — FIXED
+
 - What changed: `updateBasePrice()` processes at most `maxPriceUpdateIterations` batches (default 100) and emits `PriceUpdateIterationLimitReached` when capped. A 90‑day lookback window prevents ancient batches from impacting pricing.
 - How to test:
-  - Lower `maxPriceUpdateIterations` for demonstration, mint many batches, and perform a transaction that triggers a price update; observe the event emission and stable gas.
+    - Lower `maxPriceUpdateIterations` for demonstration, mint many batches, and perform a transaction that triggers a price update; observe the event emission and stable gas.
 
-5) USDC Token Configuration Safety — IMPROVED
+5. USDC Token Configuration Safety — IMPROVED
+
 - What changed: Constructor validates the token is a contract with `decimals()==6`; on Base mainnet, enforces canonical USDC address.
 - How to test:
-  - Confirm UI shows 6‑decimal amounts, purchases/claims reconcile to USDC base units.
+    - Confirm UI shows 6‑decimal amounts, purchases/claims reconcile to USDC base units.
 
-6) Safer ERC20 Interactions — IMPROVED
+6. Safer ERC20 Interactions — IMPROVED
+
 - What changed: All USDC transfers use OpenZeppelin SafeERC20 to support non‑standard tokens and clearer failures.
 - How to test:
-  - Exercise purchase, platform-fee claim, and producer claims; failed transfers (e.g., insufficient balance/allowance) revert clearly.
+    - Exercise purchase, platform-fee claim, and producer claims; failed transfers (e.g., insufficient balance/allowance) revert clearly.
 
-7) External ERC1155 Deposit Prevention — FIXED
+7. External ERC1155 Deposit Prevention — FIXED
+
 - What changed: ERC1155 receiver hooks accept only self‑originated mints/self‑transfers; user “returns” to the marketplace are rejected.
 - How to test:
-  - Attempt to send an AstaVerde NFT from a user back to the contract; expect revert. (Message may be “No external returns”.)
+    - Attempt to send an AstaVerde NFT from a user back to the contract; expect revert. (Message may be “No external returns”.)
 
 —
 
@@ -100,20 +108,24 @@ Notes:
 
 ## Test Scenarios (Priority Order)
 
-1) Producer Payment System
+1. Producer Payment System
+
 - Buy NFTs from multiple batches/producers; verify accrual per producer and isolated claims.
 - Claim funds as each producer using the dashboard.
 
-2) Security Validations
+2. Security Validations
+
 - Overpayment refund behavior and under‑approval revert.
 - Old‑batch price clamp (local time‑advance) or review unit test evidence.
 - Gas stability with many batches and iteration‑limit event visibility.
 - Attempt external NFT returns to the contract (expect revert).
 
-3) Price Mechanics
+3. Price Mechanics
+
 - Create/sell batches and confirm +10 USDC increases for quick sales and decreases after prolonged stagnation, bounded by floor.
 
-4) Admin Controls
+4. Admin Controls
+
 - Set platform fee within [0, 50]; >50 should revert.
 - Adjust base price/floor while preserving `basePrice >= priceFloor`.
 - Adjust iteration cap; observe effect on gas and event emissions.
@@ -140,6 +152,7 @@ Notes:
 ## Appendix: Quick QA Checklist
 
 Security ✓
+
 - [ ] Overpayment refund returns exact difference
 - [ ] Under‑approval reverts on insufficient allowance
 - [ ] Producer accrual and claims are isolated and accurate
@@ -148,12 +161,14 @@ Security ✓
 - [ ] External ERC1155 returns are rejected
 
 Functional ✓
+
 - [ ] Normal purchase flow
 - [ ] Price increases on quick sales; decreases on stagnation (not below floor)
 - [ ] Platform fee adjustments (0–50%)
 - [ ] Surplus USDC recovery (only surplus)
 
 Integration ✓
+
 - [ ] Webapp purchase flow
 - [ ] Producer dashboard shows balance and claims succeed
 - [ ] Event monitoring surfaces key adjustments and claims
@@ -162,4 +177,3 @@ Integration ✓
 —
 
 Questions or need hosted QA access? We can supply deployed Sepolia addresses and a hosted webapp URL, or you can run the local QA environment with the scripts provided in this repository.
-
