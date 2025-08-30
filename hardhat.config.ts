@@ -4,8 +4,6 @@ import "hardhat-deploy";
 import type { HardhatUserConfig } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
-// import "./tasks/fund-account";
-// import "./tasks/query";
 
 // Load public environment variables
 dotenvConfig({ path: resolve(process.cwd(), ".env") });
