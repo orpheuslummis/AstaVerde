@@ -2,8 +2,8 @@ import { multicall } from "@wagmi/core";
 import { useCallback, useState } from "react";
 import { usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
 import { wagmiConfig } from "../config/wagmi";
-import { READ_ONLY_FUNCTIONS, WRITE_FUNCTIONS } from "../config/constants";
-import type { ContractConfig, ExecuteFunction, ContractError } from "../types/contracts";
+import { getFunctionKind, isReadFunctionByAbi, isWriteFunctionByAbi } from "../lib/abiInference";
+import type { ContractConfig, ExecuteFunction, ContractError } from "../shared/types/contracts";
 
 export function useContractInteraction(contractConfig: ContractConfig, functionName: string) {
   const [isSimulating] = useState(false);
@@ -15,8 +15,8 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
   // Note: We avoid pre-creating simulate hooks for write functions to prevent
   // unintended eth_call noise on non-admin accounts. We simulate only inside execute().
 
-  const isReadOnlyFunction = READ_ONLY_FUNCTIONS.includes(functionName as (typeof READ_ONLY_FUNCTIONS)[number]);
-  const isWriteFunction = WRITE_FUNCTIONS.includes(functionName as (typeof WRITE_FUNCTIONS)[number]);
+  const isReadOnlyFunction = isReadFunctionByAbi(contractConfig.abi, functionName);
+  const isWriteFunction = isWriteFunctionByAbi(contractConfig.abi, functionName);
 
   const { data: readData, refetch: refetchReadData } = useReadContract({
     ...contractConfig,
@@ -55,7 +55,9 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
             hash,
           });
         } else {
-          throw new Error(`Unknown function: ${functionName}`);
+          const kind = getFunctionKind(contractConfig.abi, functionName);
+          const hint = kind === "unknown" ? "not found in ABI" : `classified as ${kind}`;
+          throw new Error(`Unsupported function for execute(): ${functionName} (${hint})`);
         }
         return result;
       } catch (error) {

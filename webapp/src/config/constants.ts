@@ -19,45 +19,8 @@ export const navigationLinks = [
   { name: "About", url: "/about" },
 ] as const;
 
-// Contract Function Names
-export const READ_ONLY_FUNCTIONS = [
-  "uri",
-  "balanceOf",
-  "lastTokenID",
-  "isRedeemed",
-  "getCurrentBatchPrice",
-  "getBatchInfo",
-  "lastBatchID",
-  "platformShareAccumulated",
-  "basePrice",
-  "priceFloor",
-  "dayIncreaseThreshold",
-  "dayDecreaseThreshold",
-  "maxBatchSize",
-  "platformSharePercentage",
-  "supportsInterface",
-  "dailyPriceDecay",
-  "priceAdjustDelta",
-] as const;
-
-export const WRITE_FUNCTIONS = [
-  "mintBatch",
-  "buyBatch",
-  "redeemToken",
-  "claimPlatformFunds",
-  "claimProducerFunds",
-  "pause",
-  "unpause",
-  "setURI",
-  "setPriceFloor",
-  "setBasePrice",
-  "setMaxBatchSize",
-  "setAuctionDayThresholds",
-  "setPlatformSharePercentage",
-  "mint",
-  "setPriceDelta",
-  "setDailyPriceDecay",
-] as const;
+// Contract Function Names (deprecated)
+// Static allowlists removed in favor of ABI-driven inference.
 
 // Vault Constants
 export const SCC_PER_ASSET = 20n * 10n ** 18n; // 20 SCC with 18 decimals

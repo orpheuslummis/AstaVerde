@@ -1,6 +1,6 @@
 import type { PublicClient, WalletClient } from "viem";
 import type { ContractConfig } from "../../shared/types/contracts";
-import { READ_ONLY_FUNCTIONS, WRITE_FUNCTIONS } from "../../config/constants";
+import { getFunctionKind } from "../../lib/abiInference";
 
 export class ContractService {
   constructor(
@@ -9,9 +9,8 @@ export class ContractService {
   ) {}
 
   async readContract(config: ContractConfig, functionName: string, args?: unknown[]): Promise<unknown> {
-    if (!READ_ONLY_FUNCTIONS.includes(functionName as any)) {
-      throw new Error(`${functionName} is not a read-only function`);
-    }
+    const kind = getFunctionKind(config.abi, functionName);
+    if (kind !== "read") throw new Error(`${functionName} is not a read-only function (kind=${kind})`);
 
     return this.publicClient.readContract({
       ...config,
@@ -25,9 +24,8 @@ export class ContractService {
       throw new Error("Wallet not connected");
     }
 
-    if (!WRITE_FUNCTIONS.includes(functionName as any)) {
-      throw new Error(`${functionName} is not a write function`);
-    }
+    const kind = getFunctionKind(config.abi, functionName);
+    if (kind !== "write") throw new Error(`${functionName} is not a write function (kind=${kind})`);
 
     // Simulate the transaction first
     const { request } = await this.publicClient.simulateContract({
