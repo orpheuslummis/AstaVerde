@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import { parseUnits } from "viem";
-
-const USDC_ADDRESS = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e" as const;
-const ASTAVERDE_ADDRESS = "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0" as const;
+import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
+import DevOnly from "../../components/DevOnly";
+import { getErrorMessage } from "../../shared/utils/error";
 
 
 export default function SimpleApprovePage() {
@@ -26,7 +26,7 @@ export default function SimpleApprovePage() {
 
       // Encode the function call
       const functionSelector = "0x095ea7b3";
-      const spenderPadded = ASTAVERDE_ADDRESS.slice(2).padStart(64, "0");
+      const spenderPadded = getAstaVerdeContract().address.slice(2).padStart(64, "0");
       const amountPadded = amount.toString(16).padStart(64, "0");
       const data = functionSelector + spenderPadded + amountPadded;
 
@@ -41,7 +41,7 @@ export default function SimpleApprovePage() {
         method: "eth_sendTransaction",
         params: [{
           from: address,
-          to: USDC_ADDRESS,
+          to: getUsdcContract().address,
           data: data,
           gas: "0x30000", // 196608 in decimal
         }],
@@ -68,19 +68,21 @@ export default function SimpleApprovePage() {
       }
 
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Error:", error);
-      setStatus(`Error: ${error.message || error.toString()}`);
+      setStatus(`Error: ${getErrorMessage(error)}`);
     }
   };
 
   return (
-    <div className="container mx-auto p-8">
+    <DevOnly>
+      <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Simple Approve Test</h1>
 
       <div className="mb-4">
         <p>Wallet: {address || "Not connected"}</p>
-        <p>USDC: {USDC_ADDRESS}</p>
-        <p>Spender: {ASTAVERDE_ADDRESS}</p>
+        <p>USDC: {getUsdcContract().address}</p>
+        <p>Spender: {getAstaVerdeContract().address}</p>
       </div>
 
       <button
@@ -94,6 +96,7 @@ export default function SimpleApprovePage() {
       <div className="bg-gray-100 p-4 rounded">
         <p>Status: {status}</p>
       </div>
-    </div>
+      </div>
+    </DevOnly>
   );
 }

@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useAccount, useWalletClient, usePublicClient } from "wagmi";
 import ecoStabilizerAbi from "../../config/EcoStabilizer.json";
 import astaVerdeAbi from "../../config/AstaVerde.json";
-
-const VAULT_ADDRESS = "0x9A676e781A523b5d0C0e43731313A708CB607508" as const;
-const ASTAVERDE_ADDRESS = "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0" as const;
+import { getEcoStabilizerContract, getAstaVerdeContract } from "../../config/contracts";
+import DevOnly from "../../components/DevOnly";
+import { getErrorMessage, getErrorCause } from "../../shared/utils/error";
 
 export default function TestVaultPage() {
   const { address } = useAccount();
@@ -25,16 +25,16 @@ export default function TestVaultPage() {
 
     try {
       const isApproved = await publicClient.readContract({
-        address: ASTAVERDE_ADDRESS,
+        address: getAstaVerdeContract().address,
         abi: astaVerdeAbi.abi,
         functionName: "isApprovedForAll",
-        args: [address, VAULT_ADDRESS],
+        args: [address, getEcoStabilizerContract().address],
       });
 
       addLog(`NFT approval status: ${isApproved ? "✅ Approved" : "❌ Not approved"}`);
       return isApproved;
     } catch (error) {
-      addLog(`Error checking approval: ${error.message}`);
+      addLog(`Error checking approval: ${getErrorMessage(error)}`);
       return false;
     }
   };
@@ -46,10 +46,10 @@ export default function TestVaultPage() {
 
     try {
       const hash = await walletClient.writeContract({
-        address: ASTAVERDE_ADDRESS,
+        address: getAstaVerdeContract().address,
         abi: astaVerdeAbi.abi,
         functionName: "setApprovalForAll",
-        args: [VAULT_ADDRESS, true],
+        args: [getEcoStabilizerContract().address, true],
         account: address,
       });
 
@@ -60,7 +60,7 @@ export default function TestVaultPage() {
         addLog(`✅ Approval confirmed in block ${receipt.blockNumber}`);
       }
     } catch (error) {
-      addLog(`❌ Approval error: ${error.message}`);
+      addLog(`❌ Approval error: ${getErrorMessage(error)}`);
     }
   };
 
@@ -72,7 +72,7 @@ export default function TestVaultPage() {
     try {
       for (let tokenId = 1; tokenId <= 3; tokenId++) {
         const balance = await publicClient.readContract({
-          address: ASTAVERDE_ADDRESS,
+          address: getAstaVerdeContract().address,
           abi: astaVerdeAbi.abi,
           functionName: "balanceOf",
           args: [address, BigInt(tokenId)],
@@ -83,7 +83,7 @@ export default function TestVaultPage() {
         }
       }
     } catch (error) {
-      addLog(`Error checking balance: ${error.message}`);
+      addLog(`Error checking balance: ${getErrorMessage(error)}`);
     }
   };
 
@@ -103,7 +103,7 @@ export default function TestVaultPage() {
       addLog(`Calling vault.deposit(${tokenId})...`);
 
       const hash = await walletClient.writeContract({
-        address: VAULT_ADDRESS,
+        address: getEcoStabilizerContract().address,
         abi: ecoStabilizerAbi.abi,
         functionName: "deposit",
         args: [BigInt(tokenId)],
@@ -117,20 +117,20 @@ export default function TestVaultPage() {
       addLog("Successfully deposited! You should have received 20 SCC.");
 
     } catch (error) {
-      addLog(`❌ Deposit error: ${error.message}`);
-      if (error.cause) {
-        addLog(`Cause: ${JSON.stringify(error.cause)}`);
-      }
+      addLog(`❌ Deposit error: ${getErrorMessage(error)}`);
+      const cause = getErrorCause(error);
+      if (cause) addLog(`Cause: ${JSON.stringify(cause)}`);
     }
   };
 
   return (
-    <div className="container mx-auto p-8">
+    <DevOnly>
+      <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Test Vault Operations</h1>
 
       <div className="mb-4">
         <p>Wallet: {address || "Not connected"}</p>
-        <p>Vault: {VAULT_ADDRESS}</p>
+        <p>Vault: {getEcoStabilizerContract().address}</p>
       </div>
 
       <div className="flex gap-2 mb-4">
@@ -171,6 +171,7 @@ export default function TestVaultPage() {
           ))}
         </div>
       </div>
-    </div>
+      </div>
+    </DevOnly>
   );
 }

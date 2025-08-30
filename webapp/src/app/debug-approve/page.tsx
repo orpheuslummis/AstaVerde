@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { useAccount, useWalletClient, usePublicClient } from "wagmi";
 import { parseUnits } from "viem";
 import mockUsdcAbi from "../../config/MockUSDC.json";
-
-const USDC_ADDRESS = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e" as const;
-const ASTAVERDE_ADDRESS = "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0" as const;
+import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
+import DevOnly from "../../components/DevOnly";
+import { getErrorMessage, getErrorCause } from "../../shared/utils/error";
 
 export default function DebugApprovePage() {
   const { address } = useAccount();
@@ -35,7 +35,7 @@ export default function DebugApprovePage() {
       // First check balance
       addLog("Checking balance...");
       const balanceResult = await publicClient.readContract({
-        address: USDC_ADDRESS,
+        address: getUsdcContract().address,
         abi: mockUsdcAbi.abi,
         functionName: "balanceOf",
         args: [address],
@@ -45,10 +45,10 @@ export default function DebugApprovePage() {
       // Check current allowance
       addLog("Checking current allowance...");
       const allowanceResult = await publicClient.readContract({
-        address: USDC_ADDRESS,
+        address: getUsdcContract().address,
         abi: mockUsdcAbi.abi,
         functionName: "allowance",
-        args: [address, ASTAVERDE_ADDRESS],
+        args: [address, getAstaVerdeContract().address],
       });
       addLog(`Current allowance: ${allowanceResult} (raw)`);
 
@@ -58,16 +58,16 @@ export default function DebugApprovePage() {
       addLog(`Amount to approve: ${amount} (100 USDC in wei)`);
 
       // Log the exact parameters
-      addLog(`Contract address: ${USDC_ADDRESS}`);
-      addLog(`Spender address: ${ASTAVERDE_ADDRESS}`);
+      addLog(`Contract address: ${getUsdcContract().address}`);
+      addLog(`Spender address: ${getAstaVerdeContract().address}`);
       addLog(`From address: ${address}`);
       addLog(`ABI has ${mockUsdcAbi.abi.length} functions`);
 
       const hash = await walletClient.writeContract({
-        address: USDC_ADDRESS,
+        address: getUsdcContract().address,
         abi: mockUsdcAbi.abi,
         functionName: "approve",
-        args: [ASTAVERDE_ADDRESS, amount],
+        args: [getAstaVerdeContract().address, amount],
         account: address,
       });
 
@@ -79,33 +79,31 @@ export default function DebugApprovePage() {
 
       // Check new allowance
       const newAllowance = await publicClient.readContract({
-        address: USDC_ADDRESS,
+        address: getUsdcContract().address,
         abi: mockUsdcAbi.abi,
         functionName: "allowance",
-        args: [address, ASTAVERDE_ADDRESS],
+        args: [address, getAstaVerdeContract().address],
       });
       addLog(`New allowance: ${newAllowance} (raw)`);
 
     } catch (error) {
-      addLog(`ERROR: ${error.message}`);
-      if (error.cause) {
-        addLog(`Cause: ${JSON.stringify(error.cause)}`);
-      }
-      if (error.data) {
-        addLog(`Data: ${JSON.stringify(error.data)}`);
-      }
+      addLog(`ERROR: ${getErrorMessage(error)}`);
+      const cause = getErrorCause(error);
+      if (cause) addLog(`Cause: ${JSON.stringify(cause)}`);
+      // eslint-disable-next-line no-console
       console.error("Full error:", error);
     }
   };
 
   return (
-    <div className="container mx-auto p-8">
+    <DevOnly>
+      <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Debug Approve Transaction</h1>
 
       <div className="mb-4">
         <p>Wallet: {address || "Not connected"}</p>
-        <p>USDC: {USDC_ADDRESS}</p>
-        <p>AstaVerde: {ASTAVERDE_ADDRESS}</p>
+        <p>USDC: {getUsdcContract().address}</p>
+        <p>AstaVerde: {getAstaVerdeContract().address}</p>
       </div>
 
       <button
@@ -124,6 +122,7 @@ export default function DebugApprovePage() {
           ))}
         </div>
       </div>
-    </div>
+      </div>
+    </DevOnly>
   );
 }

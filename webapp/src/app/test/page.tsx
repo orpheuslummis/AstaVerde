@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
-
-const USDC_ADDRESS = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e";
-const ASTAVERDE_ADDRESS = "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0";
+import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
+import DevOnly from "../../components/DevOnly";
+import { getErrorMessage } from "../../shared/utils/error";
 
 // Minimal ERC20 ABI
 const ERC20_ABI = [
@@ -51,7 +51,7 @@ export default function TestPage() {
 
     try {
       const bal = await publicClient.readContract({
-        address: USDC_ADDRESS,
+        address: getUsdcContract().address,
         abi: ERC20_ABI,
         functionName: "balanceOf",
         args: [address],
@@ -59,7 +59,7 @@ export default function TestPage() {
       setBalance(formatUnits(bal as bigint, 6));
       setStatus(`Balance: ${formatUnits(bal as bigint, 6)} USDC`);
     } catch (error) {
-      setStatus(`Error: ${error.message}`);
+      setStatus(`Error: ${getErrorMessage(error)}`);
     }
   };
 
@@ -68,15 +68,15 @@ export default function TestPage() {
 
     try {
       const allow = await publicClient.readContract({
-        address: USDC_ADDRESS,
+        address: getUsdcContract().address,
         abi: ERC20_ABI,
         functionName: "allowance",
-        args: [address, ASTAVERDE_ADDRESS],
+        args: [address, getAstaVerdeContract().address],
       });
       setAllowance(formatUnits(allow as bigint, 6));
       setStatus(`Allowance: ${formatUnits(allow as bigint, 6)} USDC`);
     } catch (error) {
-      setStatus(`Error: ${error.message}`);
+      setStatus(`Error: ${getErrorMessage(error)}`);
     }
   };
 
@@ -89,10 +89,10 @@ export default function TestPage() {
       const amount = parseUnits("1000", 6);
 
       const hash = await walletClient.writeContract({
-        address: USDC_ADDRESS,
+        address: getUsdcContract().address,
         abi: ERC20_ABI,
         functionName: "approve",
-        args: [ASTAVERDE_ADDRESS, amount],
+        args: [getAstaVerdeContract().address, amount],
         account: address,
       });
 
@@ -103,20 +103,22 @@ export default function TestPage() {
         setStatus(`Success! Block: ${receipt.blockNumber}`);
         checkAllowance();
       }
-    } catch (error) {
+      } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Approve error:", error);
-      setStatus(`Error: ${error.message}`);
+      setStatus(`Error: ${getErrorMessage(error)}`);
     }
   };
 
   return (
-    <div className="container mx-auto p-8">
+    <DevOnly>
+      <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Contract Test Page</h1>
 
       <div className="mb-4">
         <p>Connected: {address || "Not connected"}</p>
-        <p>USDC Address: {USDC_ADDRESS}</p>
-        <p>AstaVerde Address: {ASTAVERDE_ADDRESS}</p>
+        <p>USDC Address: {getUsdcContract().address}</p>
+        <p>AstaVerde Address: {getAstaVerdeContract().address}</p>
       </div>
 
       <div className="mb-4">
@@ -150,6 +152,7 @@ export default function TestPage() {
       <div className="p-4 bg-gray-100 rounded">
         <p>Status: {status}</p>
       </div>
-    </div>
+      </div>
+    </DevOnly>
   );
 }

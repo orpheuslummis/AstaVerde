@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useAccount } from "wagmi";
+import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
+import DevOnly from "../../components/DevOnly";
+import { getErrorMessage } from "../../shared/utils/error";
 
 export default function RawTestPage() {
   const { address } = useAccount();
@@ -20,7 +23,7 @@ export default function RawTestPage() {
       // Function selector for approve(address,uint256)
       const functionSelector = "0x095ea7b3";
       // Encode spender address (AstaVerde)
-      const spender = "000000000000000000000000a51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0";
+      const spender = `000000000000000000000000${getAstaVerdeContract().address.slice(2).toLowerCase()}`;
       // Encode amount (1000 USDC = 1000000000 in 6 decimals)
       const amount = "000000000000000000000000000000000000000000000000000000003b9aca00";
 
@@ -28,7 +31,7 @@ export default function RawTestPage() {
 
       const txParams = {
         from: address,
-        to: "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+        to: getUsdcContract().address,
         data: data,
       };
 
@@ -41,8 +44,9 @@ export default function RawTestPage() {
 
       setStatus(`Transaction sent: ${txHash}`);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Raw approve error:", error);
-      setStatus(`Error: ${error.message}`);
+      setStatus(`Error: ${getErrorMessage(error)}`);
     }
   };
 
@@ -63,7 +67,7 @@ export default function RawTestPage() {
       const result = await window.ethereum.request({
         method: "eth_call",
         params: [{
-          to: "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+          to: getUsdcContract().address,
           data: data,
         }, "latest"],
       });
@@ -71,13 +75,15 @@ export default function RawTestPage() {
       const balance = parseInt(result, 16) / 1e6;
       setStatus(`Balance: ${balance} USDC`);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("eth_call error:", error);
-      setStatus(`Error: ${error.message}`);
+      setStatus(`Error: ${getErrorMessage(error)}`);
     }
   };
 
   return (
-    <div className="container mx-auto p-8">
+    <DevOnly>
+      <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Raw Transaction Test</h1>
 
       <div className="mb-4">
@@ -103,6 +109,7 @@ export default function RawTestPage() {
       <div className="p-4 bg-gray-100 rounded">
         <p>Status: {status}</p>
       </div>
-    </div>
+      </div>
+    </DevOnly>
   );
 }

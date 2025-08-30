@@ -1,12 +1,14 @@
 "use client";
 
 import { useAccount } from "wagmi";
+import DevOnly from "../../components/DevOnly";
 
 export default function ResetWalletPage() {
   const { address } = useAccount();
 
   return (
-    <div className="container mx-auto p-8">
+    <DevOnly>
+      <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-4">Fix MetaMask Nonce Issue</h1>
 
       <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
@@ -40,6 +42,7 @@ export default function ResetWalletPage() {
       <div className="mt-6">
         <p>Connected wallet: {address || "Not connected"}</p>
       </div>
-    </div>
+      </div>
+    </DevOnly>
   );
 }

@@ -3,6 +3,7 @@
 import { parseUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import { ENV } from "../../config/environment";
+import DevOnly from "../../components/DevOnly";
 // import { useAppContext } from "../../contexts/AppContext"
 import { useContractInteraction } from "../../hooks/useContractInteraction";
 import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
@@ -55,7 +56,8 @@ export default function Page() {
   // const updateCid = (index: number, value: string) => { ... };
 
   return (
-    <div className="flex flex-col items-center space-y-8 p-4">
+    <DevOnly>
+      <div className="flex flex-col items-center space-y-8 p-4">
       <h1 className="text-3xl font-bold mb-4">AstaVerde Test Minting Page</h1>
 
       {isConnected ? (
@@ -92,6 +94,7 @@ export default function Page() {
       </div>
 
       {/* Remove or comment out the "Mint New Batch" section */}
-    </div>
+      </div>
+    </DevOnly>
   );
 }
