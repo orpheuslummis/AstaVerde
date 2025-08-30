@@ -48,3 +48,6 @@ webapp/.env
 # Root Sepolia env (contains secrets) — keep out of git
 .env.sepolia
 .env.mainnet
+
+# ESLint reports
+eslint-report.json
