@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { customToast } from "@/utils/customToast";
 import { useRouter } from "next/navigation";
 import { useIsProducer } from "@/hooks/useIsProducer";
+import { useProducerDashboardEvents } from "@/hooks/useProducerEvents";
 import Loader from "@/components/Loader";
 import { ENV } from "@/config/environment";
 
@@ -16,6 +17,9 @@ export default function ProducerDashboard() {
   const { address, isConnected } = useAccount();
   const { isProducer, producerBalance, isLoading: isCheckingProducer, refetch: refetchProducerStatus } = useIsProducer();
   const [isClaiming, setIsClaiming] = useState(false);
+
+  // Hook for producer events monitoring
+  const { recentAccruals, recentClaims, totalAccrued, hasUnclaimedPayments, triggerRefetch } = useProducerDashboardEvents();
 
   // Get total producer balances for context
   const { data: totalProducerBalances } = useReadContract({
@@ -53,6 +57,13 @@ export default function ProducerDashboard() {
       refetchProducerStatus();
     }
   }, [isSuccess, isClaiming, refetchProducerStatus]);
+
+  // Refetch balance when events trigger
+  useEffect(() => {
+    if (triggerRefetch > 0) {
+      refetchProducerStatus();
+    }
+  }, [triggerRefetch, refetchProducerStatus]);
 
   // Handle claim errors
   useEffect(() => {
@@ -191,6 +202,11 @@ export default function ProducerDashboard() {
             <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">
               {formattedBalance} USDC
             </p>
+            {hasUnclaimedPayments && (
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                + {formatUnits(totalAccrued, ENV.USDC_DECIMALS)} USDC pending
+              </p>
+            )}
           </div>
 
           {/* Total Producer Pool */}
@@ -213,6 +229,37 @@ export default function ProducerDashboard() {
             </p>
           </div>
         </div>
+
+        {/* Recent Activity Section */}
+        {(recentAccruals.length > 0 || recentClaims.length > 0) && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">
+              Recent Activity
+            </h3>
+            <div className="space-y-3 max-h-48 overflow-y-auto">
+              {recentAccruals.map((event, index) => (
+                <div key={`accrual-${index}`} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Payment accrued
+                  </span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                    +{formatUnits(event.amount, ENV.USDC_DECIMALS)} USDC
+                  </span>
+                </div>
+              ))}
+              {recentClaims.map((event, index) => (
+                <div key={`claim-${index}`} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Funds claimed
+                  </span>
+                  <span className="text-blue-600 dark:text-blue-400 font-medium">
+                    {formatUnits(event.amount, ENV.USDC_DECIMALS)} USDC
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Information Section */}
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
