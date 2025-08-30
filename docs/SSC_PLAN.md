@@ -11,7 +11,7 @@
 ## 0 │ Scope & Assumptions
 
 - _EcoAsset_ NFTs are the **ERC‑1155** tokens minted by the existing `AstaVerde` contract **already deployed on Base**. The Vault references it via constructor parameter.
-- Only **un‑redeemed** EcoAssets can be deposited; this is enforced by querying the public `tokens(tokenId)` getter in `AstaVerde`.
+- Only **un‑redeemed** EcoAssets can be deposited; this is enforced by querying `isRedeemed(tokenId)` on `AstaVerde`.
 - **Networks** – Sepolia (test) ▶ Base Mainnet (prod). Native **USDC.e** liquidity is available on Base for SCC ↔ USDC pools.
 - Contracts are **non‑upgradeable** in v0.3; future upgrades require new deployments + optional migrator.
 
@@ -110,7 +110,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
     /*────────────────────────  CORE FUNCTIONS  ───────────────────────*/
     function deposit(uint256 tokenId) external nonReentrant whenNotPaused {
         require(!loans[tokenId].active, "loan active");
-        (, , , , bool redeemed) = ecoAsset.tokens(tokenId);
+        bool redeemed = ecoAsset.isRedeemed(tokenId);
         require(!redeemed, "redeemed asset");
 
         // Transfer NFT (IAstaVerde inherits from IERC1155)
