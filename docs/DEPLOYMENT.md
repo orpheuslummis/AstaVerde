@@ -46,6 +46,10 @@ BASE_SEPOLIA_EXPLORER_API_KEY="..." # Sepolia BaseScan API key (for testing)
 MNEMONIC="..." # 12-word phrase for local development
 OWNER_ADDRESS="0x..." # Override owner address if needed
 
+# Optional - RPC overrides (recommended to avoid 429s)
+BASE_MAINNET_RPC_URL="https://<provider>/<path>" # If set, overrides Alchemy URL
+BASE_SEPOLIA_RPC_URL="https://<provider>/<path>" # If set, overrides Alchemy URL
+
 # Optional - Dual Vault Setup (QA)
 AV_ADDR_V11="0x..." # AstaVerde V1.1 address for dual-vault deployment
 ```
@@ -153,6 +157,9 @@ RPC_API_KEY=<your_alchemy_api_key>
 
 # Blockscout API key for contract verification
 BASE_SEPOLIA_EXPLORER_API_KEY=<your_blockscout_api_key>
+
+# Prefer direct RPC override to avoid rate limits (optional)
+# BASE_SEPOLIA_RPC_URL=https://<provider>/<path>
 ```
 
 Create `webapp/.env.production`:
