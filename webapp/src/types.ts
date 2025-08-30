@@ -1,6 +1,5 @@
-import type { Abi } from "abitype";
 import type { Batch } from "./lib/batch";
-import type { astaverdeContractConfig, getUsdcContractConfig } from "./lib/contracts";
+import type { ContractConfig } from "./shared/types/contracts";
 
 export type BatchData = [
   bigint, // batchId
@@ -23,9 +22,9 @@ export interface TokenMetadata {
 
 export interface AppContextType {
   batches: Batch[];
-  astaverdeContractConfig: typeof astaverdeContractConfig;
-  getUsdcContractConfig: typeof getUsdcContractConfig;
-  usdcContractConfig: ReturnType<typeof getUsdcContractConfig>;
+  astaverdeContractConfig: ContractConfig;
+  getUsdcContract: () => ContractConfig;
+  usdcContractConfig: ContractConfig;
   refetchBatches: () => void;
   updateBatch: (updatedBatch: Batch) => void;
   updateBatchItemsLeft: (batchId: bigint, newItemsLeft: bigint) => void;
@@ -58,11 +57,6 @@ export interface BatchInfoProps {
   batchData: BatchData;
 }
 
-export interface ContractConfig {
-  address: `0x${string}`;
-  abi: Abi;
-}
-
 export interface BatchCardProps {
   batch: Batch;
   updateCard?: () => void;
@@ -77,9 +71,6 @@ export interface RedeemTokensButtonProps {
   redeemStatus: Record<string, boolean>;
 }
 
-export type ExecuteFunction = (...args: unknown[]) => Promise<unknown>;
-
-export type ContractError = Error | null;
 
 export interface AdminControls {
   setPriceDelta: (amount: bigint) => Promise<string>;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useAccount, useReadContract } from "wagmi";
-import { astaverdeContractConfig } from "@/lib/contracts";
+import { getAstaVerdeContract } from "@/config/contracts";
 import { useMemo } from "react";
 
 /**
@@ -10,6 +10,7 @@ import { useMemo } from "react";
  */
 export function useIsProducer() {
   const { address, isConnected } = useAccount();
+  const astaverdeContractConfig = getAstaVerdeContract();
 
   // Check producer balance
   const {

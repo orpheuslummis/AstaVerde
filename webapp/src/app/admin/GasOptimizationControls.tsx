@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useReadContract } from "wagmi";
-import { astaverdeContractConfig } from "@/lib/contracts";
+import { getAstaVerdeContract } from "@/config/contracts";
 import { useAppContext } from "@/contexts/AppContext";
 import { customToast } from "@/utils/customToast";
 import { formatUnits } from "viem";
@@ -18,6 +18,7 @@ function ControlContainer({ children, title }: { children: React.ReactNode; titl
 }
 
 export function MaxPriceUpdateIterationsControl() {
+  const astaverdeContractConfig = getAstaVerdeContract();
   const { adminControls } = useAppContext();
   const [iterations, setIterations] = useState("");
   const { data: currentIterations, refetch: refetchIterations } = useReadContract({
@@ -79,6 +80,7 @@ export function MaxPriceUpdateIterationsControl() {
 }
 
 export function RecoverSurplusUSDCControl() {
+  const astaverdeContractConfig = getAstaVerdeContract();
   const { adminControls } = useAppContext();
   const [recipientAddress, setRecipientAddress] = useState("");
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
-import { astaverdeContractConfig } from "../../../lib/contracts";
+import { getAstaVerdeContract } from "../../../config/contracts";
 import { usePublicClient } from "wagmi";
 import Loader from "../../../components/Loader";
 import { fetchJsonFromIpfsWithFallback, resolveIpfsUriToUrl } from "../../../utils/ipfsHelper";
@@ -53,6 +53,7 @@ export default function Page({ params }: { params: { id: bigint } }) {
     }
 
     try {
+      const astaverdeContractConfig = getAstaVerdeContract();
       console.log(`Fetching token data for ID: ${params.id} using contract: ${astaverdeContractConfig.address}`);
       const contractData = (await publicClient.readContract({
         ...astaverdeContractConfig,

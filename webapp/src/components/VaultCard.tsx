@@ -7,7 +7,7 @@ import { readContract } from "wagmi/actions";
 import { wagmiConfig } from "../config/wagmi";
 import { dispatchRefetch } from "../hooks/useGlobalEvent";
 import { useVault } from "../hooks/useVault";
-import { getEcoStabilizerContractConfig } from "../lib/contracts";
+import { getEcoStabilizerContract } from "../config/contracts";
 import { customToast } from "../shared/utils/customToast";
 import { getTransactionStatusMessage, TxStatus } from "../utils/errors";
 import { ENV } from "../config/environment";
@@ -60,7 +60,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     const fetchLoanData = async () => {
       setIsLoadingLoan(true);
       try {
-        const contractConfig = getEcoStabilizerContractConfig();
+        const contractConfig = getEcoStabilizerContract();
 
         const data = await readContract(wagmiConfig, {
           ...contractConfig,
@@ -155,7 +155,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         const newBalance = await getSccBalance();
         setSccBalance(newBalance);
       }
-      
+
       // Refresh the token list to show the NFT is now in the vault
       if (onActionComplete) {
         await onActionComplete();
@@ -219,7 +219,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
         const newBalance = await getSccBalance();
         setSccBalance(newBalance);
       }
-      
+
       // Refresh the token list to show the NFT is now available
       if (onActionComplete) {
         await onActionComplete();

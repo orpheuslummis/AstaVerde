@@ -8,7 +8,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useBalance, useBlockNumber } from "wagmi";
 import { ENV } from "../config/environment";
-import { getUsdcContractConfig, getSccContractConfig } from "../lib/contracts";
+import { getUsdcContract, getSccContract } from "../config/contracts";
 import { useIsProducer } from "../hooks/useIsProducer";
 import { useDebounce } from "../hooks/useDebounce";
 
@@ -19,7 +19,7 @@ interface HeaderProps {
 export function Header({ links }: HeaderProps) {
   const { address, isConnected } = useAccount();
   const { isProducer, producerBalance } = useIsProducer();
-  const usdcConfig = getUsdcContractConfig();
+  const usdcConfig = getUsdcContract();
   const { data: usdcBalance, isLoading: isBalanceDataLoading, refetch: refetchUsdcBalance } = useBalance({
     address,
     token: usdcConfig.address,
@@ -31,7 +31,7 @@ export function Header({ links }: HeaderProps) {
   });
 
   // SCC Balance (only if vault is available)
-  const sccConfig = ENV.SCC_ADDRESS ? getSccContractConfig() : null;
+  const sccConfig = ENV.SCC_ADDRESS ? getSccContract() : null;
   const { data: sccBalance, refetch: refetchSccBalance } = useBalance({
     address,
     token: sccConfig?.address,

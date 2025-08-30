@@ -8,7 +8,7 @@ import { ENV } from "../../config/environment";
 import { Connected } from "../../components/Connected";
 import { useAppContext } from "../../contexts/AppContext";
 import { useContractInteraction } from "../../hooks/useContractInteraction";
-import { astaverdeContractConfig } from "../../lib/contracts";
+import { getAstaVerdeContract } from "../../config/contracts";
 import { customToast } from "../../utils/customToast";
 import { MaxPriceUpdateIterationsControl, RecoverSurplusUSDCControl } from "./GasOptimizationControls";
 
@@ -53,6 +53,7 @@ function ControlContainer({ children, title }: { children: React.ReactNode; titl
 
 function PauseContractControl() {
   const { adminControls } = useAppContext();
+  const astaverdeContractConfig = getAstaVerdeContract();
   const { data: isContractPaused, refetch: refetchIsContractPaused } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "paused",
@@ -107,6 +108,7 @@ function PauseContractControl() {
 function ClaimPlatformFunds() {
   const { address } = useAccount();
   const { adminControls } = useAppContext();
+  const astaverdeContractConfig = getAstaVerdeContract();
   const { data: platformFunds } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "platformShareAccumulated",
@@ -148,6 +150,7 @@ function ClaimPlatformFunds() {
 function PriceFloorControl() {
   const { adminControls } = useAppContext();
   const [priceFloor, setPriceFloor] = useState("");
+  const astaverdeContractConfig = getAstaVerdeContract();
   const { execute: getPriceFloor } = useContractInteraction(
     astaverdeContractConfig,
     "priceFloor",
@@ -210,6 +213,7 @@ function PriceFloorControl() {
 function BasePriceControl() {
   const { adminControls } = useAppContext();
   const [basePrice, setBasePrice] = useState("");
+  const astaverdeContractConfig = getAstaVerdeContract();
   const { data: currentBasePrice, refetch: refetchCurrentBasePrice } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "basePrice",
@@ -269,6 +273,7 @@ function BasePriceControl() {
 function MaxBatchSizeControl() {
   const { adminControls } = useAppContext();
   const [maxBatchSize, setMaxBatchSize] = useState("");
+  const astaverdeContractConfig = getAstaVerdeContract();
   const { data: currentMaxBatchSize, refetch: refetchCurrentMaxBatchSize } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "maxBatchSize",
@@ -321,6 +326,7 @@ function AuctionTimeThresholdsControl() {
   const { adminControls } = useAppContext();
   const [dayIncreaseThreshold, setDayIncreaseThreshold] = useState("");
   const [dayDecreaseThreshold, setDayDecreaseThreshold] = useState("");
+  const astaverdeContractConfig = getAstaVerdeContract();
   const { data: currentDayIncreaseThreshold, refetch: refetchCurrentDayIncreaseThreshold } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "dayIncreaseThreshold",
@@ -399,6 +405,7 @@ function AuctionTimeThresholdsControl() {
 function PlatformPercentageControl() {
   const { adminControls } = useAppContext();
   const [platformSharePercentage, setPlatformSharePercentage] = useState("");
+  const astaverdeContractConfig = getAstaVerdeContract();
   const { data: currentPlatformSharePercentage, refetch: refetchCurrentPlatformSharePercentage } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "platformSharePercentage",
@@ -458,6 +465,7 @@ function PlatformPercentageControl() {
 function DailyPriceDecayControl() {
   const { adminControls } = useAppContext();
   const [dailyPriceDecay, setDailyPriceDecay] = useState("");
+  const astaverdeContractConfig = getAstaVerdeContract();
   const { execute: getDailyPriceDecay } = useContractInteraction(
     astaverdeContractConfig,
     "dailyPriceDecay",
@@ -526,6 +534,7 @@ function DailyPriceDecayControl() {
 function PriceAdjustDeltaControl() {
   const { adminControls } = useAppContext();
   const [priceAdjustDelta, setPriceAdjustDelta] = useState("");
+  const astaverdeContractConfig = getAstaVerdeContract();
   const { execute: getPriceAdjustDelta } = useContractInteraction(
     astaverdeContractConfig,
     "priceAdjustDelta",

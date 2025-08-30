@@ -5,7 +5,7 @@ import { useAccount, useBalance } from "wagmi";
 import { ENV } from "../../config/environment";
 // import { useAppContext } from "../../contexts/AppContext"
 import { useContractInteraction } from "../../hooks/useContractInteraction";
-import { astaverdeContractConfig, getUsdcContractConfig } from "../../lib/contracts";
+import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
 import { customToast } from "../../utils/customToast";
 
 export default function Page() {
@@ -14,7 +14,7 @@ export default function Page() {
   // const [producers, setProducers] = useState<string[]>([""]);
   // const [cids, setCids] = useState<string[]>([""]);
 
-  const usdcContractConfig = getUsdcContractConfig();
+  const usdcContractConfig = getUsdcContract();
   const { data: usdcBalance } = useBalance({
     address,
     token: usdcContractConfig.address,
@@ -39,6 +39,7 @@ export default function Page() {
     if (!address) return;
     try {
       const amount = parseUnits("10000", ENV.USDC_DECIMALS);
+      const astaverdeContractConfig = getAstaVerdeContract();
       await approveUSDC(astaverdeContractConfig.address, amount);
       customToast.success("Successfully approved USDC");
     } catch (error) {

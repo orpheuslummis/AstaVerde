@@ -1,7 +1,7 @@
 "use client";
 
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { astaverdeContractConfig } from "@/lib/contracts";
+import { getAstaVerdeContract } from "@/config/contracts";
 import { formatUnits } from "viem";
 import { useState, useEffect } from "react";
 import { customToast } from "@/utils/customToast";
@@ -11,6 +11,7 @@ import Loader from "@/components/Loader";
 import { ENV } from "@/config/environment";
 
 export default function ProducerDashboard() {
+  const astaverdeContractConfig = getAstaVerdeContract();
   const router = useRouter();
   const { address, isConnected } = useAccount();
   const { isProducer, producerBalance, isLoading: isCheckingProducer, refetch: refetchProducerStatus } = useIsProducer();

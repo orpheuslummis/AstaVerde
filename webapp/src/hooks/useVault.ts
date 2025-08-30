@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseEther } from "viem";
 import { useAccount, usePublicClient, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { getEcoStabilizerContractConfig, getSccContractConfig, astaverdeContractConfig, detectVaultVersion } from "../lib/contracts";
+import { getEcoStabilizerContract, getSccContract, getAstaVerdeContract, detectVaultVersion } from "../config/contracts";
 import { customToast } from "../shared/utils/customToast";
 import { ENV } from "../config/environment";
 import { VAULT_GAS_LIMITS } from "../config/constants";
@@ -62,7 +62,7 @@ export function useVault(): VaultHook {
   // Transaction management
   const { writeContractAsync } = useWriteContract();
   const [currentTxHash, setCurrentTxHash] = useState<`0x${string}` | undefined>();
-  
+
   const {
     isLoading: isConfirming,
     isSuccess: isConfirmed,
@@ -92,23 +92,23 @@ export function useVault(): VaultHook {
     if (!isVaultAvailable || !vaultAddress) {
       throw new Error("Vault contracts not configured");
     }
-    return getEcoStabilizerContractConfig();
+    return getEcoStabilizerContract();
   }, [isVaultAvailable, vaultAddress]);
 
   const getAssetContractConfig = useCallback(() => {
-    return astaverdeContractConfig;
+    return getAstaVerdeContract();
   }, []);
 
   const getSccConfig = useCallback(() => {
     if (!ENV.SCC_ADDRESS) {
       throw new Error("SCC contract not configured");
     }
-    return getSccContractConfig();
+    return getSccContract();
   }, []);
 
   // Read user's SCC balance
   const { data: sccBalance, refetch: refetchSccBalance } = useReadContract({
-    ...(isVaultAvailable ? getSccContractConfig() : { address: undefined, abi: [] }),
+    ...(isVaultAvailable ? getSccContract() : { address: undefined, abi: [] }),
     functionName: "balanceOf",
     args: address ? [address] : undefined,
     query: { enabled: isVaultAvailable && !!address },
@@ -116,7 +116,7 @@ export function useVault(): VaultHook {
 
   // Read SCC allowance for vault
   const { data: sccAllowance, refetch: refetchSccAllowance } = useReadContract({
-    ...(isVaultAvailable ? getSccContractConfig() : { address: undefined, abi: [] }),
+    ...(isVaultAvailable ? getSccContract() : { address: undefined, abi: [] }),
     functionName: "allowance",
     args: address && vaultAddress ? [address, vaultAddress] : undefined,
     query: { enabled: isVaultAvailable && !!address && !!vaultAddress },
@@ -124,7 +124,7 @@ export function useVault(): VaultHook {
 
   // Read user's loans directly (non-paginated version)
   const { data: userLoansData, refetch: refetchUserLoans } = useReadContract({
-    ...(isVaultAvailable ? getEcoStabilizerContractConfig() : { address: undefined, abi: [] }),
+    ...(isVaultAvailable ? getEcoStabilizerContract() : { address: undefined, abi: [] }),
     functionName: "getUserLoans",
     args: address ? [address] : undefined,
     query: { enabled: isVaultAvailable && !!address },
@@ -132,7 +132,7 @@ export function useVault(): VaultHook {
 
   // Read total active loans
   const { data: totalActiveLoansData } = useReadContract({
-    ...(isVaultAvailable ? getEcoStabilizerContractConfig() : { address: undefined, abi: [] }),
+    ...(isVaultAvailable ? getEcoStabilizerContract() : { address: undefined, abi: [] }),
     functionName: "getTotalActiveLoans",
     query: { enabled: isVaultAvailable },
   });
@@ -191,11 +191,11 @@ export function useVault(): VaultHook {
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
-        
+
         // Wait for transaction receipt
         const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-        
-        if (receipt?.status === 'success') {
+
+        if (receipt?.status === "success") {
           setTxStatus(TxStatus.SUCCESS);
           customToast.success("NFT successfully deposited!");
           await refreshContractData();
@@ -262,11 +262,11 @@ export function useVault(): VaultHook {
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
-        
+
         // Wait for transaction receipt
         const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-        
-        if (receipt?.status === 'success') {
+
+        if (receipt?.status === "success") {
           setTxStatus(TxStatus.SUCCESS);
           customToast.success("NFT successfully withdrawn!");
           await refreshContractData();
@@ -322,10 +322,10 @@ export function useVault(): VaultHook {
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
-        
+
         const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-        
-        if (receipt?.status === 'success') {
+
+        if (receipt?.status === "success") {
           setTxStatus(TxStatus.SUCCESS);
           customToast.success(`Successfully deposited ${tokenIds.length} NFTs!`);
           await refreshContractData();
@@ -374,10 +374,10 @@ export function useVault(): VaultHook {
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
-        
+
         const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-        
-        if (receipt?.status === 'success') {
+
+        if (receipt?.status === "success") {
           setTxStatus(TxStatus.SUCCESS);
           customToast.success(`Successfully withdrew ${tokenIds.length} NFTs!`);
           await refreshContractData();
@@ -439,10 +439,10 @@ export function useVault(): VaultHook {
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
-        
+
         const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-        
-        if (receipt?.status === 'success') {
+
+        if (receipt?.status === "success") {
           setTxStatus(TxStatus.SUCCESS);
           customToast.success("NFT successfully withdrawn!");
           await refreshContractData();
@@ -498,8 +498,8 @@ export function useVault(): VaultHook {
       });
 
       const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-      
-      if (receipt?.status === 'success') {
+
+      if (receipt?.status === "success") {
         await refetchNftApproval();
         customToast.success("NFT approval granted!");
       } else {
@@ -536,8 +536,8 @@ export function useVault(): VaultHook {
         });
 
         const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-        
-        if (receipt?.status === 'success') {
+
+        if (receipt?.status === "success") {
           await refetchSccAllowance();
           customToast.success("SCC approval granted!");
         } else {

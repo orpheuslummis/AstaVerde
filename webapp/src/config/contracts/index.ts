@@ -88,3 +88,9 @@ export const contractAddresses = {
   ecoStabilizer: ENV.ECOSTABILIZER_ADDRESS,
   scc: ENV.SCC_ADDRESS,
 } as const;
+
+// Temporary helper kept for backward compatibility with older hooks
+// Current system is single-version (V2), so detection is trivial.
+export async function detectVaultVersion(_publicClient: unknown): Promise<"V2"> {
+  return "V2";
+}

@@ -4,7 +4,7 @@ import { useAccount, useReadContract } from "wagmi";
 import { useContractInteraction } from "../hooks/useContractInteraction";
 import { useAstaVerdeRefetch } from "../hooks/useGlobalEvent";
 import { Batch } from "../lib/batch";
-import { astaverdeContractConfig, getUsdcContractConfig } from "../lib/contracts";
+import { getAstaVerdeContract, getUsdcContract } from "../config/contracts";
 import { customToast } from "../shared/utils/customToast";
 import type { AppContextType } from "../types";
 
@@ -15,6 +15,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const hasLoadedBatchesRef = useRef(false);
+
+  // Canonical contract configs
+  const astaverdeContractConfig = getAstaVerdeContract();
 
   const { execute: getLastBatchID } = useContractInteraction(astaverdeContractConfig, "lastBatchID");
   const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
@@ -261,8 +264,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     () => ({
       batches,
       astaverdeContractConfig,
-      getUsdcContractConfig,
-      usdcContractConfig: getUsdcContractConfig(),
+      getUsdcContract,
+      usdcContractConfig: getUsdcContract(),
       refetchBatches,
       updateBatch,
       updateBatchItemsLeft,
