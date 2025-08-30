@@ -28,26 +28,11 @@ export function useTokenData(): TokenData {
   const { astaverdeContractConfig } = useAppContext();
   const { getUserLoans, isVaultAvailable } = useVault();
 
-  const { execute: getBalanceOf } = useContractInteraction(
-    astaverdeContractConfig,
-    "balanceOf",
-  );
-  const { execute: getIsRedeemed } = useContractInteraction(
-    astaverdeContractConfig,
-    "isRedeemed",
-  );
-  const { execute: getLastTokenID } = useContractInteraction(
-    astaverdeContractConfig,
-    "lastTokenID",
-  );
-  const { execute: getLastBatchID } = useContractInteraction(
-    astaverdeContractConfig,
-    "lastBatchID",
-  );
-  const { execute: getBatchInfo } = useContractInteraction(
-    astaverdeContractConfig,
-    "getBatchInfo",
-  );
+  const { execute: getBalanceOf } = useContractInteraction(astaverdeContractConfig, "balanceOf");
+  const { execute: getIsRedeemed } = useContractInteraction(astaverdeContractConfig, "isRedeemed");
+  const { execute: getLastTokenID } = useContractInteraction(astaverdeContractConfig, "lastTokenID");
+  const { execute: getLastBatchID } = useContractInteraction(astaverdeContractConfig, "lastBatchID");
+  const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
 
   const fetchTokens = useCallback(async () => {
     if (!address) {
@@ -60,13 +45,13 @@ export function useTokenData(): TokenData {
       setError(null);
 
       // Fetch last token ID
-      const lastTokenID = await getLastTokenID() as bigint;
+      const lastTokenID = (await getLastTokenID()) as bigint;
       if (lastTokenID === undefined || lastTokenID === null) {
         throw new Error("Failed to fetch last token ID");
       }
 
       // Fetch batch information
-      const lastBatchID = await getLastBatchID() as bigint;
+      const lastBatchID = (await getLastBatchID()) as bigint;
       const batchMap = new Map<bigint, unknown>();
 
       if (lastBatchID && lastBatchID > 0n) {
@@ -84,7 +69,7 @@ export function useTokenData(): TokenData {
 
         const batchResults = await Promise.all(batchPromises);
 
-        batchResults.forEach(result => {
+        batchResults.forEach((result) => {
           if (result && result.batch) {
             batchMap.set(result.batchId, result.batch);
           }
@@ -104,8 +89,8 @@ export function useTokenData(): TokenData {
       }
 
       // Fetch all balances in parallel
-      const balancePromises = tokenIds.map(tokenId =>
-        getBalanceOf(address, tokenId).then(balance => ({ tokenId, balance: balance as bigint })),
+      const balancePromises = tokenIds.map((tokenId) =>
+        getBalanceOf(address, tokenId).then((balance) => ({ tokenId, balance: balance as bigint })),
       );
       const balanceResults = await Promise.all(balancePromises);
 
@@ -125,8 +110,8 @@ export function useTokenData(): TokenData {
 
       // Fetch redeem status for unique tokens in parallel
       const uniqueTokenIds = Array.from(new Set(userTokens));
-      const statusPromises = uniqueTokenIds.map(tokenId =>
-        getIsRedeemed(tokenId).then(isRedeemed => ({
+      const statusPromises = uniqueTokenIds.map((tokenId) =>
+        getIsRedeemed(tokenId).then((isRedeemed) => ({
           tokenId,
           isRedeemed: isRedeemed as boolean,
         })),
@@ -144,13 +129,11 @@ export function useTokenData(): TokenData {
           setVaultedTokens(vaultLoans);
 
           // Get redeem status for vaulted tokens in parallel
-          const vaultTokensToCheck = vaultLoans.filter(
-            vaultTokenId => !status[vaultTokenId.toString()],
-          );
+          const vaultTokensToCheck = vaultLoans.filter((vaultTokenId) => !status[vaultTokenId.toString()]);
 
           if (vaultTokensToCheck.length > 0) {
-            const vaultStatusPromises = vaultTokensToCheck.map(tokenId =>
-              getIsRedeemed(tokenId).then(isRedeemed => ({
+            const vaultStatusPromises = vaultTokensToCheck.map((tokenId) =>
+              getIsRedeemed(tokenId).then((isRedeemed) => ({
                 tokenId,
                 isRedeemed: isRedeemed as boolean,
               })),

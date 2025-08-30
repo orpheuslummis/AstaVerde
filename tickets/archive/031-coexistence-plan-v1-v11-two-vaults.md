@@ -74,5 +74,3 @@ Checklist
 - [ ] Primary market UI points to AstaVerde v1.1 only
 - [ ] Webapp env configured for V1/V1.1 + both vaults + SCC
 - [ ] Per‑token vault routing implemented in frontend
-
-

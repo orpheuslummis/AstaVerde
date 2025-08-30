@@ -53,7 +53,7 @@ class AllInOneDev {
 
     async deployContracts() {
         console.log("🚀 Deploying contracts to local node...");
-        
+
         // Use hardhat-deploy to deploy contracts
         const { execSync } = require("child_process");
         try {
@@ -86,11 +86,11 @@ class AllInOneDev {
         // Get deployed contract addresses from hardhat-deploy
         const deployments = require("../deployments/localhost/MockUSDC.json");
         const astaVerdeDeployment = require("../deployments/localhost/AstaVerde.json");
-        
+
         // Connect to deployed contracts
         const MockUSDC = await ethers.getContractFactory("MockUSDC", deployer);
         const usdc = MockUSDC.attach(deployments.address);
-        
+
         const AstaVerde = await ethers.getContractFactory("AstaVerde", deployer);
         const astaVerde = AstaVerde.attach(astaVerdeDeployment.address);
 
@@ -135,7 +135,7 @@ class AllInOneDev {
         console.log("\n📦 Creating NFT batches:");
         console.log(`   Producer address: ${producer.address}`);
         console.log(`   Platform owner: ${this.users.deployer.address}`);
-        
+
         // Create multiple batches for testing - using dedicated producer address
         console.log("   - Batch 1: 3 NFTs for marketplace testing");
         await astaVerde.mintBatch(
@@ -144,10 +144,7 @@ class AllInOneDev {
         );
 
         console.log("   - Batch 2: 2 NFTs for vault testing");
-        await astaVerde.mintBatch(
-            [producer.address, producer.address],
-            ["QmVaultBatch1", "QmVaultBatch2"],
-        );
+        await astaVerde.mintBatch([producer.address, producer.address], ["QmVaultBatch1", "QmVaultBatch2"]);
 
         // Alice buys an NFT
         console.log("\n💸 Simulating NFT purchases:");
@@ -155,15 +152,19 @@ class AllInOneDev {
         console.log(`   - Alice buying 1 NFT from Batch 1 at ${ethers.formatUnits(batch1Price, 6)} USDC`);
         await usdc.connect(alice).approve(await astaVerde.getAddress(), batch1Price);
         await astaVerde.connect(alice).buyBatch(1, batch1Price, 1);
-        console.log(`     ✓ Purchase complete - Producer gets ${ethers.formatUnits((batch1Price * 70n) / 100n, 6)} USDC (70%)`);
-        console.log(`     ✓ Platform gets ${ethers.formatUnits((batch1Price * 30n) / 100n, 6)} USDC (30%)`)
+        console.log(
+            `     ✓ Purchase complete - Producer gets ${ethers.formatUnits((batch1Price * 70n) / 100n, 6)} USDC (70%)`,
+        );
+        console.log(`     ✓ Platform gets ${ethers.formatUnits((batch1Price * 30n) / 100n, 6)} USDC (30%)`);
 
         // Bob buys and redeems one (for testing redeemed rejection)
         const batch2Price = await astaVerde.getCurrentBatchPrice(2);
         console.log(`   - Bob buying 1 NFT from Batch 2 at ${ethers.formatUnits(batch2Price, 6)} USDC`);
         await usdc.connect(bob).approve(await astaVerde.getAddress(), batch2Price);
         await astaVerde.connect(bob).buyBatch(2, batch2Price, 1);
-        console.log(`     ✓ Purchase complete - Producer gets ${ethers.formatUnits((batch2Price * 70n) / 100n, 6)} USDC (70%)`);
+        console.log(
+            `     ✓ Purchase complete - Producer gets ${ethers.formatUnits((batch2Price * 70n) / 100n, 6)} USDC (70%)`,
+        );
 
         const batch2Info = await astaVerde.getBatchInfo(2);
         const bobTokenId = batch2Info[1][0];
@@ -174,12 +175,16 @@ class AllInOneDev {
         const producerBalance = await astaVerde.producerBalances(producer.address);
         const platformBalance = await astaVerde.platformShareAccumulated();
         const totalProducerBalances = await astaVerde.totalProducerBalances();
-        
+
         console.log("\n💰 Revenue Distribution Summary:");
-        console.log(`   Producer balance: ${ethers.formatUnits(producerBalance, 6)} USDC (claimable by ${producer.address})`);  
-        console.log(`   Platform fees: ${ethers.formatUnits(platformBalance, 6)} USDC (accumulated for platform owner)`);
+        console.log(
+            `   Producer balance: ${ethers.formatUnits(producerBalance, 6)} USDC (claimable by ${producer.address})`,
+        );
+        console.log(
+            `   Platform fees: ${ethers.formatUnits(platformBalance, 6)} USDC (accumulated for platform owner)`,
+        );
         console.log(`   Total producer balances: ${ethers.formatUnits(totalProducerBalances, 6)} USDC`);
-        
+
         console.log("\n✅ Test data ready:");
         console.log("   - Multiple NFT batches available for purchase");
         console.log("   - Alice owns an NFT (ready for vault deposit)");

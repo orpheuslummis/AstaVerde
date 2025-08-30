@@ -14,25 +14,25 @@ const { AllInOneDev } = require("./all-in-one-dev.js");
 
 async function main() {
     const scenario = process.env.SCENARIO || "complete";
-    
+
     console.log(`🚀 Starting AstaVerde Development Environment (${scenario} mode)\n`);
-    
+
     switch (scenario) {
         case "complete":
             // Use the all-in-one-dev setup with improvements
             const dev = new AllInOneDev();
-            
+
             // Handle cleanup on exit
             process.on("SIGINT", () => {
                 dev.cleanup();
                 process.exit(0);
             });
-            
+
             process.on("SIGTERM", () => {
                 dev.cleanup();
                 process.exit(0);
             });
-            
+
             try {
                 await dev.startHardhatNode();
                 await dev.deployContracts();
@@ -40,7 +40,7 @@ async function main() {
                 await dev.generateWebappConfig();
                 await dev.startWebapp();
                 dev.displayInstructions();
-                
+
                 // Keep running
                 return new Promise(() => {});
             } catch (error) {
@@ -49,7 +49,7 @@ async function main() {
                 process.exit(1);
             }
             break;
-            
+
         case "minimal":
             console.log("Running minimal setup (node + contracts only)...");
             // Just start node and deploy contracts
@@ -58,7 +58,7 @@ async function main() {
             await minDev.deployContracts();
             console.log("✅ Minimal setup complete - node running with contracts deployed");
             return new Promise(() => {});
-            
+
         case "testing":
             console.log("Running testing setup (for automated tests)...");
             // Start node, deploy, and exit
@@ -69,7 +69,7 @@ async function main() {
             console.log("✅ Testing setup complete");
             process.exit(0);
             break;
-            
+
         default:
             console.error(`Unknown scenario: ${scenario}`);
             console.log("Available scenarios: complete, minimal, testing");

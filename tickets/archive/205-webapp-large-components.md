@@ -65,6 +65,7 @@ Aim for <300 lines per component file
 **After:** 348 lines with modular structure
 
 #### New Structure:
+
 ```
 webapp/src/app/mytokens/
 ├── page.tsx (348 lines)
@@ -80,6 +81,7 @@ webapp/src/app/mytokens/
 ```
 
 #### Benefits Achieved:
+
 - ✅ Clear separation of concerns (data logic vs UI)
 - ✅ Reusable hooks for token management
 - ✅ Modular UI components

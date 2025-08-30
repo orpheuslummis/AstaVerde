@@ -315,10 +315,10 @@ _Space for any additional observations, questions, or feedback:_
 
 ---
 
-**Tester Name**: ******\_\_\_******
-**Date**: ******\_\_\_******
-**Wallet Address**: ******\_\_\_******
-**Browser/Device**: ******\_\_\_******
+**Tester Name**: **\*\***\_\_\_**\*\***
+**Date**: **\*\***\_\_\_**\*\***
+**Wallet Address**: **\*\***\_\_\_**\*\***
+**Browser/Device**: **\*\***\_\_\_**\*\***
 
 ---
 

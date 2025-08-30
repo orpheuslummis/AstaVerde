@@ -11,9 +11,7 @@ type AbiItem = {
 export type FunctionKind = "read" | "write" | "unknown";
 
 export function getFunctionAbi(abi: readonly unknown[], functionName: string): AbiItem | undefined {
-  return (abi as AbiItem[]).find(
-    (item) => item && item.type === "function" && item.name === functionName,
-  );
+  return (abi as AbiItem[]).find((item) => item && item.type === "function" && item.name === functionName);
 }
 
 export function getFunctionKind(abi: readonly unknown[], functionName: string): FunctionKind {
@@ -32,4 +30,3 @@ export function isReadFunctionByAbi(abi: readonly unknown[], functionName: strin
 export function isWriteFunctionByAbi(abi: readonly unknown[], functionName: string): boolean {
   return getFunctionKind(abi, functionName) === "write";
 }
-

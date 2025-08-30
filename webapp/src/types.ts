@@ -46,10 +46,10 @@ export interface WalletContextType {
 }
 
 export interface TokenData {
-  0: string;  // Original minter (address)
-  1: bigint;  // Token ID
-  2: string;  // Producer (address)
-  3: string;  // CID (string)
+  0: string; // Original minter (address)
+  1: bigint; // Token ID
+  2: string; // Producer (address)
+  3: string; // CID (string)
   4: boolean; // Redeemed
 }
 
@@ -70,7 +70,6 @@ export interface RedeemTokensButtonProps {
   allTokens: bigint[];
   redeemStatus: Record<string, boolean>;
 }
-
 
 export interface AdminControls {
   setPriceDelta: (amount: bigint) => Promise<string>;

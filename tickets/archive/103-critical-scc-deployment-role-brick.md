@@ -9,8 +9,8 @@ The risk of permanently bricking SCC by renouncing `DEFAULT_ADMIN_ROLE` before g
 ## Resolution
 
 - Implemented pre-renounce verification in `scripts/deploy_ecostabilizer.ts`:
-  - Verifies `MINTER_ROLE` is granted to the intended vault(s) before renouncing admin.
-  - Aborts renunciation with a clear error if verification fails.
+    - Verifies `MINTER_ROLE` is granted to the intended vault(s) before renouncing admin.
+    - Aborts renunciation with a clear error if verification fails.
 - Updated `docs/deployment/DEPLOYMENT.md` to document the guard and show the correct snippet.
 
 ## Key Snippet (Implemented)
@@ -43,5 +43,3 @@ await scc.renounceRole(DEFAULT_ADMIN_ROLE, deployer.address);
 ## Closure Rationale
 
 With the guard in place and documented, accidental or mis-sequenced deployments will fail fast before admin renounce, removing the brick risk described.
-
-

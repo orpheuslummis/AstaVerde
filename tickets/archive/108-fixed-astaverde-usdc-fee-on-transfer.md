@@ -15,7 +15,7 @@
 ## Resolution
 
 - Enforced canonical Base mainnet USDC address in constructor when `block.chainid == 8453`:
-  - Require `usdcToken == 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`.
+    - Require `usdcToken == 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`.
 - Keeps production safe assuming official USDC only. For test/local, optionally add a balance-delta check if using non-canonical tokens.
 
 ## Location
@@ -33,5 +33,3 @@
 
 - Optional: add balance delta verification on non-mainnet builds for safer local/test workflows.
 - Optional: tests with a fee-on-transfer mock to demonstrate the safety check behavior.
-
-

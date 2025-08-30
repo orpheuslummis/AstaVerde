@@ -304,8 +304,6 @@ export class MarketplaceService {
 
   private getRevertReason(error: unknown): string {
     const err = error as { data?: { message?: string }; shortMessage?: string; message?: string };
-    return (
-      err?.data?.message || err?.shortMessage || err?.message || "Transaction failed without a reason."
-    );
+    return err?.data?.message || err?.shortMessage || err?.message || "Transaction failed without a reason.";
   }
 }

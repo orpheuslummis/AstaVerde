@@ -42,6 +42,7 @@ npm run deploy:mainnet
 ### 1. Local Development (`npm run dev:local`)
 
 The updated `scripts/start-local.js` now:
+
 1. **Compiles contracts first** (`npm run compile`)
 2. Starts Hardhat node
 3. Deploys contracts
@@ -53,6 +54,7 @@ This ensures ABIs are always current before the webapp starts.
 ### 2. Network Deployment (`npm run deploy:testnet/mainnet`)
 
 The new `scripts/deploy-with-validation.js`:
+
 1. **Cleans and compiles** all contracts
 2. **Validates ABIs** contain expected functions
 3. **Deploys contracts** to specified network
@@ -62,6 +64,7 @@ The new `scripts/deploy-with-validation.js`:
 ### 3. ABI Validation (`npm run validate:abis`)
 
 The `scripts/validate-abis.js` tool:
+
 - Checks all contract ABIs exist
 - Verifies expected functions are present
 - Special validation for critical functions like `getUserLoansIndexed`
@@ -94,24 +97,26 @@ The `scripts/validate-abis.js` tool:
 ### If you see ABI-related errors:
 
 1. **Clean and rebuild:**
-   ```bash
-   npm run clean
-   npm run compile
-   npm run validate:abis
-   ```
+
+    ```bash
+    npm run clean
+    npm run compile
+    npm run validate:abis
+    ```
 
 2. **For persistent issues:**
-   ```bash
-   # Force complete rebuild
-   rm -rf artifacts cache
-   npm run compile
-   ```
+
+    ```bash
+    # Force complete rebuild
+    rm -rf artifacts cache
+    npm run compile
+    ```
 
 3. **Verify ABIs are valid:**
-   ```bash
-   npm run validate:abis
-   ```
-   This will show which functions are missing or invalid.
+    ```bash
+    npm run validate:abis
+    ```
+    This will show which functions are missing or invalid.
 
 ## Key Files
 
@@ -123,10 +128,11 @@ The `scripts/validate-abis.js` tool:
 ## Best Practices
 
 1. **Always validate before production deployment:**
-   ```bash
-   npm run validate:abis
-   npm run qa:status
-   ```
+
+    ```bash
+    npm run validate:abis
+    npm run qa:status
+    ```
 
 2. **Use the safe deployment scripts** instead of raw hardhat commands
 
@@ -144,6 +150,7 @@ The `scripts/validate-abis.js` tool:
 ## Future Improvements
 
 Consider adding:
+
 - CI/CD integration for automated validation
 - Pre-commit hooks for ABI validation
 - Automated contract verification after deployment

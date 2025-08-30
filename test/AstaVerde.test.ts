@@ -747,118 +747,118 @@ describe("Platform Funds Withdrawal", function () {
         expect(batch3Price).to.equal(newBasePrice);
     });
 }),
-describe("Producer payouts", function () {
-    it("Should correctly pay producers when selling part of a batch", async function () {
-        const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
+    describe("Producer payouts", function () {
+        it("Should correctly pay producers when selling part of a batch", async function () {
+            const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
 
-        // Mint a batch with multiple tokens from the same producer
-        await astaVerde.mintBatch(
-            [user2.address, user2.address, user2.address],
-            ["QmValidCID1", "QmValidCID2", "QmValidCID3"],
-        );
-        const batchID = 1n;
+            // Mint a batch with multiple tokens from the same producer
+            await astaVerde.mintBatch(
+                [user2.address, user2.address, user2.address],
+                ["QmValidCID1", "QmValidCID2", "QmValidCID3"],
+            );
+            const batchID = 1n;
 
-        // Get initial balance
-        const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
+            // Get initial balance
+            const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
 
-        // User1 buys two out of three tokens
-        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-        const totalCost = currentPrice * 2n;
-        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
-        await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
+            // User1 buys two out of three tokens
+            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+            const totalCost = currentPrice * 2n;
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+            await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
 
-        // Check accrued balance (pull pattern - funds not transferred directly)
-        const accruedProducerBalance = await astaVerde.producerBalances(user2.address);
+            // Check accrued balance (pull pattern - funds not transferred directly)
+            const accruedProducerBalance = await astaVerde.producerBalances(user2.address);
 
-        // Calculate expected producer share
-        const platformSharePercentage = await astaVerde.platformSharePercentage();
-        const expectedProducerShare = (currentPrice * 2n * (100n - platformSharePercentage)) / 100n;
+            // Calculate expected producer share
+            const platformSharePercentage = await astaVerde.platformSharePercentage();
+            const expectedProducerShare = (currentPrice * 2n * (100n - platformSharePercentage)) / 100n;
 
-        // Verify accrued balance
-        expect(accruedProducerBalance).to.equal(expectedProducerShare);
+            // Verify accrued balance
+            expect(accruedProducerBalance).to.equal(expectedProducerShare);
 
-        // Now producer claims their funds
-        await astaVerde.connect(user2).claimProducerFunds();
-        const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
-        expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
-    });
+            // Now producer claims their funds
+            await astaVerde.connect(user2).claimProducerFunds();
+            const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
+            expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
+        });
 
-    it("Should correctly distribute payments to multiple producers in a batch", async function () {
-        const { astaVerde, mockUSDC, user1, user2, user3 } = await loadFixture(deployAstaVerdeFixture);
+        it("Should correctly distribute payments to multiple producers in a batch", async function () {
+            const { astaVerde, mockUSDC, user1, user2, user3 } = await loadFixture(deployAstaVerdeFixture);
 
-        // Mint a batch with multiple producers
-        await astaVerde.mintBatch([user2.address, user3.address], ["QmValidCID1", "QmValidCID2"]);
-        const batchID = 1n;
+            // Mint a batch with multiple producers
+            await astaVerde.mintBatch([user2.address, user3.address], ["QmValidCID1", "QmValidCID2"]);
+            const batchID = 1n;
 
-        // Get initial balances
-        const initialProducer1Balance = await mockUSDC.balanceOf(user2.address);
-        const initialProducer2Balance = await mockUSDC.balanceOf(user3.address);
+            // Get initial balances
+            const initialProducer1Balance = await mockUSDC.balanceOf(user2.address);
+            const initialProducer2Balance = await mockUSDC.balanceOf(user3.address);
 
-        // User1 buys both tokens
-        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-        const totalCost = currentPrice * 2n;
-        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
-        await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
+            // User1 buys both tokens
+            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+            const totalCost = currentPrice * 2n;
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), totalCost);
+            await astaVerde.connect(user1).buyBatch(batchID, totalCost, 2n);
 
-        // Check accrued balances (pull pattern - funds not transferred directly)
-        const accruedProducer1Balance = await astaVerde.producerBalances(user2.address);
-        const accruedProducer2Balance = await astaVerde.producerBalances(user3.address);
+            // Check accrued balances (pull pattern - funds not transferred directly)
+            const accruedProducer1Balance = await astaVerde.producerBalances(user2.address);
+            const accruedProducer2Balance = await astaVerde.producerBalances(user3.address);
 
-        // Calculate expected producer share
-        const platformSharePercentage = await astaVerde.platformSharePercentage();
-        const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
+            // Calculate expected producer share
+            const platformSharePercentage = await astaVerde.platformSharePercentage();
+            const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
 
-        // Verify accrued balances
-        expect(accruedProducer1Balance).to.equal(expectedProducerShare);
-        expect(accruedProducer2Balance).to.equal(expectedProducerShare);
+            // Verify accrued balances
+            expect(accruedProducer1Balance).to.equal(expectedProducerShare);
+            expect(accruedProducer2Balance).to.equal(expectedProducerShare);
 
-        // Now producers claim their funds
-        await astaVerde.connect(user2).claimProducerFunds();
-        await astaVerde.connect(user3).claimProducerFunds();
+            // Now producers claim their funds
+            await astaVerde.connect(user2).claimProducerFunds();
+            await astaVerde.connect(user3).claimProducerFunds();
 
-        const finalProducer1Balance = await mockUSDC.balanceOf(user2.address);
-        const finalProducer2Balance = await mockUSDC.balanceOf(user3.address);
-        expect(finalProducer1Balance).to.equal(initialProducer1Balance + expectedProducerShare);
-        expect(finalProducer2Balance).to.equal(initialProducer2Balance + expectedProducerShare);
-    });
-    it("Should transfer correct amount to producer when tokens are sold", async function () {
-        const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
+            const finalProducer1Balance = await mockUSDC.balanceOf(user2.address);
+            const finalProducer2Balance = await mockUSDC.balanceOf(user3.address);
+            expect(finalProducer1Balance).to.equal(initialProducer1Balance + expectedProducerShare);
+            expect(finalProducer2Balance).to.equal(initialProducer2Balance + expectedProducerShare);
+        });
+        it("Should transfer correct amount to producer when tokens are sold", async function () {
+            const { astaVerde, mockUSDC, user1, user2 } = await loadFixture(deployAstaVerdeFixture);
 
-        // Mint a batch with user2 as the producer
-        await astaVerde.mintBatch([user2.address], ["QmValidCID"]);
-        const batchID = 1n;
+            // Mint a batch with user2 as the producer
+            await astaVerde.mintBatch([user2.address], ["QmValidCID"]);
+            const batchID = 1n;
 
-        // Get initial balances
-        const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
-        const initialContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
+            // Get initial balances
+            const initialProducerBalance = await mockUSDC.balanceOf(user2.address);
+            const initialContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
 
-        // User1 buys the token
-        const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
-        await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
-        await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
+            // User1 buys the token
+            const currentPrice = await astaVerde.getCurrentBatchPrice(batchID);
+            await mockUSDC.connect(user1).approve(await astaVerde.getAddress(), currentPrice);
+            await astaVerde.connect(user1).buyBatch(batchID, currentPrice, 1n);
 
-        // Check accrued balance (pull pattern - funds not transferred directly)
-        const accruedProducerBalance = await astaVerde.producerBalances(user2.address);
-        const finalContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
+            // Check accrued balance (pull pattern - funds not transferred directly)
+            const accruedProducerBalance = await astaVerde.producerBalances(user2.address);
+            const finalContractBalance = await mockUSDC.balanceOf(await astaVerde.getAddress());
 
-        // Calculate expected producer share
-        const platformSharePercentage = await astaVerde.platformSharePercentage();
-        const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
-        const expectedPlatformShare = currentPrice - expectedProducerShare;
+            // Calculate expected producer share
+            const platformSharePercentage = await astaVerde.platformSharePercentage();
+            const expectedProducerShare = (currentPrice * (100n - platformSharePercentage)) / 100n;
+            const expectedPlatformShare = currentPrice - expectedProducerShare;
 
-        // Verify accrued balance and contract holds all funds
-        expect(accruedProducerBalance).to.equal(expectedProducerShare);
-        expect(finalContractBalance).to.equal(initialContractBalance + currentPrice);
+            // Verify accrued balance and contract holds all funds
+            expect(accruedProducerBalance).to.equal(expectedProducerShare);
+            expect(finalContractBalance).to.equal(initialContractBalance + currentPrice);
 
-        // Now producer claims their funds
-        await astaVerde.connect(user2).claimProducerFunds();
-        const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
-        const finalContractBalanceAfterClaim = await mockUSDC.balanceOf(await astaVerde.getAddress());
+            // Now producer claims their funds
+            await astaVerde.connect(user2).claimProducerFunds();
+            const finalProducerBalance = await mockUSDC.balanceOf(user2.address);
+            const finalContractBalanceAfterClaim = await mockUSDC.balanceOf(await astaVerde.getAddress());
 
-        expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
-        expect(finalContractBalanceAfterClaim).to.equal(initialContractBalance + expectedPlatformShare);
-    });
-}));
+            expect(finalProducerBalance).to.equal(initialProducerBalance + expectedProducerShare);
+            expect(finalContractBalanceAfterClaim).to.equal(initialContractBalance + expectedPlatformShare);
+        });
+    }));
 
 describe("Additional Price Adjustment Tests", function () {
     it("Should not increase basePrice when only part of a batch is sold", async function () {

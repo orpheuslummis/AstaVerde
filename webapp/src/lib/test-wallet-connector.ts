@@ -73,34 +73,34 @@ export function testWalletConnector() {
           if (!signer) throw new Error("Test signer not initialized");
 
           switch (method) {
-          case "eth_sendTransaction": {
-            // Actually send the transaction
-            const tx = params[0];
-            const realTx = await signer.sendTransaction({
-              to: tx.to,
-              data: tx.data,
-              value: tx.value || 0,
-            });
+            case "eth_sendTransaction": {
+              // Actually send the transaction
+              const tx = params[0];
+              const realTx = await signer.sendTransaction({
+                to: tx.to,
+                data: tx.data,
+                value: tx.value || 0,
+              });
 
-            // Return real transaction hash
-            return realTx.hash;
-          }
+              // Return real transaction hash
+              return realTx.hash;
+            }
 
-          case "eth_call": {
-            // Forward to real provider
-            const provider = signer.provider;
-            return await provider.call(params[0]);
-          }
+            case "eth_call": {
+              // Forward to real provider
+              const provider = signer.provider;
+              return await provider.call(params[0]);
+            }
 
-          case "eth_getTransactionReceipt": {
-            // Get real receipt
-            const provider = signer.provider;
-            return await provider.getTransactionReceipt(params[0]);
-          }
+            case "eth_getTransactionReceipt": {
+              // Get real receipt
+              const provider = signer.provider;
+              return await provider.getTransactionReceipt(params[0]);
+            }
 
-          default:
-            // Handle other methods
-            return null;
+            default:
+              // Handle other methods
+              return null;
           }
         },
       };

@@ -5,15 +5,18 @@ Run local and remote test environments simultaneously without any configuration 
 ## 🚀 Quick Start
 
 ### Local Development (Port 3000/3001)
+
 ```bash
 npm run dev:local
 ```
+
 - Starts Hardhat node locally
 - Deploys fresh contracts
 - Seeds test data
 - Runs webapp connected to local blockchain
 
 ### Base Sepolia Testing (Port 3002)
+
 ```bash
 # First, deploy contracts to Sepolia (one time)
 npm run deploy:testnet
@@ -23,14 +26,17 @@ npm run deploy:testnet
 # Run Sepolia-connected webapp
 npm run dev:sepolia
 ```
+
 - Connects to Base Sepolia testnet
 - Uses deployed contracts
 - Runs webapp on different port
 
 ### Run Both Simultaneously
+
 ```bash
 npm run dev:both
 ```
+
 - Local environment on port 3000/3001
 - Sepolia environment on port 3002
 - No conflicts, no switching needed
@@ -38,7 +44,9 @@ npm run dev:both
 ## 📋 Setup Instructions
 
 ### Local Environment
+
 Already configured and ready to use:
+
 ```bash
 npm run dev:local
 ```
@@ -46,6 +54,7 @@ npm run dev:local
 ### Sepolia Environment
 
 1. **Deploy contracts** (one time):
+
 ```bash
 # Configure .env.local with deployment credentials
 PRIVATE_KEY=your_private_key
@@ -57,6 +66,7 @@ npm run deploy:testnet
 ```
 
 2. **Update `webapp/.env.sepolia`** with deployed addresses:
+
 ```env
 NEXT_PUBLIC_ASTAVERDE_ADDRESS=0x... # From deployment
 NEXT_PUBLIC_ECOSTABILIZER_ADDRESS=0x...
@@ -65,6 +75,7 @@ NEXT_PUBLIC_USDC_ADDRESS=0x...
 ```
 
 3. **Run Sepolia environment**:
+
 ```bash
 npm run dev:sepolia
 ```
@@ -78,20 +89,20 @@ npm run dev:sepolia
 
 ## 📊 Environment Details
 
-| Feature | Local | Sepolia |
-|---------|-------|---------|
-| **Port** | 3000/3001 | 3002 |
-| **Config** | `.env.local` | `.env.sepolia` |
-| **Blockchain** | Local Hardhat | Base Sepolia |
-| **State** | Fresh each run | Persistent |
-| **Gas** | Free | Test ETH |
+| Feature        | Local          | Sepolia        |
+| -------------- | -------------- | -------------- |
+| **Port**       | 3000/3001      | 3002           |
+| **Config**     | `.env.local`   | `.env.sepolia` |
+| **Blockchain** | Local Hardhat  | Base Sepolia   |
+| **State**      | Fresh each run | Persistent     |
+| **Gas**        | Free           | Test ETH       |
 
 ## 🔧 Commands Reference
 
 ```bash
 # Development
 npm run dev:local    # Local only
-npm run dev:sepolia  # Sepolia only  
+npm run dev:sepolia  # Sepolia only
 npm run dev:both     # Both simultaneously
 
 # Deployment

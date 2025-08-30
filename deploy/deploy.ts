@@ -286,25 +286,25 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     // Deploy v2 vault contracts (only on test networks for now)
     if (network.name === "hardhat" || network.name === "localhost" || network.name.includes("sepolia")) {
         console.log("\n=== Deploying v2 Vault Contracts ===");
-        
+
         // Deploy StabilizedCarbonCoin (SCC)
         // Pass address(0) as vault initially, will grant MINTER_ROLE after vault deployment
         console.log("\nDeploying StabilizedCarbonCoin (SCC)...");
         const scc = await deployContract("StabilizedCarbonCoin", [ethers.ZeroAddress]);
-        
+
         // Deploy EcoStabilizer vault
         console.log("\nDeploying EcoStabilizer vault...");
         console.log(`- AstaVerde Address: ${astaVerde.address}`);
         console.log(`- SCC Address: ${scc.address}`);
         const vault = await deployContract("EcoStabilizer", [astaVerde.address, scc.address]);
-        
+
         // Grant MINTER_ROLE to vault
         console.log("\nConfiguring SCC minter role...");
         const sccContract = await hre.ethers.getContractAt("StabilizedCarbonCoin", scc.address);
         const MINTER_ROLE = await sccContract.MINTER_ROLE();
         await sccContract.grantRole(MINTER_ROLE, vault.address);
         console.log(`✓ Granted MINTER_ROLE to vault at ${vault.address}`);
-        
+
         // Verify vault configuration
         const vaultContract = await hre.ethers.getContractAt("EcoStabilizer", vault.address);
         const vaultAstaVerde = await vaultContract.ecoAsset();
@@ -312,7 +312,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         console.log("\nVault configuration verified:");
         console.log(`- AstaVerde contract: ${vaultAstaVerde}`);
         console.log(`- SCC contract: ${vaultSCC}`);
-        
+
         console.log("\n✅ v2 Vault contracts deployed successfully!");
         console.log(`- SCC: ${scc.address}`);
         console.log(`- EcoStabilizer: ${vault.address}`);

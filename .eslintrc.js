@@ -79,8 +79,19 @@ module.exports = {
         // Scripts
         {
             files: ["scripts/**/*.js", "scripts/**/*.mjs"],
+            globals: {
+                ethers: "readonly",
+                network: "readonly",
+                hre: "readonly",
+                process: "readonly",
+                __dirname: "readonly",
+                module: "readonly",
+                require: "readonly",
+            },
             rules: {
                 "no-console": "off",
+                "no-case-declarations": "off",
+                "no-empty": "off",
             },
         },
         // Hardhat config and deployment scripts

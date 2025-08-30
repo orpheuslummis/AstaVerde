@@ -24,13 +24,7 @@ interface UseTokenGroupsParams {
   activeTab: TabType;
 }
 
-export function useTokenGroups({
-  tokens,
-  vaultedTokens,
-  tokenMetadata,
-  batchData,
-  activeTab,
-}: UseTokenGroupsParams) {
+export function useTokenGroups({ tokens, vaultedTokens, tokenMetadata, batchData, activeTab }: UseTokenGroupsParams) {
   const tokenGroups = useMemo(() => {
     const groups = new Map<string, TokenGroup>();
 
@@ -48,7 +42,8 @@ export function useTokenGroups({
 
       // Iterate through all batches to find which tokens belong to which batch
       batchData.forEach((batch: any, batchId) => {
-        if (batch && batch[1]) { // batch[1] contains the token IDs array
+        if (batch && batch[1]) {
+          // batch[1] contains the token IDs array
           const tokenIds = batch[1];
           tokenIds.forEach((tokenId: bigint) => {
             tokenToBatch.set(tokenId, batchId);
@@ -59,7 +54,7 @@ export function useTokenGroups({
       // Group tokens by their batch
       const batchGroups = new Map<bigint, Set<bigint>>();
 
-      allTokenIds.forEach(tokenId => {
+      allTokenIds.forEach((tokenId) => {
         const batchId = tokenToBatch.get(tokenId);
         if (batchId) {
           if (!batchGroups.has(batchId)) {
@@ -87,10 +82,10 @@ export function useTokenGroups({
         const availableTokenIds: bigint[] = [];
         const vaultedTokenIds: bigint[] = [];
 
-        batchTokenIds.forEach(tokenId => {
+        batchTokenIds.forEach((tokenId) => {
           // Count how many of this token ID we have available
-          const availableCount = tokens.filter(t => t === tokenId).length;
-          const vaultedCount = vaultedTokens.filter(t => t === tokenId).length;
+          const availableCount = tokens.filter((t) => t === tokenId).length;
+          const vaultedCount = vaultedTokens.filter((t) => t === tokenId).length;
 
           // Add the appropriate number of instances
           for (let i = 0; i < availableCount; i++) {
@@ -120,14 +115,14 @@ export function useTokenGroups({
       // Fallback: If no batch data, group all identical tokens together
       const tokenGroupMap = new Map<bigint, { available: number; vaulted: number }>();
 
-      tokens.forEach(tokenId => {
+      tokens.forEach((tokenId) => {
         if (!tokenGroupMap.has(tokenId)) {
           tokenGroupMap.set(tokenId, { available: 0, vaulted: 0 });
         }
         tokenGroupMap.get(tokenId)!.available++;
       });
 
-      vaultedTokens.forEach(tokenId => {
+      vaultedTokens.forEach((tokenId) => {
         if (!tokenGroupMap.has(tokenId)) {
           tokenGroupMap.set(tokenId, { available: 0, vaulted: 0 });
         }
@@ -177,13 +172,13 @@ export function useTokenGroups({
 
   // Filter based on active tab
   const filteredGroups = useMemo(() => {
-    switch(activeTab) {
-    case "available":
-      return tokenGroups.filter(g => g.availableCount > 0);
-    case "vaulted":
-      return tokenGroups.filter(g => g.vaultedCount > 0);
-    default:
-      return tokenGroups;
+    switch (activeTab) {
+      case "available":
+        return tokenGroups.filter((g) => g.availableCount > 0);
+      case "vaulted":
+        return tokenGroups.filter((g) => g.vaultedCount > 0);
+      default:
+        return tokenGroups;
     }
   }, [tokenGroups, activeTab]);
 

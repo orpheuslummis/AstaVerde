@@ -1,144 +1,144 @@
 {
-  "projects": [
-    {
-      "id": "solar-farm-kenya",
-      "name": "Kibera Solar Farm",
-      "location": "Nairobi, Kenya",
-      "type": "Solar Energy",
-      "description": "A 50MW solar installation providing clean energy to 25,000 households in the Kibera district, replacing diesel generators and reducing CO2 emissions by 45,000 tons annually.",
-      "verifier": "Gold Standard",
-      "vintage": "2024",
-      "co2_tons": 45000,
-      "image_style": {
-        "gradient": ["#fbbf24", "#f97316"],
-        "pattern": "solar"
-      }
-    },
-    {
-      "id": "wind-farm-texas",
-      "name": "West Texas Wind Project",
-      "location": "Abilene, Texas, USA",
-      "type": "Wind Energy",
-      "description": "200 wind turbines generating 600MW of clean energy, offsetting coal power and preventing 320,000 tons of CO2 emissions per year.",
-      "verifier": "Verra VCS",
-      "vintage": "2024",
-      "co2_tons": 320000,
-      "image_style": {
-        "gradient": ["#60a5fa", "#3b82f6"],
-        "pattern": "wind"
-      }
-    },
-    {
-      "id": "reforestation-brazil",
-      "name": "Amazon Rainforest Restoration",
-      "location": "Acre, Brazil",
-      "type": "Reforestation",
-      "description": "Restoration of 10,000 hectares of degraded rainforest, sequestering 150,000 tons of CO2 while preserving biodiversity and supporting indigenous communities.",
-      "verifier": "Climate Action Reserve",
-      "vintage": "2023",
-      "co2_tons": 150000,
-      "image_style": {
-        "gradient": ["#10b981", "#059669"],
-        "pattern": "forest"
-      }
-    },
-    {
-      "id": "biogas-india",
-      "name": "Rural Biogas Initiative",
-      "location": "Rajasthan, India",
-      "type": "Methane Capture",
-      "description": "5,000 biogas digesters installed in rural communities, converting agricultural waste to clean cooking fuel and preventing 30,000 tons of CO2 equivalent emissions.",
-      "verifier": "Gold Standard",
-      "vintage": "2024",
-      "co2_tons": 30000,
-      "image_style": {
-        "gradient": ["#a78bfa", "#7c3aed"],
-        "pattern": "biogas"
-      }
-    },
-    {
-      "id": "ocean-cleanup",
-      "name": "Pacific Blue Carbon",
-      "location": "Pacific Ocean",
-      "type": "Blue Carbon",
-      "description": "Restoration of 5,000 hectares of coastal mangroves and seagrass beds, sequestering 80,000 tons of CO2 while protecting marine ecosystems.",
-      "verifier": "Plan Vivo",
-      "vintage": "2024",
-      "co2_tons": 80000,
-      "image_style": {
-        "gradient": ["#06b6d4", "#0891b2"],
-        "pattern": "ocean"
-      }
-    },
-    {
-      "id": "geothermal-iceland",
-      "name": "Reykjavik Geothermal Expansion",
-      "location": "Reykjavik, Iceland",
-      "type": "Geothermal Energy",
-      "description": "Expansion of geothermal heating network eliminating fossil fuel heating for 15,000 homes, reducing CO2 emissions by 60,000 tons annually.",
-      "verifier": "Verra VCS",
-      "vintage": "2024",
-      "co2_tons": 60000,
-      "image_style": {
-        "gradient": ["#f87171", "#dc2626"],
-        "pattern": "geothermal"
-      }
-    },
-    {
-      "id": "hydro-norway",
-      "name": "Fjord Micro-Hydro Network",
-      "location": "Bergen, Norway",
-      "type": "Hydroelectric",
-      "description": "Network of 20 micro-hydro installations providing renewable energy to remote communities, offsetting 25,000 tons of CO2 from diesel generators.",
-      "verifier": "Climate Action Reserve",
-      "vintage": "2023",
-      "co2_tons": 25000,
-      "image_style": {
-        "gradient": ["#38bdf8", "#0284c7"],
-        "pattern": "hydro"
-      }
-    },
-    {
-      "id": "efficiency-germany",
-      "name": "Industrial Efficiency Retrofit",
-      "location": "Munich, Germany",
-      "type": "Energy Efficiency",
-      "description": "Comprehensive efficiency upgrades to 50 industrial facilities, reducing energy consumption by 40% and preventing 100,000 tons of CO2 emissions.",
-      "verifier": "Gold Standard",
-      "vintage": "2024",
-      "co2_tons": 100000,
-      "image_style": {
-        "gradient": ["#fb923c", "#ea580c"],
-        "pattern": "efficiency"
-      }
-    },
-    {
-      "id": "cookstoves-uganda",
-      "name": "Clean Cookstove Distribution",
-      "location": "Kampala, Uganda",
-      "type": "Clean Cooking",
-      "description": "Distribution of 50,000 efficient cookstoves reducing wood consumption by 60% and preventing 40,000 tons of CO2 emissions annually.",
-      "verifier": "Gold Standard",
-      "vintage": "2024",
-      "co2_tons": 40000,
-      "image_style": {
-        "gradient": ["#fde047", "#facc15"],
-        "pattern": "cookstove"
-      }
-    },
-    {
-      "id": "transport-colombia",
-      "name": "Bogotá Electric Bus Fleet",
-      "location": "Bogotá, Colombia",
-      "type": "Clean Transport",
-      "description": "Replacement of 500 diesel buses with electric vehicles, reducing urban air pollution and preventing 75,000 tons of CO2 emissions annually.",
-      "verifier": "Verra VCS",
-      "vintage": "2024",
-      "co2_tons": 75000,
-      "image_style": {
-        "gradient": ["#c084fc", "#9333ea"],
-        "pattern": "transport"
-      }
-    }
-  ]
+    "projects": [
+        {
+            "id": "solar-farm-kenya",
+            "name": "Kibera Solar Farm",
+            "location": "Nairobi, Kenya",
+            "type": "Solar Energy",
+            "description": "A 50MW solar installation providing clean energy to 25,000 households in the Kibera district, replacing diesel generators and reducing CO2 emissions by 45,000 tons annually.",
+            "verifier": "Gold Standard",
+            "vintage": "2024",
+            "co2_tons": 45000,
+            "image_style": {
+                "gradient": ["#fbbf24", "#f97316"],
+                "pattern": "solar"
+            }
+        },
+        {
+            "id": "wind-farm-texas",
+            "name": "West Texas Wind Project",
+            "location": "Abilene, Texas, USA",
+            "type": "Wind Energy",
+            "description": "200 wind turbines generating 600MW of clean energy, offsetting coal power and preventing 320,000 tons of CO2 emissions per year.",
+            "verifier": "Verra VCS",
+            "vintage": "2024",
+            "co2_tons": 320000,
+            "image_style": {
+                "gradient": ["#60a5fa", "#3b82f6"],
+                "pattern": "wind"
+            }
+        },
+        {
+            "id": "reforestation-brazil",
+            "name": "Amazon Rainforest Restoration",
+            "location": "Acre, Brazil",
+            "type": "Reforestation",
+            "description": "Restoration of 10,000 hectares of degraded rainforest, sequestering 150,000 tons of CO2 while preserving biodiversity and supporting indigenous communities.",
+            "verifier": "Climate Action Reserve",
+            "vintage": "2023",
+            "co2_tons": 150000,
+            "image_style": {
+                "gradient": ["#10b981", "#059669"],
+                "pattern": "forest"
+            }
+        },
+        {
+            "id": "biogas-india",
+            "name": "Rural Biogas Initiative",
+            "location": "Rajasthan, India",
+            "type": "Methane Capture",
+            "description": "5,000 biogas digesters installed in rural communities, converting agricultural waste to clean cooking fuel and preventing 30,000 tons of CO2 equivalent emissions.",
+            "verifier": "Gold Standard",
+            "vintage": "2024",
+            "co2_tons": 30000,
+            "image_style": {
+                "gradient": ["#a78bfa", "#7c3aed"],
+                "pattern": "biogas"
+            }
+        },
+        {
+            "id": "ocean-cleanup",
+            "name": "Pacific Blue Carbon",
+            "location": "Pacific Ocean",
+            "type": "Blue Carbon",
+            "description": "Restoration of 5,000 hectares of coastal mangroves and seagrass beds, sequestering 80,000 tons of CO2 while protecting marine ecosystems.",
+            "verifier": "Plan Vivo",
+            "vintage": "2024",
+            "co2_tons": 80000,
+            "image_style": {
+                "gradient": ["#06b6d4", "#0891b2"],
+                "pattern": "ocean"
+            }
+        },
+        {
+            "id": "geothermal-iceland",
+            "name": "Reykjavik Geothermal Expansion",
+            "location": "Reykjavik, Iceland",
+            "type": "Geothermal Energy",
+            "description": "Expansion of geothermal heating network eliminating fossil fuel heating for 15,000 homes, reducing CO2 emissions by 60,000 tons annually.",
+            "verifier": "Verra VCS",
+            "vintage": "2024",
+            "co2_tons": 60000,
+            "image_style": {
+                "gradient": ["#f87171", "#dc2626"],
+                "pattern": "geothermal"
+            }
+        },
+        {
+            "id": "hydro-norway",
+            "name": "Fjord Micro-Hydro Network",
+            "location": "Bergen, Norway",
+            "type": "Hydroelectric",
+            "description": "Network of 20 micro-hydro installations providing renewable energy to remote communities, offsetting 25,000 tons of CO2 from diesel generators.",
+            "verifier": "Climate Action Reserve",
+            "vintage": "2023",
+            "co2_tons": 25000,
+            "image_style": {
+                "gradient": ["#38bdf8", "#0284c7"],
+                "pattern": "hydro"
+            }
+        },
+        {
+            "id": "efficiency-germany",
+            "name": "Industrial Efficiency Retrofit",
+            "location": "Munich, Germany",
+            "type": "Energy Efficiency",
+            "description": "Comprehensive efficiency upgrades to 50 industrial facilities, reducing energy consumption by 40% and preventing 100,000 tons of CO2 emissions.",
+            "verifier": "Gold Standard",
+            "vintage": "2024",
+            "co2_tons": 100000,
+            "image_style": {
+                "gradient": ["#fb923c", "#ea580c"],
+                "pattern": "efficiency"
+            }
+        },
+        {
+            "id": "cookstoves-uganda",
+            "name": "Clean Cookstove Distribution",
+            "location": "Kampala, Uganda",
+            "type": "Clean Cooking",
+            "description": "Distribution of 50,000 efficient cookstoves reducing wood consumption by 60% and preventing 40,000 tons of CO2 emissions annually.",
+            "verifier": "Gold Standard",
+            "vintage": "2024",
+            "co2_tons": 40000,
+            "image_style": {
+                "gradient": ["#fde047", "#facc15"],
+                "pattern": "cookstove"
+            }
+        },
+        {
+            "id": "transport-colombia",
+            "name": "Bogotá Electric Bus Fleet",
+            "location": "Bogotá, Colombia",
+            "type": "Clean Transport",
+            "description": "Replacement of 500 diesel buses with electric vehicles, reducing urban air pollution and preventing 75,000 tons of CO2 emissions annually.",
+            "verifier": "Verra VCS",
+            "vintage": "2024",
+            "co2_tons": 75000,
+            "image_style": {
+                "gradient": ["#c084fc", "#9333ea"],
+                "pattern": "transport"
+            }
+        }
+    ]
 }

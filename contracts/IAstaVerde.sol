@@ -32,7 +32,10 @@ interface IAstaVerde is IERC1155 {
      */
     function tokens(
         uint256
-    ) external view returns (address originalMinter, uint256 tokenId, address producer, string memory cid, bool redeemed);
+    )
+        external
+        view
+        returns (address originalMinter, uint256 tokenId, address producer, string memory cid, bool redeemed);
 
     /**
      * @notice Get the most recently minted token ID

@@ -61,5 +61,3 @@ if (
 - `contracts/AstaVerde.sol` lines 681-685 (Known trade-offs comment)
 - `contracts/AstaVerde.sol` lines 746-754 (Eligibility condition)
 - Original ticket content (now archived here) for reproduction details and options
-
-

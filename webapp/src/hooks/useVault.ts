@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseEther } from "viem";
 import { useAccount, usePublicClient, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { getEcoStabilizerContract, getSccContract, getAstaVerdeContract, detectVaultVersion } from "../config/contracts";
+import {
+  getEcoStabilizerContract,
+  getSccContract,
+  getAstaVerdeContract,
+  detectVaultVersion,
+} from "../config/contracts";
 import { customToast } from "../shared/utils/customToast";
 import { ENV } from "../config/environment";
 import { VAULT_GAS_LIMITS } from "../config/constants";
@@ -141,10 +146,7 @@ export function useVault(): VaultHook {
   const { data: isNftApproved, refetch: refetchNftApproval } = useReadContract({
     ...getAssetContractConfig(),
     functionName: "isApprovedForAll",
-    args:
-      address && isVaultAvailable && vaultAddress
-        ? [address, vaultAddress]
-        : undefined,
+    args: address && isVaultAvailable && vaultAddress ? [address, vaultAddress] : undefined,
     query: { enabled: !!address && isVaultAvailable && !!vaultAddress },
   });
 
@@ -157,12 +159,7 @@ export function useVault(): VaultHook {
   // Refresh all contract data
   const refreshContractData = useCallback(async () => {
     if (isVaultAvailable && address) {
-      await Promise.all([
-        refetchSccBalance(),
-        refetchSccAllowance(),
-        refetchUserLoans(),
-        refetchNftApproval(),
-      ]);
+      await Promise.all([refetchSccBalance(), refetchSccAllowance(), refetchUserLoans(), refetchNftApproval()]);
     }
   }, [isVaultAvailable, address, refetchSccBalance, refetchSccAllowance, refetchUserLoans, refetchNftApproval]);
 
@@ -343,7 +340,15 @@ export function useVault(): VaultHook {
         setCurrentTxHash(undefined);
       }
     },
-    [address, isVaultAvailable, vaultVersion, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
+    [
+      address,
+      isVaultAvailable,
+      vaultVersion,
+      getVaultContractConfig,
+      writeContractAsync,
+      publicClient,
+      refreshContractData,
+    ],
   );
 
   const withdrawBatch = useCallback(
@@ -395,7 +400,15 @@ export function useVault(): VaultHook {
         setCurrentTxHash(undefined);
       }
     },
-    [address, isVaultAvailable, vaultVersion, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
+    [
+      address,
+      isVaultAvailable,
+      vaultVersion,
+      getVaultContractConfig,
+      writeContractAsync,
+      publicClient,
+      refreshContractData,
+    ],
   );
 
   // Backward-compatible alias for repayAndWithdraw
@@ -589,13 +602,10 @@ export function useVault(): VaultHook {
     return (isNftApproved as boolean) || false;
   }, [isNftApproved]);
 
-  const checkLoanStatus = useCallback(
-    async (_tokenId: bigint): Promise<VaultLoan | null> => {
-      // Would need implementation
-      return null;
-    },
-    [],
-  );
+  const checkLoanStatus = useCallback(async (_tokenId: bigint): Promise<VaultLoan | null> => {
+    // Would need implementation
+    return null;
+  }, []);
 
   return {
     // Core functions
