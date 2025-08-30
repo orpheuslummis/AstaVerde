@@ -311,10 +311,27 @@ export function useVault(): VaultHook {
 
         customToast.info(`Depositing ${tokenIds.length} NFTs to vault...`);
 
+        let gasLimit: bigint | undefined;
+        try {
+          if (publicClient && address) {
+            const estimate = await publicClient.estimateContractGas({
+              ...vaultConfig,
+              functionName: "depositBatch",
+              args: [tokenIds],
+              account: address,
+            });
+            gasLimit = (estimate * 150n) / 100n; // add 50% buffer for batch overhead
+          }
+        } catch {
+          // Allow wallet to estimate if RPC supports it
+          gasLimit = undefined;
+        }
+
         const hash = await writeContractAsync({
           ...vaultConfig,
           functionName: "depositBatch",
           args: [tokenIds],
+          ...(gasLimit ? { gas: gasLimit } : {}),
         });
 
         setCurrentTxHash(hash);
@@ -498,16 +515,37 @@ export function useVault(): VaultHook {
       const vaultConfig = getVaultContractConfig();
       const operator = vaultConfig.address as `0x${string}`;
 
+      // Prepare AstaVerde (ERC1155) contract config
+      const assetConfig = getAssetContractConfig();
+
       // Prevent accidental self-approval (will revert onchain)
       if (operator.toLowerCase() === address.toLowerCase()) {
         throw new Error("Invalid operator: cannot approve your own address");
       }
 
+      // Provide explicit gas to avoid wallet-side "Missing gas limit" on some RPCs
+      let gasLimit: bigint | undefined;
+      try {
+        if (publicClient && address) {
+          const estimate = await publicClient.estimateContractGas({
+            ...assetConfig,
+            functionName: "setApprovalForAll",
+            args: [operator, true],
+            account: address,
+          });
+          gasLimit = (estimate * 120n) / 100n; // 20% buffer
+        }
+      } catch {
+        // Fall back to a conservative limit; ERC1155 approval is cheap
+        gasLimit = 100_000n;
+      }
+
       const hash = await writeContractAsync({
-        ...astaverdeContractConfig,
+        ...assetConfig,
         functionName: "setApprovalForAll",
         args: [operator, true],
         account: address,
+        ...(gasLimit ? { gas: gasLimit } : {}),
       });
 
       const receipt = await publicClient?.waitForTransactionReceipt({ hash });
@@ -526,7 +564,15 @@ export function useVault(): VaultHook {
     } finally {
       setIsLoading(false);
     }
-  }, [address, isVaultAvailable, writeContractAsync, publicClient, refetchNftApproval, getVaultContractConfig]);
+  }, [
+    address,
+    isVaultAvailable,
+    writeContractAsync,
+    publicClient,
+    refetchNftApproval,
+    getVaultContractConfig,
+    getAssetContractConfig,
+  ]);
 
   const approveSCC = useCallback(
     async (amount: bigint = SCC_PER_ASSET) => {
