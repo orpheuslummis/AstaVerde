@@ -6,8 +6,7 @@ import { getAstaVerdeContract, getUsdcContract } from "@/config/contracts";
 import { useAppContext } from "@/contexts/AppContext";
 import { useAdminDashboardEvents } from "@/hooks/useAdminEvents";
 import { customToast } from "@/utils/customToast";
-import { formatUSDC, formatUSDCWithUnit } from "@/shared/utils/format";
-import { ENV } from "@/config/environment";
+import { formatUSDCWithUnit } from "@/shared/utils/format";
 
 function ControlContainer({ children, title }: { children: React.ReactNode; title: string }) {
   return (
@@ -141,8 +140,6 @@ export function RecoverSurplusUSDCControl() {
     }
   };
 
-  const formatBalance = (balance: bigint | undefined) => formatUSDC(balance);
-
   const accountedBalance = (platformShare as bigint || 0n) + (totalProducerBalances as bigint || 0n);
   const rawContractBal = (contractBalance as bigint) ?? 0n;
   const estimatedSurplus = rawContractBal > accountedBalance ? rawContractBal - accountedBalance : 0n;
@@ -205,7 +202,7 @@ export function RecoverSurplusUSDCControl() {
         <div className="text-xs text-gray-600 dark:text-gray-400">
           Notes:
           - This does not withdraw platform fees or producer funds; it never reduces tracked balances.
-          Use "Claim Platform Funds" for platform fees. Producers claim via their own flow.
+          Use &quot;Claim Platform Funds&quot; for platform fees. Producers claim via their own flow.
           Avoid sending USDC directly to the contract; use the normal purchase flow instead.
         </div>
       </div>
