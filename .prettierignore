@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+artifacts/
+cache/
+coverage/
+dist/
+types/
+typechain-types/
+
+# Next.js build
+webapp/.next/
+webapp/out/
+webapp/public/
+webapp/.cache-synpress/
+**/.cache-synpress/
+
+# Hardhat
+deployments/
+
+# Archives
+archive/
+
+# Git
+.git/
