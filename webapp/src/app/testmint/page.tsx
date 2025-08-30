@@ -58,42 +58,42 @@ export default function Page() {
   return (
     <DevOnly>
       <div className="flex flex-col items-center space-y-8 p-4">
-      <h1 className="text-3xl font-bold mb-4">AstaVerde Test Minting Page</h1>
+        <h1 className="text-3xl font-bold mb-4">AstaVerde Test Minting Page</h1>
 
-      {isConnected ? (
-        <div className="flex flex-col items-center space-y-2">
-          <p>Connected Address: {address}</p>
-          <p>
+        {isConnected ? (
+          <div className="flex flex-col items-center space-y-2">
+            <p>Connected Address: {address}</p>
+            <p>
                         Your USDC Balance: {usdcBalance ? Number.parseFloat(usdcBalance.formatted).toFixed(2) : "Loading..."}{" "}
                         USDC
-          </p>
-        </div>
-      ) : (
-        <p>Please connect your wallet to use this page.</p>
-      )}
+            </p>
+          </div>
+        ) : (
+          <p>Please connect your wallet to use this page.</p>
+        )}
 
-      <div className="w-full max-w-md space-y-4">
-        <h2 className="text-2xl font-semibold">USDC Operations</h2>
-        <button
-          type="button"
-          className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={handleMintUSDC}
-          disabled={!address}
-        >
+        <div className="w-full max-w-md space-y-4">
+          <h2 className="text-2xl font-semibold">USDC Operations</h2>
+          <button
+            type="button"
+            className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={handleMintUSDC}
+            disabled={!address}
+          >
                     Mint 10000 Test USDC
-        </button>
+          </button>
 
-        <button
-          type="button"
-          className="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          onClick={handleApproveUSDC}
-          disabled={!address}
-        >
+          <button
+            type="button"
+            className="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            onClick={handleApproveUSDC}
+            disabled={!address}
+          >
                     Approve USDC for AstaVerde
-        </button>
-      </div>
+          </button>
+        </div>
 
-      {/* Remove or comment out the "Mint New Batch" section */}
+        {/* Remove or comment out the "Mint New Batch" section */}
       </div>
     </DevOnly>
   );

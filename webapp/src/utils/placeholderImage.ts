@@ -15,17 +15,17 @@ const _generateFractalPath = (seed: number, iterations: number, angle: number): 
 
   for (const char of path) {
     switch (char) {
-      case "F":
-        x += stepSize * Math.cos(dir);
-        y += stepSize * Math.sin(dir);
-        svgPath += `L${x},${y}`;
-        break;
-      case "+":
-        dir += angle;
-        break;
-      case "-":
-        dir -= angle;
-        break;
+    case "F":
+      x += stepSize * Math.cos(dir);
+      y += stepSize * Math.sin(dir);
+      svgPath += `L${x},${y}`;
+      break;
+    case "+":
+      dir += angle;
+      break;
+    case "-":
+      dir -= angle;
+      break;
     }
   }
 
@@ -117,19 +117,19 @@ function generateShape(type: number, size: number, rotation: number): string {
   const centerX = 150;
   const centerY = 100;
   switch (type) {
-    case 0: // Circle
-      return `<circle cx="${centerX}" cy="${centerY}" r="${size / 2}" fill="rgba(255,255,255,0.2)" />`;
-    case 1: // Square
-      return `<rect x="${centerX - size / 2}" y="${centerY - size / 2}" width="${size}" height="${size}" fill="rgba(255,255,255,0.2)" transform="rotate(${rotation} ${centerX} ${centerY})" />`;
-    case 2: {
-      // Triangle
-      const points = `${centerX},${centerY - size / 2} ${centerX - size / 2},${centerY + size / 2} ${centerX + size / 2},${centerY + size / 2}`;
-      return `<polygon points="${points}" fill="rgba(255,255,255,0.2)" transform="rotate(${rotation} ${centerX} ${centerY})" />`;
-    }
-    case 3: // Star
-      return generateStar(centerX, centerY, 5, size / 2, size / 4, rotation);
-    default:
-      return "";
+  case 0: // Circle
+    return `<circle cx="${centerX}" cy="${centerY}" r="${size / 2}" fill="rgba(255,255,255,0.2)" />`;
+  case 1: // Square
+    return `<rect x="${centerX - size / 2}" y="${centerY - size / 2}" width="${size}" height="${size}" fill="rgba(255,255,255,0.2)" transform="rotate(${rotation} ${centerX} ${centerY})" />`;
+  case 2: {
+    // Triangle
+    const points = `${centerX},${centerY - size / 2} ${centerX - size / 2},${centerY + size / 2} ${centerX + size / 2},${centerY + size / 2}`;
+    return `<polygon points="${points}" fill="rgba(255,255,255,0.2)" transform="rotate(${rotation} ${centerX} ${centerY})" />`;
+  }
+  case 3: // Star
+    return generateStar(centerX, centerY, 5, size / 2, size / 4, rotation);
+  default:
+    return "";
   }
 }
 

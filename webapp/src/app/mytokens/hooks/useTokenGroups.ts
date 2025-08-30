@@ -173,12 +173,12 @@ export function useTokenGroups({ tokens, vaultedTokens, tokenMetadata, batchData
   // Filter based on active tab
   const filteredGroups = useMemo(() => {
     switch (activeTab) {
-      case "available":
-        return tokenGroups.filter((g) => g.availableCount > 0);
-      case "vaulted":
-        return tokenGroups.filter((g) => g.vaultedCount > 0);
-      default:
-        return tokenGroups;
+    case "available":
+      return tokenGroups.filter((g) => g.availableCount > 0);
+    case "vaulted":
+      return tokenGroups.filter((g) => g.vaultedCount > 0);
+    default:
+      return tokenGroups;
     }
   }, [tokenGroups, activeTab]);
 

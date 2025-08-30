@@ -14,4 +14,3 @@ export function getErrorCause(err: unknown): unknown {
   if (err && typeof err === "object" && "cause" in err) return (err as any).cause;
   return undefined;
 }
-

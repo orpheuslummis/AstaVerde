@@ -70,13 +70,13 @@ export function isLocalDevelopment(): boolean {
 // Get chain name for display
 export function getChainDisplayName(): string {
   switch (ENV.CHAIN_SELECTION) {
-    case "base_mainnet":
-      return "Base";
-    case "base_sepolia":
-      return "Base Sepolia";
-    case "local":
-      return "Local Network";
-    default:
-      return "Unknown Network";
+  case "base_mainnet":
+    return "Base";
+  case "base_sepolia":
+    return "Base Sepolia";
+  case "local":
+    return "Local Network";
+  default:
+    return "Unknown Network";
   }
 }

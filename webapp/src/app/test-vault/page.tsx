@@ -126,51 +126,51 @@ export default function TestVaultPage() {
   return (
     <DevOnly>
       <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">Test Vault Operations</h1>
+        <h1 className="text-2xl font-bold mb-4">Test Vault Operations</h1>
 
-      <div className="mb-4">
-        <p>Wallet: {address || "Not connected"}</p>
-        <p>Vault: {getEcoStabilizerContract().address}</p>
-      </div>
-
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={checkBalance}
-          className="px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          Check NFT Balance
-        </button>
-
-        <button
-          onClick={checkApproval}
-          className="px-4 py-2 bg-yellow-500 text-white rounded"
-        >
-          Check Approval
-        </button>
-
-        <button
-          onClick={approveVault}
-          className="px-4 py-2 bg-green-500 text-white rounded"
-        >
-          Approve Vault
-        </button>
-
-        <button
-          onClick={() => depositToken(2)}
-          className="px-4 py-2 bg-purple-500 text-white rounded"
-        >
-          Deposit Token #2
-        </button>
-      </div>
-
-      <div className="bg-gray-100 p-4 rounded">
-        <h2 className="font-bold mb-2">Logs:</h2>
-        <div className="font-mono text-sm max-h-96 overflow-y-auto">
-          {logs.map((log, i) => (
-            <div key={i} className="mb-1">{log}</div>
-          ))}
+        <div className="mb-4">
+          <p>Wallet: {address || "Not connected"}</p>
+          <p>Vault: {getEcoStabilizerContract().address}</p>
         </div>
-      </div>
+
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={checkBalance}
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+          >
+          Check NFT Balance
+          </button>
+
+          <button
+            onClick={checkApproval}
+            className="px-4 py-2 bg-yellow-500 text-white rounded"
+          >
+          Check Approval
+          </button>
+
+          <button
+            onClick={approveVault}
+            className="px-4 py-2 bg-green-500 text-white rounded"
+          >
+          Approve Vault
+          </button>
+
+          <button
+            onClick={() => depositToken(2)}
+            className="px-4 py-2 bg-purple-500 text-white rounded"
+          >
+          Deposit Token #2
+          </button>
+        </div>
+
+        <div className="bg-gray-100 p-4 rounded">
+          <h2 className="font-bold mb-2">Logs:</h2>
+          <div className="font-mono text-sm max-h-96 overflow-y-auto">
+            {logs.map((log, i) => (
+              <div key={i} className="mb-1">{log}</div>
+            ))}
+          </div>
+        </div>
       </div>
     </DevOnly>
   );

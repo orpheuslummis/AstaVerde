@@ -103,7 +103,7 @@ export default function TestPage() {
         setStatus(`Success! Block: ${receipt.blockNumber}`);
         checkAllowance();
       }
-      } catch (error) {
+    } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Approve error:", error);
       setStatus(`Error: ${getErrorMessage(error)}`);
@@ -113,45 +113,45 @@ export default function TestPage() {
   return (
     <DevOnly>
       <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">Contract Test Page</h1>
+        <h1 className="text-2xl font-bold mb-4">Contract Test Page</h1>
 
-      <div className="mb-4">
-        <p>Connected: {address || "Not connected"}</p>
-        <p>USDC Address: {getUsdcContract().address}</p>
-        <p>AstaVerde Address: {getAstaVerdeContract().address}</p>
-      </div>
+        <div className="mb-4">
+          <p>Connected: {address || "Not connected"}</p>
+          <p>USDC Address: {getUsdcContract().address}</p>
+          <p>AstaVerde Address: {getAstaVerdeContract().address}</p>
+        </div>
 
-      <div className="mb-4">
-        <p>Balance: {balance || "Not checked"}</p>
-        <p>Allowance: {allowance || "Not checked"}</p>
-      </div>
+        <div className="mb-4">
+          <p>Balance: {balance || "Not checked"}</p>
+          <p>Allowance: {allowance || "Not checked"}</p>
+        </div>
 
-      <div className="flex gap-4 mb-4">
-        <button
-          onClick={checkBalance}
-          className="px-4 py-2 bg-blue-500 text-white rounded"
-        >
+        <div className="flex gap-4 mb-4">
+          <button
+            onClick={checkBalance}
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+          >
           Check Balance
-        </button>
+          </button>
 
-        <button
-          onClick={checkAllowance}
-          className="px-4 py-2 bg-green-500 text-white rounded"
-        >
+          <button
+            onClick={checkAllowance}
+            className="px-4 py-2 bg-green-500 text-white rounded"
+          >
           Check Allowance
-        </button>
+          </button>
 
-        <button
-          onClick={testApprove}
-          className="px-4 py-2 bg-purple-500 text-white rounded"
-        >
+          <button
+            onClick={testApprove}
+            className="px-4 py-2 bg-purple-500 text-white rounded"
+          >
           Test Approve (1000 USDC)
-        </button>
-      </div>
+          </button>
+        </div>
 
-      <div className="p-4 bg-gray-100 rounded">
-        <p>Status: {status}</p>
-      </div>
+        <div className="p-4 bg-gray-100 rounded">
+          <p>Status: {status}</p>
+        </div>
       </div>
     </DevOnly>
   );

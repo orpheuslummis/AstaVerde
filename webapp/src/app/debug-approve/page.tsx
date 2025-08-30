@@ -98,30 +98,30 @@ export default function DebugApprovePage() {
   return (
     <DevOnly>
       <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">Debug Approve Transaction</h1>
+        <h1 className="text-2xl font-bold mb-4">Debug Approve Transaction</h1>
 
-      <div className="mb-4">
-        <p>Wallet: {address || "Not connected"}</p>
-        <p>USDC: {getUsdcContract().address}</p>
-        <p>AstaVerde: {getAstaVerdeContract().address}</p>
-      </div>
-
-      <button
-        onClick={testApprove}
-        className="px-4 py-2 bg-blue-500 text-white rounded mb-4"
-        disabled={!walletClient}
-      >
-        Test Approve
-      </button>
-
-      <div className="bg-gray-100 p-4 rounded">
-        <h2 className="font-bold mb-2">Logs:</h2>
-        <div className="font-mono text-sm">
-          {logs.map((log, i) => (
-            <div key={i} className="mb-1">{log}</div>
-          ))}
+        <div className="mb-4">
+          <p>Wallet: {address || "Not connected"}</p>
+          <p>USDC: {getUsdcContract().address}</p>
+          <p>AstaVerde: {getAstaVerdeContract().address}</p>
         </div>
-      </div>
+
+        <button
+          onClick={testApprove}
+          className="px-4 py-2 bg-blue-500 text-white rounded mb-4"
+          disabled={!walletClient}
+        >
+        Test Approve
+        </button>
+
+        <div className="bg-gray-100 p-4 rounded">
+          <h2 className="font-bold mb-2">Logs:</h2>
+          <div className="font-mono text-sm">
+            {logs.map((log, i) => (
+              <div key={i} className="mb-1">{log}</div>
+            ))}
+          </div>
+        </div>
       </div>
     </DevOnly>
   );

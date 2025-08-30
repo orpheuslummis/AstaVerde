@@ -84,31 +84,31 @@ export default function RawTestPage() {
   return (
     <DevOnly>
       <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">Raw Transaction Test</h1>
+        <h1 className="text-2xl font-bold mb-4">Raw Transaction Test</h1>
 
-      <div className="mb-4">
-        <p>Connected: {address || "Not connected"}</p>
-      </div>
+        <div className="mb-4">
+          <p>Connected: {address || "Not connected"}</p>
+        </div>
 
-      <div className="flex gap-4 mb-4">
-        <button
-          onClick={testEthCall}
-          className="px-4 py-2 bg-blue-500 text-white rounded"
-        >
+        <div className="flex gap-4 mb-4">
+          <button
+            onClick={testEthCall}
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+          >
           Test eth_call (Balance)
-        </button>
+          </button>
 
-        <button
-          onClick={testRawApprove}
-          className="px-4 py-2 bg-red-500 text-white rounded"
-        >
+          <button
+            onClick={testRawApprove}
+            className="px-4 py-2 bg-red-500 text-white rounded"
+          >
           Test Raw Approve
-        </button>
-      </div>
+          </button>
+        </div>
 
-      <div className="p-4 bg-gray-100 rounded">
-        <p>Status: {status}</p>
-      </div>
+        <div className="p-4 bg-gray-100 rounded">
+          <p>Status: {status}</p>
+        </div>
       </div>
     </DevOnly>
   );

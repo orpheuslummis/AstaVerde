@@ -77,25 +77,25 @@ export default function SimpleApprovePage() {
   return (
     <DevOnly>
       <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">Simple Approve Test</h1>
+        <h1 className="text-2xl font-bold mb-4">Simple Approve Test</h1>
 
-      <div className="mb-4">
-        <p>Wallet: {address || "Not connected"}</p>
-        <p>USDC: {getUsdcContract().address}</p>
-        <p>Spender: {getAstaVerdeContract().address}</p>
-      </div>
+        <div className="mb-4">
+          <p>Wallet: {address || "Not connected"}</p>
+          <p>USDC: {getUsdcContract().address}</p>
+          <p>Spender: {getAstaVerdeContract().address}</p>
+        </div>
 
-      <button
-        onClick={testApprove}
-        className="px-4 py-2 bg-green-500 text-white rounded mb-4"
-        disabled={!address}
-      >
+        <button
+          onClick={testApprove}
+          className="px-4 py-2 bg-green-500 text-white rounded mb-4"
+          disabled={!address}
+        >
         Test Direct Approve
-      </button>
+        </button>
 
-      <div className="bg-gray-100 p-4 rounded">
-        <p>Status: {status}</p>
-      </div>
+        <div className="bg-gray-100 p-4 rounded">
+          <p>Status: {status}</p>
+        </div>
       </div>
     </DevOnly>
   );

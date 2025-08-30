@@ -108,29 +108,29 @@ export async function fetchJsonFromIpfsWithFallback(
                     </linearGradient>
                     <pattern id="pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
                         ${
-                          style.pattern === "circles"
-                            ? `
+  style.pattern === "circles"
+    ? `
                             <circle cx="20" cy="20" r="3" fill="white" opacity="0.3"/>
                             <circle cx="0" cy="0" r="3" fill="white" opacity="0.3"/>
                             <circle cx="40" cy="0" r="3" fill="white" opacity="0.3"/>
                             <circle cx="0" cy="40" r="3" fill="white" opacity="0.3"/>
                             <circle cx="40" cy="40" r="3" fill="white" opacity="0.3"/>
                         `
-                            : style.pattern === "waves"
-                              ? `
+    : style.pattern === "waves"
+      ? `
                             <path d="M0,20 Q10,10 20,20 T40,20" stroke="white" stroke-width="2" fill="none" opacity="0.3"/>
                             <path d="M0,30 Q10,20 20,30 T40,30" stroke="white" stroke-width="2" fill="none" opacity="0.3"/>
                         `
-                              : style.pattern === "triangles"
-                                ? `
+      : style.pattern === "triangles"
+        ? `
                             <polygon points="20,5 30,25 10,25" fill="white" opacity="0.2"/>
                             <polygon points="0,25 10,5 -10,5" fill="white" opacity="0.2"/>
                             <polygon points="40,25 50,5 30,5" fill="white" opacity="0.2"/>
                         `
-                                : `
+        : `
                             <polygon points="20,5 35,15 35,35 20,45 5,35 5,15" fill="none" stroke="white" stroke-width="1" opacity="0.3"/>
                         `
-                        }
+}
                     </pattern>
                 </defs>
                 <rect width="400" height="400" fill="url(#grad)"/>
