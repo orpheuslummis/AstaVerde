@@ -22,6 +22,7 @@ interface UseTokenGroupsParams {
   tokenMetadata: Record<string, TokenMetadata>;
   batchData: Map<bigint, unknown>;
   activeTab: TabType;
+  redeemStatus: Record<string, boolean>;
 }
 
 export function useTokenGroups({ tokens, vaultedTokens, tokenMetadata, batchData, activeTab }: UseTokenGroupsParams) {

@@ -156,13 +156,10 @@ export default function MyTokensPage() {
   }, [deposit, approveNFT, fetchTokens, depositBatch, vaultVersion, getIsNftApproved]);
 
   // Handle individual deposit
-  const handleIndividualDeposit = useCallback((tokenId: bigint) => {
-    setSelectedTokens(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(tokenId);
-      return newSet;
-    });
-    fetchTokens();
+  const handleIndividualDeposit = useCallback(async () => {
+    // Only refresh tokens, don't modify selection
+    // The VaultCard will handle its own state updates
+    await fetchTokens();
   }, [fetchTokens]);
 
   // Handle token selection
