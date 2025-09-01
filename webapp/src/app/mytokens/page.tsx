@@ -47,6 +47,7 @@ export default function MyTokensPage() {
     tokenMetadata,
     batchData,
     activeTab,
+    redeemStatus,
   });
 
   const {
@@ -82,7 +83,8 @@ export default function MyTokensPage() {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const available = tokens.filter(t => !vaultedTokens.includes(t)).length;
+    // Available tokens are those not redeemed and not in vault
+    const available = tokens.filter(t => !redeemStatus[t.toString()] && !vaultedTokens.includes(t)).length;
     const vaulted = vaultedTokens.length;
     const eligibleForVault = tokens.filter(t => !redeemStatus[t.toString()] && !vaultedTokens.includes(t)).length;
 

@@ -22,9 +22,10 @@ interface UseTokenGroupsParams {
   tokenMetadata: Record<string, TokenMetadata>;
   batchData: Map<bigint, unknown>;
   activeTab: TabType;
+  redeemStatus: Record<string, boolean>;
 }
 
-export function useTokenGroups({ tokens, vaultedTokens, tokenMetadata, batchData, activeTab }: UseTokenGroupsParams) {
+export function useTokenGroups({ tokens, vaultedTokens, tokenMetadata, batchData, activeTab, redeemStatus }: UseTokenGroupsParams) {
   const tokenGroups = useMemo(() => {
     const groups = new Map<string, TokenGroup>();
 
@@ -83,8 +84,11 @@ export function useTokenGroups({ tokens, vaultedTokens, tokenMetadata, batchData
         const vaultedTokenIds: bigint[] = [];
 
         batchTokenIds.forEach((tokenId) => {
-          // Count how many of this token ID we have available
-          const availableCount = tokens.filter((t) => t === tokenId).length;
+          // Skip redeemed tokens from available list
+          const isRedeemed = redeemStatus[tokenId.toString()];
+
+          // Count how many of this token ID we have available (excluding redeemed)
+          const availableCount = isRedeemed ? 0 : tokens.filter((t) => t === tokenId).length;
           const vaultedCount = vaultedTokens.filter((t) => t === tokenId).length;
 
           // Add the appropriate number of instances
@@ -116,10 +120,13 @@ export function useTokenGroups({ tokens, vaultedTokens, tokenMetadata, batchData
       const tokenGroupMap = new Map<bigint, { available: number; vaulted: number }>();
 
       tokens.forEach((tokenId) => {
-        if (!tokenGroupMap.has(tokenId)) {
-          tokenGroupMap.set(tokenId, { available: 0, vaulted: 0 });
+        // Skip redeemed tokens from available count
+        if (!redeemStatus[tokenId.toString()]) {
+          if (!tokenGroupMap.has(tokenId)) {
+            tokenGroupMap.set(tokenId, { available: 0, vaulted: 0 });
+          }
+          tokenGroupMap.get(tokenId)!.available++;
         }
-        tokenGroupMap.get(tokenId)!.available++;
       });
 
       vaultedTokens.forEach((tokenId) => {
@@ -168,7 +175,7 @@ export function useTokenGroups({ tokens, vaultedTokens, tokenMetadata, batchData
       const bId = bMatch ? parseInt(bMatch[1]) : 0;
       return aId - bId;
     });
-  }, [tokens, vaultedTokens, tokenMetadata, batchData]);
+  }, [tokens, vaultedTokens, tokenMetadata, batchData, redeemStatus]);
 
   // Filter based on active tab
   const filteredGroups = useMemo(() => {
