@@ -56,6 +56,17 @@ export default function Page({ params }: { params: { id: bigint } }) {
       const astaverdeContractConfig = getAstaVerdeContract();
       console.log(`Fetching token data for ID: ${params.id} using contract: ${astaverdeContractConfig.address}`);
 
+      // First check if the token exists by checking lastTokenID
+      const lastTokenID = await publicClient.readContract({
+        ...astaverdeContractConfig,
+        functionName: "lastTokenID",
+        args: [],
+      }) as bigint;
+
+      if (params.id <= 0n || params.id > lastTokenID) {
+        throw new Error(`Token #${params.id} does not exist. The marketplace currently has ${lastTokenID} tokens.`);
+      }
+
       // v2-only API: read producer, cid, redeemed separately
       const [producer, rawCid, isRedeemed] = (await Promise.all([
         publicClient.readContract({
