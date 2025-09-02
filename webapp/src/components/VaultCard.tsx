@@ -121,11 +121,16 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     checkNftApproval();
   }, [address, isVaultAvailable, tokenId, getIsNftApproved]);
 
-  // Trigger parent refresh when a transaction succeeds and broadcast a global hint
+  // Trigger parent refresh when a transaction succeeds
   useEffect(() => {
     if (txStatus === TxStatus.SUCCESS) {
-      if (onActionComplete) onActionComplete();
-      dispatchRefetch();
+      // Call the parent's action handler if provided
+      if (onActionComplete) {
+        onActionComplete();
+      } else {
+        // Only dispatch global refetch if no specific handler is provided
+        dispatchRefetch();
+      }
     }
   }, [txStatus, onActionComplete]);
 

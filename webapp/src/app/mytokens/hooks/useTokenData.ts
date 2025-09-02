@@ -126,22 +126,41 @@ export function useTokenData(): TokenData {
       if (isVaultAvailable) {
         try {
           const vaultLoans = await getUserLoans();
-          setVaultedTokens(vaultLoans);
+          
+          // Filter out invalid token IDs that might be in the vault
+          // This handles cases where vault has stale data from previous deployments
+          const validVaultLoans = vaultLoans.filter((tokenId) => {
+            if (tokenId <= 0n || tokenId > lastTokenID) {
+              console.warn(`Filtering out invalid vault token ID: ${tokenId} (max valid: ${lastTokenID})`);
+              return false;
+            }
+            return true;
+          });
+          
+          setVaultedTokens(validVaultLoans);
 
-          // Get redeem status for vaulted tokens in parallel
-          const vaultTokensToCheck = vaultLoans.filter((vaultTokenId) => !status[vaultTokenId.toString()]);
+          // Get redeem status for valid vaulted tokens in parallel
+          const vaultTokensToCheck = validVaultLoans.filter((vaultTokenId) => !status[vaultTokenId.toString()]);
 
           if (vaultTokensToCheck.length > 0) {
-            const vaultStatusPromises = vaultTokensToCheck.map((tokenId) =>
-              getIsRedeemed(tokenId).then((isRedeemed) => ({
-                tokenId,
-                isRedeemed: isRedeemed as boolean,
-              })),
-            );
+            const vaultStatusPromises = vaultTokensToCheck.map(async (tokenId) => {
+              try {
+                const isRedeemed = await getIsRedeemed(tokenId);
+                return {
+                  tokenId,
+                  isRedeemed: isRedeemed as boolean,
+                };
+              } catch (err) {
+                console.warn(`Failed to get redeem status for vault token ${tokenId}:`, err);
+                return null;
+              }
+            });
             const vaultStatusResults = await Promise.all(vaultStatusPromises);
 
-            for (const { tokenId, isRedeemed } of vaultStatusResults) {
-              status[tokenId.toString()] = isRedeemed;
+            for (const result of vaultStatusResults) {
+              if (result) {
+                status[result.tokenId.toString()] = result.isRedeemed;
+              }
             }
           }
         } catch (vaultError) {

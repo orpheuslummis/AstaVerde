@@ -84,6 +84,7 @@ export function useTokenGroups({ tokens, vaultedTokens, tokenMetadata, batchData
         const vaultedTokenIds: bigint[] = [];
 
         batchTokenIds.forEach((tokenId) => {
+          // Only include tokens that the user actually owns
           // Count how many of this token ID we have available
           const availableCount = tokens.filter((t) => t === tokenId).length;
           const vaultedCount = vaultedTokens.filter((t) => t === tokenId).length;

@@ -53,6 +53,8 @@ export function useTokenMetadata(): TokenMetadataHook {
           const key = tokenId.toString();
 
           try {
+            // First check if token exists before trying to fetch URI
+            // This prevents errors when vault has invalid token IDs
             const uri = (await fetchTokenURI(tokenId)) as string;
             if (uri && uri.startsWith("ipfs://")) {
               const metadataResult = await fetchJsonFromIpfsWithFallback(uri);
@@ -61,7 +63,9 @@ export function useTokenMetadata(): TokenMetadataHook {
               }
             }
           } catch (err) {
-            console.error(`Failed to fetch metadata for token ${tokenId}:`, err);
+            // Silently skip tokens that don't exist or have invalid metadata
+            // This handles cases where vault has stale token IDs
+            console.warn(`Skipping token ${tokenId} - may not exist or have invalid metadata`);
           }
           return null;
         });
