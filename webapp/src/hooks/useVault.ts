@@ -327,10 +327,16 @@ export function useVault(): VaultHook {
           gasLimit = undefined;
         }
 
+        // Create a truly mutable array to avoid viem frozen array issues  
+        const cleanTokenIds = new Array(tokenIds.length);
+        for (let i = 0; i < tokenIds.length; i++) {
+          cleanTokenIds[i] = BigInt(tokenIds[i].toString());
+        }
+
         const hash = await writeContractAsync({
           ...vaultConfig,
           functionName: "depositBatch",
-          args: [tokenIds],
+          args: [cleanTokenIds],
           ...(gasLimit ? { gas: gasLimit } : {}),
         });
 
@@ -385,13 +391,38 @@ export function useVault(): VaultHook {
         setTxStatus(TxStatus.SIGNING);
 
         const vaultConfig = getVaultContractConfig();
+        const sccConfig = getSccConfig();
+
+        // Check and set SCC allowance if needed
+        const requiredScc = BigInt(tokenIds.length) * SCC_PER_ASSET;
+        const currentAllowance = (sccAllowance as bigint) || 0n;
+
+        if (currentAllowance < requiredScc) {
+          customToast.info("Approving SCC for withdrawal...");
+          const approveHash = await writeContractAsync({
+            ...sccConfig,
+            functionName: "approve",
+            args: [vaultConfig.address as `0x${string}`, requiredScc],
+          });
+          await publicClient?.waitForTransactionReceipt({ hash: approveHash });
+          await refetchSccAllowance();
+          // Small delay to ensure chain state is updated
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
 
         customToast.info(`Withdrawing ${tokenIds.length} NFTs from vault...`);
+
+        // Create a truly mutable array to avoid viem frozen array issues
+        const cleanTokenIds = new Array(tokenIds.length);
+        for (let i = 0; i < tokenIds.length; i++) {
+          cleanTokenIds[i] = BigInt(tokenIds[i].toString());
+        }
 
         const hash = await writeContractAsync({
           ...vaultConfig,
           functionName: "withdrawBatch",
-          args: [tokenIds],
+          args: [cleanTokenIds],
+          gas: 1000000n, // Set explicit gas limit for batch operations
         });
 
         setCurrentTxHash(hash);
@@ -422,9 +453,12 @@ export function useVault(): VaultHook {
       isVaultAvailable,
       vaultVersion,
       getVaultContractConfig,
+      getSccConfig,
       writeContractAsync,
       publicClient,
       refreshContractData,
+      sccAllowance,
+      refetchSccAllowance,
     ],
   );
 
