@@ -107,8 +107,11 @@ export default function MyTokensPage() {
   const handleDepositAll = useCallback(async (tokenIds: bigint[]) => {
     if (!tokenIds || tokenIds.length === 0) return;
 
+    // Ensure we have a truly mutable array
+    const mutableTokenIds = [...tokenIds].map(id => BigInt(id.toString()));
+
     setIsBulkDepositing(true);
-    setBulkDepositProgress({ current: 0, total: tokenIds.length });
+    setBulkDepositProgress({ current: 0, total: mutableTokenIds.length });
 
     try {
       // Check if NFTs are already approved
@@ -121,12 +124,12 @@ export default function MyTokensPage() {
 
       // Treat unknown version as V2 (single-system contracts ship V2)
       if (vaultVersion === "V2" || vaultVersion === null) {
-        setBulkDepositProgress({ current: tokenIds.length, total: tokenIds.length });
-        await depositBatch(tokenIds);
+        setBulkDepositProgress({ current: mutableTokenIds.length, total: mutableTokenIds.length });
+        await depositBatch(mutableTokenIds);
       } else {
-        const estimatedGas = tokenIds.length * 120000;
+        const estimatedGas = mutableTokenIds.length * 120000;
         const proceed = window.confirm(
-          `⚠️ Gas Warning: This operation will require ${tokenIds.length} separate transactions.\n\n` +
+          `⚠️ Gas Warning: This operation will require ${mutableTokenIds.length} separate transactions.\n\n` +
           `Estimated total gas: ~${estimatedGas.toLocaleString()} units\n\n` +
           "Continue with sequential deposits?",
         );
@@ -137,15 +140,15 @@ export default function MyTokensPage() {
           return;
         }
 
-        for (let i = 0; i < tokenIds.length; i++) {
-          setBulkDepositProgress({ current: i + 1, total: tokenIds.length });
-          await deposit(tokenIds[i]);
+        for (let i = 0; i < mutableTokenIds.length; i++) {
+          setBulkDepositProgress({ current: i + 1, total: mutableTokenIds.length });
+          await deposit(mutableTokenIds[i]);
         }
       }
 
       setSelectedTokens(prev => {
         const newSet = new Set(prev);
-        tokenIds.forEach(id => newSet.delete(id));
+        mutableTokenIds.forEach(id => newSet.delete(id));
         return newSet;
       });
 
