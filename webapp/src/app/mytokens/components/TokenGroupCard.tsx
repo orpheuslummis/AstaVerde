@@ -80,10 +80,13 @@ export function TokenGroupCard({
 
         {/* Batch Actions - Only show if there are non-redeemed available tokens */}
         {(() => {
-          const depositableTokenIds = group.availableTokenIds.filter(
+          const filtered = group.availableTokenIds.filter(
             tokenId => !redeemStatus[tokenId.toString()]
           );
-          if (depositableTokenIds.length === 0) return null;
+          if (filtered.length === 0) return null;
+          
+          // Create a mutable array to avoid frozen array issues
+          const depositableTokenIds = [...filtered];
           
           return (
             <button
