@@ -78,39 +78,64 @@ export function TokenGroupCard({
           </div>
         </div>
 
-        {/* Batch Actions - Only show if there are available tokens */}
-        {group.availableCount > 0 && (
-          <button
-            onClick={() => onDepositAll(group.availableTokenIds)}
-            disabled={isBulkDepositing}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            {isBulkDepositing && bulkDepositProgress.total > 0
-              ? `Depositing... (${bulkDepositProgress.current}/${bulkDepositProgress.total})`
-              : `Deposit All (${group.availableCount})`
-            }
-          </button>
-        )}
+        {/* Batch Actions - Only show if there are non-redeemed available tokens */}
+        {(() => {
+          const depositableTokenIds = group.availableTokenIds.filter(
+            tokenId => !redeemStatus[tokenId.toString()]
+          );
+          if (depositableTokenIds.length === 0) return null;
+          
+          return (
+            <button
+              onClick={() => onDepositAll(depositableTokenIds)}
+              disabled={isBulkDepositing}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              {isBulkDepositing && bulkDepositProgress.total > 0
+                ? `Depositing... (${bulkDepositProgress.current}/${bulkDepositProgress.total})`
+                : `Deposit All (${depositableTokenIds.length})`
+              }
+            </button>
+          );
+        })()}
       </div>
 
       {/* Token List */}
       <div className="space-y-2">
         {/* Available Tokens */}
-        {group.availableTokenIds.map((tokenId, index) => (
-          <div key={`${tokenId}-${index}`} className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-              <Link
-                href={`/token/${tokenId}`}
-                className="text-sm font-medium hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-              >
-                Token #{tokenId.toString()}
-                {tokenBalances[tokenId.toString()] && tokenBalances[tokenId.toString()] > 1n &&
-                  ` (Instance ${index + 1})`
-                }
-              </Link>
-              <span className="text-xs text-emerald-600 dark:text-emerald-400">Available</span>
-            </div>
+        {group.availableTokenIds.map((tokenId, index) => {
+          const isRedeemed = redeemStatus[tokenId.toString()];
+          return (
+            <div key={`${tokenId}-${index}`} className={`flex items-center justify-between p-3 rounded-lg ${
+              isRedeemed 
+                ? "bg-gray-100 dark:bg-gray-800 opacity-75" 
+                : "bg-emerald-50 dark:bg-emerald-900/20"
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-2 h-2 rounded-full ${
+                  isRedeemed ? "bg-gray-500" : "bg-emerald-500"
+                }`}></div>
+                <Link
+                  href={`/token/${tokenId}`}
+                  className={`text-sm font-medium transition-colors ${
+                    isRedeemed 
+                      ? "text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                      : "hover:text-emerald-600 dark:hover:text-emerald-400"
+                  }`}
+                >
+                  Token #{tokenId.toString()}
+                  {tokenBalances[tokenId.toString()] && tokenBalances[tokenId.toString()] > 1n &&
+                    ` (Instance ${index + 1})`
+                  }
+                </Link>
+                <span className={`text-xs ${
+                  isRedeemed 
+                    ? "text-gray-600 dark:text-gray-400"
+                    : "text-emerald-600 dark:text-emerald-400"
+                }`}>
+                  {isRedeemed ? "Redeemed" : "Available"}
+                </span>
+              </div>
             <div className="flex items-center gap-2">
               {/* Vault Action */}
               <div className="relative group">
@@ -154,7 +179,8 @@ export function TokenGroupCard({
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {/* Vaulted Tokens */}
         {group.vaultedTokenIds.map((tokenId, index) => (
