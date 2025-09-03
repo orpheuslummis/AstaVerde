@@ -52,7 +52,10 @@ export default function MyTokensPage() {
   const {
     deposit,
     depositBatch,
+    withdraw,
+    withdrawBatch,
     approveNFT,
+    approveSCC,
     getSccBalance,
     getIsNftApproved,
     isVaultAvailable,
@@ -165,6 +168,38 @@ export default function MyTokensPage() {
     fetchTokens();
   }, [fetchTokens]);
 
+  // Handle bulk withdraw
+  const handleWithdrawAll = useCallback(async (tokenIds: bigint[]) => {
+    if (!tokenIds || tokenIds.length === 0) return;
+
+    try {
+      // Check if user has enough SCC to withdraw
+      const requiredScc = BigInt(tokenIds.length) * BigInt(20e18); // 20 SCC per NFT
+      if (sccBalance < requiredScc) {
+        const shortfall = requiredScc - sccBalance;
+        const shortfallFormatted = Number(shortfall / BigInt(1e18));
+        window.alert(
+          `Insufficient SCC balance.\n\n` +
+          `Required: ${tokenIds.length * 20} SCC\n` +
+          `Current balance: ${Number(sccBalance / BigInt(1e18))} SCC\n` +
+          `You need ${shortfallFormatted} more SCC tokens to withdraw these NFTs.`
+        );
+        return;
+      }
+
+      // Verify that the tokens to withdraw match the actual vault loans
+      if (tokenIds.length !== vaultedTokens.length) {
+        await fetchTokens(); // Refresh to ensure we have latest data
+        return;
+      }
+
+      await withdrawBatch(tokenIds);
+      await fetchTokens();
+    } catch (error) {
+      console.error("Error during bulk withdraw:", error);
+    }
+  }, [sccBalance, vaultedTokens.length, withdrawBatch, fetchTokens]);
+
   // Handle token selection
   const handleTokenSelect = useCallback((tokenId: bigint) => {
     setSelectedTokens(prev => {
@@ -271,6 +306,29 @@ export default function MyTokensPage() {
             onTabChange={setActiveTab}
             counts={tabCounts}
           />
+
+          {/* Bulk Withdraw Section */}
+          {vaultedTokens.length > 0 && activeTab !== "available" && (
+            <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-medium text-purple-900 dark:text-purple-100">
+                    {vaultedTokens.length} NFTs in Vault
+                  </p>
+                  <p className="text-sm text-purple-700 dark:text-purple-300 mt-1">
+                    Withdraw all NFTs by returning {vaultedTokens.length * 20} SCC
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleWithdrawAll(vaultedTokens)}
+                  disabled={sccBalance < BigInt(vaultedTokens.length) * BigInt(20e18)}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+                >
+                  Withdraw All ({vaultedTokens.length})
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Main Content */}
           {isLoading ? (
