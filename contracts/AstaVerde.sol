@@ -257,20 +257,20 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         super._update(from, to, ids, values);
     }
 
-    function setPlatformSharePercentage(uint256 newSharePercentage) external onlyOwner {
+    function setPlatformSharePercentage(uint256 newSharePercentage) external onlyOwner whenNotPaused {
         require(newSharePercentage <= 50, "Platform share cannot exceed 50%");
         platformSharePercentage = newSharePercentage;
         emit PlatformSharePercentageSet(newSharePercentage);
     }
 
-    function setPriceFloor(uint256 newPriceFloor) external onlyOwner {
+    function setPriceFloor(uint256 newPriceFloor) external onlyOwner whenNotPaused {
         require(newPriceFloor > 0, "Invalid price floor");
         require(newPriceFloor <= basePrice, "Price floor cannot exceed base price");
         priceFloor = newPriceFloor;
         emit PlatformPriceFloorAdjusted(newPriceFloor, block.timestamp);
     }
 
-    function setBasePrice(uint256 newStartingPrice) external onlyOwner {
+    function setBasePrice(uint256 newStartingPrice) external onlyOwner whenNotPaused {
         require(newStartingPrice > 0, "Invalid starting price");
         require(newStartingPrice >= priceFloor, "Base price must be at least price floor");
         bool increased = newStartingPrice > basePrice;
@@ -278,13 +278,13 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         emit BasePriceAdjusted(newStartingPrice, block.timestamp, increased);
     }
 
-    function setMaxBatchSize(uint256 newSize) external onlyOwner {
+    function setMaxBatchSize(uint256 newSize) external onlyOwner whenNotPaused {
         require(newSize > 0 && newSize <= 100, "Batch size must be between 1 and 100");
         maxBatchSize = newSize;
         emit MaxBatchSizeSet(newSize);
     }
 
-    function setAuctionDayThresholds(uint256 increase, uint256 decrease) external onlyOwner {
+    function setAuctionDayThresholds(uint256 increase, uint256 decrease) external onlyOwner whenNotPaused {
         require(increase > 0, "Invalid increase threshold");
         require(decrease > 0, "Invalid decrease threshold");
         require(increase < decrease, "Increase threshold must be lower than decrease threshold");
@@ -292,13 +292,13 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         dayDecreaseThreshold = decrease;
     }
 
-    function setPriceDelta(uint256 newPriceDelta) external onlyOwner {
+    function setPriceDelta(uint256 newPriceDelta) external onlyOwner whenNotPaused {
         require(newPriceDelta > 0, "Price delta must be positive");
         priceAdjustDelta = newPriceDelta;
         emit PriceDeltaSet(newPriceDelta);
     }
 
-    function setDailyPriceDecay(uint256 newDailyDecay) external onlyOwner {
+    function setDailyPriceDecay(uint256 newDailyDecay) external onlyOwner whenNotPaused {
         require(newDailyDecay > 0, "Daily decay must be positive");
         dailyPriceDecay = newDailyDecay;
         emit DailyPriceDecaySet(newDailyDecay);
@@ -320,7 +320,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
      *
      * @param newLimit New iteration limit (1-1000)
      */
-    function setMaxPriceUpdateIterations(uint256 newLimit) external onlyOwner {
+    function setMaxPriceUpdateIterations(uint256 newLimit) external onlyOwner whenNotPaused {
         require(newLimit > 0 && newLimit <= 1000, "Iteration limit must be between 1 and 1000");
         maxPriceUpdateIterations = newLimit;
         emit MaxPriceUpdateIterationsSet(newLimit);
@@ -594,10 +594,10 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     /**
      * @notice Mark a token as redeemed for its real-world carbon offset
      * @dev Sets redemption flag without burning - tokens remain tradeable as collectibles
-     * Works during pause to allow offset claims during emergencies
+     * Blocked during pause for security consistency
      * @param tokenId The token ID to mark as redeemed
      */
-    function redeemToken(uint256 tokenId) external nonReentrant {
+    function redeemToken(uint256 tokenId) external nonReentrant whenNotPaused {
         require(tokenId > 0 && tokenId <= lastTokenID, "Token does not exist");
         TokenInfo storage token = tokens[tokenId];
         require(balanceOf(msg.sender, tokenId) > 0, "Caller is not the token owner");
@@ -622,11 +622,12 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
      * @notice Recover accidentally sent ERC20 tokens (excluding USDC)
      * @dev USDC recovery blocked here to maintain accounting integrity.
      * Use recoverSurplusUSDC() to recover accidentally sent USDC.
+     * Works during pause for emergency recovery.
      * @param token The ERC20 token address to recover (cannot be USDC)
      * @param amount The amount to recover
      * @param to The recipient address
      */
-    function recoverERC20(address token, uint256 amount, address to) external onlyOwner nonReentrant whenNotPaused {
+    function recoverERC20(address token, uint256 amount, address to) external onlyOwner nonReentrant {
         require(to != address(0), "Address must not be zero");
         require(token != address(usdcToken), "Use recoverSurplusUSDC for USDC");
         IERC20(token).safeTransfer(to, amount);
@@ -649,7 +650,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     /**
      * @notice Producers claim their accumulated payments
      * @dev Pull payment pattern prevents DoS attacks from blocking sales.
-     * Any producer can claim their accrued funds at any time.
+     * IMPORTANT: Intentionally works during pause to prevent locking producer funds.
+     * Any producer can claim their accrued funds at any time, even during emergency pause.
      */
     function claimProducerFunds() external nonReentrant {
         uint256 amount = producerBalances[msg.sender];
