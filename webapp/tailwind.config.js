@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: "media",
+  darkMode: "class",
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
@@ -13,6 +13,18 @@ module.exports = {
     },
     extend: {
       colors: {
+        // Semantic colors for vault operations
+        vault: {
+          deposit: "var(--vault-deposit)",
+          withdraw: "var(--vault-withdraw)",
+          batch: "var(--vault-batch)",
+        },
+        // Status colors
+        status: {
+          available: "var(--status-available)",
+          vaulted: "var(--status-vaulted)",
+          redeemed: "var(--status-redeemed)",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

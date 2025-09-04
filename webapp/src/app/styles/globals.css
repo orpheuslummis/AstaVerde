@@ -4,64 +4,113 @@
 
 @layer base {
     :root {
+        /* Light Theme - Clean & Professional */
         --background: 0 0% 100%;
-        --foreground: 222.2 84% 4.9%;
-        --card: 0 0% 100%;
-        --card-foreground: 222.2 84% 4.9%;
+        --foreground: 222 47% 11%;
+        --card: 0 0% 98%;
+        --card-foreground: 222 47% 11%;
+        --card-elevated: 0 0% 100%;
         --popover: 0 0% 100%;
-        --popover-foreground: 222.2 84% 4.9%;
+        --popover-foreground: 222 47% 11%;
+        
+        /* Primary - Emerald Green */
         --primary: 151 55% 41.6%;
-        --primary-foreground: 355.7 100% 97.3%;
+        --primary-foreground: 0 0% 100%;
         --primary-dark: 151 55% 31.6%;
+        
+        /* Secondary - Teal */
         --secondary: 186 75% 39%;
-        --secondary-foreground: 240 5.9% 10%;
+        --secondary-foreground: 0 0% 100%;
         --secondary-dark: 186 75% 29%;
+        
+        /* Muted & Accent */
         --muted: 240 4.8% 95.9%;
         --muted-foreground: 240 3.8% 46.1%;
         --accent: 240 4.8% 95.9%;
         --accent-foreground: 240 5.9% 10%;
+        
+        /* Destructive - Red */
         --destructive: 0 84.2% 60.2%;
         --destructive-foreground: 0 0% 98%;
+        
+        /* Borders & Inputs */
         --border: 240 5.9% 90%;
         --input: 240 5.9% 90%;
         --ring: 142.1 76.2% 36.3%;
         --radius: 0.5rem;
+        
+        /* Vault Operation Colors */
+        --vault-deposit: 142 70% 45%;
+        --vault-withdraw: 271 91% 65%;
+        --vault-batch: 199 89% 48%;
+        
+        /* Status Colors */
+        --status-available: 142 70% 45%;
+        --status-vaulted: 271 91% 65%;
+        --status-redeemed: 0 0% 63%;
+        
+        /* Chart Colors */
         --chart-1: 12 76% 61%;
         --chart-2: 173 58% 39%;
         --chart-3: 197 37% 24%;
         --chart-4: 43 74% 66%;
         --chart-5: 27 87% 67%;
+        
         /* Default header height; updated dynamically by Header.tsx */
         --header-height: 64px;
     }
 
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --background: 222.2 84% 4.9%;
-            --foreground: 210 40% 98%;
-            --card: 222.2 84% 4.9%;
-            --card-foreground: 210 40% 98%;
-            --popover: 222.2 84% 4.9%;
-            --popover-foreground: 210 40% 98%;
-            --primary: 142.1 70.6% 45.3%;
-            --primary-foreground: 144.9 80.4% 10%;
-            --secondary: 186 75% 39%;
-            --secondary-foreground: 210 40% 98%;
-            --muted: 217.2 32.6% 17.5%;
-            --muted-foreground: 215 20.2% 65.1%;
-            --accent: 217.2 32.6% 17.5%;
-            --accent-foreground: 210 40% 98%;
-            --destructive: 0 62.8% 30.6%;
-            --destructive-foreground: 210 40% 98%;
-            --border: 217.2 32.6% 17.5%;
-            --input: 217.2 32.6% 17.5%;
-            --ring: 142.4 71.8% 29.2%;
-            --chart-1: 220 70% 50%;
-            --chart-2: 160 60% 45%;
-            --chart-3: 30 80% 55%;
-            --chart-4: 280 65% 60%;
-            --chart-5: 340 75% 55%;
-        }
+    .dark {
+        /* Dark Theme - Modern & Easy on Eyes */
+        --background: 222 47% 7%;
+        --foreground: 210 40% 96%;
+        --card: 222 47% 11%;
+        --card-foreground: 210 40% 96%;
+        --card-elevated: 222 47% 15%;
+        --popover: 222 47% 11%;
+        --popover-foreground: 210 40% 96%;
+        
+        /* Primary - Brighter Emerald */
+        --primary: 142 70% 50%;
+        --primary-foreground: 0 0% 100%;
+        --primary-dark: 142 70% 40%;
+        
+        /* Secondary - Brighter Teal */
+        --secondary: 186 75% 45%;
+        --secondary-foreground: 0 0% 100%;
+        --secondary-dark: 186 75% 35%;
+        
+        /* Muted & Accent */
+        --muted: 217 32% 17%;
+        --muted-foreground: 215 25% 80%;
+        --accent: 217 32% 20%;
+        --accent-foreground: 210 40% 96%;
+        
+        /* Destructive - Red */
+        --destructive: 0 72% 51%;
+        --destructive-foreground: 0 0% 98%;
+        
+        /* Borders & Inputs */
+        --border: 217 32% 20%;
+        --input: 217 32% 20%;
+        --ring: 142 71% 40%;
+        
+        /* Vault Operation Colors - Brighter for Dark Mode */
+        --vault-deposit: 142 76% 55%;
+        --vault-withdraw: 271 90% 70%;
+        --vault-batch: 199 95% 55%;
+        
+        /* Status Colors - Brighter for Dark Mode */
+        --status-available: 142 76% 55%;
+        --status-vaulted: 271 90% 70%;
+        --status-redeemed: 0 0% 45%;
+        
+        /* Chart Colors */
+        --chart-1: 220 70% 50%;
+        --chart-2: 160 60% 45%;
+        --chart-3: 30 80% 55%;
+        --chart-4: 280 65% 60%;
+        --chart-5: 340 75% 55%;
     }
 
     * {
@@ -69,7 +118,7 @@
     }
 
     body {
-        @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+        @apply bg-background text-foreground transition-colors duration-200;
     }
 
     h1,

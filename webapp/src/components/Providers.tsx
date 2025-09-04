@@ -8,6 +8,7 @@ import { WalletProvider } from "../contexts/WalletContext";
 import { wagmiConfig } from "../config/wagmi";
 import { GlobalLoadingProvider } from "./GlobalLoadingProvider";
 import { ENV } from "../config/environment";
+import { ThemeProvider } from "../contexts/ThemeContext";
 
 const queryClient = new QueryClient();
 
@@ -26,18 +27,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
     : {};
 
   return (
-    <GlobalLoadingProvider>
-      <WagmiProvider config={wagmiConfig}>
-        <QueryClientProvider client={queryClient}>
-          <ConnectKitProvider {...connectKitOptions}>
-            <WalletProvider>
-              <AppProvider>
-                {children}
-              </AppProvider>
-            </WalletProvider>
-          </ConnectKitProvider>
-        </QueryClientProvider>
-      </WagmiProvider>
-    </GlobalLoadingProvider>
+    <ThemeProvider>
+      <GlobalLoadingProvider>
+        <WagmiProvider config={wagmiConfig}>
+          <QueryClientProvider client={queryClient}>
+            <ConnectKitProvider {...connectKitOptions}>
+              <WalletProvider>
+                <AppProvider>
+                  {children}
+                </AppProvider>
+              </WalletProvider>
+            </ConnectKitProvider>
+          </QueryClientProvider>
+        </WagmiProvider>
+      </GlobalLoadingProvider>
+    </ThemeProvider>
   );
 }

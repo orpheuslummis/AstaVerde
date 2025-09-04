@@ -78,7 +78,7 @@ function BatchListing() {
     <div className="container mx-auto px-4 py-8">
       {sortedBatches.length > 0 ? (
         <>
-          <div className="grid-responsive">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {paginatedBatches.map((batch) => (
               <BatchCard
                 key={batch.id?.toString() ?? `batch-${Math.random()}`}
@@ -87,23 +87,23 @@ function BatchListing() {
               />
             ))}
           </div>
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex justify-center items-center gap-4">
             <button
               onClick={handlePreviousPage}
               disabled={currentPage === 1}
-              className="px-4 py-2 mr-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors hover:opacity-90"
             >
-                            Previous
+              Previous
             </button>
-            <span className="px-4 py-2">
-                            Page {currentPage} of {totalPages}
+            <span className="px-4 py-2 text-foreground font-medium">
+              Page {currentPage} of {totalPages}
             </span>
             <button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 ml-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors hover:opacity-90"
             >
-                            Next
+              Next
             </button>
           </div>
         </>

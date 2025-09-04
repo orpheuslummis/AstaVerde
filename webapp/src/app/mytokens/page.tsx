@@ -237,43 +237,43 @@ export default function MyTokensPage() {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       {/* Header Section */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">My Eco Assets</h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <h1 className="text-3xl font-bold mb-2 text-foreground">My Eco Assets</h1>
+        <p className="text-muted-foreground">
           Manage your carbon offset NFTs and vault operations
         </p>
 
         {/* Action Guide */}
         <div className="mt-4 flex flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <div className="px-2 py-1 bg-emerald-600 text-white rounded text-xs">Deposit</div>
-            <span className="text-gray-600 dark:text-gray-400">Lock NFT to earn 20 SCC tokens</span>
+            <div className="px-2 py-1 bg-vault-deposit text-white rounded text-xs font-medium">Deposit</div>
+            <span className="text-muted-foreground">Lock NFT to earn 20 SCC tokens</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="px-2 py-1 bg-purple-600 text-white rounded text-xs">Withdraw</div>
-            <span className="text-gray-600 dark:text-gray-400">Return 20 SCC to reclaim NFT</span>
+            <div className="px-2 py-1 bg-vault-withdraw text-white rounded text-xs font-medium">Withdraw</div>
+            <span className="text-muted-foreground">Return 20 SCC to reclaim NFT</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="px-2 py-1 bg-red-600 text-white rounded text-xs">Redeem</div>
-            <span className="text-gray-600 dark:text-gray-400">Retire carbon credits (permanent)</span>
+            <div className="px-2 py-1 bg-destructive text-destructive-foreground rounded text-xs font-medium">Redeem</div>
+            <span className="text-muted-foreground">Retire carbon credits (permanent)</span>
           </div>
         </div>
 
         {/* Transaction Helper */}
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
+        <div className="mt-4 p-3 bg-accent/20 border border-accent rounded-lg text-sm">
           <div className="flex items-start gap-2">
-            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 text-primary mt-0.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
             <div>
-              <p className="font-medium text-blue-900 dark:text-blue-100">About MetaMask Transactions</p>
-              <p className="text-blue-700 dark:text-blue-300 mt-1">
+              <p className="font-medium text-foreground">About MetaMask Transactions</p>
+              <p className="text-muted-foreground mt-1">
                 Vault operations require 2 transactions:
               </p>
-              <ul className="ml-4 mt-1 text-blue-700 dark:text-blue-300 list-disc">
+              <ul className="ml-4 mt-1 text-muted-foreground list-disc">
                 <li><strong>First transaction (Approval):</strong> Shows as &quot;Send 0 ETH&quot; - this gives permission to the vault contract</li>
                 <li><strong>Second transaction:</strong> The actual deposit/withdrawal operation</li>
               </ul>
-              <p className="text-blue-600 dark:text-blue-400 mt-1 text-xs">
+              <p className="text-primary mt-1 text-xs">
                 Watch the button text and toast notifications to know which step you&apos;re on.
               </p>
             </div>
@@ -285,11 +285,11 @@ export default function MyTokensPage() {
       {showConnectPrompt && (
         <div className="container mx-auto px-4 py-16 max-w-6xl">
           <div className="text-center">
-            <svg className="mx-auto h-16 w-16 mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="mx-auto h-16 w-16 mb-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <p className="text-xl font-semibold mb-2">Connect your wallet to get started</p>
-            <p className="text-gray-500">View and manage your Eco Assets after connecting</p>
+            <p className="text-xl font-semibold mb-2 text-foreground">Connect your wallet to get started</p>
+            <p className="text-muted-foreground">View and manage your Eco Assets after connecting</p>
           </div>
         </div>
       )}
@@ -312,20 +312,20 @@ export default function MyTokensPage() {
 
           {/* Bulk Withdraw Section */}
           {vaultedTokens.length > 0 && activeTab !== "available" && (
-            <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl">
+            <div className="mb-6 p-4 bg-card-elevated border border-border rounded-xl">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="font-medium text-purple-900 dark:text-purple-100">
+                  <p className="font-medium text-foreground">
                     {vaultedTokens.length} NFTs in Vault
                   </p>
-                  <p className="text-sm text-purple-700 dark:text-purple-300 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Withdraw all NFTs by returning {vaultedTokens.length * 20} SCC
                   </p>
                 </div>
                 <button
                   onClick={() => handleWithdrawAll(vaultedTokens)}
                   disabled={sccBalance < BigInt(vaultedTokens.length) * BigInt(20e18)}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+                  className="px-4 py-2 bg-vault-withdraw hover:opacity-90 disabled:bg-muted disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all"
                 >
                   Withdraw All ({vaultedTokens.length})
                 </button>
@@ -336,23 +336,23 @@ export default function MyTokensPage() {
           {/* Main Content */}
           {isLoading ? (
             <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : error ? (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
-              <p className="text-red-600 dark:text-red-400">{error}</p>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-6">
+              <p className="text-destructive">{error}</p>
             </div>
           ) : filteredGroups.length === 0 ? (
-            <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl">
-              <svg className="mx-auto h-16 w-16 mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="text-center py-16 bg-card rounded-xl border border-border">
+              <svg className="mx-auto h-16 w-16 mb-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
-              <p className="text-lg font-medium mb-2">
+              <p className="text-lg font-medium mb-2 text-foreground">
                 {activeTab === "available" && "No available NFTs"}
                 {activeTab === "vaulted" && "No NFTs in vault"}
                 {activeTab === "all" && "No NFTs yet"}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 {activeTab === "available" && "Your NFTs in the vault will appear here once withdrawn"}
                 {activeTab === "vaulted" && "Deposit NFTs to start earning SCC rewards"}
                 {activeTab === "all" && "Purchase Eco Assets from the marketplace"}
@@ -387,21 +387,21 @@ export default function MyTokensPage() {
 
           {/* Batch Redemption Section */}
           {selectedTokens.size > 0 && (
-            <div className="mt-8 p-6 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl">
+            <div className="mt-8 p-6 bg-destructive/10 border-2 border-destructive/20 rounded-xl">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="font-medium text-lg">Carbon Credit Retirement</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="font-medium text-lg text-foreground">Carbon Credit Retirement</p>
+                  <p className="text-sm text-muted-foreground mt-1">
                     {selectedTokens.size} NFTs selected for permanent retirement
                   </p>
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                  <p className="text-xs text-destructive mt-2">
                     ⚠️ This action is permanent. Redeemed NFTs cannot be deposited to vault or transferred.
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handleDeselectAll}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                    className="px-4 py-2 bg-muted rounded-lg hover:bg-muted/80 transition-colors text-foreground"
                   >
                     Cancel Selection
                   </button>

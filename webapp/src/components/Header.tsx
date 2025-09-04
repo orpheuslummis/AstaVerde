@@ -12,6 +12,7 @@ import { getUsdcContract, getSccContract } from "../config/contracts";
 import { useIsProducer } from "../hooks/useIsProducer";
 import { useDebounce } from "../hooks/useDebounce";
 import { useAppContext } from "../contexts/AppContext";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
     links: readonly { readonly name: string; readonly url: string }[];
@@ -229,8 +230,11 @@ export function Header({ links }: HeaderProps) {
         </ul>
       </nav>
 
-      <div className="flex-shrink-0 ml-4" data-testid="connect-wallet">
-        <ConnectKitButton />
+      <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+        <ThemeToggle />
+        <div data-testid="connect-wallet">
+          <ConnectKitButton />
+        </div>
       </div>
     </header>
   );
