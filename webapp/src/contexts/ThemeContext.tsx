@@ -26,12 +26,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    
+
     // Remove previous theme class
     root.classList.remove("light", "dark");
-    
+
     let resolved: "light" | "dark" = "light";
-    
+
     if (theme === "system") {
       // Check system preference
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -41,11 +41,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       resolved = theme as "light" | "dark";
     }
-    
+
     // Apply theme class
     root.classList.add(resolved);
     setResolvedTheme(resolved);
-    
+
     // Listen for system theme changes if in system mode
     if (theme === "system") {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -55,7 +55,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         root.classList.add(newTheme);
         setResolvedTheme(newTheme);
       };
-      
+
       mediaQuery.addEventListener("change", handleChange);
       return () => mediaQuery.removeEventListener("change", handleChange);
     }

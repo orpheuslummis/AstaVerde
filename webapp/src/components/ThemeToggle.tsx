@@ -40,7 +40,7 @@ export function ThemeToggle() {
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
         </svg>
       </button>
-      
+
       <button
         onClick={() => setTheme("system")}
         className={`p-1.5 rounded transition-colors ${
@@ -67,7 +67,7 @@ export function ThemeToggle() {
           <line x1="12" y1="17" x2="12" y2="21"></line>
         </svg>
       </button>
-      
+
       <button
         onClick={() => setTheme("dark")}
         className={`p-1.5 rounded transition-colors ${
