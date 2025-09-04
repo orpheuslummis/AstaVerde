@@ -81,13 +81,13 @@ export function TokenGroupCard({
         {/* Batch Actions - Only show if there are non-redeemed available tokens */}
         {(() => {
           const filtered = group.availableTokenIds.filter(
-            tokenId => !redeemStatus[tokenId.toString()]
+            tokenId => !redeemStatus[tokenId.toString()],
           );
           if (filtered.length === 0) return null;
-          
+
           // Create a mutable array to avoid frozen array issues
           const depositableTokenIds = [...filtered];
-          
+
           return (
             <button
               onClick={() => onDepositAll(depositableTokenIds)}
@@ -110,8 +110,8 @@ export function TokenGroupCard({
           const isRedeemed = redeemStatus[tokenId.toString()];
           return (
             <div key={`${tokenId}-${index}`} className={`flex items-center justify-between p-3 rounded-lg ${
-              isRedeemed 
-                ? "bg-gray-100 dark:bg-gray-800 opacity-75" 
+              isRedeemed
+                ? "bg-gray-100 dark:bg-gray-800 opacity-75"
                 : "bg-emerald-50 dark:bg-emerald-900/20"
             }`}>
               <div className="flex items-center gap-3">
@@ -121,7 +121,7 @@ export function TokenGroupCard({
                 <Link
                   href={`/token/${tokenId}`}
                   className={`text-sm font-medium transition-colors ${
-                    isRedeemed 
+                    isRedeemed
                       ? "text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                       : "hover:text-emerald-600 dark:hover:text-emerald-400"
                   }`}
@@ -132,56 +132,56 @@ export function TokenGroupCard({
                   }
                 </Link>
                 <span className={`text-xs ${
-                  isRedeemed 
+                  isRedeemed
                     ? "text-gray-600 dark:text-gray-400"
                     : "text-emerald-600 dark:text-emerald-400"
                 }`}>
                   {isRedeemed ? "Redeemed" : "Available"}
                 </span>
               </div>
-            <div className="flex items-center gap-2">
-              {/* Vault Action */}
-              <div className="relative group">
-                <VaultCard
-                  tokenId={tokenId}
-                  isRedeemed={redeemStatus[tokenId.toString()]}
-                  onActionComplete={() => onIndividualDeposit(tokenId)}
-                />
-                <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 hidden group-hover:block z-10">
-                  <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap">
-                    Deposit to vault to earn 20 SCC
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-                      <div className="border-4 border-transparent border-t-gray-900"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Redeem Action */}
-              {!redeemStatus[tokenId.toString()] && (
+              <div className="flex items-center gap-2">
+                {/* Vault Action */}
                 <div className="relative group">
-                  <button
-                    onClick={() => onTokenSelect(tokenId)}
-                    className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                      selectedTokens.has(tokenId)
-                        ? "bg-red-600 text-white hover:bg-red-700"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300"
-                    }`}
-                  >
-                    {selectedTokens.has(tokenId) ? "Selected" : "Select to Redeem"}
-                  </button>
+                  <VaultCard
+                    tokenId={tokenId}
+                    isRedeemed={redeemStatus[tokenId.toString()]}
+                    onActionComplete={() => onIndividualDeposit(tokenId)}
+                  />
                   <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 hidden group-hover:block z-10">
                     <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap">
-                      Mark as retired (permanent, cannot be deposited to vault)
+                    Deposit to vault to earn 20 SCC
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
                         <div className="border-4 border-transparent border-t-gray-900"></div>
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
+
+                {/* Redeem Action */}
+                {!redeemStatus[tokenId.toString()] && (
+                  <div className="relative group">
+                    <button
+                      onClick={() => onTokenSelect(tokenId)}
+                      className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                        selectedTokens.has(tokenId)
+                          ? "bg-red-600 text-white hover:bg-red-700"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      {selectedTokens.has(tokenId) ? "Selected" : "Select to Redeem"}
+                    </button>
+                    <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 hidden group-hover:block z-10">
+                      <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap">
+                      Mark as retired (permanent, cannot be deposited to vault)
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                          <div className="border-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
           );
         })}
 

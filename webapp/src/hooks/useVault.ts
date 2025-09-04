@@ -327,7 +327,7 @@ export function useVault(): VaultHook {
           gasLimit = undefined;
         }
 
-        // Create a truly mutable array to avoid viem frozen array issues  
+        // Create a truly mutable array to avoid viem frozen array issues
         const cleanTokenIds = new Array(tokenIds.length);
         for (let i = 0; i < tokenIds.length; i++) {
           cleanTokenIds[i] = BigInt(tokenIds[i].toString());

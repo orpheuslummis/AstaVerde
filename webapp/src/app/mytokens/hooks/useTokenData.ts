@@ -126,7 +126,7 @@ export function useTokenData(): TokenData {
       if (isVaultAvailable) {
         try {
           const vaultLoans = await getUserLoans();
-          
+
           // Filter out invalid token IDs that might be in the vault
           // This handles cases where vault has stale data from previous deployments
           const validVaultLoans = vaultLoans.filter((tokenId) => {
@@ -136,7 +136,7 @@ export function useTokenData(): TokenData {
             }
             return true;
           });
-          
+
           setVaultedTokens(validVaultLoans);
 
           // Get redeem status for valid vaulted tokens in parallel

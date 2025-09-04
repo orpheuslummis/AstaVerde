@@ -23,7 +23,7 @@ export default function MyTokensPage() {
   const { address } = useAccount();
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [selectedTokens, setSelectedTokens] = useState<Set<bigint>>(new Set());
-  const [isBulkDepositing, setIsBulkDepositing] = useState(false);
+  const [depositingBatchId, setDepositingBatchId] = useState<string | null>(null);
   const [bulkDepositProgress, setBulkDepositProgress] = useState({ current: 0, total: 0 });
   const [sccBalance, setSccBalance] = useState<bigint>(0n);
 
@@ -104,13 +104,13 @@ export default function MyTokensPage() {
   }), [stats]);
 
   // Handle bulk deposit
-  const handleDepositAll = useCallback(async (tokenIds: bigint[]) => {
+  const handleDepositAll = useCallback(async (tokenIds: bigint[], batchId: string) => {
     if (!tokenIds || tokenIds.length === 0) return;
 
     // Ensure we have a truly mutable array
     const mutableTokenIds = [...tokenIds].map(id => BigInt(id.toString()));
 
-    setIsBulkDepositing(true);
+    setDepositingBatchId(batchId);
     setBulkDepositProgress({ current: 0, total: mutableTokenIds.length });
 
     try {
@@ -135,7 +135,7 @@ export default function MyTokensPage() {
         );
 
         if (!proceed) {
-          setIsBulkDepositing(false);
+          setDepositingBatchId(null);
           setBulkDepositProgress({ current: 0, total: 0 });
           return;
         }
@@ -156,7 +156,7 @@ export default function MyTokensPage() {
     } catch (error) {
       console.error("Error during bulk deposit:", error);
     } finally {
-      setIsBulkDepositing(false);
+      setDepositingBatchId(null);
       setBulkDepositProgress({ current: 0, total: 0 });
     }
   }, [deposit, approveNFT, fetchTokens, depositBatch, vaultVersion, getIsNftApproved]);
@@ -182,10 +182,10 @@ export default function MyTokensPage() {
         const shortfall = requiredScc - sccBalance;
         const shortfallFormatted = Number(shortfall / BigInt(1e18));
         window.alert(
-          `Insufficient SCC balance.\n\n` +
+          "Insufficient SCC balance.\n\n" +
           `Required: ${tokenIds.length * 20} SCC\n` +
           `Current balance: ${Number(sccBalance / BigInt(1e18))} SCC\n` +
-          `You need ${shortfallFormatted} more SCC tokens to withdraw these NFTs.`
+          `You need ${shortfallFormatted} more SCC tokens to withdraw these NFTs.`,
         );
         return;
       }
@@ -374,11 +374,11 @@ export default function MyTokensPage() {
                     tokenBalances={tokenBalances}
                     selectedTokens={selectedTokens}
                     onTokenSelect={handleTokenSelect}
-                    onDepositAll={handleDepositAll}
+                    onDepositAll={(tokenIds) => handleDepositAll(tokenIds, group.batchId)}
                     onIndividualDeposit={handleIndividualDeposit}
                     onActionComplete={fetchTokens}
-                    isBulkDepositing={isBulkDepositing}
-                    bulkDepositProgress={bulkDepositProgress}
+                    isBulkDepositing={depositingBatchId === group.batchId}
+                    bulkDepositProgress={depositingBatchId === group.batchId ? bulkDepositProgress : { current: 0, total: 0 }}
                   />
                 );
               })}
