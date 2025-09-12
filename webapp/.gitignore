@@ -9,6 +9,14 @@
 # testing
 
 /coverage
+/e2e-reports
+/test-results
+/e2e/.env
+/e2e/screenshots
+/e2e/videos
+/playwright-report
+/playwright/.cache
+/.cache/synpress
 
 # next.js
 
@@ -30,6 +38,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# local env files
+.env*.local
+.env
 
 # vercel
 

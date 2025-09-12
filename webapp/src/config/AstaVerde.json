@@ -132,28 +132,6 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "caller",
-          "type": "address"
-        }
-      ],
-      "name": "NotProducer",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "caller",
-          "type": "address"
-        }
-      ],
-      "name": "NotTokenOwner",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
           "name": "owner",
           "type": "address"
         }
@@ -180,12 +158,12 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
         }
       ],
-      "name": "TokenAlreadyRedeemed",
+      "name": "SafeERC20FailedOperation",
       "type": "error"
     },
     {
@@ -242,9 +220,9 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
+          "indexed": true,
           "internalType": "uint256",
-          "name": "newPrice",
+          "name": "batchId",
           "type": "uint256"
         },
         {
@@ -252,21 +230,9 @@
           "internalType": "uint256",
           "name": "timestamp",
           "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "daysSinceLastAdjustment",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "totalPlatformSalesSinceLastAdjustment",
-          "type": "uint256"
         }
       ],
-      "name": "BasePriceForNewBatchesAdjusted",
+      "name": "BatchMarkedUsedInPriceDecrease",
       "type": "event"
     },
     {
@@ -343,6 +309,19 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newLimit",
+          "type": "uint256"
+        }
+      ],
+      "name": "MaxPriceUpdateIterationsSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": true,
           "internalType": "address",
           "name": "previousOwner",
@@ -370,7 +349,7 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "batchSoldTime",
+          "name": "partialSaleTime",
           "type": "uint256"
         },
         {
@@ -464,6 +443,25 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "batchesProcessed",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "totalBatches",
+          "type": "uint256"
+        }
+      ],
+      "name": "PriceUpdateIterationLimitReached",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": true,
           "internalType": "address",
           "name": "producer",
@@ -476,7 +474,45 @@
           "type": "uint256"
         }
       ],
-      "name": "ProducerPayment",
+      "name": "ProducerPaymentAccrued",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "producer",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "ProducerPaymentClaimed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "SurplusUSDCRecovered",
       "type": "event"
     },
     {
@@ -612,6 +648,32 @@
     },
     {
       "inputs": [],
+      "name": "BASE_MAINNET_USDC",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MAX_CID_LENGTH",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "PRICE_WINDOW",
       "outputs": [
         {
@@ -687,25 +749,6 @@
     {
       "inputs": [],
       "name": "basePrice",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "batchCreationIndex",
       "outputs": [
         {
           "internalType": "uint256",
@@ -845,6 +888,13 @@
     },
     {
       "inputs": [],
+      "name": "claimProducerFunds",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "dailyPriceDecay",
       "outputs": [
         {
@@ -944,6 +994,63 @@
       "inputs": [
         {
           "internalType": "address",
+          "name": "producer",
+          "type": "address"
+        }
+      ],
+      "name": "getProducerBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getTokenCid",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getTokenProducer",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
           "name": "account",
           "type": "address"
         },
@@ -954,6 +1061,25 @@
         }
       ],
       "name": "isApprovedForAll",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "isRedeemed",
       "outputs": [
         {
           "internalType": "bool",
@@ -1030,6 +1156,19 @@
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "maxPriceUpdateIterations",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "address[]",
@@ -1056,7 +1195,7 @@
         },
         {
           "internalType": "address",
-          "name": "",
+          "name": "from",
           "type": "address"
         },
         {
@@ -1095,7 +1234,7 @@
         },
         {
           "internalType": "address",
-          "name": "",
+          "name": "from",
           "type": "address"
         },
         {
@@ -1208,6 +1347,61 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "producerBalances",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "recoverERC20",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "recoverSurplusUSDC",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -1375,6 +1569,19 @@
       "inputs": [
         {
           "internalType": "uint256",
+          "name": "newLimit",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMaxPriceUpdateIterations",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
           "name": "newSharePercentage",
           "type": "uint256"
         }
@@ -1443,39 +1650,13 @@
       "type": "function"
     },
     {
-      "inputs": [
+      "inputs": [],
+      "name": "totalProducerBalances",
+      "outputs": [
         {
           "internalType": "uint256",
           "name": "",
           "type": "uint256"
-        }
-      ],
-      "name": "tokens",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "producer",
-          "type": "address"
-        },
-        {
-          "internalType": "string",
-          "name": "cid",
-          "type": "string"
-        },
-        {
-          "internalType": "bool",
-          "name": "redeemed",
-          "type": "bool"
         }
       ],
       "stateMutability": "view",

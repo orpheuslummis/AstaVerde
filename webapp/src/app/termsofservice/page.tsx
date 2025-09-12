@@ -122,9 +122,9 @@ export default function Page() {
           related to their NFTs. These Terms solely govern the use of our Services. NFTs are available on public
           blockchains, are purchased, sold, or transferred between a buyer, seller and/or creator directly, and may be
           purchased, sold, or transferred by buyers, sellers, and/or creators without the use of our Services and
-          therefore without agreeing to our Terms. There may be terms and conditions that apply to the NFTs' themselves
+          therefore without agreeing to our Terms. There may be terms and conditions that apply to the NFTs&apos; themselves
           set directly between buyers, sellers, and/or creators with respect to the NFT including with respect to the
-          use of the NFT content and rights and obligations associated with a given NFT ("NFT Terms"). For example, when
+          use of the NFT content and rights and obligations associated with a given NFT (&quot;NFT Terms&quot;). For example, when
           you click to get more details about any of the NFTs or NFT collections visible on EcoTradeZone or view the NFT
           metadata, you may notice a third-party link to NFT Terms governing the use of the NFT that you will be
           required to comply with. EcoTradeZone does not set the NFT Terms and is not party to any such NFT Terms, which
@@ -202,7 +202,7 @@ export default function Page() {
           sexual exploitation, or encouraging or promoting any activity that violates the Terms of Services; Use the
           Services with the proceeds of unlawful activity or with a wallet used to engage in unlawful activity; Use the
           Services in any manner that could interfere with, disrupt, negatively affect or inhibit other users from fully
-          enjoying the Services. We allow users to post "not safe for work" ("NSFW") content, but that content and other
+          enjoying the Services. We allow users to post &quot;not safe for work&quot; (&quot;NSFW&quot;) content, but that content and other
           associated material is subject to being marked NSFW and may be handled differently than non-NSFW content in
           navigation menus and search results. Finally, by using the Services, you understand the importance of DYOR –
           doing your own research. You bear full responsibility for verifying the authenticity, legitimacy, identity,
@@ -219,8 +219,8 @@ export default function Page() {
           through the Services for our current and future business purposes, including to provide, promote, and improve
           the Services. This includes any digital file, art, or other material linked to or associated with any NFTs
           that are displayed on the Services. EcoTradeZone does not claim that submitting, posting, or displaying this
-          content on or through the Services gives EcoTradeZone any ownership of the content. We're not saying we own
-          it. We're just saying we might use it and show it off a bit. You represent and warrant that you have, or have
+          content on or through the Services gives EcoTradeZone any ownership of the content. We&apos;re not saying we own
+          it. We&apos;re just saying we might use it and show it off a bit. You represent and warrant that you have, or have
           obtained, all rights, licenses, consents, permissions, power and/or authority necessary to grant the rights
           granted herein for any content that you create, submit, post, promote, or display on or through the Services.
           You are solely responsible for the content and metadata associated with NFTs and digital items you create. You
@@ -229,7 +229,7 @@ export default function Page() {
           entitled to post the material and to grant EcoTradeZone the license described above, and that the content does
           not violate any laws. EcoTradeZone will take down works in response to complaints that copyright has been
           breached and will remove any materials that contravenes the Copyright Designs Patents Act 1988 and will
-          terminate a user's access to the Services if the user is determined to be a repeat infringer. If you believe
+          terminate a user&apos;s access to the Services if the user is determined to be a repeat infringer. If you believe
           that your content has been copied in a way that constitutes copyright or trademark infringement, or violates
           your publicity or other intellectual property rights you must give notice in writing to our designated
           copyright agent at: Email: chris@bionerg.com For us to process your infringement claim regarding content on
@@ -385,7 +385,7 @@ export default function Page() {
           so the above limitation or exclusion may not apply to you. Some jurisdictions also limit disclaimers or
           limitations of liability for personal injury from consumer products, so this limitation may not apply to
           personal injury claims. Privacy Policy Please refer to our Privacy Policy for information about how we
-          collect, use, and share information from and/or about you ("Your Information"). By submitting Your Information
+          collect, use, and share information from and/or about you (&quot;Your Information&quot;). By submitting Your Information
           through our Services, you agree to the terms of our Privacy Policy and you expressly consent to the
           collection, use, and disclosure of Your Information in accordance with the Privacy Policy. Modifications to
           the Services We reserve the right in our sole discretion to modify, suspend, or discontinue, temporarily or

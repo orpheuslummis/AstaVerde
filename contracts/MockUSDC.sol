@@ -5,8 +5,18 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract MockUSDC is ERC20 {
     uint8 private immutable _decimals = 6;
 
-    constructor(uint256 initialSupply) ERC20("USDC", "USDC") {
-        // _mint(msg.sender, initialSupply);
+    constructor(uint256 /* initialSupply */) ERC20("Mock USDC", "USDC") {
+        // Note: initialSupply parameter is kept for backwards compatibility with deployment scripts
+        // but is not used. Tokens are minted via the public mint() function instead.
+        // This allows test scripts to have full control over token distribution.
+
+        // Safety check: prevent deployment on production networks
+        require(
+            block.chainid == 31337 || // Hardhat local
+                block.chainid == 84532 || // Base Sepolia
+                block.chainid == 11155111, // Sepolia
+            "MockUSDC: Production deployment forbidden"
+        );
     }
 
     function mint(address to, uint256 amount) public {

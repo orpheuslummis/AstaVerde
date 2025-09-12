@@ -23,7 +23,11 @@ async function deployAstaVerde(admin: HardhatEthersSigner, mockUSDCAddress: stri
     return astaVerde;
 }
 
-async function approveAstaVerde(mockUSDC: MockUSDC, astaVerdeAddress: string, signers: HardhatEthersSigner[]): Promise<void> {
+async function approveAstaVerde(
+    mockUSDC: MockUSDC,
+    astaVerdeAddress: string,
+    signers: HardhatEthersSigner[],
+): Promise<void> {
     for (const signer of signers) {
         await mockUSDC.connect(signer).approve(astaVerdeAddress, ethers.MaxUint256);
     }

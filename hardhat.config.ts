@@ -4,19 +4,18 @@ import "hardhat-deploy";
 import type { HardhatUserConfig } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
-import "./tasks/fund-account";
-import "./tasks/query";
 
-// Load public environment variables
-dotenvConfig({ path: resolve(__dirname, ".env") });
-
-// Load private environment variables
-dotenvConfig({ path: resolve(__dirname, ".env.local") });
+// Load base env first, then allow .env.local to override
+dotenvConfig({ path: resolve(process.cwd(), ".env") });
+dotenvConfig({ path: resolve(process.cwd(), ".env.local"), override: true });
 
 const mnemonic: string | undefined = process.env.MNEMONIC;
 const privateKey: string | undefined = process.env.PRIVATE_KEY;
 const rpcApiKey: string | undefined = process.env.RPC_API_KEY;
 const ownerAddress: string | undefined = process.env.OWNER_ADDRESS;
+// Optional direct RPC URL overrides (prefer these in CI or when rate-limited)
+const BASE_MAINNET_RPC_URL: string | undefined = process.env.BASE_MAINNET_RPC_URL;
+const BASE_SEPOLIA_RPC_URL: string | undefined = process.env.BASE_SEPOLIA_RPC_URL;
 
 const chainIds = {
     hardhat: 31337,
@@ -31,10 +30,10 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
             jsonRpcUrl = "http://localhost:8545";
             break;
         case "base-mainnet":
-            jsonRpcUrl = `https://base-mainnet.g.alchemy.com/v2/${rpcApiKey}`;
+            jsonRpcUrl = BASE_MAINNET_RPC_URL || `https://base-mainnet.g.alchemy.com/v2/${rpcApiKey}`;
             break;
         case "base-sepolia":
-            jsonRpcUrl = `https://base-sepolia.g.alchemy.com/v2/${rpcApiKey}`;
+            jsonRpcUrl = BASE_SEPOLIA_RPC_URL || `https://base-sepolia.g.alchemy.com/v2/${rpcApiKey}`;
             break;
         default:
             jsonRpcUrl = "";
@@ -71,9 +70,17 @@ const config: HardhatUserConfig = {
                 interval: 0,
             },
         },
+        localhost: {
+            // External JSON-RPC hardhat node
+            url: "http://127.0.0.1:8545",
+            chainId: chainIds.hardhat,
+            accounts: {
+                mnemonic,
+            },
+        },
         "base-mainnet": {
             ...getChainConfig("base-mainnet"),
-            accounts: [privateKey as string],
+            accounts: privateKey ? [privateKey] : [],
             verify: {
                 etherscan: {
                     apiKey: process.env.BASE_MAINNET_EXPLORER_API_KEY,
@@ -83,7 +90,7 @@ const config: HardhatUserConfig = {
         },
         "base-sepolia": {
             ...getChainConfig("base-sepolia"),
-            accounts: [privateKey as string],
+            accounts: privateKey ? [privateKey] : [],
             verify: {
                 etherscan: {
                     apiKey: process.env.BASE_SEPOLIA_EXPLORER_API_KEY,
@@ -119,6 +126,7 @@ const config: HardhatUserConfig = {
     solidity: {
         version: "0.8.27",
         settings: {
+            viaIR: true,
             metadata: {
                 bytecodeHash: "none",
             },

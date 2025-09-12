@@ -1,490 +1,238 @@
 import { multicall } from "@wagmi/core";
-import { useCallback, useMemo, useState } from "react";
-import { formatUnits } from "viem";
-import {
-    useBalance,
-    usePublicClient,
-    useReadContract,
-    useSimulateContract,
-    useWalletClient,
-    useWriteContract,
-} from "wagmi";
-import { USDC_DECIMALS } from "../app.config";
-import { useAppContext } from "../contexts/AppContext";
-import { customToast } from "../utils/customToast";
-import { config } from "../wagmi";
+import { useCallback, useState } from "react";
+import { usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
+import { wagmiConfig } from "../config/wagmi";
+import { getFunctionKind, isReadFunctionByAbi, isWriteFunctionByAbi } from "../lib/abiInference";
+import type { ContractConfig, ExecuteFunction, ContractError } from "../shared/types/contracts";
 
-const READ_ONLY_FUNCTIONS = [
-    "uri",
-    "balanceOf",
-    "lastTokenID",
-    "tokens",
-    "getCurrentBatchPrice",
-    "getBatchInfo",
-    "lastBatchID",
-    "platformShareAccumulated",
-    "basePrice",
-    "priceFloor",
-    "priceDelta",
-    "priceDecreaseRate",
-    "dayIncreaseThreshold",
-    "dayDecreaseThreshold",
-    "lastPriceChangeTime",
-    "pricingInfo",
-    "maxBatchSize",
-    "platformSharePercentage",
-    "supportsInterface",
-    "balanceOf",
-    "tokenOfOwnerByIndex",
-    "lastTokenID",
-    "dailyPriceDecay",
-    "priceAdjustDelta",
-];
+export function useContractInteraction(contractConfig: ContractConfig, functionName: string) {
+  const [isSimulating] = useState(false);
+  const [isPending] = useState(false);
+  const [error] = useState<ContractError>(null);
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
+  const { writeContractAsync } = useWriteContract();
+  // Note: We avoid pre-creating simulate hooks for write functions to prevent
+  // unintended eth_call noise on non-admin accounts. We simulate only inside execute().
 
-const WRITE_FUNCTIONS = [
-    "updateBasePrice",
-    "mintBatch",
-    "buyBatch",
-    "redeemToken",
-    "claimPlatformFunds",
-    "pause",
-    "unpause",
-    "setURI",
-    "setPriceFloor",
-    "setBasePrice",
-    "setMaxBatchSize",
-    "setAuctionDayThresholds",
-    "setPlatformSharePercentage",
-    "mint",
-    "setPriceDelta",
-    "setDailyPriceDecay",
-];
+  const isReadOnlyFunction = isReadFunctionByAbi(contractConfig.abi, functionName);
+  const isWriteFunction = isWriteFunctionByAbi(contractConfig.abi, functionName);
 
-type ExecuteFunction = (...args: unknown[]) => Promise<any>;
+  const { data: readData, refetch: refetchReadData } = useReadContract({
+    ...contractConfig,
+    functionName,
+    query: {
+      enabled: isReadOnlyFunction, // Only query if it's a read function
+    },
+  });
 
-type ContractError = Error | null;
+  const execute: ExecuteFunction = useCallback(
+    async (...args: unknown[]) => {
+      if (!publicClient || !contractConfig) return;
 
-export function useContractInteraction(
-    contractConfig: any,
-    functionName: string,
-) {
-    const [isSimulating, setIsSimulating] = useState(false);
-    const [isPending, setIsPending] = useState(false);
-    const [error, setError] = useState<ContractError>(null);
-    const publicClient = usePublicClient();
-    const { data: walletClient } = useWalletClient();
-    const { writeContractAsync } = useWriteContract();
-    const {
-        data: simulationData,
-        error: simulationError,
-        refetch: refetchSimulation,
-    } = useSimulateContract({
-        ...contractConfig,
-        functionName,
-        enabled: false, // Disable automatic simulation
-    });
-
-    const { data: readData, refetch: refetchReadData } = useReadContract({
-        ...contractConfig,
-        functionName,
-    });
-
-    const isReadOnlyFunction = READ_ONLY_FUNCTIONS.includes(functionName);
-    const isWriteFunction = WRITE_FUNCTIONS.includes(functionName);
-
-    const execute: ExecuteFunction = useCallback(
-        async (...args: unknown[]) => {
-            if (!publicClient || !contractConfig) return;
-
-            try {
-                let result;
-                if (isReadOnlyFunction) {
-                    result = await publicClient.readContract({
-                        ...contractConfig,
-                        functionName,
-                        args,
-                    });
-                } else if (isWriteFunction) {
-                    if (!walletClient) throw new Error("Wallet not connected");
-
-                    // Simulate the transaction first
-                    const { request } = await publicClient.simulateContract({
-                        ...contractConfig,
-                        functionName,
-                        args,
-                        account: walletClient.account,
-                    });
-
-                    // If simulation is successful, send the actual transaction
-                    const hash = await writeContractAsync(request);
-                    result = await publicClient.waitForTransactionReceipt({
-                        hash,
-                    });
-                } else {
-                    throw new Error(`Unknown function: ${functionName}`);
-                }
-                return result;
-            } catch (error) {
-                console.error(`Error in ${functionName} interaction:`, error);
-                throw error;
-            }
-        },
-        [
-            publicClient,
-            walletClient,
-            contractConfig,
+      try {
+        let result;
+        if (isReadOnlyFunction) {
+          result = await publicClient.readContract({
+            ...contractConfig,
             functionName,
-            isReadOnlyFunction,
-            isWriteFunction,
-            writeContractAsync,
-        ],
-    );
+            args,
+          });
+        } else if (isWriteFunction) {
+          if (!walletClient) throw new Error("Wallet not connected");
 
-    const mintBatch = useCallback(
-        async (producers: string[], cids: string[]) => {
-            console.log(
-                "mintBatch called with producers:",
-                producers,
-                "and cids:",
-                cids,
-            );
-            return execute(producers, cids);
-        },
-        [execute],
-    );
+          // Simulate the transaction first
+          const { request } = await publicClient.simulateContract({
+            ...contractConfig,
+            functionName,
+            args,
+            account: walletClient.account,
+          });
 
-    const buyBatch = useCallback(
-        async (batchID: number, usdcAmount: bigint, tokenAmount: number) => {
-            return execute(batchID, usdcAmount, tokenAmount);
-        },
-        [execute],
-    );
-
-    const claimPlatformFunds = useCallback(
-        async (to: string) => {
-            return execute(to);
-        },
-        [execute],
-    );
-
-    const getTokensOfOwner = useCallback(
-        async (ownerAddress: string) => {
-            try {
-                if (!publicClient) {
-                    throw new Error("Public client not available");
-                }
-
-                const lastTokenID = await publicClient.readContract({
-                    ...contractConfig,
-                    functionName: "lastTokenID",
-                });
-
-                console.log("Last Token ID:", lastTokenID);
-
-                const batchSize = 500; // Adjust based on your needs and RPC provider limits
-                const batches = Math.ceil(Number(lastTokenID) / batchSize);
-                const ownedTokens: number[] = [];
-
-                for (let i = 0; i < batches; i++) {
-                    const start = i * batchSize + 1;
-                    const end = Math.min(
-                        (i + 1) * batchSize,
-                        Number(lastTokenID),
-                    );
-
-                    const calls = Array.from(
-                        { length: end - start + 1 },
-                        (_, index) => ({
-                            ...contractConfig,
-                            functionName: "balanceOf",
-                            args: [ownerAddress, BigInt(start + index)],
-                        }),
-                    );
-
-                    const results = await multicall(config, {
-                        contracts: calls as any[],
-                        allowFailure: true,
-                    });
-
-                    results.forEach((result, index) => {
-                        if (
-                            result.status === "success" &&
-                            typeof result.result === "bigint" &&
-                            result.result > 0n
-                        ) {
-                            ownedTokens.push(start + index);
-                        }
-                    });
-                }
-
-                console.log("Owned tokens:", ownedTokens);
-                return ownedTokens;
-            } catch (error) {
-                console.error("Error in getTokensOfOwner:", error);
-                throw error;
-            }
-        },
-        [publicClient, contractConfig, config],
-    );
-
-    const getCurrentBatchPrice = useCallback(
-        async (batchId: number) => {
-            try {
-                if (!publicClient) {
-                    throw new Error("Public client not available");
-                }
-
-                const price = await publicClient.readContract({
-                    ...contractConfig,
-                    functionName: "getCurrentBatchPrice",
-                    args: [BigInt(batchId)],
-                });
-
-                console.log(`Current price for batch ${batchId}:`, price);
-                return price;
-            } catch (error) {
-                console.error("Error in getCurrentBatchPrice:", error);
-                throw error;
-            }
-        },
-        [publicClient, contractConfig],
-    );
-
-    const getRevertReason = (error: any): string => {
-        if (error.data && error.data.message) {
-            return error.data.message;
-        } else if (error.message) {
-            return error.message;
+          // If simulation is successful, send the actual transaction
+          const hash = await writeContractAsync(request);
+          result = await publicClient.waitForTransactionReceipt({
+            hash,
+          });
         } else {
-            return "Transaction failed without a reason.";
+          const kind = getFunctionKind(contractConfig.abi, functionName);
+          const hint = kind === "unknown" ? "not found in ABI" : `classified as ${kind}`;
+          throw new Error(`Unsupported function for execute(): ${functionName} (${hint})`);
         }
-    };
+        return result;
+      } catch (error) {
+        console.error(`Error in ${functionName} interaction:`, error);
+        throw error;
+      }
+    },
+    [publicClient, walletClient, contractConfig, functionName, isReadOnlyFunction, isWriteFunction, writeContractAsync],
+  );
 
-    const redeemToken = useCallback(
-        async (tokenId: bigint) => {
-            try {
-                if (!walletClient) {
-                    throw new Error("Wallet not connected");
-                }
-                console.log("Redeeming token:", tokenId);
-                const result = await execute(tokenId);
-                console.log("Redeem token result:", result);
-                return result;
-            } catch (error: any) {
-                console.error("Error in redeemToken:", error);
-                const revertReason = getRevertReason(error);
-                throw new Error(`Failed to redeem token: ${revertReason}`);
+  const mintBatch = useCallback(
+    async (producers: string[], cids: string[]) => {
+      return execute(producers, cids);
+    },
+    [execute],
+  );
+
+  const buyBatch = useCallback(
+    async (batchID: number, usdcAmount: bigint, tokenAmount: number) => {
+      return execute(batchID, usdcAmount, tokenAmount);
+    },
+    [execute],
+  );
+
+  const claimPlatformFunds = useCallback(
+    async (to: string) => {
+      return execute(to);
+    },
+    [execute],
+  );
+
+  const getTokensOfOwner = useCallback(
+    async (ownerAddress: string) => {
+      try {
+        if (!publicClient) {
+          throw new Error("Public client not available");
+        }
+
+        const lastTokenID = await publicClient.readContract({
+          ...contractConfig,
+          functionName: "lastTokenID",
+        });
+
+        const batchSize = 500; // Adjust based on your needs and RPC provider limits
+        const batches = Math.ceil(Number(lastTokenID) / batchSize);
+        const ownedTokens: number[] = [];
+
+        for (let i = 0; i < batches; i++) {
+          const start = i * batchSize + 1;
+          const end = Math.min((i + 1) * batchSize, Number(lastTokenID));
+
+          const calls = Array.from({ length: end - start + 1 }, (_, index) => ({
+            ...contractConfig,
+            functionName: "balanceOf",
+            args: [ownerAddress, BigInt(start + index)],
+          }));
+
+          const results = await multicall(wagmiConfig, {
+            contracts: calls,
+            allowFailure: true,
+          });
+
+          results.forEach((result, index) => {
+            if (result.status === "success" && typeof result.result === "bigint" && result.result > 0n) {
+              ownedTokens.push(start + index);
             }
-        },
-        [execute, walletClient],
-    );
+          });
+        }
 
-    const getBatchInfo = useCallback(
-        async (batchId: number) => {
-            console.log(`Fetching info for batch ${batchId}`);
-            try {
-                if (!publicClient) {
-                    throw new Error("Public client is not available");
-                }
+        return ownedTokens;
+      } catch (error) {
+        console.error("Error in getTokensOfOwner:", error);
+        throw error;
+      }
+    },
+    [publicClient, contractConfig, wagmiConfig],
+  );
 
-                const result = await execute(batchId);
-                console.log(`Raw batch ${batchId} info:`, result);
+  const getCurrentBatchPrice = useCallback(
+    async (batchId: number) => {
+      try {
+        if (!publicClient) {
+          throw new Error("Public client not available");
+        }
 
-                if (Array.isArray(result) && result.length === 5) {
-                    return result;
-                } else {
-                    throw new Error(
-                        `Unexpected format for batch ${batchId} info`,
-                    );
-                }
-            } catch (error) {
-                console.error(`Error fetching batch ${batchId} info:`, error);
-                throw error;
-            }
-        },
-        [execute, publicClient],
-    );
+        const price = await publicClient.readContract({
+          ...contractConfig,
+          functionName: "getCurrentBatchPrice",
+          args: [BigInt(batchId)],
+        });
+        return price;
+      } catch (error) {
+        console.error("Error in getCurrentBatchPrice:", error);
+        throw error;
+      }
+    },
+    [publicClient, contractConfig],
+  );
 
-    return {
-        execute,
-        isSimulating,
-        isPending,
-        error,
-        simulationError,
-        readData,
-        refetchReadData,
-        refetchSimulation,
-        getTokensOfOwner,
-        getCurrentBatchPrice,
-        redeemToken,
-        mintBatch,
-        buyBatch,
-        claimPlatformFunds,
-        getBatchInfo,
-    };
-}
+  const getRevertReason = (error: unknown): string => {
+    const err = error as { data?: { message?: string }; message?: string };
+    if (err.data && err.data.message) {
+      return err.data.message;
+    } else if (err.message) {
+      return err.message;
+    } else {
+      return "Transaction failed without a reason.";
+    }
+  };
 
-export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
-    const { astaverdeContractConfig, getUsdcContractConfig } = useAppContext();
-    const [isLoading, setIsLoading] = useState(false);
-    const publicClient = usePublicClient();
-    const { data: walletClient } = useWalletClient();
+  const redeemToken = useCallback(
+    async (tokenId: bigint) => {
+      try {
+        if (!walletClient) {
+          throw new Error("Wallet not connected");
+        }
+        const result = await execute(tokenId);
+        return result;
+      } catch (error) {
+        console.error("Error in redeemToken:", error);
 
-    const { data: allowance, refetch: refetchAllowance } = useReadContract({
-        ...getUsdcContractConfig(),
-        functionName: "allowance",
-        args: [walletClient?.account.address, astaverdeContractConfig.address],
-    });
+        // Check if user rejected the transaction
+        const err = error as { message?: string; code?: number; cause?: { code?: number } };
+        if (
+          err.message?.includes("User rejected") ||
+          err.message?.includes("User denied") ||
+          err.code === 4001 ||
+          err.cause?.code === 4001
+        ) {
+          throw new Error("Transaction cancelled by user");
+        }
 
-    const { data: usdcBalance } = useBalance({
-        address: walletClient?.account.address,
-        token: getUsdcContractConfig().address,
-    });
+        const revertReason = getRevertReason(error);
+        throw new Error(`Failed to redeem token: ${revertReason}`);
+      }
+    },
+    [execute, walletClient],
+  );
 
-    const hasEnoughUSDC = useMemo(() => {
-        if (!usdcBalance) return false;
-        return BigInt(usdcBalance.value) >= totalPrice;
-    }, [usdcBalance, totalPrice]);
+  const getBatchInfo = useCallback(
+    async (batchId: number) => {
+      try {
+        if (!publicClient) {
+          throw new Error("Public client is not available");
+        }
 
-    const handleApproveAndBuy = useCallback(
-        async (tokenAmount: bigint, usdcAmount: bigint) => {
-            if (!walletClient) throw new Error("Wallet not connected");
-            if (!publicClient) throw new Error("Public client not available");
-            setIsLoading(true);
-            try {
-                const currentAllowance = allowance
-                    ? BigInt(allowance.toString())
-                    : 0n;
-                const needsApproval = currentAllowance < usdcAmount;
+        const result = await execute(batchId);
 
-                if (needsApproval) {
-                    // Fetch the current max batch size from the contract
-                    const maxBatchSize = await publicClient.readContract({
-                        ...astaverdeContractConfig,
-                        functionName: "maxBatchSize",
-                    });
+        if (Array.isArray(result) && result.length === 5) {
+          return result;
+        } else {
+          throw new Error(`Unexpected format for batch ${batchId} info`);
+        }
+      } catch (error) {
+        console.error(`Error fetching batch ${batchId} info:`, error);
+        throw error;
+      }
+    },
+    [execute, publicClient],
+  );
 
-                    // Safely convert maxBatchSize to a bigint
-                    let maxBatchSizeBigInt: bigint;
-                    if (typeof maxBatchSize === "bigint") {
-                        maxBatchSizeBigInt = maxBatchSize;
-                    } else if (typeof maxBatchSize === "number") {
-                        maxBatchSizeBigInt = BigInt(maxBatchSize);
-                    } else if (typeof maxBatchSize === "string") {
-                        maxBatchSizeBigInt = BigInt(maxBatchSize);
-                    } else {
-                        throw new Error("Unexpected type for maxBatchSize");
-                    }
+  return {
+    execute,
+    isSimulating,
+    isPending,
+    error,
 
-                    // Calculate a reasonable approval amount
-                    const pricePerUnit = BigInt(usdcAmount) /
-                        BigInt(tokenAmount);
-                    const bufferFactor = 100n; // Adjust this as needed
-                    const approvalAmount = maxBatchSizeBigInt * pricePerUnit *
-                        bufferFactor;
-
-                    console.log(
-                        "Calculated approval amount:",
-                        formatUnits(approvalAmount, USDC_DECIMALS),
-                    );
-
-                    const approveTx = await walletClient.writeContract({
-                        ...getUsdcContractConfig(),
-                        functionName: "approve",
-                        args: [astaverdeContractConfig.address, approvalAmount],
-                    });
-                    customToast.info("Approval transaction submitted");
-                    await publicClient.waitForTransactionReceipt({
-                        hash: approveTx,
-                    });
-                    customToast.success("Approval confirmed");
-                    await refetchAllowance();
-                }
-
-                // Prepare the arguments for the buyBatch function
-                const buyBatchArgs = [batchId, usdcAmount, tokenAmount];
-
-                // Estimate gas for the buy transaction
-                const gasEstimate = await publicClient.estimateContractGas({
-                    ...astaverdeContractConfig,
-                    functionName: "buyBatch",
-                    args: buyBatchArgs,
-                    account: walletClient.account.address,
-                });
-
-                // Add a buffer to the estimated gas (e.g., 20% more)
-                const estimatedGas = (gasEstimate * 120n) / 100n;
-
-                console.log("Estimated gas:", formatUnits(estimatedGas, 0));
-
-                const { request } = await publicClient.simulateContract({
-                    ...astaverdeContractConfig,
-                    functionName: "buyBatch",
-                    args: buyBatchArgs,
-                    account: walletClient.account.address,
-                    gas: (estimatedGas * 150n) / 100n,
-                });
-
-                const buyTx = await walletClient.writeContract(request);
-                customToast.info("Buy transaction submitted");
-
-                // Add timeout and retry logic for transaction confirmation
-                const maxRetries = 3;
-                let retryCount = 0;
-
-                while (retryCount < maxRetries) {
-                    try {
-                        await publicClient.waitForTransactionReceipt({
-                            hash: buyTx,
-                            timeout: 120_000, // 2 minute timeout
-                            confirmations: 2, // Wait for 2 confirmations on mainnet
-                        });
-                        customToast.success("Purchase confirmed");
-                        break;
-                    } catch (error) {
-                        retryCount++;
-                        if (retryCount === maxRetries) {
-                            throw new Error(
-                                "Transaction confirmation timed out after multiple retries. The transaction may still complete - check your wallet history.",
-                            );
-                        }
-                        // Wait 10 seconds before retrying
-                        await new Promise((resolve) =>
-                            setTimeout(resolve, 10000)
-                        );
-                    }
-                }
-            } catch (error) {
-                console.error("Error in approve and buy process:", error);
-                if (error instanceof Error) {
-                    if (error.message.includes("Insufficient funds sent")) {
-                        customToast.error(
-                            "Insufficient USDC balance for this purchase.",
-                        );
-                    } else {
-                        customToast.error(
-                            "Transaction failed: " + error.message,
-                        );
-                    }
-                } else {
-                    customToast.error(
-                        "An unknown error occurred during the transaction.",
-                    );
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        },
-        [
-            walletClient,
-            publicClient,
-            allowance,
-            batchId,
-            astaverdeContractConfig,
-            getUsdcContractConfig,
-            refetchAllowance,
-        ],
-    );
-
-    return { handleApproveAndBuy, isLoading, hasEnoughUSDC };
+    readData,
+    refetchReadData,
+    getTokensOfOwner,
+    getCurrentBatchPrice,
+    redeemToken,
+    mintBatch,
+    buyBatch,
+    claimPlatformFunds,
+    getBatchInfo,
+  };
 }

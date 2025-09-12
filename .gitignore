@@ -20,3 +20,42 @@ tmp
 coverage.json
 yarn.lock
 .vercel
+webapp/tsconfig.tsbuildinfo
+
+# Backup files
+*.backup
+*.bak
+
+# Disabled test files
+*.disabled
+
+# Cache directories
+.cache-synpress/
+*/.cache-synpress/
+
+# Archive directories (local reference)
+/archive/
+
+# Duplicate webapp directory
+webapp/webapp/
+
+# Temporary test files
+webapp/test-wallet-flow.js
+webapp/.env.sepolia
+webapp/.env.mainnet
+# Intentionally tracked public webapp env
+# (contains only NEXT_PUBLIC_* values)
+# webapp/.env is versioned on purpose
+
+# Root Sepolia env (contains secrets) — keep out of git
+.env.sepolia
+.env.mainnet
+
+# Root env (contains secrets) — keep out of git
+.env
+
+# Ensure Next.js build output is never tracked if created from root context
+webapp/.next/
+
+# ESLint reports
+eslint-report.json

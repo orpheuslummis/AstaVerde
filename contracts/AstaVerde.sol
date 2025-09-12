@@ -5,17 +5,69 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Pausable.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+/**
+ * @title AstaVerde - Carbon Offset NFT Marketplace
+ * @author AstaVerde Team
+ * @notice ERC-1155 NFT marketplace for tokenized carbon offsets with Dutch auction pricing
+ * @dev Batch-based minting with time-decaying prices and dynamic base price adjustments
+ *
+ * DEPLOYMENT:
+ * - Live on Base mainnet with canonical USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913)
+ * - USDC token address is immutable (set in constructor, validated for 6 decimals)
+ * - Owner MUST be a multisig wallet (e.g., 3-of-5 Gnosis Safe) for production
+ *
+ * KEY MECHANICS:
+ * - Dutch auction: Prices decrease 1 USDC daily from base price to 40 USDC floor
+ * - Dynamic pricing: +10 USDC for sales <2 days, -10 USDC after 4 days stagnation
+ * - Platform fee: 30% default (max 50%), remainder to carbon offset producers
+ * - Redeemed tokens remain transferable for secondary markets
+ * - Direct USDC transfers are not auto-accounted; surplus above accounted
+ *   balances can be recovered via recoverSurplusUSDC()
+ *
+ * SECURITY:
+ * - ReentrancyGuard on all external payment functions
+ * - Emergency pause system for asset protection
+ * - Multisig controls: pricing, pausing, minting, and fund recovery
+ * - Gas-bounded price updates via maxPriceUpdateIterations (prevents DoS)
+ *
+ * GAS OPTIMIZATION & OPERATIONAL NOTES:
+ * - Price updates add ~100k-300k gas to buyBatch() calls (buyer pays)
+ * - Use larger batches (up to maxBatchSize=50) to minimize total batch count
+ * - Monitor PriceUpdateIterationLimitReached events for tuning
+ * - Iteration cap ensures bounded gas but may delay price adjustments (eventual consistency)
+ */
 contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     IERC20 public immutable usdcToken;
-    uint256 constant INTERNAL_PRECISION = 1e18;
+    address public constant BASE_MAINNET_USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     uint256 constant USDC_PRECISION = 1e6;
-    uint256 constant PRECISION_FACTOR = INTERNAL_PRECISION / USDC_PRECISION;
     uint256 public constant SECONDS_IN_A_DAY = 86400;
     uint256 public constant PRICE_WINDOW = 90 days;
+    uint256 public constant MAX_CID_LENGTH = 100;
+
+    /**
+     * @notice Gas limit protection for price update iterations
+     * @dev Prevents unbounded loops in updateBasePrice() from causing DoS
+     *
+     * OPERATIONAL GUIDELINES:
+     * - Default: 100 iterations (balanced for safety and accuracy)
+     * - Adjustment range: 50-100 for normal operations
+     * - Lower values (50-80): Reduce buyer gas costs, may delay price adjustments
+     * - Higher values (80-100): More accurate pricing, higher gas for buyers
+     *
+     * MONITORING:
+     * - Watch for PriceUpdateIterationLimitReached events
+     * - Frequent events indicate need to increase limit or use larger batches
+     * - Buyer gas impact: ~100k-300k additional gas at 100 iterations
+     */
+    uint256 public maxPriceUpdateIterations = 100;
 
     uint256 public platformSharePercentage;
     uint256 public maxBatchSize;
@@ -31,14 +83,21 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     uint256 public lastPriceAdjustmentTime;
     uint256 public lastCompleteSaleTime;
 
+    // Producer payment tracking for pull pattern (prevents DoS)
+    mapping(address => uint256) public producerBalances;
+    uint256 public totalProducerBalances;
+
     struct TokenInfo {
-        address owner;
-        uint256 tokenId;
-        address producer;
+        address originalMinter; // Who minted the token (always the owner/multisig)
+        address producer; // Who produced the carbon offset (receives payment)
         string cid;
         bool redeemed;
     }
 
+    /**
+     * @notice Batch storage with 1-based external IDs, 0-based internal arrays
+     * @dev External batchId starts at 1, stored at batches[batchId - 1]
+     */
     struct Batch {
         uint256 batchId;
         uint256[] tokenIds;
@@ -47,42 +106,69 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         uint256 remainingTokens;
     }
 
-    mapping(uint256 => TokenInfo) public tokens;
+    /// @notice Token metadata storage
+    /// @dev originalMinter: tracks who initiated mint (owner/multisig), not current holder
+    /// @dev producer: receives payment when token is sold
+    /// @dev redeemed: flag for real-world claim, tokens remain transferable after redemption
+    mapping(uint256 => TokenInfo) private tokens;
     Batch[] public batches;
     mapping(uint256 => uint256) public batchSoldTime;
     mapping(uint256 => uint256) public batchFinalPrice;
     mapping(uint256 => bool) public batchUsedInPriceDecrease;
-    mapping(uint256 => uint256) public batchCreationIndex;
 
     event PlatformSharePercentageSet(uint256 platformSharePercentage);
-    event BasePriceForNewBatchesAdjusted(
-        uint256 newPrice,
-        uint256 timestamp,
-        uint256 daysSinceLastAdjustment,
-        uint256 totalPlatformSalesSinceLastAdjustment
-    );
+    // Base price changes are surfaced via BasePriceAdjusted in v2
     event PlatformPriceFloorAdjusted(uint256 newPrice, uint256 timestamp);
     event BatchMinted(uint256 batchId, uint256 batchCreationTime);
     event BatchSold(uint256 batchId, uint256 batchSoldTime, uint256 tokensSold);
-    event PartialBatchSold(uint256 batchId, uint256 batchSoldTime, uint256 remainingTokens);
+    event PartialBatchSold(uint256 batchId, uint256 partialSaleTime, uint256 remainingTokens);
     event TokenRedeemed(uint256 tokenId, address redeemer, uint256 timestamp);
     event PriceDeltaSet(uint256 newPriceDelta);
     event BasePriceAdjusted(uint256 newBasePrice, uint256 timestamp, bool increased);
     event PlatformFundsClaimed(address to, uint256 amount);
     event MaxBatchSizeSet(uint256 newMaxBatchSize);
     event DailyPriceDecaySet(uint256 newDailyDecay);
-    event ProducerPayment(address indexed producer, uint256 amount);
+    event PriceUpdateIterationLimitReached(uint256 batchesProcessed, uint256 totalBatches);
+    event MaxPriceUpdateIterationsSet(uint256 newLimit);
+    event BatchMarkedUsedInPriceDecrease(uint256 indexed batchId, uint256 timestamp);
+    event SurplusUSDCRecovered(address to, uint256 amount);
+    event ProducerPaymentAccrued(address indexed producer, uint256 amount);
+    event ProducerPaymentClaimed(address indexed producer, uint256 amount);
 
-    error NotProducer(address caller);
-    error NotTokenOwner(address caller);
-    error TokenAlreadyRedeemed(uint256 tokenId);
-
+    /**
+     * @notice Constructor for AstaVerde marketplace
+     * @dev CRITICAL: The owner parameter MUST be a multisig wallet address for production deployments
+     *
+     * TOKEN IMMUTABILITY: The _usdcToken address is permanently set here and cannot be changed.
+     * Production deployment uses canonical USDC which has no transfer fees.
+     *
+     * @param owner The address that will own the contract (MUST be multisig in production)
+     * @param _usdcToken The USDC token contract address (must have 6 decimals, immutable after deployment)
+     */
     constructor(address owner, IERC20 _usdcToken) ERC1155("ipfs://") Ownable(owner) {
         usdcToken = _usdcToken;
+
+        // Sanity check: ensure it's a contract
+        require(address(_usdcToken).code.length > 0, "USDC address must be a contract");
+
+        // Verify token decimals strictly
+        try IERC20Metadata(address(_usdcToken)).decimals() returns (uint8 decimals) {
+            require(decimals == 6, "Token must have 6 decimals for USDC compatibility");
+        } catch {
+            revert("Token must support decimals()==6");
+        }
+
+        // Enforce canonical USDC address on Base mainnet
+        if (block.chainid == 8453) {
+            require(address(_usdcToken) == BASE_MAINNET_USDC, "Invalid USDC address for Base mainnet");
+        }
+
         platformSharePercentage = 30;
         maxBatchSize = 50;
         basePrice = 230 * USDC_PRECISION;
         priceFloor = 40 * USDC_PRECISION;
+        // Price invariant: basePrice >= priceFloor is maintained throughout contract lifecycle
+        // Initial values: 230 USDC >= 40 USDC ✓
         dailyPriceDecay = 1 * USDC_PRECISION;
         priceAdjustDelta = 10 * USDC_PRECISION;
         dayIncreaseThreshold = 2;
@@ -96,12 +182,62 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         return super.supportsInterface(interfaceId);
     }
 
+    function onERC1155Received(
+        address,
+        address from,
+        uint256,
+        uint256,
+        bytes memory
+    ) public virtual override returns (bytes4) {
+        // Only accept tokens from this contract to prevent third-party token dusting
+        require(msg.sender == address(this), "Only self ERC1155 accepted");
+        // Accept transfers that originate from this contract (self-transfers and minting)
+        // Minting has from == address(0), self-transfers have from == address(this)
+        require(from == address(0) || from == address(this), "No external returns");
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address,
+        address from,
+        uint256[] memory,
+        uint256[] memory,
+        bytes memory
+    ) public virtual override returns (bytes4) {
+        // Only accept tokens from this contract to prevent third-party token dusting
+        require(msg.sender == address(this), "Only self ERC1155 accepted");
+        // Accept batch transfers that originate from this contract (self-transfers and minting)
+        // Minting has from == address(0), self-transfers have from == address(this)
+        require(from == address(0) || from == address(this), "No external returns");
+        return this.onERC1155BatchReceived.selector;
+    }
+
     function setURI(string memory newuri) public onlyOwner {
         _setURI(newuri);
     }
 
     function uri(uint256 tokenId) public view override returns (string memory) {
         return string(abi.encodePacked(super.uri(tokenId), tokens[tokenId].cid));
+    }
+
+    /**
+     * @notice Get the producer address for a token
+     * @param tokenId The ID of the token to query
+     * @return producer address
+     */
+    function getTokenProducer(uint256 tokenId) external view returns (address) {
+        require(tokenId > 0 && tokenId <= lastTokenID, "Token does not exist");
+        return tokens[tokenId].producer;
+    }
+
+    /**
+     * @notice Get the CID for a token's metadata
+     * @param tokenId The ID of the token to query
+     * @return cid string
+     */
+    function getTokenCid(uint256 tokenId) external view returns (string memory) {
+        require(tokenId > 0 && tokenId <= lastTokenID, "Token does not exist");
+        return tokens[tokenId].cid;
     }
 
     function pause() public onlyOwner {
@@ -121,39 +257,34 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         super._update(from, to, ids, values);
     }
 
-    modifier onlyTokenOwner(uint256[] memory tokenIds) {
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            require(tokens[tokenIds[i]].tokenId != 0, "Token does not exist");
-            require(balanceOf(msg.sender, tokens[tokenIds[i]].tokenId) > 0, "Caller is not the token owner");
-        }
-        _;
-    }
-
-    function setPlatformSharePercentage(uint256 newSharePercentage) external onlyOwner {
-        require(newSharePercentage < 100, "Share must be between 0 and 99");
+    function setPlatformSharePercentage(uint256 newSharePercentage) external onlyOwner whenNotPaused {
+        require(newSharePercentage <= 50, "Platform share cannot exceed 50%");
         platformSharePercentage = newSharePercentage;
         emit PlatformSharePercentageSet(newSharePercentage);
     }
 
-    function setPriceFloor(uint256 newPriceFloor) external onlyOwner {
+    function setPriceFloor(uint256 newPriceFloor) external onlyOwner whenNotPaused {
         require(newPriceFloor > 0, "Invalid price floor");
+        require(newPriceFloor <= basePrice, "Price floor cannot exceed base price");
         priceFloor = newPriceFloor;
         emit PlatformPriceFloorAdjusted(newPriceFloor, block.timestamp);
     }
 
-    function setBasePrice(uint256 newStartingPrice) external onlyOwner {
+    function setBasePrice(uint256 newStartingPrice) external onlyOwner whenNotPaused {
         require(newStartingPrice > 0, "Invalid starting price");
+        require(newStartingPrice >= priceFloor, "Base price must be at least price floor");
+        bool increased = newStartingPrice > basePrice;
         basePrice = newStartingPrice;
-        emit BasePriceForNewBatchesAdjusted(newStartingPrice, block.timestamp, 0, 0);
+        emit BasePriceAdjusted(newStartingPrice, block.timestamp, increased);
     }
 
-    function setMaxBatchSize(uint256 newSize) external onlyOwner {
-        require(newSize > 0, "Invalid batch size");
+    function setMaxBatchSize(uint256 newSize) external onlyOwner whenNotPaused {
+        require(newSize > 0 && newSize <= 100, "Batch size must be between 1 and 100");
         maxBatchSize = newSize;
         emit MaxBatchSizeSet(newSize);
     }
 
-    function setAuctionDayThresholds(uint256 increase, uint256 decrease) external onlyOwner {
+    function setAuctionDayThresholds(uint256 increase, uint256 decrease) external onlyOwner whenNotPaused {
         require(increase > 0, "Invalid increase threshold");
         require(decrease > 0, "Invalid decrease threshold");
         require(increase < decrease, "Increase threshold must be lower than decrease threshold");
@@ -161,22 +292,58 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         dayDecreaseThreshold = decrease;
     }
 
-    function setPriceDelta(uint256 newPriceDelta) external onlyOwner {
+    function setPriceDelta(uint256 newPriceDelta) external onlyOwner whenNotPaused {
         require(newPriceDelta > 0, "Price delta must be positive");
         priceAdjustDelta = newPriceDelta;
         emit PriceDeltaSet(newPriceDelta);
     }
 
-    function setDailyPriceDecay(uint256 newDailyDecay) external onlyOwner {
+    function setDailyPriceDecay(uint256 newDailyDecay) external onlyOwner whenNotPaused {
         require(newDailyDecay > 0, "Daily decay must be positive");
         dailyPriceDecay = newDailyDecay;
         emit DailyPriceDecaySet(newDailyDecay);
     }
 
+    /**
+     * @notice Update the maximum iterations for price update calculations
+     * @dev Controls gas consumption in updateBasePrice() to prevent DoS
+     *
+     * RECOMMENDED VALUES:
+     * - Production: 60-100 (start at 100, adjust based on gas costs)
+     * - High activity periods: Lower to 50-60 to reduce buyer gas
+     * - Low activity periods: Can increase to 100+ for better accuracy
+     *
+     * OPERATIONAL NOTES:
+     * - Buyers pay the gas cost via buyBatch() calls
+     * - Lower values = eventual consistency (prices adjust over multiple txs)
+     * - Monitor PriceUpdateIterationLimitReached events for tuning
+     *
+     * @param newLimit New iteration limit (1-1000)
+     */
+    function setMaxPriceUpdateIterations(uint256 newLimit) external onlyOwner whenNotPaused {
+        require(newLimit > 0 && newLimit <= 1000, "Iteration limit must be between 1 and 1000");
+        maxPriceUpdateIterations = newLimit;
+        emit MaxPriceUpdateIterationsSet(newLimit);
+    }
+
+    /**
+     * @notice Mint a new batch of carbon offset NFTs
+     * @dev Only owner can mint. Each token represents a unique carbon offset with metadata stored on IPFS.
+     * Minting creates tokens owned by the contract itself for later sale via buyBatch().
+     * The current basePrice is locked in as the starting price for this batch.
+     *
+     * @param producers Array of addresses that produced the carbon offsets (receive payment on sale)
+     * @param cids Array of IPFS content identifiers for token metadata (must be ≤100 chars each)
+     */
     function mintBatch(address[] memory producers, string[] memory cids) public onlyOwner whenNotPaused {
         require(producers.length > 0, "No producers provided");
         require(producers.length == cids.length, "Mismatch between producers and cids lengths");
         require(producers.length <= maxBatchSize, "Batch size exceeds max batch size");
+
+        // Validate CID lengths to prevent DoS attacks
+        for (uint256 i = 0; i < cids.length; i++) {
+            require(bytes(cids[i]).length <= MAX_CID_LENGTH, "CID too long");
+        }
 
         updateBasePrice();
 
@@ -184,33 +351,46 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         uint256[] memory amounts = new uint256[](producers.length);
 
         for (uint256 i = 0; i < producers.length; i++) {
+            require(producers[i] != address(0), "Invalid producer address");
             lastTokenID++;
             ids[i] = lastTokenID;
             amounts[i] = 1;
-            tokens[lastTokenID] = TokenInfo(msg.sender, lastTokenID, producers[i], cids[i], false);
+            // Set originalMinter to track who initiated the mint transaction (owner/multisig)
+            // Producer field tracks who receives payment for the carbon offset
+            tokens[lastTokenID] = TokenInfo(msg.sender, producers[i], cids[i], false);
         }
 
         _mintBatch(address(this), ids, amounts, "");
 
         lastBatchID++;
-        uint256 newIndex = batches.length;
         batches.push(Batch(lastBatchID, ids, block.timestamp, basePrice, producers.length));
-        batchCreationIndex[lastBatchID] = newIndex;
 
         emit BatchMinted(lastBatchID, block.timestamp);
     }
 
+    /**
+     * @notice Get the current price for a batch
+     * @dev Uses block.timestamp (±15 sec miner manipulation negligible on daily decay)
+     * @param batchID The 1-based batch ID
+     * @return Current price after decay
+     */
     function getCurrentBatchPrice(uint256 batchID) public view returns (uint256) {
         require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
-        Batch storage batch = batches[batchID - 1];
+        Batch storage batch = batches[batchID - 1]; // Convert 1-based ID to 0-based index
 
         if (batchSoldTime[batchID] > 0) {
             return batchFinalPrice[batchID];
         }
 
         uint256 daysSinceCreation = (block.timestamp - batch.creationTime) / SECONDS_IN_A_DAY;
-        uint256 decayedPrice = batch.startingPrice - (daysSinceCreation * dailyPriceDecay);
+        uint256 priceDecrement = daysSinceCreation * dailyPriceDecay;
 
+        // Prevent underflow: if decrement exceeds starting price, return floor
+        if (priceDecrement >= batch.startingPrice) {
+            return priceFloor;
+        }
+
+        uint256 decayedPrice = batch.startingPrice - priceDecrement;
         return decayedPrice > priceFloor ? decayedPrice : priceFloor;
     }
 
@@ -227,6 +407,15 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         );
     }
 
+    /**
+     * @notice Purchase tokens from a specific batch using USDC
+     * @dev Implements Dutch auction pricing with daily decay. Handles partial batch purchases.
+     * Pulls full usdcAmount, distributes to platform/producers, refunds excess.
+     *
+     * @param batchID The batch identifier (1-based indexing)
+     * @param usdcAmount Maximum USDC to spend (excess will be refunded)
+     * @param tokenAmount Number of tokens to purchase from the batch
+     */
     function buyBatch(uint256 batchID, uint256 usdcAmount, uint256 tokenAmount) external whenNotPaused nonReentrant {
         require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
         Batch storage batch = batches[batchID - 1];
@@ -238,6 +427,8 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         uint256 totalCost = currentPrice * tokenAmount;
         require(usdcAmount >= totalCost, "Insufficient funds sent");
 
+        // Pull full amount first, then refund excess after state changes
+        // Protected by nonReentrant modifier
         uint256 refundAmount = usdcAmount > totalCost ? usdcAmount - totalCost : 0;
 
         uint256[] memory ids = (tokenAmount == batch.tokenIds.length)
@@ -253,28 +444,32 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         batch.remainingTokens -= tokenAmount;
         platformShareAccumulated += platformShare;
 
-        if (batch.remainingTokens == 0) {
+        bool isBatchComplete = batch.remainingTokens == 0;
+        if (isBatchComplete) {
             batchSoldTime[batchID] = block.timestamp;
             batchFinalPrice[batchID] = currentPrice;
             lastCompleteSaleTime = block.timestamp;
-            emit BatchSold(batchID, block.timestamp, tokenAmount);
-        } else {
-            emit PartialBatchSold(batchID, block.timestamp, batch.remainingTokens);
         }
 
+        // Update base price before transfers to ensure new batches reflect current market
+        // Safe due to nonReentrant modifier and locked transaction price
         updateBasePrice();
 
-        require(usdcToken.transferFrom(msg.sender, address(this), totalCost), "Transfer from user failed");
+        // Pull the full usdcAmount from buyer
+        usdcToken.safeTransferFrom(msg.sender, address(this), usdcAmount);
 
-        if (refundAmount > 0) {
-            require(usdcToken.transfer(msg.sender, refundAmount), "Refund failed");
-        }
-
+        // Accrue payments to producers (pull pattern to prevent DoS)
         for (uint256 i = 0; i < recipients.length; i++) {
             if (amounts[i] > 0) {
-                require(usdcToken.transfer(recipients[i], amounts[i]), "Producer transfer failed");
-                emit ProducerPayment(recipients[i], amounts[i]);
+                producerBalances[recipients[i]] += amounts[i];
+                totalProducerBalances += amounts[i];
+                emit ProducerPaymentAccrued(recipients[i], amounts[i]);
             }
+        }
+
+        // Refund any excess to buyer
+        if (refundAmount > 0) {
+            usdcToken.safeTransfer(msg.sender, refundAmount);
         }
 
         uint256[] memory tokenAmounts = new uint256[](ids.length);
@@ -282,6 +477,13 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             tokenAmounts[i] = 1;
         }
         _safeBatchTransferFrom(address(this), msg.sender, ids, tokenAmounts, "");
+
+        // Emit events only after all transfers succeed
+        if (isBatchComplete) {
+            emit BatchSold(batchID, block.timestamp, tokenAmount);
+        } else {
+            emit PartialBatchSold(batchID, block.timestamp, batch.remainingTokens);
+        }
     }
 
     function calculateTransferDetails(
@@ -294,19 +496,24 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         platformShare = (totalPrice * platformSharePercentage) / 100;
         uint256 producerShare = totalPrice - platformShare;
 
+        // Calculate per-token amount and remainder for fair distribution
+        uint256 perTokenAmount = producerShare / ids.length;
+        uint256 remainder = producerShare % ids.length;
+
         // Count unique producers first
         uint256 uniqueCount;
         address[] memory tempProducers = new address[](ids.length);
         uint256[] memory tempAmounts = new uint256[](ids.length);
+        uint256[] memory tempTokenCounts = new uint256[](ids.length);
 
-        // First pass: calculate exact shares without division
+        // First pass: count tokens per producer
         for (uint256 i = 0; i < ids.length; ) {
             TokenInfo storage token = tokens[ids[i]];
             bool found;
 
             for (uint256 j = 0; j < uniqueCount; ) {
                 if (tempProducers[j] == token.producer) {
-                    tempAmounts[j] += producerShare / ids.length; // Divide total by number of tokens
+                    tempTokenCounts[j]++;
                     found = true;
                     break;
                 }
@@ -317,7 +524,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
             if (!found) {
                 tempProducers[uniqueCount] = token.producer;
-                tempAmounts[uniqueCount] = producerShare / ids.length;
+                tempTokenCounts[uniqueCount] = 1;
                 unchecked {
                     ++uniqueCount;
                 }
@@ -327,11 +534,24 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             }
         }
 
+        // Calculate amounts with remainder going to first producer
+        for (uint256 i = 0; i < uniqueCount; ) {
+            tempAmounts[i] = perTokenAmount * tempTokenCounts[i];
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Add remainder wei to first producer (deterministic, prevents manipulation)
+        if (remainder > 0 && uniqueCount > 0) {
+            tempAmounts[0] += remainder;
+        }
+
         // Create final arrays
         recipients = new address[](uniqueCount);
         amounts = new uint256[](uniqueCount);
 
-        // Copy values and calculate total
+        // Copy values and verify total
         uint256 totalDistributed;
         for (uint256 i = 0; i < uniqueCount; ) {
             recipients[i] = tempProducers[i];
@@ -342,10 +562,17 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
             }
         }
 
-        // Add rounding difference to platform share
-        platformShare += (producerShare - totalDistributed);
+        // Ensure invariant: total distributed to producers + platform share = total price
+        require(totalDistributed + platformShare == totalPrice, "Payment distribution mismatch");
     }
 
+    /**
+     * @notice Returns available tokens from a batch for partial purchase
+     * @dev Returns tokens in batch order, may be non-sequential if some already sold
+     * @param batchID The 1-based batch ID to buy from
+     * @param numberToBuy How many tokens to purchase
+     * @return Array of available token IDs
+     */
     function getPartialIds(uint256 batchID, uint256 numberToBuy) internal view returns (uint256[] memory) {
         require(batchID > 0 && batchID <= batches.length, "Invalid batch ID");
         require(numberToBuy > 0, "Number to buy must be greater than zero");
@@ -364,7 +591,14 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         return partialIds;
     }
 
-    function redeemToken(uint256 tokenId) external nonReentrant {
+    /**
+     * @notice Mark a token as redeemed for its real-world carbon offset
+     * @dev Sets redemption flag without burning - tokens remain tradeable as collectibles
+     * Blocked during pause for security consistency
+     * @param tokenId The token ID to mark as redeemed
+     */
+    function redeemToken(uint256 tokenId) external nonReentrant whenNotPaused {
+        require(tokenId > 0 && tokenId <= lastTokenID, "Token does not exist");
         TokenInfo storage token = tokens[tokenId];
         require(balanceOf(msg.sender, tokenId) > 0, "Caller is not the token owner");
         require(!token.redeemed, "Token already redeemed");
@@ -373,15 +607,115 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         emit TokenRedeemed(tokenId, msg.sender, block.timestamp);
     }
 
-    function claimPlatformFunds(address to) external onlyOwner nonReentrant whenNotPaused {
+    /**
+     * @notice Check if a token has been redeemed
+     * @param tokenId The ID of the token to check
+     * @return Whether the token has been redeemed
+     * @dev Provides a stable interface that doesn't depend on internal struct layout
+     */
+    function isRedeemed(uint256 tokenId) external view returns (bool) {
+        require(tokenId > 0 && tokenId <= lastTokenID, "Token does not exist");
+        return tokens[tokenId].redeemed;
+    }
+
+    /**
+     * @notice Recover accidentally sent ERC20 tokens (excluding USDC)
+     * @dev USDC recovery blocked here to maintain accounting integrity.
+     * Use recoverSurplusUSDC() to recover accidentally sent USDC.
+     * Works during pause for emergency recovery.
+     * @param token The ERC20 token address to recover (cannot be USDC)
+     * @param amount The amount to recover
+     * @param to The recipient address
+     */
+    function recoverERC20(address token, uint256 amount, address to) external onlyOwner nonReentrant {
+        require(to != address(0), "Address must not be zero");
+        require(token != address(usdcToken), "Use recoverSurplusUSDC for USDC");
+        IERC20(token).safeTransfer(to, amount);
+    }
+
+    /**
+     * @notice Withdraw accumulated platform fees
+     * @dev Works during pause for emergency recovery. Only withdraws tracked platform fees.
+     * @param to The address to send platform funds to
+     */
+    function claimPlatformFunds(address to) external onlyOwner nonReentrant {
         require(to != address(0), "Address must not be zero");
         require(platformShareAccumulated > 0, "No funds to withdraw");
         uint256 amountToWithdraw = platformShareAccumulated;
         platformShareAccumulated = 0;
-        require(usdcToken.transfer(to, amountToWithdraw), "Withdrawal failed");
+        usdcToken.safeTransfer(to, amountToWithdraw);
         emit PlatformFundsClaimed(to, amountToWithdraw);
     }
 
+    /**
+     * @notice Producers claim their accumulated payments
+     * @dev Pull payment pattern prevents DoS attacks from blocking sales.
+     * IMPORTANT: Intentionally works during pause to prevent locking producer funds.
+     * Any producer can claim their accrued funds at any time, even during emergency pause.
+     */
+    function claimProducerFunds() external nonReentrant {
+        uint256 amount = producerBalances[msg.sender];
+        require(amount > 0, "No funds to claim");
+
+        // Update state before transfer (CEI pattern)
+        producerBalances[msg.sender] = 0;
+        totalProducerBalances -= amount;
+
+        // Transfer funds
+        usdcToken.safeTransfer(msg.sender, amount);
+        emit ProducerPaymentClaimed(msg.sender, amount);
+    }
+
+    /**
+     * @notice Get producer's claimable balance
+     * @param producer The producer address to check
+     * @return The amount of USDC claimable by the producer
+     */
+    function getProducerBalance(address producer) external view returns (uint256) {
+        return producerBalances[producer];
+    }
+
+    /**
+     * @notice Recover surplus USDC not tracked in platform or producer accounting
+     * @dev Only withdraws USDC above platformShareAccumulated + totalProducerBalances.
+     * This handles both accidental direct transfers and any unforeseen accounting discrepancies.
+     * Works during pause for emergency recovery.
+     * @param to The address to send surplus funds to
+     */
+    function recoverSurplusUSDC(address to) external onlyOwner nonReentrant {
+        require(to != address(0), "Address must not be zero");
+
+        uint256 contractBalance = usdcToken.balanceOf(address(this));
+        uint256 accountedBalance = platformShareAccumulated + totalProducerBalances;
+
+        require(contractBalance > accountedBalance, "No surplus to recover");
+
+        uint256 surplus = contractBalance - accountedBalance;
+        usdcToken.safeTransfer(to, surplus);
+
+        emit SurplusUSDCRecovered(to, surplus);
+    }
+
+    /**
+     * @notice Update base price based on market activity
+     * @dev Auto-adjusts: +10 USDC for quick sales (<2 days), -10 USDC for slow market (>4 days)
+     *
+     * GAS CONSUMPTION:
+     * - Bounded by maxPriceUpdateIterations to prevent DoS
+     * - Typical: 100k-300k gas at 100 iterations
+     * - Worst case: ~2.3M gas with many storage writes
+     * - Called by mintBatch() (owner pays) and buyBatch() (buyer pays)
+     *
+     * KNOWN TRADE-OFFS:
+     * - Iteration cap may cause "eventual consistency" in pricing
+     * - Prices may take multiple transactions to fully adjust
+     * - Buying 1 token from a batch excludes it from decrease calculations
+     *
+     * OPERATIONAL STRATEGY:
+     * - Prefer larger batches (up to maxBatchSize) to reduce total batch count
+     * - Monitor PriceUpdateIterationLimitReached events
+     * - Adjust maxPriceUpdateIterations based on gas costs vs pricing accuracy
+     */
     function updateBasePrice() private {
         uint256 currentTime = block.timestamp;
         if (batches.length == 0) return;
@@ -409,7 +743,7 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
         if (quickSaleCount > 0) {
             uint256 totalIncrease = quickSaleCount * priceAdjustDelta;
-            basePrice = Math.max(priceFloor, basePrice + totalIncrease);
+            basePrice = basePrice + totalIncrease;
             lastPriceAdjustmentTime = currentTime;
             emit BasePriceAdjusted(basePrice, currentTime, true);
             return;
@@ -421,9 +755,22 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         if (daysWithoutSales >= dayDecreaseThreshold) {
             uint256 thresholdStartTime = currentTime - (dayDecreaseThreshold * SECONDS_IN_A_DAY);
             uint256 unsoldBatchCount = 0;
+            uint256 iterations = 0;
+            bool limitReached = false;
 
-            for (uint256 i = batches.length; i > 0 && batches[i - 1].creationTime >= windowStart; i--) {
+            for (uint256 i = batches.length; i > 0; i--) {
+                // Check iteration limit to prevent DoS
+                if (iterations >= maxPriceUpdateIterations) {
+                    limitReached = true;
+                    emit PriceUpdateIterationLimitReached(iterations, batches.length);
+                    break;
+                }
+
                 Batch storage batch = batches[i - 1];
+
+                // Early exit if batch is before the window
+                if (batch.creationTime < windowStart) break;
+
                 if (
                     batch.creationTime <= thresholdStartTime &&
                     batch.remainingTokens == batch.tokenIds.length &&
@@ -431,7 +778,10 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
                 ) {
                     unsoldBatchCount++;
                     batchUsedInPriceDecrease[batch.batchId] = true;
+                    emit BatchMarkedUsedInPriceDecrease(batch.batchId, block.timestamp);
                 }
+
+                iterations++;
             }
 
             if (unsoldBatchCount > 0) {

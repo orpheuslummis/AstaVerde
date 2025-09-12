@@ -17,43 +17,43 @@ const fromBlock = BigInt("5282940"); // get from etherscan.io > events > Block
 const toBlock = BigInt("5282950");
 
 export const publicClient = createPublicClient({
-	chain,
-	transport: http(),
+    chain,
+    transport: http(),
 });
 
 const logs = await publicClient.getContractEvents({
-	address: astaverdeContractConfig.address,
-	abi: astaverdeContractConfig.abi,
-	eventName: "TokenReedemed",
-	fromBlock,
-	toBlock,
+    address: astaverdeContractConfig.address,
+    abi: astaverdeContractConfig.abi,
+    eventName: "TokenReedemed",
+    fromBlock,
+    toBlock,
 });
 
 if (logs.length > 0) {
-	for (const log of logs) {
-		const topics = decodeEventLog({
-			abi: astaverdeContractConfig.abi,
-			data: log.data,
-			topics: log.topics,
-		});
+    for (const log of logs) {
+        const topics = decodeEventLog({
+            abi: astaverdeContractConfig.abi,
+            data: log.data,
+            topics: log.topics,
+        });
 
-		// Extract values from topics
-		const { eventName, args } = topics;
-		const { tokenId, redeemer, timestamp } = args;
+        // Extract values from topics
+        const { eventName, args } = topics;
+        const { tokenId, redeemer, timestamp } = args;
 
-		// Format tokenId as a regular number
-		const formattedTokenId = Number(tokenId);
+        // Format tokenId as a regular number
+        const formattedTokenId = Number(tokenId);
 
-		// Convert timestamp to a human-readable date
-		const formattedTimestamp = new Date(Number(timestamp) * 1000);
+        // Convert timestamp to a human-readable date
+        const formattedTimestamp = new Date(Number(timestamp) * 1000);
 
-		// Log human-friendly output
-		console.log(`Event: ${eventName}`);
-		console.log(`tokenId: ${formattedTokenId}`);
-		console.log(`redeemer: ${redeemer}`);
-		console.log(`timestamp: ${formattedTimestamp}`);
-		console.log("-------------------------");
-	}
+        // Log human-friendly output
+        console.log(`Event: ${eventName}`);
+        console.log(`tokenId: ${formattedTokenId}`);
+        console.log(`redeemer: ${redeemer}`);
+        console.log(`timestamp: ${formattedTimestamp}`);
+        console.log("-------------------------");
+    }
 } else {
-	console.log("No logs");
+    console.log("No logs");
 }

@@ -1,26 +1,33 @@
-import type React from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const GlobalLoadingContext = createContext<{
     isLoading: boolean;
     setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }>({
-    isLoading: true,
-    setIsLoading: () => { },
+  isLoading: true,
+  setIsLoading: () => { },
 });
 
 export const useGlobalLoading = () => useContext(GlobalLoadingContext);
 
 export const GlobalLoadingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
+  useEffect(() => {
+    // Wait for Next.js hydration and initial render
+    if (typeof window !== "undefined") {
+      // Small delay to ensure components are mounted
+      const timer = setTimeout(() => {
         setIsLoading(false);
-    }, []);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
-    return (
-        <GlobalLoadingContext.Provider value={{ isLoading, setIsLoading }}>
-            {isLoading ? <div>Loading...</div> : children}
-        </GlobalLoadingContext.Provider>
-    );
+  return (
+    <GlobalLoadingContext.Provider value={{ isLoading, setIsLoading }}>
+      {isLoading ? <div>Loading...</div> : children}
+    </GlobalLoadingContext.Provider>
+  );
 };

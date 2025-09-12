@@ -1,9 +1,5 @@
-import type { Abi } from "abitype";
 import type { Batch } from "./lib/batch";
-import type {
-  astaverdeContractConfig,
-  getUsdcContractConfig,
-} from "./lib/contracts";
+import type { ContractConfig } from "./shared/types/contracts";
 
 export type BatchData = [
   bigint, // batchId
@@ -26,21 +22,16 @@ export interface TokenMetadata {
 
 export interface AppContextType {
   batches: Batch[];
-  astaverdeContractConfig: typeof astaverdeContractConfig;
-  getUsdcContractConfig: typeof getUsdcContractConfig;
-  usdcContractConfig: ReturnType<typeof getUsdcContractConfig>;
+  astaverdeContractConfig: ContractConfig;
+  getUsdcContract: () => ContractConfig;
+  usdcContractConfig: ContractConfig;
   refetchBatches: () => void;
   updateBatch: (updatedBatch: Batch) => void;
   updateBatchItemsLeft: (batchId: bigint, newItemsLeft: bigint) => void;
   adminControls: AdminControls;
   getCurrentBatchPrice: (batchId: number) => Promise<bigint>;
-  buyBatch: (
-    batchId: number,
-    usdcAmount: bigint,
-    tokenAmount: number,
-  ) => Promise<string>;
+  buyBatch: (batchId: number, usdcAmount: bigint, tokenAmount: number) => Promise<string>;
   redeemToken: (tokenId: bigint) => Promise<string>;
-  updateBasePrice: () => Promise<string>;
   getBatchInfo: (batchId: number) => Promise<BatchInfoProps["batchData"]>;
   isAdmin: boolean;
 }
@@ -55,19 +46,15 @@ export interface WalletContextType {
 }
 
 export interface TokenData {
-  0: bigint; // Token ID
-  1: string; // Producer
-  2: string; // CID
-  3: boolean; // Is redeemed
+  0: string; // Original minter (address)
+  1: bigint; // Token ID
+  2: string; // Producer (address)
+  3: string; // CID (string)
+  4: boolean; // Redeemed
 }
 
 export interface BatchInfoProps {
   batchData: BatchData;
-}
-
-export interface ContractConfig {
-  address: `0x${string}`;
-  abi: Abi;
 }
 
 export interface BatchCardProps {
@@ -84,25 +71,19 @@ export interface RedeemTokensButtonProps {
   redeemStatus: Record<string, boolean>;
 }
 
-export type ExecuteFunction = (...args: unknown[]) => Promise<unknown>;
-
-export type ContractError = Error | null;
-
 export interface AdminControls {
   setPriceDelta: (amount: bigint) => Promise<string>;
   setDailyPriceDecay: (amount: bigint) => Promise<string>;
+  setMaxPriceUpdateIterations: (limit: bigint) => Promise<string>;
+  recoverSurplusUSDC: (to: string) => Promise<string>;
   pauseContract: () => Promise<string>;
   unpauseContract: () => Promise<string>;
   claimPlatformFunds: (recipient: string) => Promise<string>;
   setPriceFloor: (amount: string) => Promise<void>;
   setBasePrice: (amount: bigint) => Promise<void>;
   setMaxBatchSize: (size: bigint) => Promise<void>;
-  setAuctionDayThresholds: (
-    increase: string,
-    decrease: string,
-  ) => Promise<void>;
+  setAuctionDayThresholds: (increase: string, decrease: string) => Promise<void>;
   setPlatformSharePercentage: (percentage: string) => Promise<void>;
   setURI: (uri: string) => Promise<void>;
-  updateBasePrice: () => Promise<string>;
   mintBatch: (producers: string[], cids: string[]) => Promise<string>;
 }

@@ -4,10 +4,10 @@ import { ethers } from "ethers";
 import fs from "fs/promises";
 import path from "path";
 
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
-const ABI = JSON.parse(await fs.readFile("./artifacts/contracts/AstaVerde.sol/AstaVerde.json", 'utf8')).abi;
+const ABI = JSON.parse(await fs.readFile("./artifacts/contracts/AstaVerde.sol/AstaVerde.json", "utf8")).abi;
 console.log("ABI loaded:", ABI ? "Success" : "Failed");
 
 const config = {
@@ -22,30 +22,30 @@ const EXTERNAL_URL = process.env.EXTERNAL_URL || "https://ecotradezone.bionerg.c
 const IPFS_PREFIX = process.env.IPFS_PREFIX || "ipfs://";
 
 function validateConfig(config) {
-    const requiredKeys = ['contractAddress', 'rpcApiKey', 'email', 'chainId', 'privateKey'];
+    const requiredKeys = ["contractAddress", "rpcApiKey", "email", "chainId", "privateKey"];
     const missingKeys = requiredKeys.filter(key => !config[key]);
 
     if (missingKeys.length) {
-        throw new Error(`Missing required environment variables: ${missingKeys.join(', ')}`);
+        throw new Error(`Missing required environment variables: ${missingKeys.join(", ")}`);
     }
 
     if (!/^0x[a-fA-F0-9]{40}$/.test(config.contractAddress)) {
-        throw new Error('Invalid contract address format');
+        throw new Error("Invalid contract address format");
     }
 
     if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(config.email)) {
-        throw new Error('Invalid email address');
+        throw new Error("Invalid email address");
     }
 
-    if (!['8453', '84532'].includes(config.chainId)) {
-        throw new Error('Invalid chainId. Must be either 8453 (mainnet) or 84532 (testnet)');
+    if (!["8453", "84532"].includes(config.chainId)) {
+        throw new Error("Invalid chainId. Must be either 8453 (mainnet) or 84532 (testnet)");
     }
 
     if (!/^0x[a-fA-F0-9]{64}$/.test(config.privateKey)) {
-        throw new Error('Invalid private key format');
+        throw new Error("Invalid private key format");
     }
 
-    console.log('Using the following configuration:');
+    console.log("Using the following configuration:");
     console.log(`- Contract Address: ${config.contractAddress}`);
     console.log(`- Chain ID: ${config.chainId}`);
     console.log(`- Email: ${config.email}`);
@@ -56,7 +56,7 @@ function validateConfig(config) {
 async function setupProvider() {
     let provider, wallet, contract;
     try {
-        const networkName = config.chainId === '8453' ? 'mainnet' : 'sepolia';
+        const networkName = config.chainId === "8453" ? "mainnet" : "sepolia";
         const rpcURL = `https://base-${networkName}.g.alchemy.com/v2/${config.rpcApiKey}`;
         console.log(`Connecting to ${networkName} using RPC URL: ${rpcURL}`);
 
@@ -74,8 +74,8 @@ async function setupProvider() {
         }
 
         const contractCode = await provider.getCode(config.contractAddress);
-        console.log("Contract code at address:", contractCode === '0x' ? "No code (not deployed)" : "Code found");
-        if (contractCode === '0x') {
+        console.log("Contract code at address:", contractCode === "0x" ? "No code (not deployed)" : "Code found");
+        if (contractCode === "0x") {
             console.error("No contract found at the specified address");
             throw new Error("Contract not deployed");
         }
@@ -103,7 +103,7 @@ function generateRandomTokenData(count) {
 }
 
 async function getRandomImage() {
-    const response = await fetch('https://picsum.photos/200');
+    const response = await fetch("https://picsum.photos/200");
     return await response.arrayBuffer();
 }
 
@@ -141,7 +141,7 @@ async function mintRandomTokens(tokenCount = 50) {
 
         for (const token of tokenData) {
             const imageBuffer = await getRandomImage();
-            const imageCid = await uploadToIPFS(client, imageBuffer, 'image/jpeg');
+            const imageCid = await uploadToIPFS(client, imageBuffer, "image/jpeg");
 
             const metadata = {
                 name: token.name,
@@ -151,7 +151,7 @@ async function mintRandomTokens(tokenCount = 50) {
                 properties: [{ trait_type: "Producer Address", value: token.producer_address }],
             };
 
-            const metadataCid = await uploadToIPFS(client, JSON.stringify(metadata), 'application/json');
+            const metadataCid = await uploadToIPFS(client, JSON.stringify(metadata), "application/json");
 
             producers.push(token.producer_address);
             cids.push(metadataCid);
@@ -180,7 +180,7 @@ async function mintRandomTokens(tokenCount = 50) {
 
         const batchMintedEvent = receipt.logs
             .map(log => { try { return contract.interface.parseLog(log); } catch (e) { return null; } })
-            .find(event => event && event.name === 'BatchMinted');
+            .find(event => event && event.name === "BatchMinted");
 
         if (batchMintedEvent) {
             console.log("BatchMinted event found:", batchMintedEvent.args);
@@ -200,13 +200,13 @@ async function mintRandomTokens(tokenCount = 50) {
 async function queryMintedTokens(contract, batchId) {
     try {
         const batchInfo = await contract.getBatchInfo(batchId);
-        console.log('\nBatch Info:');
+        console.log("\nBatch Info:");
         console.log(`- Batch ID: ${batchInfo[0].toString()}`);
         console.log(`- Token IDs: ${batchInfo[1] ? batchInfo[1].map(id => id.toString()) : []}`);
         console.log(`- Creation Time: ${batchInfo[2].toString()}`);
         console.log(`- Current Price: ${batchInfo[3].toString()}`);
         console.log(`- Remaining Tokens: ${batchInfo[4].toString()}`);
-        
+
         return batchInfo;
     } catch (error) {
         console.error(`Error querying batch ${batchId}:`, error);
@@ -219,11 +219,11 @@ const isDevelopment = process.env.NODE_ENV === "development";
 (async () => {
     try {
         console.log("Starting random token minting process...");
-        console.log(`Running in ${isDevelopment ? 'development' : 'production'} mode`);
+        console.log(`Running in ${isDevelopment ? "development" : "production"} mode`);
 
         validateConfig(config);
 
-        const tokenCount = parseInt(process.env.TOKEN_COUNT || '50', 10);
+        const tokenCount = parseInt(process.env.TOKEN_COUNT || "50", 10);
         console.log(`Minting ${tokenCount} tokens`);
 
         await mintRandomTokens(tokenCount);
