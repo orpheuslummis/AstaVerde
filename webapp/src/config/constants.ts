@@ -25,7 +25,8 @@ export const navigationLinks = [
 // Vault Constants
 export const SCC_PER_ASSET = 20n * 10n ** 18n; // 20 SCC with 18 decimals
 export const VAULT_GAS_LIMITS = {
-  DEPOSIT: 150_000n,
+  // Per AGENTS.md (2025-08-27): current target ~215k, cap 230k
+  DEPOSIT: 230_000n,
   WITHDRAW: 120_000n,
 } as const;
 
