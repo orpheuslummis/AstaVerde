@@ -51,5 +51,11 @@ webapp/.env.mainnet
 .env.sepolia
 .env.mainnet
 
+# Root env (contains secrets) — keep out of git
+.env
+
+# Ensure Next.js build output is never tracked if created from root context
+webapp/.next/
+
 # ESLint reports
 eslint-report.json
