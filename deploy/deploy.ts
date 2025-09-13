@@ -298,16 +298,46 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         }
     }
 
-    console.log("\nDeploying AstaVerde main contract...");
-    console.log(`- Owner Address: ${ownerAddress}`);
-    console.log(`- USDC Address: ${usdcTokenAddress}`);
+    // Optionally reuse an existing AstaVerde (e.g., live Phase 1 on Base mainnet)
+    const useExistingAV = process.env.USE_EXISTING_ASTAVERDE === "true";
+    const existingAV = process.env.AV_ADDR;
 
-    const astaVerde = await deployContract("AstaVerde", [ownerAddress, usdcTokenAddress]);
+    let astaVerdeAddress: string | undefined;
+    if (useExistingAV) {
+        if (!existingAV || !ethers.isAddress(existingAV)) {
+            throw new Error(
+                "USE_EXISTING_ASTAVERDE=true set but AV_ADDR is missing or invalid. Provide AV_ADDR=0x... to continue.",
+            );
+        }
+        // Basic sanity check: code must exist at AV_ADDR
+        const code = await provider.getCode(existingAV);
+        if (!code || code === "0x") {
+            throw new Error(`AV_ADDR ${existingAV} has no contract code on ${network.name}`);
+        }
+        console.log("\nUsing existing AstaVerde contract:");
+        console.log(`- Address: ${existingAV}`);
+        astaVerdeAddress = existingAV;
+    } else {
+        console.log("\nDeploying AstaVerde main contract...");
+        console.log(`- Owner Address: ${ownerAddress}`);
+        console.log(`- USDC Address: ${usdcTokenAddress}`);
 
-    console.log("AstaVerde deployed with owner:", ownerAddress);
+        const astaVerde = await deployContract("AstaVerde", [ownerAddress, usdcTokenAddress]);
+        astaVerdeAddress = astaVerde.address;
 
-    // Deploy v2 vault contracts (only on test networks for now)
-    if (network.name === "hardhat" || network.name === "localhost" || network.name.includes("sepolia")) {
+        console.log("AstaVerde deployed with owner:", ownerAddress);
+    }
+
+    // Deploy v2 vault contracts
+    // Testnets: always deploy. Mainnet: deploy when explicitly enabled via DEPLOY_VAULT_V2=true
+    const enableV2OnProd = process.env.DEPLOY_VAULT_V2 === "true";
+    const shouldDeployV2 =
+        network.name === "hardhat" ||
+        network.name === "localhost" ||
+        network.name.includes("sepolia") ||
+        enableV2OnProd;
+
+    if (shouldDeployV2) {
         console.log("\n=== Deploying v2 Vault Contracts ===");
 
         // Deploy StabilizedCarbonCoin (SCC)
@@ -316,10 +346,13 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         const scc = await deployContract("StabilizedCarbonCoin", [ethers.ZeroAddress]);
 
         // Deploy EcoStabilizer vault
+        if (!astaVerdeAddress) {
+            throw new Error("Internal error: AstaVerde address not resolved");
+        }
         console.log("\nDeploying EcoStabilizer vault...");
-        console.log(`- AstaVerde Address: ${astaVerde.address}`);
+        console.log(`- AstaVerde Address: ${astaVerdeAddress}`);
         console.log(`- SCC Address: ${scc.address}`);
-        const vault = await deployContract("EcoStabilizer", [astaVerde.address, scc.address]);
+        const vault = await deployContract("EcoStabilizer", [astaVerdeAddress, scc.address]);
 
         // Grant MINTER_ROLE to vault
         console.log("\nConfiguring SCC minter role...");
@@ -327,6 +360,28 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         const MINTER_ROLE = await sccContract.MINTER_ROLE();
         await sccContract.grantRole(MINTER_ROLE, vault.address);
         console.log(`✓ Granted MINTER_ROLE to vault at ${vault.address}`);
+
+        // Optional: Renounce SCC admin role on production after guards pass
+        const wantRenounce = process.env.RENOUNCE_SCC_ADMIN === "true";
+        if (
+            wantRenounce &&
+            !(network.name === "hardhat" || network.name === "localhost" || network.name.includes("sepolia"))
+        ) {
+            console.log("\nRenouncing SCC DEFAULT_ADMIN_ROLE (production hardening)...");
+            const DEFAULT_ADMIN_ROLE = await sccContract.DEFAULT_ADMIN_ROLE();
+            const hasMinter = await sccContract.hasRole(MINTER_ROLE, vault.address);
+            if (!hasMinter) {
+                throw new Error("Abort: Vault missing MINTER_ROLE — will not renounce admin");
+            }
+            const isAdmin = await sccContract.hasRole(DEFAULT_ADMIN_ROLE, deployer);
+            if (isAdmin) {
+                const tx = await sccContract.renounceRole(DEFAULT_ADMIN_ROLE, deployer);
+                await tx.wait();
+                console.log("✓ SCC admin role renounced by deployer");
+            } else {
+                console.log("✓ SCC admin already renounced");
+            }
+        }
 
         // Verify vault configuration
         const vaultContract = await hre.ethers.getContractAt("EcoStabilizer", vault.address);

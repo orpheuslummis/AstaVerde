@@ -105,6 +105,8 @@ const config: HardhatUserConfig = {
         apiKey: {
             "base-sepolia": process.env.BASE_SEPOLIA_EXPLORER_API_KEY!,
             base: process.env.BASE_MAINNET_EXPLORER_API_KEY!,
+            // Map our network alias to the same Base mainnet key
+            "base-mainnet": process.env.BASE_MAINNET_EXPLORER_API_KEY!,
         },
         customChains: [
             {
@@ -113,6 +115,15 @@ const config: HardhatUserConfig = {
                 urls: {
                     apiURL: "https://base-sepolia.blockscout.com/api",
                     browserURL: "https://base-sepolia.blockscout.com",
+                },
+            },
+            {
+                // Ensure verification works when using network name 'base-mainnet'
+                network: "base-mainnet",
+                chainId: 8453,
+                urls: {
+                    apiURL: "https://api.basescan.org/api",
+                    browserURL: "https://basescan.org",
                 },
             },
         ],
