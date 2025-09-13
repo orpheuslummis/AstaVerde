@@ -20,7 +20,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
  * DEPLOYMENT:
  * - Live on Base mainnet with canonical USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913)
  * - USDC token address is immutable (set in constructor, validated for 6 decimals)
- * - Owner MUST be a multisig wallet (e.g., 3-of-5 Gnosis Safe) for production
  *
  * KEY MECHANICS:
  * - Dutch auction: Prices decrease 1 USDC daily from base price to 40 USDC floor
@@ -33,7 +32,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
  * SECURITY:
  * - ReentrancyGuard on all external payment functions
  * - Emergency pause system for asset protection
- * - Multisig controls: pricing, pausing, minting, and fund recovery
+ * - Owner/Multisig controls: pricing, pausing, minting, and fund recovery
  * - Gas-bounded price updates via maxPriceUpdateIterations (prevents DoS)
  *
  * GAS OPTIMIZATION & OPERATIONAL NOTES:
@@ -137,12 +136,13 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
 
     /**
      * @notice Constructor for AstaVerde marketplace
-     * @dev CRITICAL: The owner parameter MUST be a multisig wallet address for production deployments
      *
      * TOKEN IMMUTABILITY: The _usdcToken address is permanently set here and cannot be changed.
      * Production deployment uses canonical USDC which has no transfer fees.
      *
-     * @param owner The address that will own the contract (MUST be multisig in production)
+     * SECURITY NOTE (production): Set a multisig as `owner` for admin controls.
+     *
+     * @param owner The address that will own the contract (multisig recommended in production)
      * @param _usdcToken The USDC token contract address (must have 6 decimals, immutable after deployment)
      */
     constructor(address owner, IERC20 _usdcToken) ERC1155("ipfs://") Ownable(owner) {
@@ -168,7 +168,6 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         basePrice = 230 * USDC_PRECISION;
         priceFloor = 40 * USDC_PRECISION;
         // Price invariant: basePrice >= priceFloor is maintained throughout contract lifecycle
-        // Initial values: 230 USDC >= 40 USDC ✓
         dailyPriceDecay = 1 * USDC_PRECISION;
         priceAdjustDelta = 10 * USDC_PRECISION;
         dayIncreaseThreshold = 2;
