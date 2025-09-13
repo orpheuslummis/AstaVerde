@@ -64,7 +64,7 @@
         "access": "public"
     },
     "scripts": {
-        "start": "npm run dev:complete",
+        "start": "npm run dev:local",
         "qa": "npm run qa:status && npm run qa:fast && npm run qa:full",
         "compile": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat compile && jq '{abi: .abi}' ./artifacts/contracts/AstaVerde.sol/AstaVerde.json > ./webapp/src/config/AstaVerde.json",
         "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
@@ -72,6 +72,7 @@
         "test": "hardhat test",
         "coverage": "hardhat coverage --solcoverjs ./.solcover.js --temp artifacts --testfiles \"test/**/*.ts\" && npm run typechain",
         "lint": "npm run lint:js && npm run lint:sol && npm run prettier:check",
+        "lint:fix": "npm run lint:js:fix && npm run prettier:write",
         "lint:js": "eslint . --ext .js,.mjs,.ts",
         "lint:js:fix": "eslint . --ext .js,.mjs,.ts --fix",
         "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\"",
@@ -87,7 +88,8 @@
         "dev:sepolia": "node scripts/dev-sepolia.js",
         "deploy:testnet": "node scripts/deploy-with-validation.js --network base-sepolia",
         "deploy:mainnet": "node scripts/deploy-with-validation.js --network base-mainnet",
-        "deploy:safe": "node scripts/deploy-with-validation.js"
+        "deploy:safe": "node scripts/deploy-with-validation.js",
+        "verify:contracts": "hardhat etherscan-verify --sleep"
     },
     "dependencies": {
         "@openzeppelin/contracts": "^5.0.0",

@@ -442,7 +442,7 @@ Tasks
 - Deploy EcoStabilizer to Base Mainnet
 - Grant `MINTER_ROLE` to EcoStabilizer
 - Renounce admin roles
-- Update `webapp/src/app.config.ts` with mainnet addresses
+- Configure webapp via env files (`webapp/.env.mainnet`) and `webapp/src/config/environment.ts`/`constants.ts` (do not hardcode addresses)
 - Verify on Base Explorer
 
 Pre‑Deployment Checklist
@@ -472,7 +472,7 @@ npm run task:mint:local
 
 Key Technical Details
 
-- Contract addresses configured in `webapp/src/app.config.ts`
+- Contract addresses sourced from env files and read in `webapp/src/config/environment.ts`
 - Important constants:
     - `SCC_PER_ASSET = 20 * 1e18`
     - `MAX_SUPPLY = 1_000_000_000 * 1e18`
@@ -525,5 +525,5 @@ Production ready when
 - Smart Contracts: `contracts/EcoStabilizer.sol`, `contracts/StabilizedCarbonCoin.sol`
 - Tests: `test/EcoStabilizer.ts`, `test/IntegrationPhase1Phase2.ts`, `test/SCCInvariants.ts`
 - Deployment: `deploy/deploy_ecostabilizer.ts`
-- Webapp config: `webapp/src/app.config.ts`, `webapp/src/lib/contracts.ts`
+- Webapp config: `webapp/src/config/environment.ts`, `webapp/src/config/constants.ts`
 - ABIs: `webapp/src/config/EcoStabilizer.json`, `webapp/src/config/StabilizedCarbonCoin.json`

@@ -47,7 +47,7 @@ Provides complete environment with:
 - `npm run dev:basic` - Simple marketplace with few tokens
 - `npm run dev:marketplace` - Active marketplace simulation
 - `npm run dev:vault` - Vault testing with deposits/withdrawals
-- `npm run dev:complete` - All scenarios combined
+- `npm run dev:local` - Local full stack (node + deploy + webapp)
 
 ### 2. Quick QA Scripts
 

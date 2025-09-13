@@ -58,8 +58,8 @@ npx hardhat verify --network base_mainnet <ECOSTABILIZER_ADDRESS> <AV_ADDR> <SCC
 
 ### 3. Update Webapp Configuration
 
-- [ ] Update `webapp/.env.local` with deployed addresses
-- [ ] Update `webapp/src/app.config.ts` if needed
+- [ ] Update `webapp/.env.local` (or `.env.mainnet`) with deployed addresses
+- [ ] Ensure webapp reads addresses from `src/config/environment.ts` (do not hardcode)
 - [ ] Build webapp: `cd webapp && npm run build`
 
 ### 4. Post-Deployment Testing

@@ -63,7 +63,7 @@ npm run dev
 npm run dev:basic       # Basic marketplace
 npm run dev:marketplace # Active marketplace with various states
 npm run dev:vault       # Vault functionality testing
-npm run dev:complete    # All scenarios combined
+npm run dev:local       # Local full stack (node + deploy + webapp)
 ```
 
 ### Quick QA Testing
@@ -167,7 +167,9 @@ Look for transaction details in the terminal running `npm run dev`.
   └── status-check.js          # Health monitoring
 
 /webapp/
-  ├── src/app.config.ts        # Chain and contract configuration
+  ├── src/config/environment.ts  # Env-driven chain/addresses (current)
+  ├── src/config/constants.ts    # Frontend constants (current)
+  ├── src/app.config.ts          # Deprecated (kept for backward-compat)
   └── src/config/
       └── local-dev.json       # Local contract addresses
 

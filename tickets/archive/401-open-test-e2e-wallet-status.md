@@ -691,7 +691,7 @@ curl http://localhost:3000 | grep -E "<title>|AstaVerde|EcoTradeZone"
 ```bash
 # Start the environment
 npx hardhat node              # Terminal 1
-npm run dev:complete          # Terminal 2
+npm run dev:local             # Terminal 2
 cd webapp && npm run dev      # Terminal 3
 
 # Run tests

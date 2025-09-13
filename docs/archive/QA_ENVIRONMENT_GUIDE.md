@@ -71,7 +71,7 @@ npm run dev:vault
 ### Complete Testing
 
 ```bash
-npm run dev:complete
+npm run dev:local
 ```
 
 - All scenarios combined
@@ -151,7 +151,7 @@ npm run qa:status          # 400ms health check
 # SCENARIO-SPECIFIC SETUPS
 npm run dev:basic          # Basic marketplace
 npm run dev:vault          # Vault testing focus
-npm run dev:complete       # Everything combined
+npm run dev:local          # Local full stack
 
 # AUTOMATED TESTING
 npm run qa:full            # Comprehensive analysis

@@ -313,7 +313,7 @@ npx hardhat clean
 # Development
 npm run dev           # Start everything
 npm run dev:basic     # Minimal test data
-npm run dev:complete  # Full test scenarios
+npm run dev:local  # Local full stack (HH node + deploy + webapp)
 
 # Testing
 npm run test          # Run all tests
