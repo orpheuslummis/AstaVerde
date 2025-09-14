@@ -130,13 +130,15 @@ export function useAdminEvents({
 
     const loadHistoricalEvents = async () => {
       try {
-        // Fetch recent historical events (last 500 blocks ~ last hour)
+        // Fetch recent historical events with a small lookback that's
+        // compatible with providers that limit eth_getLogs ranges.
         const currentBlock = await window.ethereum?.request({
           method: "eth_blockNumber",
         });
 
         if (currentBlock) {
-          const fromBlock = BigInt(currentBlock) - 500n;
+          // Use a 50-block lookback (pairs with CHUNK_LEN=10 in useContractEvents)
+          const fromBlock = BigInt(currentBlock) - 50n;
 
           const iterations = await fetchIterationHistory(fromBlock);
           const batches = await fetchBatchHistory(fromBlock);

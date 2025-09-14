@@ -96,9 +96,9 @@ export function useContractEvents<T>({
         })();
         const end = toBlock ?? latest;
 
-        // Alchemy and some providers restrict eth_getLogs window to ~500 blocks.
-        // Chunk the range into windows of 500 blocks (inclusive) to stay under limits.
-        const CHUNK_LEN = 500n; // inclusive block count
+        // Some providers (e.g. Alchemy free) restrict eth_getLogs to very small
+        // windows (≈10 blocks). Keep chunk size <=10 to be compatible.
+        const CHUNK_LEN = 10n; // inclusive block count
         const results: { data: T | null; log: Log }[] = [];
 
         let chunkStart = start;
