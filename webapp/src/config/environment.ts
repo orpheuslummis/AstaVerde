@@ -16,10 +16,14 @@ export const ENV = {
   WALLET_CONNECT_PROJECT_ID: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "",
 
   // IPFS Configuration
-  IPFS_GATEWAY_URL: process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL || "https://ipfs.io/ipfs/",
+  // Default to Web3.Storage's public gateway (path-style); env can override.
+  IPFS_GATEWAY_URL: process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL || "https://w3s.link/ipfs/",
 
   // Token Configuration
   USDC_DECIMALS: Number(process.env.NEXT_PUBLIC_USDC_DECIMALS) || 6,
+
+  // Debug controls (browser-exposed)
+  DEBUG: (process.env.NEXT_PUBLIC_DEBUG || "false").toLowerCase() === "true",
 } as const;
 
 export const CHAIN_OPTIONS = ["local", "base_sepolia", "base_mainnet"] as const;

@@ -188,7 +188,8 @@ NEXT_PUBLIC_SCC_ADDRESS=
 
 # Configuration
 NEXT_PUBLIC_USDC_DECIMALS=6
-NEXT_PUBLIC_IPFS_GATEWAY_URL=https://ipfs.io/ipfs/
+# Preferred default: Web3.Storage public gateway (path-style)
+NEXT_PUBLIC_IPFS_GATEWAY_URL=https://w3s.link/ipfs/
 
 # API Keys (production keys required)
 NEXT_PUBLIC_ALCHEMY_API_KEY=<your_alchemy_api_key>

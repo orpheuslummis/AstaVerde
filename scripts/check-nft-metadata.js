@@ -146,9 +146,11 @@ async function main() {
                 
                 // Try multiple gateways
                 const gateways = [
-                    process.env.IPFS_GATEWAY_URL || "https://ipfs.io/ipfs/",
+                    process.env.IPFS_GATEWAY_URL || "https://w3s.link/ipfs/",
                     "https://cloudflare-ipfs.com/ipfs/",
-                    "https://gateway.pinata.cloud/ipfs/"
+                    "https://gateway.pinata.cloud/ipfs/",
+                    "https://ipfs.io/ipfs/",
+                    "https://dweb.link/ipfs/"
                 ];
                 
                 let metadata = null;

@@ -91,6 +91,10 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "w3s.link", // Path-style gateway host
+      },
+      {
+        protocol: "https",
         hostname: process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL
           ? new URL(process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL).hostname
           : "n/a", // Required, but won't match if env var is not set

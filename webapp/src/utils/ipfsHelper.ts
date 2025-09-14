@@ -67,6 +67,43 @@ export async function fetchJsonFromIpfsWithFallback(
 ): Promise<{ data: unknown; gateway: string } | null> {
   const cid = cidOrUri.replace("ipfs://", "");
 
+  // Simple fetch with timeout support
+  async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { signal: controller.signal });
+    } finally {
+      clearTimeout(id);
+    }
+  }
+
+  // Retry helper with small jittered backoff
+  async function tryGateway(baseUrl: string, label: string, timeoutMs: number, retries = 1) {
+    const url = `${baseUrl}${cid}`;
+    let lastErr: unknown = null;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const res = await fetchWithTimeout(url, timeoutMs);
+        if (res.ok) {
+          const data = await res.json();
+          return { data, gateway: baseUrl } as const;
+        }
+        lastErr = new Error(`${label} responded ${res.status}`);
+      } catch (e) {
+        lastErr = e;
+      }
+      // jitter 150–450ms between attempts
+      if (attempt < retries) {
+        const jitter = 150 + Math.floor(Math.random() * 300);
+        await new Promise((r) => setTimeout(r, jitter));
+      }
+    }
+    // eslint-disable-next-line no-console
+    console.warn(`${label} failed for ${cid}:`, lastErr);
+    return null;
+  }
+
   // For local development, return mock metadata instead of trying external gateways
   if (ENV.CHAIN_SELECTION === "local") {
     // Generate different mock data based on the CID to simulate variety
@@ -163,63 +200,28 @@ export async function fetchJsonFromIpfsWithFallback(
     return { data: mockData, gateway: "local-mock" };
   }
 
-  // Try primary gateway
-  try {
-    const response = await fetch(`${ENV.IPFS_GATEWAY_URL}${cid}`);
-    if (response.ok) {
-      const data = await response.json();
-      return { data, gateway: ENV.IPFS_GATEWAY_URL };
-    }
-    // eslint-disable-next-line no-console
-    console.warn(`Primary gateway fetch failed for ${cid} using ${ENV.IPFS_GATEWAY_URL}: ${response.status}`);
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.warn(`Error fetching from primary gateway ${ENV.IPFS_GATEWAY_URL} for ${cid}:`, error);
-  }
+  // Try primary gateway (short timeout; 1 retry)
+  const primary = await tryGateway(ENV.IPFS_GATEWAY_URL, "primary", 3000, 1);
+  if (primary) return primary;
 
   // Try web3.storage gateway (second attempt)
   if (WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION) {
-    const web3StorageGatewayUrl = `${WEB3_STORAGE_GATEWAY_PREFIX}${cid}${WEB3_STORAGE_GATEWAY_SUFFIX}`;
+    const web3StorageGatewayBase = `${WEB3_STORAGE_GATEWAY_PREFIX}${cid}${WEB3_STORAGE_GATEWAY_SUFFIX}`;
+    // Note: host-construction returns a full URL; for consistency pass back host base
     try {
+      const u = new URL(web3StorageGatewayBase);
+      const base = `${u.protocol}//${u.hostname}/`;
+      const w3 = await tryGateway(base, "w3s.link", 2500, 1);
+      if (w3) return w3;
+    } catch (e) {
       // eslint-disable-next-line no-console
-      console.debug?.(`Attempting web3.storage gateway for ${cid} to ${web3StorageGatewayUrl}`);
-      const response = await fetch(web3StorageGatewayUrl);
-      if (response.ok) {
-        const data = await response.json();
-        // eslint-disable-next-line no-console
-        console.debug?.(`web3.storage gateway fetch SUCCEEDED for ${cid} using ${web3StorageGatewayUrl}`);
-        // For image resolution, we need a base URL that works with simple suffix concatenation for ipfs:// uris in metadata
-        // So we pass back a generic representation of the successful gateway type or a known working public gateway for that host.
-        // In this case, dweb.link can also resolve these CIDs if w3s.link works, and is easier for image URL construction.
-        // Or, more robustly, the caller (TokenCard/Page) should be aware of subdomain gateways for images.
-        // For now, let's return a gateway that works with the current resolveIpfsUriToUrl structure.
-        // We'll use dweb.link as a stand-in for constructing image URLs if w3s.link (subdomain) fetched the metadata.
-        // This is a simplification; ideally, resolveIpfsUriToUrl would handle subdomain gateways.
-        return { data, gateway: `https://${new URL(web3StorageGatewayUrl).hostname}/` };
-      }
-      // eslint-disable-next-line no-console
-      console.warn(`web3.storage gateway fetch failed for ${cid} using ${web3StorageGatewayUrl}: ${response.status}`);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.warn(`Error fetching from web3.storage gateway ${web3StorageGatewayUrl} for ${cid}:`, error);
+      console.warn("Invalid w3s.link constructed URL", e);
     }
   }
 
   // Try fallback gateway (third attempt)
-  try {
-    // eslint-disable-next-line no-console
-    console.debug?.(`Attempting fallback for ${cid} to ${FALLBACK_IPFS_GATEWAY_URL}`);
-    const response = await fetch(`${FALLBACK_IPFS_GATEWAY_URL}${cid}`);
-    if (response.ok) {
-      const data = await response.json();
-      return { data, gateway: FALLBACK_IPFS_GATEWAY_URL };
-    }
-    // eslint-disable-next-line no-console
-    console.warn(`Fallback gateway fetch failed for ${cid} using ${FALLBACK_IPFS_GATEWAY_URL}: ${response.status}`);
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.warn(`Error fetching from fallback gateway for ${cid}:`, error);
-  }
+  const fallback = await tryGateway(FALLBACK_IPFS_GATEWAY_URL, "fallback", 2500, 1);
+  if (fallback) return fallback;
 
   return null;
 }

@@ -136,7 +136,8 @@ NEXT_PUBLIC_ALCHEMY_ID=your-key
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your-key
 
 # IPFS (optional for local dev)
-NEXT_PUBLIC_IPFS_GATEWAY=https://gateway.pinata.cloud
+# Default read gateway is w3s.link; override if desired
+NEXT_PUBLIC_IPFS_GATEWAY_URL=https://w3s.link/ipfs/
 ```
 
 ### Network Configuration
