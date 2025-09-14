@@ -32,6 +32,9 @@
 .DS_Store
 \*.pem
 
+# local dev outputs
+dev-*.out
+
 # debug
 
 npm-debug.log*
