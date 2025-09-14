@@ -89,7 +89,8 @@
         "deploy:testnet": "node scripts/deploy-with-validation.js --network base-sepolia",
         "deploy:mainnet": "node scripts/deploy-with-validation.js --network base-mainnet",
         "deploy:safe": "node scripts/deploy-with-validation.js",
-        "verify:contracts": "hardhat etherscan-verify --sleep"
+        "verify:contracts": "hardhat etherscan-verify --sleep",
+        "pinata:pin": "node scripts/pinata-pin.mjs"
     },
     "dependencies": {
         "@openzeppelin/contracts": "^5.0.0",
