@@ -4,6 +4,7 @@ import { injected } from "wagmi/connectors";
 import { getConfiguredChains, isLocalDevelopment } from "./chains";
 import { ENV, hasWalletConnectProjectId } from "./environment";
 import { mockConnector } from "../lib/mock-connector";
+import { debugLog } from "../utils/debug";
 
 // Get chains for configuration
 const chains = getConfiguredChains();
@@ -85,6 +86,23 @@ if (isE2EMode && isLocalDevelopment()) {
       );
     }
   }
+}
+
+// Debug summary once config is created
+try {
+  const connectors = (wagmiConfig as any)?.connectors?.map((c: any) => c?.id) || [];
+  const transports: Record<number, string[]> = {};
+  (getConfiguredChains() || []).forEach((chain) => {
+    transports[chain.id] = chain.rpcUrls?.default?.http || [];
+  });
+  debugLog("wagmi", {
+    chains: getConfiguredChains().map((c) => ({ id: c.id, name: c.name })),
+    connectors,
+    transports,
+    wcEnabled: hasWalletConnectProjectId(),
+  });
+} catch {
+  // ignore
 }
 
 export { wagmiConfig };

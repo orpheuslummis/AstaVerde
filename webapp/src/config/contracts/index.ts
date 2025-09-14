@@ -4,6 +4,7 @@ import astaverdeAbi from "../../config/AstaVerde.json";
 import ecoStabilizerAbi from "../../config/EcoStabilizer.json";
 import stabilizedCarbonCoinAbi from "../../config/StabilizedCarbonCoin.json";
 import { ENV } from "../environment";
+import { debugLog } from "../../utils/debug";
 import type { ContractConfig } from "../../shared/types/contracts";
 
 // Extended ERC20 ABI with mint function for MockUSDC
@@ -55,6 +56,18 @@ export const contracts = {
     } as ContractConfig)
     : null,
 } as const;
+
+// Emit a one-time debug summary of contract configuration
+debugLog(
+  "contracts",
+  {
+    chain: ENV.CHAIN_SELECTION,
+    astaverde: ENV.ASTAVERDE_ADDRESS,
+    usdc: ENV.USDC_ADDRESS,
+    ecoStabilizer: ENV.ECOSTABILIZER_ADDRESS,
+    scc: ENV.SCC_ADDRESS,
+  },
+);
 
 // Helper functions for contract access
 export function getAstaVerdeContract(): ContractConfig {

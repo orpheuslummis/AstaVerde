@@ -4,6 +4,8 @@ import { useAccount, useReadContract } from "wagmi";
 import { useContractInteraction } from "../hooks/useContractInteraction";
 import { useAstaVerdeRefetch } from "../hooks/useGlobalEvent";
 import { Batch } from "../lib/batch";
+import { debugLog } from "../utils/debug";
+import { ENV } from "../config/environment";
 import { getAstaVerdeContract, getUsdcContract } from "../config/contracts";
 import { customToast } from "../shared/utils/customToast";
 import type { AppContextType } from "../types";
@@ -43,6 +45,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const lastBatchID = await getLastBatchID();
+      debugLog("batches", { lastBatchID: lastBatchID?.toString?.() ?? String(lastBatchID) });
 
       if (lastBatchID !== undefined && lastBatchID > 0n) {
         const batchPromises = [];
@@ -63,9 +66,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
 
         setBatches(processedBatches);
+        debugLog("batches", { loaded: processedBatches.length });
         hasLoadedBatchesRef.current = true;
       } else {
         setBatches([]);
+        debugLog("batches", { loaded: 0 });
         hasLoadedBatchesRef.current = true;
       }
     } catch (error) {
@@ -253,6 +258,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (address && typeof contractOwner === "string") {
       setIsAdmin(address.toLowerCase() === contractOwner.toLowerCase());
+      debugLog("admin", { address, contractOwner, isAdmin: address.toLowerCase() === contractOwner.toLowerCase() });
     } else {
       setIsAdmin(false);
     }
@@ -292,6 +298,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       balanceOf,
     ],
   );
+
+  // One-time boot log
+  useEffect(() => {
+    debugLog("app", {
+      env: { chainSelection: ENV.CHAIN_SELECTION },
+      contracts: {
+        astaverde: astaverdeContractConfig?.address,
+        usdc: getUsdcContract().address,
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
 }
