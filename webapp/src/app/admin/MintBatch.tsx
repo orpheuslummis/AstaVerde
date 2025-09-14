@@ -132,8 +132,11 @@ export default function MintBatch() {
       customToast.info(`If prompted, check your inbox at ${email} to authorize Web3.Storage`);
 
       let timedOut = false;
+      let connected = false;
       await withTimeout(
-        connectToSpace(web3StorageClient, email, "astaverde-dev"),
+        connectToSpace(web3StorageClient, email, "astaverde-dev").then(() => {
+          connected = true;
+        }),
         20000,
         () => {
           timedOut = true;
@@ -144,11 +147,11 @@ export default function MintBatch() {
         if (!timedOut) throw err;
       });
 
-      // If user pressed Continue after confirming, try ensuring space is active
-      if (step === "waitingEmail") {
-        setStep("provision");
-        setStatus("Finalizing Web3.Storage session…");
-        await connectToSpace(web3StorageClient, email, "astaverde-dev");
+      // If we timed out waiting for the email link, stop here.
+      // User can click Continue after confirming the email to retry this flow.
+      if (timedOut && !connected) {
+        setIsUploading(false);
+        return;
       }
 
       // 2) Upload assets + metadata
@@ -175,6 +178,13 @@ export default function MintBatch() {
           cids.push(metadataCid);
           setProgress({ current: i + 1, total });
         } catch (err) {
+          const msg = (err as Error)?.message || String(err);
+          if (msg.toLowerCase().includes("missing current space")) {
+            setStep("waitingEmail");
+            setStatus("Web3.Storage session not ready. Confirm the email link, then click Continue.");
+            setIsUploading(false);
+            return;
+          }
           customToast.error(`Failed to prepare token ${token.name || i + 1}`);
         }
       }
@@ -205,12 +215,20 @@ export default function MintBatch() {
     } catch (e) {
       setStep("error");
       const msg = (e as Error).message || "Failed to mint batch";
-      setStatus(msg);
-      if (msg.includes("Timed out")) {
+      // Friendly guidance for common wallet/extension issues
+      if (/tab is not active|ResourceUnavailableRpcError/i.test(msg)) {
+        setStatus(
+          "Wallet blocked the transaction: browser tab not active. Bring this tab & your wallet prompt to the foreground, close duplicate AstaVerde tabs, then click Continue to retry.",
+        );
+        customToast.info(
+          "Focus this tab and your wallet, close duplicate tabs, then retry. If using Brave/Coinbase wallet, try MetaMask.",
+        );
+      } else if (msg.includes("Timed out")) {
         customToast.info("Still waiting for email authorization. After confirming, click Continue.");
       } else if (msg.includes("cancelled")) {
         customToast.info("Mint cancelled");
       } else {
+        setStatus(msg);
         customToast.error(msg);
       }
     } finally {
