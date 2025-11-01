@@ -7,6 +7,7 @@ export const WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION = true;
 export const WEB3_STORAGE_GATEWAY_PREFIX = "https://";
 export const WEB3_STORAGE_GATEWAY_SUFFIX = ".ipfs.w3s.link/";
 export const FALLBACK_IPFS_GATEWAY_URL = "https://dweb.link/ipfs/";
+export const CLOUDFLARE_IPFS_GATEWAY_URL = "https://cloudflare-ipfs.com/ipfs/";
 
 // External URLs
 export const EXTERNAL_URL = "https://ecotradezone.bionerg.com/token/";

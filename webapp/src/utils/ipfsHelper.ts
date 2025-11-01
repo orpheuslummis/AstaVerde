@@ -1,6 +1,7 @@
 import { ENV } from "../config/environment";
 import {
   FALLBACK_IPFS_GATEWAY_URL,
+  CLOUDFLARE_IPFS_GATEWAY_URL,
   WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION,
   WEB3_STORAGE_GATEWAY_PREFIX,
   WEB3_STORAGE_GATEWAY_SUFFIX,
@@ -200,28 +201,36 @@ export async function fetchJsonFromIpfsWithFallback(
     return { data: mockData, gateway: "local-mock" };
   }
 
-  // Try primary gateway (short timeout; 1 retry)
-  const primary = await tryGateway(ENV.IPFS_GATEWAY_URL, "primary", 3000, 1);
+  // Try primary gateway (slightly longer timeout; 1 retry)
+  const primary = await tryGateway(ENV.IPFS_GATEWAY_URL, "primary", 5000, 1);
   if (primary) return primary;
 
   // Try web3.storage gateway (second attempt)
   if (WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION) {
-    const web3StorageGatewayBase = `${WEB3_STORAGE_GATEWAY_PREFIX}${cid}${WEB3_STORAGE_GATEWAY_SUFFIX}`;
-    // Note: host-construction returns a full URL; for consistency pass back host base
+    // For host-style gateway, the full URL is https://<cid>.ipfs.w3s.link/
+    // We must NOT append the CID again to the path.
+    const web3StorageGatewayUrl = `${WEB3_STORAGE_GATEWAY_PREFIX}${cid}${WEB3_STORAGE_GATEWAY_SUFFIX}`;
     try {
-      const u = new URL(web3StorageGatewayBase);
-      const base = `${u.protocol}//${u.hostname}/`;
-      const w3 = await tryGateway(base, "w3s.link", 2500, 1);
-      if (w3) return w3;
+      const res = await fetchWithTimeout(web3StorageGatewayUrl, 5000);
+      if (res.ok) {
+        const data = await res.json();
+        const u = new URL(web3StorageGatewayUrl);
+        const gatewayBase = `${u.protocol}//${u.hostname}/`;
+        return { data, gateway: gatewayBase } as const;
+      }
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.warn("Invalid w3s.link constructed URL", e);
+      console.warn("w3s.link host gateway failed", e);
     }
   }
 
   // Try fallback gateway (third attempt)
-  const fallback = await tryGateway(FALLBACK_IPFS_GATEWAY_URL, "fallback", 2500, 1);
+  const fallback = await tryGateway(FALLBACK_IPFS_GATEWAY_URL, "fallback", 5000, 1);
   if (fallback) return fallback;
+
+  // Try Cloudflare IPFS gateway (fourth attempt)
+  const cloudflare = await tryGateway(CLOUDFLARE_IPFS_GATEWAY_URL, "cloudflare", 5000, 1);
+  if (cloudflare) return cloudflare;
 
   return null;
 }

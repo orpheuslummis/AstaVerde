@@ -95,17 +95,25 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "cloudflare-ipfs.com",
+      },
+      {
+        protocol: "https",
         hostname: process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL
           ? new URL(process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL).hostname
           : "n/a", // Required, but won't match if env var is not set
       },
       {
         protocol: "https",
-        hostname: "*.ipfs.w3s.link", // Added for web3.storage gateway
+        hostname: "**.ipfs.w3s.link", // Allow all w3s subdomains (host-style)
       },
       {
         protocol: "https",
         hostname: "dweb.link", // Added for dweb.link fallback
+      },
+      {
+        protocol: "https",
+        hostname: "**.ipfs.dweb.link", // Allow ipfs.dweb.link host-style
       },
     ],
     // domains: [
