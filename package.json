@@ -86,8 +86,8 @@
         "dev:local:stop": "node scripts/stop-local.js",
         "dev:local:seed": "cross-env TS_NODE_TRANSPILE_ONLY=true npx hardhat run scripts/seed-local.js --network localhost",
         "dev:sepolia": "node scripts/dev-sepolia.js",
-        "deploy:testnet": "node scripts/deploy-with-validation.js --network base-sepolia",
-        "deploy:mainnet": "node scripts/deploy-with-validation.js --network base-mainnet",
+        "deploy:testnet": "node scripts/deploy-with-validation.js --network arbitrum-sepolia",
+        "deploy:mainnet": "node scripts/deploy-with-validation.js --network arbitrum-one",
         "deploy:safe": "node scripts/deploy-with-validation.js",
         "verify:contracts": "hardhat etherscan-verify --sleep",
         "pinata:pin": "node scripts/pinata-pin.mjs"

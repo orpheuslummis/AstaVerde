@@ -38,8 +38,13 @@ if (network !== "localhost" && network !== "hardhat") {
     const env = process.env;
     const isBaseSepolia = network === "base-sepolia";
     const isBaseMainnet = network === "base-mainnet" || network === "base";
+    const isArbitrumSepolia = network === "arbitrum-sepolia";
+    const isArbitrumMainnet = network === "arbitrum-one" || network === "arbitrum";
     const haveDirectUrl =
-        (isBaseSepolia && !!env.BASE_SEPOLIA_RPC_URL) || (isBaseMainnet && !!env.BASE_MAINNET_RPC_URL);
+        (isBaseSepolia && !!env.BASE_SEPOLIA_RPC_URL) ||
+        (isBaseMainnet && !!env.BASE_MAINNET_RPC_URL) ||
+        (isArbitrumSepolia && !!env.ARBITRUM_SEPOLIA_RPC_URL) ||
+        (isArbitrumMainnet && !!env.ARBITRUM_MAINNET_RPC_URL);
     const apiKey = env.RPC_API_KEY || "";
 
     if (!haveDirectUrl) {
@@ -58,6 +63,16 @@ if (network !== "localhost" && network !== "hardhat") {
                     "   Set BASE_MAINNET_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key.",
                 );
                 console.error("   Example: export BASE_MAINNET_RPC_URL=https://<provider>/<path>\n");
+            } else if (isArbitrumSepolia) {
+                console.error(
+                    "   Set ARBITRUM_SEPOLIA_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key.",
+                );
+                console.error("   Example: export ARBITRUM_SEPOLIA_RPC_URL=https://<provider>/<path>\n");
+            } else if (isArbitrumMainnet) {
+                console.error(
+                    "   Set ARBITRUM_MAINNET_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key.",
+                );
+                console.error("   Example: export ARBITRUM_MAINNET_RPC_URL=https://<provider>/<path>\n");
             }
             process.exit(1);
         }
@@ -225,7 +240,9 @@ if (network === "localhost") {
 if (network !== "localhost" && network !== "hardhat") {
     console.log("\n✅ Step 5: Post-deployment tasks...");
     console.log("\n📝 Next steps:");
-    console.log("1. Update webapp/.env.sepolia or webapp/.env with deployed addresses");
+    const webappEnvHint =
+        network === "arbitrum-one" || network === "arbitrum-sepolia" ? "webapp/.env.arbitrum" : "webapp/.env.sepolia";
+    console.log(`1. Update ${webappEnvHint} or webapp/.env with deployed addresses`);
     console.log("2. Run contract verification if needed: npm run verify:contracts");
     console.log("3. Test the deployment: npm run qa:status");
 
