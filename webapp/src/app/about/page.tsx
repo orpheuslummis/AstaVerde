@@ -50,11 +50,11 @@ export default function Page() {
                             Q: Why don&apos;t the Ethereums work here to buy eco assets?
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
-                            A: This is on the Base network, which runs in parallel to the main Ethereum network and has
+                            A: This is on the Arbitrum network, which runs in parallel to the main Ethereum network and has
                             responsibilities to it in terms of its data integrity. But this means that you need the
-                            currencies that are used on this Base network. Coinbase wallets work natively with Base and
-                            the currency that you purchase in is USDC so make sure that the currency you have on your
-                            Base network wallet.
+                            currencies that are used on this Arbitrum network. Rainbow, Rabby, Coinbase wallets work
+                            natively with Arbitrum and the currency that you purchase in is USDC so make sure that the
+                            currency you have on your Arbitrum network wallet.
             </p>
           </div>
           <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
@@ -62,29 +62,28 @@ export default function Page() {
                             Q: What do I need to know about using my wallet here?
             </h3>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-                            A: Transactions here are conducted using Base native USDC, issued by Circle. For more
+                            A: Transactions here are conducted using Arbitrum native USDC, issued by Circle. For more
                             understanding:
             </p>
             <div className="space-y-2">
               <a
-                href="https://base.mirror.xyz/Ouwm--AtTIVyz40He3FxI0fDAC05lOQwN6EzFMD_2UM"
+                href="https://arbitrum.io/"
                 className="block text-primary hover:underline transition duration-300"
               >
-                                Learn about Base
+                                Learn about Arbitrum
               </a>
               <a
-                href="https://help.coinbase.com/en/coinbase/other-topics/other/base"
+                href="https://docs.arbitrum.io/arbitrum-bridge/usdc-arbitrum-one"
                 className="block text-primary hover:underline transition duration-300"
               >
-                                Base from Coinbase
-              </a>
-              <a
-                href="https://www.circle.com/blog/usdc-now-available-natively-on-base"
-                className="block text-primary hover:underline transition duration-300"
-              >
-                                USDC on Base
+                                USDC on Arbitrum
               </a>
             </div>
+            <p className="text-gray-700 dark:text-gray-300 mt-3">
+              We require native USDC (Circle): <span className="font-mono text-sm">0xaf88...e5831</span> on Arbitrum One and
+              <span className="font-mono text-sm"> 0x75fa...AA4d</span> on Arbitrum Sepolia. Bridged USDC.e (
+              <span className="font-mono text-sm">0xff97...5CC8</span>) will not work for purchases.
+            </p>
           </div>
           <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
             <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">Q: What do I need to buy eco assets?</h3>
@@ -92,7 +91,7 @@ export default function Page() {
               <p>A: You need two currencies:</p>
               <ol className="list-decimal list-inside mt-2">
                 <li>Enough USDC to make the auction price, and</li>
-                <li>A few dollars worth of Ethereums ON Base to pay for the transaction gas.</li>
+                <li>A few dollars worth of Ethereums ON Arbitrum to pay for the transaction gas.</li>
               </ol>
             </div>
           </div>

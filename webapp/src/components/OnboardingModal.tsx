@@ -62,8 +62,11 @@ export function OnboardingModal() {
                 {
                   icon: <CurrencyDollarIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "USDC Transactions",
-                  description: "We use Base native USDC for all transactions. Ensure your wallet is compatible and funded.",
-                  link: { text: "Learn more about Base and USDC", href: "#" },
+                  description: "We use Arbitrum native USDC for all transactions. Ensure your wallet is compatible and funded.",
+                  link: {
+                    text: "Learn more about Arbitrum and USDC",
+                    href: "https://docs.arbitrum.io/arbitrum-bridge/usdc-arbitrum-one",
+                  },
                 },
                 {
                   icon: <InformationCircleIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
