@@ -1,4 +1,4 @@
-import { base, baseSepolia } from "wagmi/chains";
+import { arbitrum, arbitrumSepolia, base, baseSepolia } from "wagmi/chains";
 import { ENV } from "./environment";
 import type { Chain } from "wagmi/chains";
 
@@ -28,7 +28,9 @@ export const chainConfigs = {
     ...base,
     rpcUrls: {
       default: {
-        http: [`https://base-mainnet.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`],
+        http: ENV.ALCHEMY_API_KEY
+          ? [`https://base-mainnet.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`]
+          : base.rpcUrls.default.http,
       },
     },
   },
@@ -36,7 +38,29 @@ export const chainConfigs = {
     ...baseSepolia,
     rpcUrls: {
       default: {
-        http: [`https://base-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`],
+        http: ENV.ALCHEMY_API_KEY
+          ? [`https://base-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`]
+          : baseSepolia.rpcUrls.default.http,
+      },
+    },
+  },
+  arbitrum_mainnet: {
+    ...arbitrum,
+    rpcUrls: {
+      default: {
+        http: ENV.ALCHEMY_API_KEY
+          ? [`https://arb-mainnet.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`]
+          : arbitrum.rpcUrls.default.http,
+      },
+    },
+  },
+  arbitrum_sepolia: {
+    ...arbitrumSepolia,
+    rpcUrls: {
+      default: {
+        http: ENV.ALCHEMY_API_KEY
+          ? [`https://arb-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`]
+          : arbitrumSepolia.rpcUrls.default.http,
       },
     },
   },
@@ -59,7 +83,11 @@ export function getConfiguredChains(): readonly [Chain, ...Chain[]] {
 
 // Check if we're on a testnet
 export function isTestnet(): boolean {
-  return ENV.CHAIN_SELECTION === "base_sepolia" || ENV.CHAIN_SELECTION === "local";
+  return (
+    ENV.CHAIN_SELECTION === "base_sepolia" ||
+    ENV.CHAIN_SELECTION === "arbitrum_sepolia" ||
+    ENV.CHAIN_SELECTION === "local"
+  );
 }
 
 // Check if we're on local development
@@ -74,6 +102,10 @@ export function getChainDisplayName(): string {
     return "Base";
   case "base_sepolia":
     return "Base Sepolia";
+  case "arbitrum_mainnet":
+    return "Arbitrum One";
+  case "arbitrum_sepolia":
+    return "Arbitrum Sepolia";
   case "local":
     return "Local Network";
   default:

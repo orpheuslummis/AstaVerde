@@ -3,7 +3,7 @@
 
 export const ENV = {
   // Chain configuration
-  CHAIN_SELECTION: (process.env.NEXT_PUBLIC_CHAIN_SELECTION || "base_sepolia") as ChainSelection,
+  CHAIN_SELECTION: (process.env.NEXT_PUBLIC_CHAIN_SELECTION || "arbitrum_sepolia") as ChainSelection,
 
   // Contract addresses - single system (new)
   ASTAVERDE_ADDRESS: process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS || "",
@@ -26,7 +26,7 @@ export const ENV = {
   DEBUG: (process.env.NEXT_PUBLIC_DEBUG || "false").toLowerCase() === "true",
 } as const;
 
-export const CHAIN_OPTIONS = ["local", "base_sepolia", "base_mainnet"] as const;
+export const CHAIN_OPTIONS = ["local", "base_sepolia", "base_mainnet", "arbitrum_sepolia", "arbitrum_mainnet"] as const;
 export type ChainSelection = (typeof CHAIN_OPTIONS)[number];
 
 // Validate required environment variables

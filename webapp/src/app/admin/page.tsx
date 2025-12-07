@@ -128,7 +128,10 @@ function MintUSDCControl() {
   const [amount, setAmount] = useState<string>("1000");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isTestEnv = ENV.CHAIN_SELECTION === "base_sepolia" || ENV.CHAIN_SELECTION === "local";
+  const isTestEnv =
+    ENV.CHAIN_SELECTION === "arbitrum_sepolia" ||
+    ENV.CHAIN_SELECTION === "base_sepolia" ||
+    ENV.CHAIN_SELECTION === "local";
   const usdcContractConfig = getUsdcContract();
   const { execute } = useContractInteraction(usdcContractConfig, "mint");
 
@@ -149,7 +152,7 @@ function MintUSDCControl() {
       customToast.success(`Minted ${amount} USDC to ${to.slice(0, 6)}…${to.slice(-4)}`);
     } catch (err) {
       console.error("Mint USDC error:", err);
-      customToast.error("Mint failed. Are you on Base Sepolia/local?");
+      customToast.error("Mint failed. Are you on Arbitrum Sepolia/local?");
     } finally {
       setIsSubmitting(false);
     }
@@ -159,7 +162,7 @@ function MintUSDCControl() {
     <ControlContainer title="Mint Testnet USDC" id="mint-usdc">
       {!isTestEnv ? (
         <div className="text-sm text-amber-600 dark:text-amber-400">
-          Hidden on mainnet. Switch to Base Sepolia or local to use the test faucet.
+          Hidden on mainnet. Switch to Arbitrum Sepolia or local to use the test faucet.
         </div>
       ) : !isAdmin ? (
         <div className="text-sm text-gray-500">Admin only.</div>
