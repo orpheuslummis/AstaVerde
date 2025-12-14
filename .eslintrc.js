@@ -36,7 +36,7 @@ module.exports = {
     rules: {
         semi: ["error", "always"],
         quotes: ["error", "double", { avoidEscape: true }],
-        indent: ["error", 4],
+        indent: ["error", 4, { SwitchCase: 1 }],
         "comma-dangle": ["error", "always-multiline"],
         "no-trailing-spaces": "error",
         "eol-last": ["error", "always"],
@@ -112,7 +112,7 @@ module.exports = {
                 React: "readonly",
             },
             rules: {
-                indent: ["error", 2], // Webapp uses 2 spaces
+                indent: "off",
                 "no-console": ["warn", { allow: ["warn", "error"] }],
             },
         },
@@ -127,7 +127,7 @@ module.exports = {
                 React: "readonly",
             },
             rules: {
-                indent: ["error", 2], // Webapp uses 2 spaces
+                indent: "off",
                 "no-console": ["warn", { allow: ["warn", "error"] }],
             },
         },

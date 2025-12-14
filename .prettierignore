@@ -25,3 +25,6 @@ archive/
 
 # Git
 .git/
+
+# Local agent/editor settings
+.claude/

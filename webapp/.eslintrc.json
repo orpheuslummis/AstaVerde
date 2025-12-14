@@ -4,7 +4,7 @@
     "project": false
   },
   "rules": {
-    "indent": ["error", 2],
+    "indent": "off",
     "semi": ["error", "always"],
     "quotes": ["error", "double", { "avoidEscape": true }],
     "comma-dangle": ["error", "always-multiline"],
@@ -21,6 +21,11 @@
     "@typescript-eslint/no-explicit-any": "warn",
     "react-hooks/exhaustive-deps": "warn",
     "@next/next/no-img-element": "warn"
+  },
+  "settings": {
+    "next": {
+      "rootDir": ["./", "webapp/"]
+    }
   },
   "overrides": [
     {
