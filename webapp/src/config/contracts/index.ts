@@ -7,6 +7,20 @@ import { ENV } from "../environment";
 import { debugLog } from "../../utils/debug";
 import type { ContractConfig } from "../../shared/types/contracts";
 
+const ARBITRUM_SEPOLIA_NATIVE_USDC = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
+
+function shouldUseMockUsdcAbi() {
+  if (ENV.CHAIN_SELECTION === "local" || ENV.CHAIN_SELECTION === "base_sepolia") return true;
+
+  // Arbitrum Sepolia can be deployed either with canonical Circle USDC or our MockUSDC.
+  // If the configured address is not the canonical FiatToken, assume it's our MockUSDC.
+  if (ENV.CHAIN_SELECTION === "arbitrum_sepolia") {
+    return (ENV.USDC_ADDRESS || "").toLowerCase() !== ARBITRUM_SEPOLIA_NATIVE_USDC.toLowerCase();
+  }
+
+  return false;
+}
+
 // Extended ERC20 ABI with mint function for MockUSDC
 const extendedERC20Abi = [
   ...erc20Abi,
@@ -35,12 +49,7 @@ export const contracts = {
   usdc: {
     address: ENV.USDC_ADDRESS as `0x${string}`,
     // Allow mint() on local and testnets (MockUSDC)
-    abi:
-      ENV.CHAIN_SELECTION === "local" ||
-      ENV.CHAIN_SELECTION === "base_sepolia" ||
-      ENV.CHAIN_SELECTION === "arbitrum_sepolia"
-        ? (extendedERC20Abi as unknown as Abi)
-        : erc20Abi,
+    abi: shouldUseMockUsdcAbi() ? (extendedERC20Abi as unknown as Abi) : erc20Abi,
   } as ContractConfig,
 
   // Phase 2 Contracts (optional)

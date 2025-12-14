@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useReadContract } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
 import { getAstaVerdeContract, getUsdcContract } from "@/config/contracts";
 import { useAppContext } from "@/contexts/AppContext";
-import { useAdminDashboardEvents } from "@/hooks/useAdminEvents";
+import { dispatchBalancesRefetch } from "@/hooks/useGlobalEvent";
 import { customToast } from "@/utils/customToast";
 import { formatUSDCWithUnit } from "@/shared/utils/format";
+import type { PriceUpdateIterationLimitReachedEvent, SurplusUSDCRecoveredEvent } from "@/features/events/eventTypes";
 
 function ControlContainer({ children, title }: { children: React.ReactNode; title: string }) {
   return (
@@ -17,10 +18,15 @@ function ControlContainer({ children, title }: { children: React.ReactNode; titl
   );
 }
 
-export function MaxPriceUpdateIterationsControl() {
+export function MaxPriceUpdateIterationsControl({
+  highlightGasControl,
+  lastIterationWarning,
+}: {
+  highlightGasControl: boolean;
+  lastIterationWarning: PriceUpdateIterationLimitReachedEvent | null;
+}) {
   const astaverdeContractConfig = getAstaVerdeContract();
   const { adminControls } = useAppContext();
-  const { highlightGasControl, lastIterationWarning } = useAdminDashboardEvents();
   const [iterations, setIterations] = useState("");
   const { data: currentIterations, refetch: refetchIterations } = useReadContract({
     ...astaverdeContractConfig,
@@ -93,11 +99,15 @@ export function MaxPriceUpdateIterationsControl() {
   );
 }
 
-export function RecoverSurplusUSDCControl() {
+export function RecoverSurplusUSDCControl({
+  surplusRecoveryHistory = [],
+}: {
+  surplusRecoveryHistory?: SurplusUSDCRecoveredEvent[];
+}) {
+  const { address } = useAccount();
   const astaverdeContractConfig = getAstaVerdeContract();
   const usdcContractConfig = getUsdcContract();
   const { adminControls } = useAppContext();
-  const { surplusRecoveryHistory } = useAdminDashboardEvents();
   const [recipientAddress, setRecipientAddress] = useState("");
 
   // Get current balances for display
@@ -132,6 +142,9 @@ export function RecoverSurplusUSDCControl() {
 
     try {
       await adminControls.recoverSurplusUSDC(recipientAddress);
+      if (address && recipientAddress.toLowerCase() === address.toLowerCase()) {
+        dispatchBalancesRefetch();
+      }
       customToast.success("Surplus USDC recovered successfully");
       setRecipientAddress("");
     } catch (error) {
