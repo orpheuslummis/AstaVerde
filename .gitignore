@@ -51,6 +51,11 @@ webapp/.env.mainnet
 .env.sepolia
 .env.mainnet
 
+# Root Arbitrum env (contains secrets) — keep out of git
+.env.arbitrum
+.env.arbitrum-sepolia
+.env.arbitrum-one
+
 # Root env (contains secrets) — keep out of git
 .env
 
@@ -59,4 +64,3 @@ webapp/.next/
 
 # ESLint reports
 eslint-report.json
-
