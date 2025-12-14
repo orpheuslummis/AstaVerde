@@ -62,13 +62,10 @@ export default function RedeemTokensButton(
       }
     }
 
-    if (remaining.length === 0) {
-      await wait(2000);
-      onRedeemComplete();
-    } else {
+    if (remaining.length > 0) {
       await redeemBatch(remaining);
     }
-  }, [redeemToken, onRedeemComplete, redeemStatus]);
+  }, [redeemToken, redeemStatus]);
 
   /**
      * Handles the redemption process for selected tokens.
@@ -90,6 +87,7 @@ export default function RedeemTokensButton(
 
     try {
       await redeemBatch(unredeemedTokens);
+      await wait(2000);
       customToast.success(
         "All selected unredeemed tokens redeemed successfully",
       );

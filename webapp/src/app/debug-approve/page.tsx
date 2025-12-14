@@ -1,17 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAccount, useWalletClient, usePublicClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { parseUnits } from "viem";
 import mockUsdcAbi from "../../config/MockUSDC.json";
 import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
 import DevOnly from "../../components/DevOnly";
 import { getErrorMessage, getErrorCause } from "../../shared/utils/error";
+import { useRateLimitedPublicClient } from "@/hooks/useRateLimitedPublicClient";
 
 export default function DebugApprovePage() {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient();
+  const publicClient = useRateLimitedPublicClient();
   const [logs, setLogs] = useState<string[]>([]);
 
   const addLog = (message: string) => {

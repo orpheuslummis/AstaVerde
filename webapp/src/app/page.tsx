@@ -27,7 +27,9 @@ function BatchListing() {
     } catch (error) {
       console.error("Failed to fetch batches:", error);
     } finally {
-      if (isMountedRef.current) setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [refetchBatches]);
 
@@ -37,7 +39,8 @@ function BatchListing() {
       fetchBatches();
     }, 1000);
 
-    const intervalId = setInterval(fetchBatches, 30000); // Refetch every 30 seconds
+    // Refresh on a slow cadence to keep UI current without spamming RPC
+    const intervalId = setInterval(fetchBatches, 180000);
 
     return () => {
       clearTimeout(timeoutId);

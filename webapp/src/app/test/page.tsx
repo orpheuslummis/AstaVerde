@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
 import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
 import DevOnly from "../../components/DevOnly";
 import { getErrorMessage } from "../../shared/utils/error";
+import { useRateLimitedPublicClient } from "@/hooks/useRateLimitedPublicClient";
 
 // Minimal ERC20 ABI
 const ERC20_ABI = [
@@ -40,7 +41,7 @@ const ERC20_ABI = [
 
 export default function TestPage() {
   const { address } = useAccount();
-  const publicClient = usePublicClient();
+  const publicClient = useRateLimitedPublicClient();
   const { data: walletClient } = useWalletClient();
   const [status, setStatus] = useState("");
   const [balance, setBalance] = useState("");

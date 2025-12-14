@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { formatUnits } from "viem";
 import { useContractEvents } from "./useContractEvents";
 import { customToast } from "@/utils/customToast";
 import { ENV } from "@/config/environment";
+import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
 import type {
   PriceUpdateIterationLimitReachedEvent,
   BatchMarkedUsedInPriceDecreaseEvent,
@@ -23,6 +24,9 @@ interface BatchUsageRecord {
   timestamp: number;
 }
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const LOG_QUERY_GAP_MS = 1_100;
+
 /**
  * Hook for monitoring admin-related contract events
  * Listens for price update limits, batch usage, and surplus recovery events
@@ -33,12 +37,14 @@ export function useAdminEvents({
   onBatchMarkedUsed,
   onSurplusRecovered,
   showToasts = true,
-  enabled = true,
+  enabled = false,
 }: AdminEventsConfig = {}) {
+  const publicClient = useRateLimitedPublicClient();
   const [iterationLimitEvents, setIterationLimitEvents] = useState<PriceUpdateIterationLimitReachedEvent[]>([]);
   const [batchUsageHistory, setBatchUsageHistory] = useState<BatchUsageRecord[]>([]);
   const [surplusRecoveryHistory, setSurplusRecoveryHistory] = useState<SurplusUSDCRecoveredEvent[]>([]);
   const [lastIterationWarning, setLastIterationWarning] = useState<PriceUpdateIterationLimitReachedEvent | null>(null);
+  const [, setHistoryLoaded] = useState(false);
 
   // Handle PriceUpdateIterationLimitReached events
   const handleIterationLimitReached = useCallback(
@@ -108,6 +114,8 @@ export function useAdminEvents({
     eventName: EVENT_NAMES.PriceUpdateIterationLimitReached,
     onEvent: handleIterationLimitReached,
     enabled,
+    watchEnabled: false,
+    pollingIntervalMs: 30000,
   });
 
   // Watch for BatchMarkedUsedInPriceDecrease events
@@ -115,6 +123,8 @@ export function useAdminEvents({
     eventName: EVENT_NAMES.BatchMarkedUsedInPriceDecrease,
     onEvent: handleBatchMarkedUsed,
     enabled,
+    watchEnabled: false,
+    pollingIntervalMs: 30000,
   });
 
   // Watch for SurplusUSDCRecovered events
@@ -122,63 +132,91 @@ export function useAdminEvents({
     eventName: EVENT_NAMES.SurplusUSDCRecovered,
     onEvent: handleSurplusRecovered,
     enabled,
+    watchEnabled: false,
+    pollingIntervalMs: 30000,
   });
 
-  // Load recent historical events on mount
+  const lastPolledBlockRef = useRef<bigint | null>(null);
+  const hasInitializedRef = useRef(false);
+
+  // Lightweight polling of recent events to avoid RPC bursts
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !publicClient) return;
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let isFetching = false;
 
     const loadHistoricalEvents = async () => {
+      if (isFetching) return;
+      isFetching = true;
       try {
-        // Fetch recent historical events with a small lookback that's
-        // compatible with providers that limit eth_getLogs ranges.
-        const currentBlock = await window.ethereum?.request({
-          method: "eth_blockNumber",
+        const latest = await publicClient.getBlockNumber();
+        const fromBlock =
+          lastPolledBlockRef.current !== null
+            ? lastPolledBlockRef.current + 1n
+            : latest > 6n
+              ? latest - 6n
+              : 0n;
+        const toBlock = latest;
+
+        const iterations = await fetchIterationHistory(fromBlock, toBlock);
+        await delay(publicClient.chain?.id === 31337 ? 250 : LOG_QUERY_GAP_MS);
+        const batches = await fetchBatchHistory(fromBlock, toBlock);
+        await delay(publicClient.chain?.id === 31337 ? 250 : LOG_QUERY_GAP_MS);
+        const surplus = await fetchSurplusHistory(fromBlock, toBlock);
+
+        if (cancelled) return;
+
+        // Process historical events
+        iterations.forEach(({ data }) => {
+          if (data) {
+            handleIterationLimitReached(data);
+          }
         });
 
-        if (currentBlock) {
-          // Use a 50-block lookback (pairs with CHUNK_LEN=10 in useContractEvents)
-          const fromBlock = BigInt(currentBlock) - 50n;
+        batches.forEach(({ data }) => {
+          if (data) {
+            handleBatchMarkedUsed(data);
+          }
+        });
 
-          const iterations = await fetchIterationHistory(fromBlock);
-          const batches = await fetchBatchHistory(fromBlock);
-          const surplus = await fetchSurplusHistory(fromBlock);
+        surplus.forEach(({ data }) => {
+          if (data) {
+            handleSurplusRecovered(data);
+          }
+        });
 
-          // Process historical events
-          iterations.forEach(({ data }) => {
-            if (data) {
-              setIterationLimitEvents((prev) => [...prev, data]);
-              if (!lastIterationWarning) {
-                setLastIterationWarning(data);
-              }
-            }
-          });
-
-          batches.forEach(({ data }) => {
-            if (data) {
-              setBatchUsageHistory((prev) => [
-                ...prev,
-                {
-                  batchId: data.batchId,
-                  timestamp: Number(data.timestamp) * 1000,
-                },
-              ]);
-            }
-          });
-
-          surplus.forEach(({ data }) => {
-            if (data) {
-              setSurplusRecoveryHistory((prev) => [...prev, data]);
-            }
-          });
-        }
+        setHistoryLoaded(true);
+        lastPolledBlockRef.current = toBlock;
       } catch (error) {
         console.error("Error loading historical admin events:", error);
+      } finally {
+        isFetching = false;
       }
     };
 
-    loadHistoricalEvents();
-  }, [enabled, fetchIterationHistory, fetchBatchHistory, fetchSurplusHistory, lastIterationWarning]);
+    void loadHistoricalEvents();
+    pollTimer = setInterval(() => {
+      void loadHistoricalEvents();
+    }, 180000);
+
+    return () => {
+      cancelled = true;
+      if (pollTimer) clearInterval(pollTimer);
+    };
+  }, [
+    enabled,
+    publicClient,
+    fetchIterationHistory,
+    fetchBatchHistory,
+    fetchSurplusHistory,
+    handleIterationLimitReached,
+    handleBatchMarkedUsed,
+    handleSurplusRecovered,
+  ]);
 
   // Calculate statistics
   const stats = {
@@ -208,7 +246,7 @@ export function useAdminEvents({
  * Hook specifically for the admin dashboard
  * Provides comprehensive admin event monitoring
  */
-export function useAdminDashboardEvents() {
+export function useAdminDashboardEvents(enabled = true) {
   const [highlightGasControl, setHighlightGasControl] = useState(false);
 
   const handleIterationLimit = useCallback(() => {
@@ -220,6 +258,7 @@ export function useAdminDashboardEvents() {
   const events = useAdminEvents({
     onIterationLimitReached: handleIterationLimit,
     showToasts: true,
+    enabled,
   });
 
   return {

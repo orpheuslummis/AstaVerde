@@ -2,7 +2,7 @@
 
 import type { BatchData, BatchParams } from "../../../types";
 import { useEffect, useMemo, useState } from "react";
-import { usePublicClient } from "wagmi";
+import { useRateLimitedPublicClient } from "@/hooks/useRateLimitedPublicClient";
 import Image from "next/image";
 import Link from "next/link";
 import BatchInfo from "../../../components/BatchInfo";
@@ -16,7 +16,7 @@ export default function Page({ params }: { params: BatchParams }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { astaverdeContractConfig } = useAppContext();
-  const publicClient = usePublicClient();
+  const publicClient = useRateLimitedPublicClient();
 
   const placeholderImage = useMemo(() =>
     getPlaceholderImageUrl(

@@ -1,15 +1,18 @@
 import { multicall } from "@wagmi/core";
 import { useCallback, useState } from "react";
-import { usePublicClient, useReadContract, useWalletClient, useWriteContract } from "wagmi";
+import { useReadContract, useWalletClient, useWriteContract } from "wagmi";
 import { wagmiConfig } from "../config/wagmi";
 import { getFunctionKind, isReadFunctionByAbi, isWriteFunctionByAbi } from "../lib/abiInference";
 import type { ContractConfig, ExecuteFunction, ContractError } from "../shared/types/contracts";
+import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
+
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function useContractInteraction(contractConfig: ContractConfig, functionName: string) {
   const [isSimulating] = useState(false);
   const [isPending] = useState(false);
   const [error] = useState<ContractError>(null);
-  const publicClient = usePublicClient();
+  const publicClient = useRateLimitedPublicClient();
   const { data: walletClient } = useWalletClient();
   const { writeContractAsync } = useWriteContract();
   // Note: We avoid pre-creating simulate hooks for write functions to prevent
@@ -22,7 +25,11 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
     ...contractConfig,
     functionName,
     query: {
-      enabled: isReadOnlyFunction, // Only query if it's a read function
+      enabled: false, // Avoid auto-read; calls go through execute()
+      staleTime: 15_000,
+      cacheTime: 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
     },
   });
 
@@ -101,7 +108,7 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
           functionName: "lastTokenID",
         });
 
-        const batchSize = 500; // Adjust based on your needs and RPC provider limits
+        const batchSize = 100; // Smaller batches to reduce RPC pressure
         const batches = Math.ceil(Number(lastTokenID) / batchSize);
         const ownedTokens: number[] = [];
 
@@ -125,6 +132,11 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
               ownedTokens.push(start + index);
             }
           });
+
+          // Space out batches to avoid RPC 429 responses
+          if (i < batches - 1) {
+            await pause(250);
+          }
         }
 
         return ownedTokens;
