@@ -1,5 +1,43 @@
 we have new requirements for the project ...
 
+=======================================================
+
+# Status Quo Snapshot (2025-12-13)
+
+This section is the current, repo-backed snapshot of what is actually deployed / configured today. It’s meant to complement (not replace) the original plan text below.
+
+## Confirmed in repo
+
+### Arbitrum Sepolia deployment exists (fresh deploy)
+
+Artifacts are present under `deployments/arbitrum-sepolia/`:
+
+- AstaVerde: `0xdE8b55d782634a9adbCF0815fec4f09665e9c5ea`
+- MockUSDC: `0x32b5E192aC9C941b4B5F0216Cdb13053aB74e124`
+- EcoStabilizer: `0x8C04a27dED3aCf8635A0c1dfA6708F5c3bBC10fC`
+- StabilizedCarbonCoin (SCC): `0x695B030B8fE57e67293Be3f7a5d7DA3Ce3654d5F`
+
+Local webapp QA env (`webapp/.env.arbitrum`) is configured to point at these addresses and uses `NEXT_PUBLIC_CHAIN_SELECTION=arbitrum_sepolia`.
+
+### Arbitrum One deployment does not exist yet
+
+- No `deployments/arbitrum-one/` artifacts are present.
+
+## Notes / deviations from the original plan text
+
+- The current Arbitrum Sepolia deployment uses **MockUSDC** (mintable test token) rather than Circle native USDC (`0x75fa…AA4d`). This is fine for QA, but copy/FAQ that says “Circle-issued native USDC” is only strictly true on mainnet unless we redeploy Sepolia using native USDC.
+- There is a large set of uncommitted webapp changes focused on RPC provider stability (429 avoidance): global rate-limited transports, reduced polling/watch, and chunked reads.
+- Root `.env` was historically tracked in git; it is deleted locally but not yet committed as a removal.
+
+## Updated “what’s left” checklist (as of 2025-12-13)
+
+- Land and validate the uncommitted RPC stability changes (lint/test/build).
+- QA the Arbitrum Sepolia deployment end-to-end (wallet connect, buy/redeem, vault deposit/withdraw, admin flows).
+- Prepare Arbitrum One env (`.env.arbitrum-one` and production webapp env), then deploy to Arbitrum One using native USDC `0xaf88…e5831` (not USDC.e).
+- Verify mainnet deployment on Arbiscan (optional, but recommended before shipping).
+
+=======================================================
+
 
 › our new requirement is that we should instead deploy (afresh) to
   arbitrum ... instead of base. we don't need migration of state. let's
@@ -187,3 +225,10 @@ By entering AstaVerde, you acknowledge that you understand and agree to these te
 4. QA on Arbitrum Sepolia: wallet connect, USDC detection, deposit/withdraw flows, UI copy and PDF.
 5. Deploy to Arbitrum One via `npm run deploy:mainnet` using native USDC 0xaf88…e5831; capture addresses/tx hashes and update production env files.
 6. Mainnet verification: follow-up decision (currently optional per stakeholder); if enabled, run Arbiscan verify; otherwise skip.
+
+## Progress update (2025-12-13)
+
+- Step 3 (Arbitrum Sepolia deploy): DONE (see `deployments/arbitrum-sepolia/` addresses in the Status Quo Snapshot).
+- Step 4 (QA on Arbitrum Sepolia): IN PROGRESS (significant RPC-stability work is currently uncommitted).
+- Step 5 (Arbitrum One deploy): TODO (no `deployments/arbitrum-one/` yet).
+- Step 6 (Mainnet verification): TODO (depends on Step 5).
