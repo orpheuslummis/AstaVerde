@@ -7,14 +7,14 @@ import { useAccount } from "wagmi";
 import { ENV } from "../config/environment";
 import { useAppContext } from "../contexts/AppContext";
 import { useBatchOperations } from "../features/marketplace";
-import { dispatchRefetch } from "../hooks/useGlobalEvent";
+import { dispatchBalancesRefetch } from "../hooks/useGlobalEvent";
 import type { BatchCardProps } from "../types";
 import { getPlaceholderImageUrl } from "../utils/placeholderImage";
 import Loader from "./Loader";
 
 export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
   const { isConnected } = useAccount();
-  const { refetchBatches } = useAppContext();
+  const { getBatchInfo, updateBatchItemsLeft } = useAppContext();
   const [tokenAmount, setTokenAmount] = useState(1);
 
   useEffect(() => {
@@ -45,9 +45,26 @@ export function BatchCard({ batch, updateCard, isSoldOut }: BatchCardProps) {
     if (batch.itemsLeft === 0n || isSoldOut) return;
     try {
       await handleApproveAndBuy(BigInt(tokenAmount));
-      // Immediately refresh the batches after successful purchase
-      await refetchBatches();
-      dispatchRefetch();
+
+      // Optimistically decrement inventory for instant UI feedback.
+      const purchased = BigInt(tokenAmount);
+      const optimisticItemsLeft = batch.itemsLeft > purchased ? batch.itemsLeft - purchased : 0n;
+      updateBatchItemsLeft(batch.batchId, optimisticItemsLeft);
+
+      // Refresh this batch's remaining inventory from chain (fast path; avoids refetching every batch).
+      try {
+        const info = await getBatchInfo(Number(batch.batchId));
+        const remainingTokens = Array.isArray(info) ? info[4] : undefined;
+        if (typeof remainingTokens === "bigint") {
+          updateBatchItemsLeft(batch.batchId, remainingTokens);
+        }
+      } catch {
+        // Keep optimistic UI state on transient RPC failures.
+      }
+
+      // Update header balances (USDC decreases).
+      dispatchBalancesRefetch();
+
       if (updateCard) {
         updateCard();
       }

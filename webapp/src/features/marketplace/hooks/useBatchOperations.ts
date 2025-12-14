@@ -1,13 +1,14 @@
 import { useCallback, useState, useMemo } from "react";
-import { usePublicClient, useWalletClient, useBalance } from "wagmi";
+import { useWalletClient, useBalance } from "wagmi";
 import { wagmiConfig } from "../../../config/wagmi";
 import { MarketplaceService } from "../../../services/blockchain/marketplaceService";
 import { getUsdcContract } from "../../../config/contracts";
 import { customToast } from "../../../shared/utils/customToast";
+import { useRateLimitedPublicClient } from "@/hooks/useRateLimitedPublicClient";
 
 export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
   const [isLoading, setIsLoading] = useState(false);
-  const publicClient = usePublicClient();
+  const publicClient = useRateLimitedPublicClient();
   const { data: walletClient } = useWalletClient();
 
   // Create marketplace service
@@ -49,10 +50,20 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
         console.error("Error in approve and buy process:", error);
 
         const errorMessage = error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes("Insufficient funds sent")) {
-          customToast.error("Insufficient USDC balance for this purchase.");
-        } else if (!errorMessage.includes("cancelled by user")) {
-          customToast.error(`Transaction failed: ${errorMessage}`);
+        const lower = errorMessage.toLowerCase();
+        const suppressToast =
+          lower.includes("user rejected") || lower.includes("user denied") || lower.includes("cancelled by user");
+
+        if (!suppressToast) {
+          if (errorMessage.includes("Wrong network")) {
+            customToast.error(errorMessage);
+          } else if (errorMessage.includes("Insufficient funds sent") || errorMessage.includes("Insufficient USDC balance")) {
+            customToast.error("Insufficient USDC balance for this purchase.");
+          } else if (errorMessage.startsWith("USDC approval failed:")) {
+            customToast.error(errorMessage);
+          } else {
+            customToast.error(`Transaction failed: ${errorMessage}`);
+          }
         }
 
         throw error;

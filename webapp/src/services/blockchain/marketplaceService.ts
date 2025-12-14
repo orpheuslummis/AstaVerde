@@ -20,6 +20,34 @@ export class MarketplaceService {
     private wagmiConfig: Config,
   ) {}
 
+  private async assertWalletOnExpectedChain(): Promise<void> {
+    if (!this.walletClient) return;
+
+    const expectedChainId = this.publicClient.chain?.id;
+    if (!expectedChainId) return;
+
+    const walletClientAny = this.walletClient as unknown as {
+      chain?: { id?: number };
+      getChainId?: () => Promise<number>;
+    };
+
+    let walletChainId: number | undefined = walletClientAny.chain?.id;
+    if (!walletChainId && typeof walletClientAny.getChainId === "function") {
+      try {
+        walletChainId = await walletClientAny.getChainId();
+      } catch {
+        return;
+      }
+    }
+
+    if (walletChainId && walletChainId !== expectedChainId) {
+      const expectedName = this.publicClient.chain?.name ?? `chainId ${expectedChainId}`;
+      throw new Error(
+        `Wrong network (wallet chainId ${walletChainId}). Please switch your wallet to ${expectedName}.`,
+      );
+    }
+  }
+
   // Batch operations
   async getCurrentBatchPrice(batchId: number): Promise<bigint> {
     const contract = getAstaVerdeContract();
@@ -57,6 +85,8 @@ export class MarketplaceService {
     if (!this.walletClient) {
       throw new Error("Wallet not connected");
     }
+
+    await this.assertWalletOnExpectedChain();
 
     // Get fresh price at time of purchase
     const currentUnitPrice = await this.getCurrentBatchPrice(batchId);
@@ -104,7 +134,9 @@ export class MarketplaceService {
     });
 
     if (balance < exactTotalCost) {
-      throw new Error(`Insufficient USDC balance. Need ${exactTotalCost.toString()} but have ${balance.toString()}`);
+      throw new Error(
+        `Insufficient USDC balance. Need ${formatUnits(exactTotalCost, ENV.USDC_DECIMALS)} but have ${formatUnits(balance, ENV.USDC_DECIMALS)}.`,
+      );
     }
 
     // Check and handle USDC approval
@@ -253,20 +285,40 @@ export class MarketplaceService {
       const approvalAmount = amount * APPROVAL_BUFFER_FACTOR;
 
       try {
-        // Skip simulation and directly execute approval
-        // Simulation might be failing due to viem/wagmi issues with local network
-        const approveTx = await this.walletClient!.writeContract({
-          ...usdcContract,
-          functionName: "approve",
-          args: [astaverdeContract.address, approvalAmount],
-          account: this.walletClient!.account,
-        });
+        const isLocalChain = this.publicClient.chain?.id === 31337;
+        let approveTx: `0x${string}`;
+
+        if (!isLocalChain) {
+          try {
+            const { request } = await this.publicClient.simulateContract({
+              ...usdcContract,
+              functionName: "approve",
+              args: [astaverdeContract.address, approvalAmount],
+              account: this.walletClient.account,
+            });
+            approveTx = await this.walletClient.writeContract(request);
+          } catch {
+            approveTx = await this.walletClient.writeContract({
+              ...usdcContract,
+              functionName: "approve",
+              args: [astaverdeContract.address, approvalAmount],
+              account: this.walletClient.account,
+            });
+          }
+        } else {
+          approveTx = await this.walletClient.writeContract({
+            ...usdcContract,
+            functionName: "approve",
+            args: [astaverdeContract.address, approvalAmount],
+            account: this.walletClient.account,
+          });
+        }
 
         await this.publicClient.waitForTransactionReceipt({ hash: approveTx });
         console.log("Approval successful:", approveTx);
       } catch (error) {
         console.error("Approval error details:", error);
-        throw error;
+        throw Object.assign(new Error(`USDC approval failed: ${this.getRevertReason(error)}`), { cause: error });
       }
     }
   }
@@ -311,7 +363,16 @@ export class MarketplaceService {
   }
 
   private getRevertReason(error: unknown): string {
-    const err = error as { data?: { message?: string }; shortMessage?: string; message?: string };
-    return err?.data?.message || err?.shortMessage || err?.message || "Transaction failed without a reason.";
+    const seen = new Set<unknown>();
+    let current: any = error;
+
+    for (let depth = 0; depth < 6 && current && !seen.has(current); depth++) {
+      seen.add(current);
+      const message = current?.data?.message || current?.shortMessage || current?.message;
+      if (typeof message === "string" && message.trim().length > 0) return message;
+      current = current?.cause;
+    }
+
+    return "Transaction failed without a reason.";
   }
 }
