@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { parseEther } from "viem";
-import { useAccount, usePublicClient, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import {
   getEcoStabilizerContract,
   getSccContract,
@@ -11,8 +11,9 @@ import { customToast } from "../shared/utils/customToast";
 import { ENV } from "../config/environment";
 import { VAULT_GAS_LIMITS } from "../config/constants";
 import { parseVaultError, TxStatus, VaultErrorState } from "../utils/errors";
-import { dispatchRefetch } from "./useGlobalEvent";
+import { dispatchBalancesRefetch } from "./useGlobalEvent";
 import type { VaultLoan } from "../features/vault/types";
+import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
 
 export interface VaultHook {
   // Core functionality
@@ -49,9 +50,10 @@ export interface VaultHook {
 }
 
 const SCC_PER_ASSET = parseEther("20");
+const MINTER_ROLE = "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6" as const;
 
 export function useVault(): VaultHook {
-  const publicClient = usePublicClient();
+  const publicClient = useRateLimitedPublicClient();
   const { address } = useAccount();
 
   // State
@@ -67,14 +69,6 @@ export function useVault(): VaultHook {
   // Transaction management
   const { writeContractAsync } = useWriteContract();
   const [currentTxHash, setCurrentTxHash] = useState<`0x${string}` | undefined>();
-
-  const {
-    isLoading: isConfirming,
-    isSuccess: isConfirmed,
-    error: txError,
-  } = useWaitForTransactionReceipt({
-    hash: currentTxHash,
-  });
 
   // Check if vault contracts are available
   const isVaultAvailable = useMemo(() => {
@@ -162,376 +156,6 @@ export function useVault(): VaultHook {
       await Promise.all([refetchSccBalance(), refetchSccAllowance(), refetchUserLoans(), refetchNftApproval()]);
     }
   }, [isVaultAvailable, address, refetchSccBalance, refetchSccAllowance, refetchUserLoans, refetchNftApproval]);
-
-  // Core vault functions with proper async handling
-  const deposit = useCallback(
-    async (tokenId: bigint) => {
-      if (!address || !isVaultAvailable) {
-        throw new Error("Wallet not connected or vault not available");
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        setVaultError(null);
-        setTxStatus(TxStatus.SIGNING);
-
-        const vaultContractConfig = getVaultContractConfig();
-
-        customToast.info("Depositing NFT to vault...");
-
-        const hash = await writeContractAsync({
-          ...vaultContractConfig,
-          functionName: "deposit",
-          args: [tokenId],
-        });
-
-        setCurrentTxHash(hash);
-        setTxStatus(TxStatus.CONFIRMING);
-
-        // Wait for transaction receipt
-        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-
-        if (receipt?.status === "success") {
-          setTxStatus(TxStatus.SUCCESS);
-          customToast.success("NFT successfully deposited!");
-          await refreshContractData();
-          dispatchRefetch();
-        } else {
-          throw new Error("Transaction failed");
-        }
-      } catch (err) {
-        const parsedError = parseVaultError(err, {
-          operation: "deposit",
-          approveNFT: async () => approveNFT(),
-          retry: () => deposit(tokenId),
-        });
-        setError((err as Error)?.message || "Failed to deposit NFT");
-        setVaultError(parsedError);
-        setTxStatus(TxStatus.ERROR);
-        customToast.error(parsedError.message);
-        throw err;
-      } finally {
-        setIsLoading(false);
-        setCurrentTxHash(undefined);
-      }
-    },
-    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
-  );
-
-  const withdraw = useCallback(
-    async (tokenId: bigint) => {
-      if (!address || !isVaultAvailable) {
-        throw new Error("Wallet not connected or vault not available");
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        setVaultError(null);
-        setTxStatus(TxStatus.SIGNING);
-
-        const vaultConfig = getVaultContractConfig();
-
-        customToast.info("Withdrawing NFT from vault...");
-
-        let gasLimit: bigint | undefined;
-        try {
-          if (publicClient && address) {
-            const estimate = await publicClient.estimateContractGas({
-              ...vaultConfig,
-              functionName: "withdraw",
-              args: [tokenId],
-              account: address,
-            });
-            gasLimit = (estimate * 150n) / 100n; // add 50% buffer
-          }
-        } catch {
-          gasLimit = VAULT_GAS_LIMITS.WITHDRAW;
-        }
-
-        const hash = await writeContractAsync({
-          ...vaultConfig,
-          functionName: "withdraw",
-          args: [tokenId],
-          ...(gasLimit ? { gas: gasLimit } : {}),
-        });
-
-        setCurrentTxHash(hash);
-        setTxStatus(TxStatus.CONFIRMING);
-
-        // Wait for transaction receipt
-        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-
-        if (receipt?.status === "success") {
-          setTxStatus(TxStatus.SUCCESS);
-          customToast.success("NFT successfully withdrawn!");
-          await refreshContractData();
-          dispatchRefetch();
-        } else {
-          throw new Error("Transaction failed");
-        }
-      } catch (err) {
-        const parsedError = parseVaultError(err, {
-          operation: "withdraw",
-          approveSCC: async () => approveSCC(SCC_PER_ASSET),
-          retry: () => withdraw(tokenId),
-        });
-        setError((err as Error)?.message || "Failed to withdraw NFT");
-        setVaultError(parsedError);
-        setTxStatus(TxStatus.ERROR);
-        customToast.error(parsedError.message);
-        throw err;
-      } finally {
-        setIsLoading(false);
-        setCurrentTxHash(undefined);
-      }
-    },
-    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
-  );
-
-  // Batch operations
-  const depositBatch = useCallback(
-    async (tokenIds: bigint[]) => {
-      if (!address || !isVaultAvailable) {
-        throw new Error("Wallet not connected or vault not available");
-      }
-
-      if (vaultVersion !== "V2") {
-        throw new Error("Batch operations only available in V2");
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        setVaultError(null);
-        setTxStatus(TxStatus.SIGNING);
-
-        const vaultConfig = getVaultContractConfig();
-
-        customToast.info(`Depositing ${tokenIds.length} NFTs to vault...`);
-
-        let gasLimit: bigint | undefined;
-        try {
-          if (publicClient && address) {
-            const estimate = await publicClient.estimateContractGas({
-              ...vaultConfig,
-              functionName: "depositBatch",
-              args: [tokenIds],
-              account: address,
-            });
-            gasLimit = (estimate * 150n) / 100n; // add 50% buffer for batch overhead
-          }
-        } catch {
-          // Allow wallet to estimate if RPC supports it
-          gasLimit = undefined;
-        }
-
-        // Create a truly mutable array to avoid viem frozen array issues
-        const cleanTokenIds = new Array(tokenIds.length);
-        for (let i = 0; i < tokenIds.length; i++) {
-          cleanTokenIds[i] = BigInt(tokenIds[i].toString());
-        }
-
-        const hash = await writeContractAsync({
-          ...vaultConfig,
-          functionName: "depositBatch",
-          args: [cleanTokenIds],
-          ...(gasLimit ? { gas: gasLimit } : {}),
-        });
-
-        setCurrentTxHash(hash);
-        setTxStatus(TxStatus.CONFIRMING);
-
-        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-
-        if (receipt?.status === "success") {
-          setTxStatus(TxStatus.SUCCESS);
-          customToast.success(`Successfully deposited ${tokenIds.length} NFTs!`);
-          await refreshContractData();
-          dispatchRefetch();
-        } else {
-          throw new Error("Transaction failed");
-        }
-      } catch (err) {
-        setError((err as Error)?.message || "Failed to deposit batch");
-        setTxStatus(TxStatus.ERROR);
-        customToast.error("Batch deposit failed");
-        throw err;
-      } finally {
-        setIsLoading(false);
-        setCurrentTxHash(undefined);
-      }
-    },
-    [
-      address,
-      isVaultAvailable,
-      vaultVersion,
-      getVaultContractConfig,
-      writeContractAsync,
-      publicClient,
-      refreshContractData,
-    ],
-  );
-
-  const withdrawBatch = useCallback(
-    async (tokenIds: bigint[]) => {
-      if (!address || !isVaultAvailable) {
-        throw new Error("Wallet not connected or vault not available");
-      }
-
-      if (vaultVersion !== "V2") {
-        throw new Error("Batch operations only available in V2");
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        setVaultError(null);
-        setTxStatus(TxStatus.SIGNING);
-
-        const vaultConfig = getVaultContractConfig();
-        const sccConfig = getSccConfig();
-
-        // Check and set SCC allowance if needed
-        const requiredScc = BigInt(tokenIds.length) * SCC_PER_ASSET;
-        const currentAllowance = (sccAllowance as bigint) || 0n;
-
-        if (currentAllowance < requiredScc) {
-          customToast.info("Approving SCC for withdrawal...");
-          const approveHash = await writeContractAsync({
-            ...sccConfig,
-            functionName: "approve",
-            args: [vaultConfig.address as `0x${string}`, requiredScc],
-          });
-          await publicClient?.waitForTransactionReceipt({ hash: approveHash });
-          await refetchSccAllowance();
-          // Small delay to ensure chain state is updated
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-
-        customToast.info(`Withdrawing ${tokenIds.length} NFTs from vault...`);
-
-        // Create a truly mutable array to avoid viem frozen array issues
-        const cleanTokenIds = new Array(tokenIds.length);
-        for (let i = 0; i < tokenIds.length; i++) {
-          cleanTokenIds[i] = BigInt(tokenIds[i].toString());
-        }
-
-        const hash = await writeContractAsync({
-          ...vaultConfig,
-          functionName: "withdrawBatch",
-          args: [cleanTokenIds],
-          gas: 1000000n, // Set explicit gas limit for batch operations
-        });
-
-        setCurrentTxHash(hash);
-        setTxStatus(TxStatus.CONFIRMING);
-
-        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-
-        if (receipt?.status === "success") {
-          setTxStatus(TxStatus.SUCCESS);
-          customToast.success(`Successfully withdrew ${tokenIds.length} NFTs!`);
-          await refreshContractData();
-          dispatchRefetch();
-        } else {
-          throw new Error("Transaction failed");
-        }
-      } catch (err) {
-        setError((err as Error)?.message || "Failed to withdraw batch");
-        setTxStatus(TxStatus.ERROR);
-        customToast.error("Batch withdrawal failed");
-        throw err;
-      } finally {
-        setIsLoading(false);
-        setCurrentTxHash(undefined);
-      }
-    },
-    [
-      address,
-      isVaultAvailable,
-      vaultVersion,
-      getVaultContractConfig,
-      getSccConfig,
-      writeContractAsync,
-      publicClient,
-      refreshContractData,
-      sccAllowance,
-      refetchSccAllowance,
-    ],
-  );
-
-  // Backward-compatible alias for repayAndWithdraw
-  const repayAndWithdraw = useCallback(
-    async (tokenId: bigint) => {
-      if (!address || !isVaultAvailable) {
-        throw new Error("Wallet not connected or vault not available");
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        setVaultError(null);
-        setTxStatus(TxStatus.SIGNING);
-
-        const vaultConfig = getVaultContractConfig();
-
-        customToast.info("Repaying 20 SCC and withdrawing NFT...");
-
-        let gasLimit: bigint | undefined;
-        try {
-          if (publicClient && address) {
-            const estimate = await publicClient.estimateContractGas({
-              ...vaultConfig,
-              functionName: "withdraw",
-              args: [tokenId],
-              account: address,
-            });
-            gasLimit = (estimate * 150n) / 100n;
-          }
-        } catch {
-          gasLimit = VAULT_GAS_LIMITS.WITHDRAW;
-        }
-
-        const hash = await writeContractAsync({
-          ...vaultConfig,
-          functionName: "withdraw",
-          args: [tokenId],
-          ...(gasLimit ? { gas: gasLimit } : {}),
-        });
-
-        setCurrentTxHash(hash);
-        setTxStatus(TxStatus.CONFIRMING);
-
-        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-
-        if (receipt?.status === "success") {
-          setTxStatus(TxStatus.SUCCESS);
-          customToast.success("NFT successfully withdrawn!");
-          await refreshContractData();
-          dispatchRefetch();
-        } else {
-          throw new Error("Transaction failed");
-        }
-      } catch (err) {
-        const parsedError = parseVaultError(err, {
-          operation: "withdraw",
-          approveSCC: async () => approveSCC(SCC_PER_ASSET),
-          retry: () => repayAndWithdraw(tokenId),
-        });
-        setError((err as Error)?.message || "Failed to repay and withdraw NFT");
-        setVaultError(parsedError);
-        setTxStatus(TxStatus.ERROR);
-        customToast.error(parsedError.message);
-        throw err;
-      } finally {
-        setIsLoading(false);
-        setCurrentTxHash(undefined);
-      }
-    },
-    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
-  );
 
   // Approval functions
   const approveNFT = useCallback(async () => {
@@ -648,6 +272,516 @@ export function useVault(): VaultHook {
     [address, isVaultAvailable, getSccConfig, writeContractAsync, publicClient, refetchSccAllowance],
   );
 
+  const diagnoseDepositFailure = useCallback(
+    async (tokenId: bigint): Promise<VaultErrorState | null> => {
+      if (!publicClient || !address || !isVaultAvailable || !vaultAddress) return null;
+
+      try {
+        const vaultConfig = getVaultContractConfig();
+        const assetConfig = getAssetContractConfig();
+        const sccConfig = getSccConfig();
+
+        const results = await publicClient.multicall({
+          allowFailure: true,
+          contracts: [
+            { ...vaultConfig, functionName: "paused" },
+            { ...vaultConfig, functionName: "ecoAsset" },
+            { ...vaultConfig, functionName: "scc" },
+            { ...assetConfig, functionName: "paused" },
+            { ...assetConfig, functionName: "isApprovedForAll", args: [address, vaultAddress] },
+            { ...assetConfig, functionName: "balanceOf", args: [address, tokenId] },
+            { ...assetConfig, functionName: "isRedeemed", args: [tokenId] },
+            { ...sccConfig, functionName: "hasRole", args: [MINTER_ROLE, vaultAddress] },
+          ],
+        });
+
+        const get = <T,>(i: number): T | null => {
+          const res = results[i];
+          if (!res || res.status !== "success") return null;
+          return res.result as T;
+        };
+
+        const vaultPaused = get<boolean>(0);
+        const vaultEcoAsset = get<`0x${string}`>(1);
+        const vaultScc = get<`0x${string}`>(2);
+        const assetPaused = get<boolean>(3);
+        const approvedForAll = get<boolean>(4);
+        const balance = get<bigint>(5);
+        const redeemed = get<boolean>(6);
+        const vaultIsMinter = get<boolean>(7);
+
+        if (vaultEcoAsset && vaultEcoAsset.toLowerCase() !== assetConfig.address.toLowerCase()) {
+          return {
+            type: "contract",
+            message: "Vault Address Mismatch",
+            details:
+              "This vault is wired to a different AstaVerde contract than the UI is configured for. Update your env addresses to match the deployed contracts.",
+            originalError: { vaultEcoAsset, uiEcoAsset: assetConfig.address },
+          };
+        }
+
+        if (vaultScc && vaultScc.toLowerCase() !== sccConfig.address.toLowerCase()) {
+          return {
+            type: "contract",
+            message: "Vault Address Mismatch",
+            details:
+              "This vault is wired to a different SCC contract than the UI is configured for. Update your env addresses to match the deployed contracts.",
+            originalError: { vaultScc, uiScc: sccConfig.address },
+          };
+        }
+
+        if (vaultPaused) {
+          return {
+            type: "contract",
+            message: "Vault Temporarily Unavailable",
+            details: "The EcoStabilizer vault contract is paused.",
+          };
+        }
+
+        if (assetPaused) {
+          return {
+            type: "contract",
+            message: "Marketplace Temporarily Unavailable",
+            details: "The AstaVerde NFT contract is paused, so transfers are disabled.",
+          };
+        }
+
+        if (redeemed) {
+          return {
+            type: "contract",
+            message: "NFT Already Redeemed",
+            details: "This NFT has been redeemed and cannot be deposited to the vault.",
+          };
+        }
+
+        if (typeof balance === "bigint" && balance === 0n) {
+          return {
+            type: "contract",
+            message: "Not NFT Owner",
+            details: "You must own this NFT to deposit it into the vault.",
+          };
+        }
+
+        if (approvedForAll === false) {
+          return {
+            type: "approval",
+            message: "NFT Approval Required",
+            details: "Please approve the vault to transfer your NFTs first.",
+            action: {
+              label: "Approve NFTs",
+              handler: async () => approveNFT(),
+            },
+          };
+        }
+
+        if (vaultIsMinter === false) {
+          return {
+            type: "contract",
+            message: "Vault Misconfigured",
+            details: "EcoStabilizer is missing SCC MINTER_ROLE, so deposits cannot mint SCC. Redeploy or grant MINTER_ROLE to the vault address.",
+          };
+        }
+      } catch {
+        // ignore — diagnostics are best-effort only
+      }
+
+      return null;
+    },
+    [
+      address,
+      approveNFT,
+      getAssetContractConfig,
+      getSccConfig,
+      getVaultContractConfig,
+      isVaultAvailable,
+      publicClient,
+      vaultAddress,
+    ],
+  );
+
+  // Core vault functions with proper async handling
+  const deposit = useCallback(
+    async (tokenId: bigint) => {
+      if (!address || !isVaultAvailable) {
+        throw new Error("Wallet not connected or vault not available");
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        setVaultError(null);
+        setTxStatus(TxStatus.SIGNING);
+
+        const vaultContractConfig = getVaultContractConfig();
+
+        customToast.info("Depositing NFT to vault...");
+
+        const hash = await writeContractAsync({
+          ...vaultContractConfig,
+          functionName: "deposit",
+          args: [tokenId],
+        });
+
+        setCurrentTxHash(hash);
+        setTxStatus(TxStatus.CONFIRMING);
+
+        // Wait for transaction receipt
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+
+        if (receipt?.status === "success") {
+          setTxStatus(TxStatus.SUCCESS);
+          customToast.success("NFT successfully deposited!");
+          await refreshContractData();
+          dispatchBalancesRefetch();
+        } else {
+          throw new Error("Transaction failed");
+        }
+      } catch (err) {
+        let parsedError = parseVaultError(err, {
+          operation: "deposit",
+          approveNFT: async () => approveNFT(),
+          retry: () => deposit(tokenId),
+        });
+        if (parsedError.type === "unknown") {
+          const diagnosed = await diagnoseDepositFailure(tokenId);
+          if (diagnosed) parsedError = { ...diagnosed, originalError: err };
+        }
+        setError((err as Error)?.message || "Failed to deposit NFT");
+        setVaultError(parsedError);
+        setTxStatus(TxStatus.ERROR);
+        customToast.error(parsedError.message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+        setCurrentTxHash(undefined);
+      }
+    },
+    [
+      address,
+      approveNFT,
+      diagnoseDepositFailure,
+      getVaultContractConfig,
+      isVaultAvailable,
+      publicClient,
+      refreshContractData,
+      writeContractAsync,
+    ],
+  );
+
+  const withdraw = useCallback(
+    async (tokenId: bigint) => {
+      if (!address || !isVaultAvailable) {
+        throw new Error("Wallet not connected or vault not available");
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        setVaultError(null);
+        setTxStatus(TxStatus.SIGNING);
+
+        const vaultConfig = getVaultContractConfig();
+
+        customToast.info("Withdrawing NFT from vault...");
+
+        let gasLimit: bigint | undefined;
+        try {
+          if (publicClient && address) {
+            const estimate = await publicClient.estimateContractGas({
+              ...vaultConfig,
+              functionName: "withdraw",
+              args: [tokenId],
+              account: address,
+            });
+            gasLimit = (estimate * 150n) / 100n; // add 50% buffer
+          }
+        } catch {
+          gasLimit = VAULT_GAS_LIMITS.WITHDRAW;
+        }
+
+        const hash = await writeContractAsync({
+          ...vaultConfig,
+          functionName: "withdraw",
+          args: [tokenId],
+          ...(gasLimit ? { gas: gasLimit } : {}),
+        });
+
+        setCurrentTxHash(hash);
+        setTxStatus(TxStatus.CONFIRMING);
+
+        // Wait for transaction receipt
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+
+        if (receipt?.status === "success") {
+          setTxStatus(TxStatus.SUCCESS);
+          customToast.success("NFT successfully withdrawn!");
+          await refreshContractData();
+          dispatchBalancesRefetch();
+        } else {
+          throw new Error("Transaction failed");
+        }
+      } catch (err) {
+        const parsedError = parseVaultError(err, {
+          operation: "withdraw",
+          approveSCC: async () => approveSCC(SCC_PER_ASSET),
+          retry: () => withdraw(tokenId),
+        });
+        setError((err as Error)?.message || "Failed to withdraw NFT");
+        setVaultError(parsedError);
+        setTxStatus(TxStatus.ERROR);
+        customToast.error(parsedError.message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+        setCurrentTxHash(undefined);
+      }
+    },
+    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
+  );
+
+  // Batch operations
+  const depositBatch = useCallback(
+    async (tokenIds: bigint[]) => {
+      if (!address || !isVaultAvailable) {
+        throw new Error("Wallet not connected or vault not available");
+      }
+
+      if (vaultVersion !== "V2") {
+        throw new Error("Batch operations only available in V2");
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        setVaultError(null);
+        setTxStatus(TxStatus.SIGNING);
+
+        const vaultConfig = getVaultContractConfig();
+
+        customToast.info(`Depositing ${tokenIds.length} NFTs to vault...`);
+
+        let gasLimit: bigint | undefined;
+        try {
+          if (publicClient && address) {
+            const estimate = await publicClient.estimateContractGas({
+              ...vaultConfig,
+              functionName: "depositBatch",
+              args: [tokenIds],
+              account: address,
+            });
+            gasLimit = (estimate * 150n) / 100n; // add 50% buffer for batch overhead
+          }
+        } catch {
+          // Allow wallet to estimate if RPC supports it
+          gasLimit = undefined;
+        }
+
+        // Create a truly mutable array to avoid viem frozen array issues
+        const cleanTokenIds = new Array(tokenIds.length);
+        for (let i = 0; i < tokenIds.length; i++) {
+          cleanTokenIds[i] = BigInt(tokenIds[i].toString());
+        }
+
+        const hash = await writeContractAsync({
+          ...vaultConfig,
+          functionName: "depositBatch",
+          args: [cleanTokenIds],
+          ...(gasLimit ? { gas: gasLimit } : {}),
+        });
+
+        setCurrentTxHash(hash);
+        setTxStatus(TxStatus.CONFIRMING);
+
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+
+        if (receipt?.status === "success") {
+          setTxStatus(TxStatus.SUCCESS);
+          customToast.success(`Successfully deposited ${tokenIds.length} NFTs!`);
+          await refreshContractData();
+          dispatchBalancesRefetch();
+        } else {
+          throw new Error("Transaction failed");
+        }
+      } catch (err) {
+        setError((err as Error)?.message || "Failed to deposit batch");
+        setTxStatus(TxStatus.ERROR);
+        customToast.error("Batch deposit failed");
+        throw err;
+      } finally {
+        setIsLoading(false);
+        setCurrentTxHash(undefined);
+      }
+    },
+    [
+      address,
+      isVaultAvailable,
+      vaultVersion,
+      getVaultContractConfig,
+      writeContractAsync,
+      publicClient,
+      refreshContractData,
+    ],
+  );
+
+  const withdrawBatch = useCallback(
+    async (tokenIds: bigint[]) => {
+      if (!address || !isVaultAvailable) {
+        throw new Error("Wallet not connected or vault not available");
+      }
+
+      if (vaultVersion !== "V2") {
+        throw new Error("Batch operations only available in V2");
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        setVaultError(null);
+        setTxStatus(TxStatus.SIGNING);
+
+        const vaultConfig = getVaultContractConfig();
+        const sccConfig = getSccConfig();
+
+        // Check and set SCC allowance if needed
+        const requiredScc = BigInt(tokenIds.length) * SCC_PER_ASSET;
+        const currentAllowance = (sccAllowance as bigint) || 0n;
+
+        if (currentAllowance < requiredScc) {
+          customToast.info("Approving SCC for withdrawal...");
+          const approveHash = await writeContractAsync({
+            ...sccConfig,
+            functionName: "approve",
+            args: [vaultConfig.address as `0x${string}`, requiredScc],
+          });
+          await publicClient?.waitForTransactionReceipt({ hash: approveHash });
+          await refetchSccAllowance();
+          // Small delay to ensure chain state is updated
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
+        customToast.info(`Withdrawing ${tokenIds.length} NFTs from vault...`);
+
+        // Create a truly mutable array to avoid viem frozen array issues
+        const cleanTokenIds = new Array(tokenIds.length);
+        for (let i = 0; i < tokenIds.length; i++) {
+          cleanTokenIds[i] = BigInt(tokenIds[i].toString());
+        }
+
+        const hash = await writeContractAsync({
+          ...vaultConfig,
+          functionName: "withdrawBatch",
+          args: [cleanTokenIds],
+          gas: 1000000n, // Set explicit gas limit for batch operations
+        });
+
+        setCurrentTxHash(hash);
+        setTxStatus(TxStatus.CONFIRMING);
+
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+
+        if (receipt?.status === "success") {
+          setTxStatus(TxStatus.SUCCESS);
+          customToast.success(`Successfully withdrew ${tokenIds.length} NFTs!`);
+          await refreshContractData();
+          dispatchBalancesRefetch();
+        } else {
+          throw new Error("Transaction failed");
+        }
+      } catch (err) {
+        setError((err as Error)?.message || "Failed to withdraw batch");
+        setTxStatus(TxStatus.ERROR);
+        customToast.error("Batch withdrawal failed");
+        throw err;
+      } finally {
+        setIsLoading(false);
+        setCurrentTxHash(undefined);
+      }
+    },
+    [
+      address,
+      isVaultAvailable,
+      vaultVersion,
+      getVaultContractConfig,
+      getSccConfig,
+      writeContractAsync,
+      publicClient,
+      refreshContractData,
+      sccAllowance,
+      refetchSccAllowance,
+    ],
+  );
+
+  // Backward-compatible alias for repayAndWithdraw
+  const repayAndWithdraw = useCallback(
+    async (tokenId: bigint) => {
+      if (!address || !isVaultAvailable) {
+        throw new Error("Wallet not connected or vault not available");
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        setVaultError(null);
+        setTxStatus(TxStatus.SIGNING);
+
+        const vaultConfig = getVaultContractConfig();
+
+        customToast.info("Repaying 20 SCC and withdrawing NFT...");
+
+        let gasLimit: bigint | undefined;
+        try {
+          if (publicClient && address) {
+            const estimate = await publicClient.estimateContractGas({
+              ...vaultConfig,
+              functionName: "withdraw",
+              args: [tokenId],
+              account: address,
+            });
+            gasLimit = (estimate * 150n) / 100n;
+          }
+        } catch {
+          gasLimit = VAULT_GAS_LIMITS.WITHDRAW;
+        }
+
+        const hash = await writeContractAsync({
+          ...vaultConfig,
+          functionName: "withdraw",
+          args: [tokenId],
+          ...(gasLimit ? { gas: gasLimit } : {}),
+        });
+
+        setCurrentTxHash(hash);
+        setTxStatus(TxStatus.CONFIRMING);
+
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+
+        if (receipt?.status === "success") {
+          setTxStatus(TxStatus.SUCCESS);
+          customToast.success("NFT successfully withdrawn!");
+          await refreshContractData();
+          dispatchBalancesRefetch();
+        } else {
+          throw new Error("Transaction failed");
+        }
+      } catch (err) {
+        const parsedError = parseVaultError(err, {
+          operation: "withdraw",
+          approveSCC: async () => approveSCC(SCC_PER_ASSET),
+          retry: () => repayAndWithdraw(tokenId),
+        });
+        setError((err as Error)?.message || "Failed to repay and withdraw NFT");
+        setVaultError(parsedError);
+        setTxStatus(TxStatus.ERROR);
+        customToast.error(parsedError.message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+        setCurrentTxHash(undefined);
+      }
+    },
+    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
+  );
+
   // Read functions
   const getUserLoans = useCallback(async (): Promise<bigint[]> => {
     // Prefer a fresh on-demand read to avoid cross-hook staleness during batch flows
@@ -710,7 +844,7 @@ export function useVault(): VaultHook {
 
     // Status
     isVaultAvailable,
-    isLoading: isLoading || isConfirming,
+    isLoading,
     error,
     vaultError,
     txStatus,

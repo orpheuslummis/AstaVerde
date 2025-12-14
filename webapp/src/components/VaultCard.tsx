@@ -5,7 +5,7 @@ import { formatEther, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import { readContract } from "wagmi/actions";
 import { wagmiConfig } from "../config/wagmi";
-import { dispatchRefetch } from "../hooks/useGlobalEvent";
+import { dispatchBalancesRefetch } from "../hooks/useGlobalEvent";
 import { useVault } from "../hooks/useVault";
 import { getEcoStabilizerContract } from "../config/contracts";
 import { customToast } from "../shared/utils/customToast";
@@ -128,8 +128,8 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       if (onActionComplete) {
         onActionComplete();
       } else {
-        // Only dispatch global refetch if no specific handler is provided
-        dispatchRefetch();
+        // Fallback: keep header balances current even when no parent refresh handler is provided.
+        dispatchBalancesRefetch();
       }
     }
   }, [txStatus, onActionComplete]);
@@ -168,12 +168,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Deposit error:", error);
-      // Check if user cancelled the transaction
-      if (error?.message?.includes("User rejected") || error?.message?.includes("User denied")) {
-        customToast.info("Transaction cancelled");
-      } else {
-        customToast.error("Deposit failed. Please try again.");
-      }
+      // useVault already parses & toasts a user-friendly error; avoid duplicate generic toasts here
     } finally {
       setIsDepositLoading(false);
       setTransactionStep("");
@@ -232,12 +227,7 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Withdraw error:", error);
-      // Check if user cancelled the transaction
-      if (error?.message?.includes("User rejected") || error?.message?.includes("User denied")) {
-        customToast.info("Transaction cancelled");
-      } else {
-        customToast.error("Withdrawal failed. Please try again.");
-      }
+      // useVault already parses & toasts a user-friendly error; avoid duplicate generic toasts here
     } finally {
       setIsWithdrawLoading(false);
       setTransactionStep("");
