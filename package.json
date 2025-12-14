@@ -89,6 +89,7 @@
         "deploy:testnet": "node scripts/deploy-with-validation.js --network arbitrum-sepolia",
         "deploy:mainnet": "node scripts/deploy-with-validation.js --network arbitrum-one",
         "deploy:safe": "node scripts/deploy-with-validation.js",
+        "mint:testnet": "node scripts/mint-arbitrum-sepolia.js",
         "verify:contracts": "hardhat etherscan-verify --sleep",
         "pinata:pin": "node scripts/pinata-pin.mjs"
     },
