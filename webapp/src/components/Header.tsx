@@ -4,14 +4,14 @@ import { ConnectKitButton } from "connectkit";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatUnits } from "viem";
-import { useAccount, useBalance, useBlockNumber } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
 import { ENV } from "../config/environment";
 import { getUsdcContract, getSccContract } from "../config/contracts";
 import { useIsProducer } from "../hooks/useIsProducer";
-import { useDebounce } from "../hooks/useDebounce";
 import { useAppContext } from "../contexts/AppContext";
+import { useAstaVerdeBalancesRefetch } from "../hooks/useGlobalEvent";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
@@ -45,21 +45,54 @@ export function Header({ links }: HeaderProps) {
     },
   });
 
-  // Watch new blocks to keep balances fresh after on-chain actions
-  // Use debouncing to avoid excessive refetches
-  const { data: blockNumber } = useBlockNumber({
-    watch: true,
-    query: { enabled: isConnected },
-  });
+  const refreshInFlightRef = useRef(false);
+  const refreshPendingRef = useRef(false);
 
-  // Debounce block number changes by 5 seconds to reduce refetch frequency
-  const debouncedBlockNumber = useDebounce(blockNumber, 5000);
+  const refreshBalances = useCallback(async () => {
+    if (!isConnected || !address) return;
 
+    if (refreshInFlightRef.current) {
+      refreshPendingRef.current = true;
+      return;
+    }
+
+    refreshInFlightRef.current = true;
+    refreshPendingRef.current = false;
+
+    const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    try {
+      // Refetch immediately, then retry a couple times to smooth over transient 429s/timeouts.
+      const delays = [0, 1500, 3000];
+      for (const delayMs of delays) {
+        if (delayMs) await pause(delayMs);
+
+        const usdcRes = await refetchUsdcBalance();
+        const sccRes = sccConfig ? await refetchSccBalance() : undefined;
+
+        const usdcOk = !usdcRes.isError;
+        const sccOk = !sccConfig || !sccRes?.isError;
+
+        if (usdcOk && sccOk) break;
+      }
+    } finally {
+      refreshInFlightRef.current = false;
+      if (refreshPendingRef.current) {
+        refreshPendingRef.current = false;
+        void refreshBalances();
+      }
+    }
+  }, [address, isConnected, refetchSccBalance, refetchUsdcBalance, sccConfig]);
+
+  // Initial load + whenever wallet/chain changes.
   useEffect(() => {
-    if (!isConnected || !debouncedBlockNumber) return;
-    void refetchUsdcBalance();
-    if (sccConfig) void refetchSccBalance();
-  }, [debouncedBlockNumber, isConnected, sccConfig, refetchUsdcBalance, refetchSccBalance]);
+    void refreshBalances();
+  }, [refreshBalances]);
+
+  // Refresh balances after successful txs (mint/buy/claim/vault ops, etc).
+  useAstaVerdeBalancesRefetch(() => {
+    void refreshBalances();
+  }, [refreshBalances]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement | null>(null);

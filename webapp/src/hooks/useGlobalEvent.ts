@@ -31,10 +31,29 @@ export function useAstaVerdeRefetch(handler: () => void, deps: DependencyList = 
 }
 
 /**
+ * Specialized hook for the astaverde:refetchBalances event.
+ * Intended for lightweight balance updates (e.g. header UI) without triggering
+ * heavier refetch flows like batch reloads.
+ */
+export function useAstaVerdeBalancesRefetch(handler: () => void, deps: DependencyList = []) {
+  useGlobalEvent("astaverde:refetchBalances", handler as EventListener, deps);
+}
+
+/**
  * Helper function to dispatch the astaverde:refetch event
  */
 export function dispatchRefetch() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("astaverde:refetch"));
+    dispatchBalancesRefetch();
+  }
+}
+
+/**
+ * Helper function to dispatch the astaverde:refetchBalances event
+ */
+export function dispatchBalancesRefetch() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("astaverde:refetchBalances"));
   }
 }
