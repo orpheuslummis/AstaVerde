@@ -5,6 +5,7 @@ import { getConfiguredChains, isLocalDevelopment } from "./chains";
 import { ENV, hasWalletConnectProjectId } from "./environment";
 import { mockConnector } from "../lib/mock-connector";
 import { debugLog } from "../utils/debug";
+import { createRateLimitedHttp } from "../lib/rpcLimiter";
 
 // Get chains for configuration
 const chains = getConfiguredChains();
@@ -35,6 +36,13 @@ const baseConfig = isLocalDevelopment()
 
 // Create wagmi config with explicit transports
 let wagmiConfig: ReturnType<typeof createConfig>;
+
+const rateLimitedTransports = chains.reduce((acc, chain) => {
+  const url = chain.rpcUrls?.default?.http?.[0];
+  const isLocalChain = chain.id === 31337 || url?.includes("127.0.0.1") || url?.includes("localhost");
+  acc[chain.id] = isLocalChain ? http(url ?? "http://127.0.0.1:8545") : createRateLimitedHttp(url);
+  return acc;
+}, {} as Record<number, ReturnType<typeof http>>);
 
 if (isE2EMode && isLocalDevelopment()) {
   // E2E mode: Add mock connector to the config (filter out Coinbase)
@@ -67,6 +75,7 @@ if (isE2EMode && isLocalDevelopment()) {
       ...defaultConfig,
       // Filter out Coinbase; keep WC + Injected
       connectors: (defaultConfig.connectors || []).filter((c) => c?.id !== "coinbaseWallet"),
+      transports: rateLimitedTransports,
     });
   } else {
     // No WC project ID: build a minimal, stable connector set to avoid WC runtime errors
@@ -74,11 +83,7 @@ if (isE2EMode && isLocalDevelopment()) {
     wagmiConfig = createConfig({
       chains,
       connectors: [injected()],
-      transports: chains.reduce((acc, chain) => {
-        const url = chain.rpcUrls?.default?.http?.[0];
-        acc[chain.id] = http(url);
-        return acc;
-      }, {} as Record<number, ReturnType<typeof http>>),
+      transports: rateLimitedTransports,
     });
     if (typeof window !== "undefined") {
       console.warn(

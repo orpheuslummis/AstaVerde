@@ -22,46 +22,69 @@ const localChain: Chain = {
   testnet: true,
 };
 
+function buildHttpUrls(
+  overrideUrl: string,
+  alchemyUrl: string | undefined,
+  fallback: readonly string[],
+): readonly string[] {
+  if (overrideUrl) {
+    return [overrideUrl];
+  }
+  if (alchemyUrl) {
+    return [alchemyUrl];
+  }
+  return fallback;
+}
+
+const baseMainnetRpc = buildHttpUrls(
+  ENV.BASE_MAINNET_RPC_URL,
+  ENV.ALCHEMY_API_KEY ? `https://base-mainnet.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}` : undefined,
+  base.rpcUrls.default.http,
+);
+const baseSepoliaRpc = buildHttpUrls(
+  ENV.BASE_SEPOLIA_RPC_URL,
+  ENV.ALCHEMY_API_KEY ? `https://base-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}` : undefined,
+  baseSepolia.rpcUrls.default.http,
+);
+const arbitrumMainnetRpc = buildHttpUrls(
+  ENV.ARBITRUM_MAINNET_RPC_URL,
+  ENV.ALCHEMY_API_KEY ? `https://arb-mainnet.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}` : undefined,
+  arbitrum.rpcUrls.default.http,
+);
+const arbitrumSepoliaRpc = buildHttpUrls(
+  ENV.ARBITRUM_SEPOLIA_RPC_URL,
+  ENV.ALCHEMY_API_KEY ? `https://arb-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}` : undefined,
+  arbitrumSepolia.rpcUrls.default.http,
+);
+
 // Chain configurations with custom RPC endpoints
 export const chainConfigs = {
   base_mainnet: {
     ...base,
     rpcUrls: {
-      default: {
-        http: ENV.ALCHEMY_API_KEY
-          ? [`https://base-mainnet.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`]
-          : base.rpcUrls.default.http,
-      },
+      default: { http: baseMainnetRpc },
+      public: { http: baseMainnetRpc },
     },
   },
   base_sepolia: {
     ...baseSepolia,
     rpcUrls: {
-      default: {
-        http: ENV.ALCHEMY_API_KEY
-          ? [`https://base-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`]
-          : baseSepolia.rpcUrls.default.http,
-      },
+      default: { http: baseSepoliaRpc },
+      public: { http: baseSepoliaRpc },
     },
   },
   arbitrum_mainnet: {
     ...arbitrum,
     rpcUrls: {
-      default: {
-        http: ENV.ALCHEMY_API_KEY
-          ? [`https://arb-mainnet.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`]
-          : arbitrum.rpcUrls.default.http,
-      },
+      default: { http: arbitrumMainnetRpc },
+      public: { http: arbitrumMainnetRpc },
     },
   },
   arbitrum_sepolia: {
     ...arbitrumSepolia,
     rpcUrls: {
-      default: {
-        http: ENV.ALCHEMY_API_KEY
-          ? [`https://arb-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`]
-          : arbitrumSepolia.rpcUrls.default.http,
-      },
+      default: { http: arbitrumSepoliaRpc },
+      public: { http: arbitrumSepoliaRpc },
     },
   },
   local: localChain,
