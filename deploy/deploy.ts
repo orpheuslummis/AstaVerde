@@ -269,8 +269,11 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     };
 
     let usdcTokenAddress: string;
+    const mockSupportedChainIds = new Set([31337, 84532, 11155111, 421614]); // Hardhat, Base Sepolia, Ethereum Sepolia, Arbitrum Sepolia
+    const currentChainId = Number(network.config?.chainId ?? 0);
+    const canDeployMockUSDC = mockSupportedChainIds.has(currentChainId);
 
-    if (network.name === "hardhat" || network.name === "localhost" || network.name.includes("sepolia")) {
+    if (canDeployMockUSDC) {
         console.log("\nDeploying MockUSDC for test network...");
         const initialSupply = ethers.parseUnits("1000000", 6);
         console.log(`Initial supply: ${initialSupply} (${ethers.formatUnits(initialSupply, 6)} USDC)`);
@@ -278,11 +281,20 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         const mockUSDC = await deployContract("MockUSDC", [initialSupply]);
         usdcTokenAddress = mockUSDC.address;
     } else {
-        const envUsdcAddress = process.env.USDC_ADDRESS;
-        if (!envUsdcAddress || !ethers.isAddress(envUsdcAddress)) {
-            throw new Error("Invalid USDC_ADDRESS in the environment for this network");
+        const nativeUsdcAddresses: Record<string, string> = {
+            "arbitrum-one": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+            "arbitrum-sepolia": "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
+        };
+
+        const resolvedUsdcAddress = process.env.USDC_ADDRESS || nativeUsdcAddresses[network.name];
+
+        if (!resolvedUsdcAddress || !ethers.isAddress(resolvedUsdcAddress)) {
+            throw new Error(
+                `Invalid or missing USDC address for ${network.name}. ` +
+                    "Set USDC_ADDRESS in your environment or update the native address mapping.",
+            );
         }
-        usdcTokenAddress = envUsdcAddress;
+        usdcTokenAddress = resolvedUsdcAddress;
         console.log("Using existing USDC at address:", usdcTokenAddress);
 
         // Verify USDC has 6 decimals
