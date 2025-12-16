@@ -41,13 +41,13 @@ Implications:
 
 Function: `updateBasePrice()` (invoked by `mintBatch()` and `buyBatch()`)
 
-1) Price increases (quick sell‑outs)
+1. Price increases (quick sell‑outs)
 
 - Looks at up to the 10 most recent batches whose `creationTime` is within `PRICE_WINDOW`.
 - For each batch that sold out after the last adjustment and within `< dayIncreaseThreshold` days of its creation, increments a `quickSaleCount`.
 - If `quickSaleCount > 0`, increases `basePrice` by `quickSaleCount × priceAdjustDelta`, updates `lastPriceAdjustmentTime`, emits `BasePriceAdjusted(..., increased=true)`, then returns early (no decrease considered in the same call).
 
-2) Price decreases (stagnation)
+2. Price decreases (stagnation)
 
 - Only evaluated when there have been no complete sell‑outs for `≥ dayDecreaseThreshold` days (`lastCompleteSaleTime`).
 - Scans batches backward (bounded by `maxPriceUpdateIterations` and `PRICE_WINDOW`).
@@ -70,13 +70,13 @@ These behaviors are intentional guardrails for gas and stability, but they do me
 ## Operational Guidance
 
 - Monitoring
-  - Watch `BasePriceAdjusted`, `PriceUpdateIterationLimitReached`, and `BatchMarkedUsedInPriceDecrease` to understand drift and backlog.
-  - Track the share of active batches at floor; a high fraction for multiple days indicates suppressed decreases.
+    - Watch `BasePriceAdjusted`, `PriceUpdateIterationLimitReached`, and `BatchMarkedUsedInPriceDecrease` to understand drift and backlog.
+    - Track the share of active batches at floor; a high fraction for multiple days indicates suppressed decreases.
 
 - Tuning
-  - `maxPriceUpdateIterations`: 60–100 in normal conditions (buyers pay gas in `buyBatch`), 50–60 in high activity to reduce buyer costs.
-  - `dayIncreaseThreshold` and `dayDecreaseThreshold`: widen to reduce churn; narrow to react faster (with higher gas across events).
-  - Consider operationally preferring larger `mintBatch` sizes (up to `maxBatchSize`) to reduce total batch count and scan work.
+    - `maxPriceUpdateIterations`: 60–100 in normal conditions (buyers pay gas in `buyBatch`), 50–60 in high activity to reduce buyer costs.
+    - `dayIncreaseThreshold` and `dayDecreaseThreshold`: widen to reduce churn; narrow to react faster (with higher gas across events).
+    - Consider operationally preferring larger `mintBatch` sizes (up to `maxBatchSize`) to reduce total batch count and scan work.
 
 ## Test Coverage Snapshot
 
@@ -126,4 +126,3 @@ For implementation references, see `contracts/AstaVerde.sol`:
 - `getCurrentBatchPrice`, `mintBatch`, `buyBatch` (pricing + lifecycle)
 - `updateBasePrice` (auto‑adjustment), `PRICE_WINDOW`, `maxPriceUpdateIterations`
 - Events: `BasePriceAdjusted`, `PriceUpdateIterationLimitReached`, `BatchMarkedUsedInPriceDecrease`
-

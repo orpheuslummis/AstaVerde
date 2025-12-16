@@ -6,7 +6,7 @@ Scope: This document compares v1 on main (contracts/AstaVerde.sol in branch `mai
 
 - Payment flow: producers now use pull‑payments (claimable balances) instead of immediate transfers in `buyBatch()`.
 - ERC‑1155 receiver hardening: contract only accepts its own tokens; third‑party ERC1155 “dust” is rejected.
-- USDC safety: constructor validates 6‑decimals and enforces canonical USDC on Base mainnet; all transfers use SafeERC20.
+- USDC safety: constructor validates 6‑decimals; on Base mainnet (chainid 8453) it also enforces canonical USDC; all transfers use SafeERC20. For other chains (e.g., Arbitrum), deploy scripts must supply the correct USDC address.
 - Fairer producer distribution: rounding remainder goes to producers, not the platform; totals are verified to the cent.
 - Bounded pricing maintenance: `maxPriceUpdateIterations` caps loop work in `updateBasePrice()` to avoid DoS.
 - Stronger parameter guards: platform fee capped at 50%; base price/floor consistency checks; batch size limited to 1–100.
@@ -61,7 +61,7 @@ Removed/Deprecated
     - v1: `{ owner, tokenId, producer, cid, redeemed }`
     - v2: `{ originalMinter, producer, cid, redeemed }` (no `tokenId`/`owner` field; owner is derived via balances)
 - New accounting: `mapping(address => uint256) producerBalances; uint256 totalProducerBalances`.
-- New constants: `MAX_CID_LENGTH = 100`, `BASE_MAINNET_USDC` (canonical USDC on Base mainnet).
+- New constants: `MAX_CID_LENGTH = 100`, `BASE_MAINNET_USDC` (canonical USDC on Base mainnet; used only when `block.chainid == 8453`).
 - Removed: `INTERNAL_PRECISION`, `PRECISION_FACTOR` (USDC‑only math).
 - New control: `uint256 public maxPriceUpdateIterations = 100`.
 
@@ -108,7 +108,7 @@ Why it changed
 
 ## Security Improvements
 
-- Safe token handling: `SafeERC20` for transfers; constructor enforces `decimals()==6` and canonical USDC on Base (chainid 8453).
+- Safe token handling: `SafeERC20` for transfers; constructor enforces `decimals()==6` and (on Base mainnet only) canonical USDC when `block.chainid == 8453`.
 - DoS resistance: bounded iteration via `maxPriceUpdateIterations` in price update logic.
 - Underflow prevention: explicit guard in decayed price calculation.
 - Receiver hardening: rejects external ERC1155 tokens to avoid dusting/griefing vectors.

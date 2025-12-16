@@ -17,8 +17,8 @@ We've implemented a comprehensive ABI validation and deployment system that ensu
 ### For Development
 
 ```bash
-# Local development (automatically compiles first)
-npm run dev:local
+# Run the webapp against Sepolia (currently Arbitrum Sepolia)
+npm run dev:sepolia
 
 # Validate ABIs are properly generated
 npm run validate:abis
@@ -30,16 +30,16 @@ npm run deploy:safe
 ### For Production Deployment
 
 ```bash
-# Deploy to Base Sepolia (with validation)
+# Deploy to Sepolia (currently Arbitrum Sepolia) with validation
 npm run deploy:testnet
 
-# Deploy to Base Mainnet (with validation)
+# Deploy to Arbitrum One (with validation)
 npm run deploy:mainnet
 ```
 
 ## How It Works
 
-### 1. Local Development (`npm run dev:local`)
+### 1. Local Development (`npm run dev:local`) (legacy)
 
 The updated `scripts/start-local.js` now:
 
@@ -72,24 +72,24 @@ The `scripts/validate-abis.js` tool:
 
 ## Deployment Checklist
 
-### For Local Development
+### For Local Development (legacy)
 
 1. Run `npm run dev:local`
-2. Everything is handled automatically!
+2. Everything is handled automatically (deploys + writes `webapp/.env.local`)
 
-### For Base Sepolia
+### For Sepolia (Arbitrum Sepolia)
 
-1. Set environment variables in `.env`
+1. Set deploy secrets in `.env.local` (copy from `.env.local.example`)
 2. Run `npm run deploy:testnet`
-3. Copy displayed addresses to `webapp/.env.sepolia`
+3. Copy displayed addresses to `webapp/.env.local`
 4. Run `npm run dev:sepolia`
 
-### For Base Mainnet
+### For Arbitrum One Mainnet
 
 1. Set production environment variables
 2. Run `npm run deploy:mainnet`
 3. Copy displayed addresses to production config
-4. Verify contracts on BaseScan
+4. Verify contracts on Arbiscan
 5. Run smoke tests
 
 ## Troubleshooting
