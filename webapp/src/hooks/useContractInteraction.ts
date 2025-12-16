@@ -1,8 +1,7 @@
-import { multicall } from "@wagmi/core";
 import { useCallback, useState } from "react";
 import { useReadContract, useWalletClient, useWriteContract } from "wagmi";
-import { wagmiConfig } from "../config/wagmi";
 import { getFunctionKind, isReadFunctionByAbi, isWriteFunctionByAbi } from "../lib/abiInference";
+import { safeMulticall } from "../lib/safeMulticall";
 import type { ContractConfig, ExecuteFunction, ContractError } from "../shared/types/contracts";
 import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
 
@@ -122,7 +121,7 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
             args: [ownerAddress, BigInt(start + index)],
           }));
 
-          const results = await multicall(wagmiConfig, {
+          const results = await safeMulticall(publicClient, {
             contracts: calls,
             allowFailure: true,
           });
@@ -145,7 +144,7 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
         throw error;
       }
     },
-    [publicClient, contractConfig, wagmiConfig],
+    [publicClient, contractConfig],
   );
 
   const getCurrentBatchPrice = useCallback(

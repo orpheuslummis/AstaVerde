@@ -1,6 +1,5 @@
 import { useCallback, useState, useMemo } from "react";
 import { useWalletClient, useBalance } from "wagmi";
-import { wagmiConfig } from "../../../config/wagmi";
 import { MarketplaceService } from "../../../services/blockchain/marketplaceService";
 import { getUsdcContract } from "../../../config/contracts";
 import { customToast } from "../../../shared/utils/customToast";
@@ -14,7 +13,7 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
   // Create marketplace service
   const marketplaceService = useMemo(() => {
     if (!publicClient) return null;
-    return new MarketplaceService(publicClient, walletClient, wagmiConfig);
+    return new MarketplaceService(publicClient, walletClient);
   }, [publicClient, walletClient]);
 
   // Check USDC balance
@@ -57,7 +56,10 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
         if (!suppressToast) {
           if (errorMessage.includes("Wrong network")) {
             customToast.error(errorMessage);
-          } else if (errorMessage.includes("Insufficient funds sent") || errorMessage.includes("Insufficient USDC balance")) {
+          } else if (
+            errorMessage.includes("Insufficient funds sent") ||
+            errorMessage.includes("Insufficient USDC balance")
+          ) {
             customToast.error("Insufficient USDC balance for this purchase.");
           } else if (errorMessage.startsWith("USDC approval failed:")) {
             customToast.error(errorMessage);

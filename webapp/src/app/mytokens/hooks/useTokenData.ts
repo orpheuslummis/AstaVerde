@@ -4,6 +4,7 @@ import { useAppContext } from "../../../contexts/AppContext";
 import { useVault } from "../../../hooks/useVault";
 import type { BatchData } from "../../../types";
 import { useRateLimitedPublicClient } from "@/hooks/useRateLimitedPublicClient";
+import { safeMulticall } from "@/lib/safeMulticall";
 
 type TokenBalanceRecord = Record<string, bigint>;
 type RedeemStatus = Record<string, boolean>;
@@ -48,7 +49,7 @@ export function useTokenData() {
       const chunks = chunkArray(ids, BATCH_INFO_CHUNK);
 
       for (const chunk of chunks) {
-        const results = await publicClient.multicall({
+        const results = await safeMulticall(publicClient, {
           allowFailure: true,
           contracts: chunk.map((id) => ({
             ...astaverdeContractConfig,
@@ -84,7 +85,7 @@ export function useTokenData() {
       const chunks = chunkArray(tokenIds, BALANCE_CHUNK);
 
       for (const chunk of chunks) {
-        const results = await publicClient.multicall({
+        const results = await safeMulticall(publicClient, {
           allowFailure: true,
           contracts: chunk.map((tokenId) => ({
             ...astaverdeContractConfig,
@@ -124,7 +125,7 @@ export function useTokenData() {
       const statuses: RedeemStatus = {};
 
       for (const chunk of chunks) {
-        const results = await publicClient.multicall({
+        const results = await safeMulticall(publicClient, {
           allowFailure: true,
           contracts: chunk.map((tokenId) => ({
             ...astaverdeContractConfig,
@@ -208,7 +209,15 @@ export function useTokenData() {
         void fetchTokens();
       }
     }
-  }, [address, astaverdeContractConfig, fetchBalances, fetchBatchData, fetchRedeemStatuses, getUserLoans, publicClient]);
+  }, [
+    address,
+    astaverdeContractConfig,
+    fetchBalances,
+    fetchBatchData,
+    fetchRedeemStatuses,
+    getUserLoans,
+    publicClient,
+  ]);
 
   useEffect(() => {
     void fetchTokens();

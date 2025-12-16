@@ -1,15 +1,16 @@
 import { useCallback, useState, useMemo } from "react";
 import { useWalletClient } from "wagmi";
-import { wagmiConfig } from "../../../config/wagmi";
 import { MarketplaceService } from "../../../services/blockchain/marketplaceService";
 import { customToast } from "../../../shared/utils/customToast";
 import type { BatchData, MarketplaceOperations } from "../types";
 import { useRateLimitedPublicClient } from "@/hooks/useRateLimitedPublicClient";
 
-export function useMarketplace(): MarketplaceOperations & {
+type UseMarketplaceReturn = MarketplaceOperations & {
   isLoading: boolean;
   error: string | null;
-  } {
+};
+
+export function useMarketplace(): UseMarketplaceReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const publicClient = useRateLimitedPublicClient();
@@ -18,7 +19,7 @@ export function useMarketplace(): MarketplaceOperations & {
   // Create marketplace service instance
   const marketplaceService = useMemo(() => {
     if (!publicClient) return null;
-    return new MarketplaceService(publicClient, walletClient, wagmiConfig);
+    return new MarketplaceService(publicClient, walletClient);
   }, [publicClient, walletClient]);
 
   // Buy batch operation

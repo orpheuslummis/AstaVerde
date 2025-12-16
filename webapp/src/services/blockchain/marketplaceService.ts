@@ -1,5 +1,3 @@
-import { multicall } from "@wagmi/core";
-import type { Config } from "wagmi";
 import type { PublicClient, WalletClient } from "viem";
 import { formatUnits } from "viem";
 import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
@@ -12,12 +10,12 @@ import {
 } from "../../config/constants";
 import { ENV } from "../../config/environment";
 import type { BatchData, TokenDataObj, TokenDataTuple } from "../../features/marketplace/types";
+import { safeMulticall } from "../../lib/safeMulticall";
 
 export class MarketplaceService {
   constructor(
     private publicClient: PublicClient,
     private walletClient: WalletClient | undefined,
-    private wagmiConfig: Config,
   ) {}
 
   private async assertWalletOnExpectedChain(): Promise<void> {
@@ -42,9 +40,7 @@ export class MarketplaceService {
 
     if (walletChainId && walletChainId !== expectedChainId) {
       const expectedName = this.publicClient.chain?.name ?? `chainId ${expectedChainId}`;
-      throw new Error(
-        `Wrong network (wallet chainId ${walletChainId}). Please switch your wallet to ${expectedName}.`,
-      );
+      throw new Error(`Wrong network (wallet chainId ${walletChainId}). Please switch your wallet to ${expectedName}.`);
     }
   }
 
@@ -197,7 +193,7 @@ export class MarketplaceService {
         args: [ownerAddress, BigInt(start + index)],
       }));
 
-      const results = await multicall(this.wagmiConfig, {
+      const results = await safeMulticall(this.publicClient, {
         contracts: calls as any[],
         allowFailure: true,
       });
@@ -232,7 +228,7 @@ export class MarketplaceService {
     const contract = getAstaVerdeContract();
 
     // v2-only API: compose from dedicated getters
-    const [producerRes, cidRes, redeemedRes] = await multicall(this.wagmiConfig, {
+    const [producerRes, cidRes, redeemedRes] = await safeMulticall(this.publicClient, {
       contracts: [
         { ...contract, functionName: "getTokenProducer", args: [tokenId] },
         { ...contract, functionName: "getTokenCid", args: [tokenId] },

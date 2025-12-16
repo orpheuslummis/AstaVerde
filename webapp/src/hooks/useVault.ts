@@ -14,6 +14,7 @@ import { parseVaultError, TxStatus, VaultErrorState } from "../utils/errors";
 import { dispatchBalancesRefetch } from "./useGlobalEvent";
 import type { VaultLoan } from "../features/vault/types";
 import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
+import { safeMulticall } from "../lib/safeMulticall";
 
 export interface VaultHook {
   // Core functionality
@@ -281,7 +282,7 @@ export function useVault(): VaultHook {
         const assetConfig = getAssetContractConfig();
         const sccConfig = getSccConfig();
 
-        const results = await publicClient.multicall({
+        const results = await safeMulticall(publicClient, {
           allowFailure: true,
           contracts: [
             { ...vaultConfig, functionName: "paused" },
@@ -295,7 +296,7 @@ export function useVault(): VaultHook {
           ],
         });
 
-        const get = <T,>(i: number): T | null => {
+        const get = <T>(i: number): T | null => {
           const res = results[i];
           if (!res || res.status !== "success") return null;
           return res.result as T;
@@ -378,7 +379,8 @@ export function useVault(): VaultHook {
           return {
             type: "contract",
             message: "Vault Misconfigured",
-            details: "EcoStabilizer is missing SCC MINTER_ROLE, so deposits cannot mint SCC. Redeploy or grant MINTER_ROLE to the vault address.",
+            details:
+              "EcoStabilizer is missing SCC MINTER_ROLE, so deposits cannot mint SCC. Redeploy or grant MINTER_ROLE to the vault address.",
           };
         }
       } catch {
