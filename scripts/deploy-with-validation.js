@@ -21,13 +21,11 @@ const network = networkIndex !== -1 && args[networkIndex + 1] ? args[networkInde
 // Load base env, then allow local to override, then network-specific with override
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: true });
-const candidates = [`.env.${network}`, `.env.${network.split("-").pop()}`];
-for (const file of candidates) {
-    const full = path.resolve(process.cwd(), file);
-    if (fs.existsSync(full)) {
-        dotenv.config({ path: full, override: true });
-        break;
-    }
+
+// Optional network-specific override (recommended for chain-specific config)
+const networkEnv = path.resolve(process.cwd(), `.env.${network}`);
+if (fs.existsSync(networkEnv)) {
+    dotenv.config({ path: networkEnv, override: true });
 }
 
 console.log(`🚀 Starting deployment process for network: ${network}`);
@@ -240,9 +238,7 @@ if (network === "localhost") {
 if (network !== "localhost" && network !== "hardhat") {
     console.log("\n✅ Step 5: Post-deployment tasks...");
     console.log("\n📝 Next steps:");
-    const webappEnvHint =
-        network === "arbitrum-one" || network === "arbitrum-sepolia" ? "webapp/.env.arbitrum" : "webapp/.env.sepolia";
-    console.log(`1. Update ${webappEnvHint} or webapp/.env with deployed addresses`);
+    console.log("1. Update webapp/.env.local with deployed addresses");
     console.log("2. Run contract verification if needed: npm run verify:contracts");
     console.log("3. Test the deployment: npm run qa:status");
 

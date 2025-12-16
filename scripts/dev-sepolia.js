@@ -2,8 +2,11 @@
 
 /**
  * Arbitrum Sepolia Development Environment
- * Connects webapp to Arbitrum Sepolia testnet contracts
- * Runs on port 3002 to avoid conflicts with local development (port 3001)
+ * Connects webapp to Arbitrum Sepolia testnet contracts.
+ * Runs on port 3002.
+ *
+ * Config:
+ * - webapp/.env.local (untracked) (copy from webapp/.env.local.example)
  */
 
 const { spawn } = require("child_process");
@@ -22,12 +25,7 @@ class SepoliaDevEnvironment {
         console.log("=".repeat(60));
 
         try {
-            // Load root env files so we can map RPC_API_KEY → NEXT_PUBLIC_ALCHEMY_API_KEY
-            dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-            dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: true });
-            dotenv.config({ path: path.resolve(process.cwd(), ".env.arbitrum"), override: true });
-
-            // Check if .env.arbitrum exists
+            // Read and validate webapp/.env.local for display/validation.
             await this.checkSepoliaConfig();
 
             // Load and display contract addresses
@@ -45,33 +43,29 @@ class SepoliaDevEnvironment {
     }
 
     async checkSepoliaConfig() {
-        const envPath = path.join(__dirname, "../webapp/.env.arbitrum");
+        const envPath = path.join(__dirname, "../webapp/.env.local");
 
         if (!fs.existsSync(envPath)) {
-            throw new Error(".env.arbitrum not found. Please create it from .env.arbitrum.example");
+            throw new Error(
+                "webapp/.env.local not found.\n" +
+                    "Create it from webapp/.env.local.example (Arbitrum Sepolia config) and fill addresses + RPC.",
+            );
         }
 
-        // Load the config
         const envContent = fs.readFileSync(envPath, "utf8");
-        const lines = envContent.split("\n");
+        const config = dotenv.parse(envContent);
 
-        const config = {};
-        lines.forEach((line) => {
-            if (line && !line.startsWith("#")) {
-                const [key, value] = line.split("=");
-                if (key && value) {
-                    config[key.trim()] = value.trim();
-                }
-            }
-        });
+        const chainSelection = (config.NEXT_PUBLIC_CHAIN_SELECTION || "").trim();
+        if (chainSelection && chainSelection !== "arbitrum_sepolia") {
+            throw new Error(
+                `webapp/.env.local has NEXT_PUBLIC_CHAIN_SELECTION=${chainSelection}, but dev:sepolia expects arbitrum_sepolia.\n` +
+                    "Update webapp/.env.local (copy from webapp/.env.local.example) and re-run.",
+            );
+        }
 
         // Check for placeholder addresses
-        const requiredAddresses = [
-            "NEXT_PUBLIC_ASTAVERDE_ADDRESS",
-            "NEXT_PUBLIC_ECOSTABILIZER_ADDRESS",
-            "NEXT_PUBLIC_SCC_ADDRESS",
-            "NEXT_PUBLIC_USDC_ADDRESS",
-        ];
+        const requiredAddresses = ["NEXT_PUBLIC_ASTAVERDE_ADDRESS", "NEXT_PUBLIC_USDC_ADDRESS"];
+        const optionalAddresses = ["NEXT_PUBLIC_ECOSTABILIZER_ADDRESS", "NEXT_PUBLIC_SCC_ADDRESS"];
 
         const missingAddresses = requiredAddresses.filter(
             (key) => !config[key] || config[key] === "0x0000000000000000000000000000000000000000",
@@ -82,8 +76,34 @@ class SepoliaDevEnvironment {
             missingAddresses.forEach((addr) => {
                 console.log(`   - ${addr}`);
             });
-            console.log("\n   Run 'npm run deploy:testnet' to deploy contracts to Arbitrum Sepolia");
-            console.log("   Then update .env.arbitrum with the deployed addresses\n");
+            console.log(
+                "\n   Deploy contracts to Arbitrum Sepolia, then update webapp/.env.local with the deployed addresses.\n",
+            );
+        }
+
+        const rpcOverride = (config.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || "").trim();
+        if (rpcOverride.toLowerCase().includes("infura.io")) {
+            console.log("\n⚠️  Warning: RPC override points at Infura:");
+            console.log(`   NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL=${rpcOverride}`);
+            console.log("   Remove it or replace with your Alchemy RPC URL to avoid rate limits.\n");
+        }
+        const alchemyKey = (config.NEXT_PUBLIC_ALCHEMY_API_KEY || "").trim();
+        if (!rpcOverride && !alchemyKey) {
+            console.log("\n⚠️  Warning: No Arbitrum Sepolia RPC configured.");
+            console.log(
+                "   Set NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL (recommended) or NEXT_PUBLIC_ALCHEMY_API_KEY in webapp/.env.local.\n",
+            );
+        }
+
+        const missingOptional = optionalAddresses.filter(
+            (key) => !config[key] || config[key] === "0x0000000000000000000000000000000000000000",
+        );
+        if (missingOptional.length > 0) {
+            console.log("\nℹ️  Optional contracts not configured (vault UI may be disabled):");
+            missingOptional.forEach((addr) => {
+                console.log(`   - ${addr}`);
+            });
+            console.log("");
         }
 
         this.config = config;
@@ -115,43 +135,30 @@ class SepoliaDevEnvironment {
     async startWebapp() {
         console.log(`\n🚀 Starting webapp on port ${this.webappPort}...`);
 
-        const envSepoliaPath = path.join(__dirname, "../webapp/.env.arbitrum");
+        // Force chain selection to prevent accidental mainnet connections.
+        const forcedEnv = { NEXT_PUBLIC_CHAIN_SELECTION: "arbitrum_sepolia" };
 
-        // Load Sepolia env vars directly without modifying files
-        const envContent = fs.readFileSync(envSepoliaPath, "utf8");
-        const envVars = {};
-
-        envContent.split("\n").forEach((line) => {
-            if (line && !line.startsWith("#")) {
-                const [key, value] = line.split("=");
-                if (key && value) {
-                    envVars[key.trim()] = value.trim();
-                }
+        // Pass through only explicit webapp config keys to avoid surprises from shell env.
+        const allowlisted = {};
+        Object.entries(this.config || {}).forEach(([key, value]) => {
+            if (key.startsWith("NEXT_PUBLIC_")) {
+                allowlisted[key] = value;
             }
         });
 
-        // Ensure correct chain + RPC for Arbitrum Sepolia regardless of .env.local overrides
-        const forcedEnv = {
-            NEXT_PUBLIC_CHAIN_SELECTION: "arbitrum_sepolia",
-        };
-
-        // Resolve public Alchemy key in priority order
-        // 1) webapp/.env.arbitrum NEXT_PUBLIC_ALCHEMY_API_KEY
-        // 2) root .env.arbitrum RPC_API_KEY
-        // 3) existing process env NEXT_PUBLIC_ALCHEMY_API_KEY
-        const resolvedAlchemyKey =
-            envVars.NEXT_PUBLIC_ALCHEMY_API_KEY || process.env.RPC_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
-        if (resolvedAlchemyKey) {
-            forcedEnv.NEXT_PUBLIC_ALCHEMY_API_KEY = resolvedAlchemyKey;
+        // Prevent leaking `NEXT_PUBLIC_*` vars from the shell into Next.js (common source of wrong RPC URLs).
+        const baseEnv = { ...process.env };
+        for (const key of Object.keys(baseEnv)) {
+            if (key.startsWith("NEXT_PUBLIC_")) delete baseEnv[key];
         }
-        // WalletConnect is optional for dev. Explicitly set it so .env.local values (e.g., "demo") don't leak in.
-        // Priority: webapp/.env.arbitrum -> process.env -> else blank to disable WC.
-        if (envVars.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID) {
-            forcedEnv.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID = envVars.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID;
+
+        // WalletConnect is optional for dev. Explicitly set it so shell env doesn't leak in.
+        if (allowlisted.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID) {
+            forcedEnv.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID = allowlisted.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID;
         } else if (process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID) {
             forcedEnv.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID;
         } else {
-            forcedEnv.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID = ""; // disable WC on Sepolia if not configured
+            forcedEnv.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID = "";
         }
 
         // Start Next.js on specified port with Arbitrum Sepolia environment and forced overrides
@@ -159,8 +166,8 @@ class SepoliaDevEnvironment {
             cwd: path.join(__dirname, "../webapp"),
             stdio: "inherit",
             env: {
-                ...process.env,
-                ...envVars, // Inject Arbitrum Sepolia env vars directly
+                ...baseEnv,
+                ...allowlisted,
                 ...forcedEnv, // Force chain selection and optional keys
                 PORT: this.webappPort.toString(),
             },
@@ -186,18 +193,13 @@ class SepoliaDevEnvironment {
         console.log("=".repeat(60));
         console.log(`🌐 Webapp: http://localhost:${this.webappPort}`);
         console.log("⛓️  Network: Arbitrum Sepolia Testnet");
-        console.log("\n📝 Setup Instructions:");
-        console.log("   1. Add Arbitrum Sepolia to MetaMask:");
-        console.log("      - Network: Arbitrum Sepolia");
-        console.log("      - RPC URL: https://arb-sepolia.g.alchemy.com/v2/<your-key>");
-        console.log("      - Chain ID: 421614");
-        console.log("      - Symbol: ETH");
-        console.log("\n   2. Get test ETH from faucet:");
+        console.log("\n📝 Setup:");
+        console.log("   1. Create webapp/.env.local from webapp/.env.local.example");
+        console.log("   2. Add Arbitrum Sepolia to MetaMask and get faucet ETH:");
         console.log("      https://www.alchemy.com/faucets/arbitrum-sepolia");
-        console.log("\n   3. Connect wallet to webapp");
-        console.log("\n⚡ Quick Commands:");
+        console.log("   3. Connect wallet to the webapp");
+        console.log("\n⚡ Commands:");
         console.log("   npm run deploy:testnet    # Deploy contracts to Arbitrum Sepolia");
-        console.log("   npm run dev:local         # Run local development (port 3001)");
         console.log("\n🛑 To stop: Press Ctrl+C");
         console.log("=".repeat(60));
     }
