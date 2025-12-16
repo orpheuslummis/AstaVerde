@@ -96,12 +96,9 @@ export function useAdminEvents({
       if (showToasts) {
         const formattedAmount = formatUnits(event.amount, ENV.USDC_DECIMALS);
         const shortAddress = `${event.to.slice(0, 6)}...${event.to.slice(-4)}`;
-        customToast.success(
-          `✅ Surplus USDC recovered: ${formattedAmount} USDC sent to ${shortAddress}`,
-          {
-            duration: 5000,
-          },
-        );
+        customToast.success(`✅ Surplus USDC recovered: ${formattedAmount} USDC sent to ${shortAddress}`, {
+          duration: 5000,
+        });
       }
 
       onSurplusRecovered?.(event);
@@ -137,13 +134,17 @@ export function useAdminEvents({
   });
 
   const lastPolledBlockRef = useRef<bigint | null>(null);
-  const hasInitializedRef = useRef(false);
+  const lastPolledChainIdRef = useRef<number | null>(null);
 
   // Lightweight polling of recent events to avoid RPC bursts
   useEffect(() => {
     if (!enabled || !publicClient) return;
-    if (hasInitializedRef.current) return;
-    hasInitializedRef.current = true;
+
+    const currentChainId = publicClient.chain?.id ?? null;
+    if (lastPolledChainIdRef.current !== currentChainId) {
+      lastPolledChainIdRef.current = currentChainId;
+      lastPolledBlockRef.current = null;
+    }
 
     let cancelled = false;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -155,11 +156,7 @@ export function useAdminEvents({
       try {
         const latest = await publicClient.getBlockNumber();
         const fromBlock =
-          lastPolledBlockRef.current !== null
-            ? lastPolledBlockRef.current + 1n
-            : latest > 6n
-              ? latest - 6n
-              : 0n;
+          lastPolledBlockRef.current !== null ? lastPolledBlockRef.current + 1n : latest > 6n ? latest - 6n : 0n;
         const toBlock = latest;
 
         const iterations = await fetchIterationHistory(fromBlock, toBlock);
@@ -223,10 +220,7 @@ export function useAdminEvents({
     totalIterationWarnings: iterationLimitEvents.length,
     totalBatchesMarkedUsed: batchUsageHistory.length,
     totalSurplusRecoveries: surplusRecoveryHistory.length,
-    totalSurplusRecovered: surplusRecoveryHistory.reduce(
-      (sum, event) => sum + event.amount,
-      0n,
-    ),
+    totalSurplusRecovered: surplusRecoveryHistory.reduce((sum, event) => sum + event.amount, 0n),
   };
 
   return {
