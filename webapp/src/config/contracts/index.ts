@@ -55,30 +55,27 @@ export const contracts = {
   // Phase 2 Contracts (optional)
   ecoStabilizer: ENV.ECOSTABILIZER_ADDRESS
     ? ({
-      address: ENV.ECOSTABILIZER_ADDRESS as `0x${string}`,
-      abi: ecoStabilizerAbi.abi as Abi,
-    } as ContractConfig)
+        address: ENV.ECOSTABILIZER_ADDRESS as `0x${string}`,
+        abi: ecoStabilizerAbi.abi as Abi,
+      } as ContractConfig)
     : null,
 
   scc: ENV.SCC_ADDRESS
     ? ({
-      address: ENV.SCC_ADDRESS as `0x${string}`,
-      abi: stabilizedCarbonCoinAbi.abi as Abi,
-    } as ContractConfig)
+        address: ENV.SCC_ADDRESS as `0x${string}`,
+        abi: stabilizedCarbonCoinAbi.abi as Abi,
+      } as ContractConfig)
     : null,
 } as const;
 
 // Emit a one-time debug summary of contract configuration
-debugLog(
-  "contracts",
-  {
-    chain: ENV.CHAIN_SELECTION,
-    astaverde: ENV.ASTAVERDE_ADDRESS,
-    usdc: ENV.USDC_ADDRESS,
-    ecoStabilizer: ENV.ECOSTABILIZER_ADDRESS,
-    scc: ENV.SCC_ADDRESS,
-  },
-);
+debugLog("contracts", {
+  chain: ENV.CHAIN_SELECTION,
+  astaverde: ENV.ASTAVERDE_ADDRESS,
+  usdc: ENV.USDC_ADDRESS,
+  ecoStabilizer: ENV.ECOSTABILIZER_ADDRESS,
+  scc: ENV.SCC_ADDRESS,
+});
 
 // Helper functions for contract access
 export function getAstaVerdeContract(): ContractConfig {

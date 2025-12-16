@@ -5,10 +5,7 @@ import { useContractEvents } from "./useContractEvents";
 import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
 import { customToast } from "@/utils/customToast";
 import { ENV } from "@/config/environment";
-import type {
-  ProducerPaymentAccruedEvent,
-  ProducerPaymentClaimedEvent,
-} from "@/features/events/eventTypes";
+import type { ProducerPaymentAccruedEvent, ProducerPaymentClaimedEvent } from "@/features/events/eventTypes";
 import { EVENT_NAMES } from "@/features/events/eventTypes";
 
 interface ProducerEventsConfig {
@@ -22,11 +19,7 @@ interface ProducerEventsConfig {
  * Listens for ProducerPaymentAccrued and ProducerPaymentClaimed events
  * @param config Configuration options
  */
-export function useProducerEvents({
-  onBalanceUpdate,
-  showToasts = true,
-  enabled = true,
-}: ProducerEventsConfig = {}) {
+export function useProducerEvents({ onBalanceUpdate, showToasts = true, enabled = true }: ProducerEventsConfig = {}) {
   const { address } = useAccount();
   const publicClient = useRateLimitedPublicClient();
   const [recentAccruals, setRecentAccruals] = useState<ProducerPaymentAccruedEvent[]>([]);
@@ -67,13 +60,10 @@ export function useProducerEvents({
 
         if (showToasts) {
           const formattedAmount = formatUnits(event.amount, ENV.USDC_DECIMALS);
-          customToast.success(
-            `Successfully claimed ${formattedAmount} USDC`,
-            {
-              duration: 5000,
-              icon: "💰",
-            },
-          );
+          customToast.success(`Successfully claimed ${formattedAmount} USDC`, {
+            duration: 5000,
+            icon: "💰",
+          });
         }
 
         // Reset accruals since they've been claimed
@@ -120,11 +110,7 @@ export function useProducerEvents({
       try {
         const latest = await publicClient.getBlockNumber();
         const fromBlock =
-          lastPolledBlockRef.current !== null
-            ? lastPolledBlockRef.current + 1n
-            : latest > 12n
-              ? latest - 12n
-              : 0n;
+          lastPolledBlockRef.current !== null ? lastPolledBlockRef.current + 1n : latest > 12n ? latest - 12n : 0n;
         const toBlock = latest;
 
         const accruals = await fetchAccruedHistory(fromBlock, toBlock);
@@ -162,7 +148,15 @@ export function useProducerEvents({
       cancelled = true;
       if (pollTimer) clearInterval(pollTimer);
     };
-  }, [enabled, address, publicClient, fetchAccruedHistory, fetchClaimedHistory, handlePaymentAccrued, handlePaymentClaimed]);
+  }, [
+    enabled,
+    address,
+    publicClient,
+    fetchAccruedHistory,
+    fetchClaimedHistory,
+    handlePaymentAccrued,
+    handlePaymentClaimed,
+  ]);
 
   // Clear state when account changes
   useEffect(() => {

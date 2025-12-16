@@ -26,23 +26,23 @@ export function mockConnector(options: MockConnectorOptions = {}) {
       const mockProvider = {
         request: async ({ method, params }: any) => {
           switch (method) {
-          case "eth_accounts":
-            return [mockAddress];
-          case "eth_chainId":
-            return `0x${mockChainId.toString(16)}`;
-          case "eth_requestAccounts":
-            return [mockAddress];
-          case "personal_sign":
-          case "eth_sign":
-            return "0x" + "00".repeat(65); // Mock signature
-          case "eth_sendTransaction":
-            return "0x" + "00".repeat(32); // Mock tx hash
-          case "wallet_switchEthereumChain":
-            return null;
-          default:
-            // eslint-disable-next-line no-console
-            console.log("[Mock Connector] Unhandled method:", method);
-            return null;
+            case "eth_accounts":
+              return [mockAddress];
+            case "eth_chainId":
+              return `0x${mockChainId.toString(16)}`;
+            case "eth_requestAccounts":
+              return [mockAddress];
+            case "personal_sign":
+            case "eth_sign":
+              return "0x" + "00".repeat(65); // Mock signature
+            case "eth_sendTransaction":
+              return "0x" + "00".repeat(32); // Mock tx hash
+            case "wallet_switchEthereumChain":
+              return null;
+            default:
+              // eslint-disable-next-line no-console
+              console.log("[Mock Connector] Unhandled method:", method);
+              return null;
           }
         },
         on: () => {},
@@ -88,12 +88,12 @@ export function mockConnector(options: MockConnectorOptions = {}) {
       const provider = custom({
         request: async ({ method, params }: any) => {
           switch (method) {
-          case "eth_accounts":
-            return [mockAddress];
-          case "eth_chainId":
-            return `0x${mockChainId.toString(16)}`;
-          default:
-            return null;
+            case "eth_accounts":
+              return [mockAddress];
+            case "eth_chainId":
+              return `0x${mockChainId.toString(16)}`;
+            default:
+              return null;
           }
         },
       });

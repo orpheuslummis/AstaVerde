@@ -31,4 +31,3 @@ export function formatUSDCWithUnit(value: bigint | undefined | null, opts?: Opti
 export function formatUSDCPerDay(value: bigint | undefined | null, opts?: Options): string {
   return `${formatUSDC(value, opts)} USDC/day`;
 }
-

@@ -30,4 +30,3 @@ export function enableDebugPersist(enable: boolean): void {
   window.localStorage.setItem("av_debug", enable ? "1" : "0");
   cached = enable;
 }
-

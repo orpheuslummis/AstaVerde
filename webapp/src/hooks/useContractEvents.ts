@@ -33,31 +33,32 @@ export function useContractEvents<T>({
   const cooldownUntilRef = useRef<number | null>(null);
 
   // Parse event data from logs
-  const parseEventData = useCallback((log: Log): T | null => {
-    try {
-      const contractAbi = contract.abi;
-      const eventAbi = contractAbi.find(
-        (item) => item.type === "event" && item.name === eventName,
-      );
+  const parseEventData = useCallback(
+    (log: Log): T | null => {
+      try {
+        const contractAbi = contract.abi;
+        const eventAbi = contractAbi.find((item) => item.type === "event" && item.name === eventName);
 
-      if (!eventAbi || eventAbi.type !== "event") {
-        console.error(`Event ${eventName} not found in ABI`);
+        if (!eventAbi || eventAbi.type !== "event") {
+          console.error(`Event ${eventName} not found in ABI`);
+          return null;
+        }
+
+        // Decode the log using viem's decodeEventLog
+        const decoded = decodeEventLog({
+          abi: [eventAbi],
+          data: log.data,
+          topics: log.topics,
+        });
+
+        return decoded?.args as T;
+      } catch (error) {
+        console.error(`Error parsing event ${eventName}:`, error);
         return null;
       }
-
-      // Decode the log using viem's decodeEventLog
-      const decoded = decodeEventLog({
-        abi: [eventAbi],
-        data: log.data,
-        topics: log.topics,
-      });
-
-      return decoded?.args as T;
-    } catch (error) {
-      console.error(`Error parsing event ${eventName}:`, error);
-      return null;
-    }
-  }, [eventName, contract.abi]);
+    },
+    [eventName, contract.abi],
+  );
 
   // Use wagmi's built-in event watcher
   useWatchContractEvent({
@@ -98,9 +99,9 @@ export function useContractEvents<T>({
       }
 
       try {
-        const eventAbi = contract.abi.find(
-          (item) => item.type === "event" && item.name === eventName,
-        ) as AbiEvent | undefined;
+        const eventAbi = contract.abi.find((item) => item.type === "event" && item.name === eventName) as
+          | AbiEvent
+          | undefined;
 
         if (!eventAbi) {
           console.error(`Event ${eventName} not found in ABI`);

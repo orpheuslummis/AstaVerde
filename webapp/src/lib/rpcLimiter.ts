@@ -155,7 +155,8 @@ function drainQueue() {
     active += 1;
     creditWindow.push({ startedAt: now, credits: Math.min(item.credits, CREDIT_BUDGET_PER_SECOND) });
 
-    item.task()
+    item
+      .task()
       .then((res) => {
         rateLimitStrikes = 0;
         item.resolve(res);
@@ -190,7 +191,8 @@ export function createRateLimitedHttp(url?: string, config?: Parameters<typeof h
     const baseRequest = transport.request;
     return {
       ...transport,
-      request: (opts: Parameters<typeof baseRequest>[0]) => schedule(() => baseRequest(opts), estimateCreditsForRequest(opts)),
+      request: (opts: Parameters<typeof baseRequest>[0]) =>
+        schedule(() => baseRequest(opts), estimateCreditsForRequest(opts)),
     };
   }) as ReturnType<typeof http>;
 }
@@ -209,7 +211,8 @@ export function wrapPublicClient<T extends object>(client: T): T {
       if (typeof value !== "function") {
         return value;
       }
-      return (...args: unknown[]) => rateLimited(() => (value as (...fnArgs: unknown[]) => Promise<unknown>).apply(target, args));
+      return (...args: unknown[]) =>
+        rateLimited(() => (value as (...fnArgs: unknown[]) => Promise<unknown>).apply(target, args));
     },
   }) as T;
 }

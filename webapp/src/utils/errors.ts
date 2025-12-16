@@ -152,13 +152,7 @@ function collectErrorMessages(error: unknown, out: string[] = [], visited = new 
   visited.add(error);
 
   const anyErr = error as Record<string, unknown> & { cause?: unknown };
-  const candidates = [
-    anyErr?.shortMessage,
-    anyErr?.message,
-    anyErr?.reason,
-    anyErr?.details,
-    anyErr?.name,
-  ];
+  const candidates = [anyErr?.shortMessage, anyErr?.message, anyErr?.reason, anyErr?.details, anyErr?.name];
   for (const c of candidates) {
     if (typeof c === "string" && c.trim()) out.push(c);
   }
@@ -194,7 +188,7 @@ export function parseVaultError(
     approveSCC?: () => Promise<void>;
     approveNFT?: () => Promise<void>;
     retry?: () => void;
-    },
+  },
 ): VaultErrorState {
   const anyError = asRecord(error);
   const messages = collectErrorMessages(error);
@@ -229,23 +223,27 @@ export function parseVaultError(
     }
 
     if (decoded.name === "ERC1155MissingApprovalForAll") {
+      const approveNFT = context?.approveNFT;
+      let action: VaultErrorState["action"] | undefined;
+      if (approveNFT) {
+        action = {
+          label: "Approve NFTs",
+          handler: async () => {
+            try {
+              await approveNFT();
+              customToast.success("Approval initiated. Please confirm in your wallet.");
+            } catch {
+              customToast.error("Failed to initiate approval");
+            }
+          },
+        };
+      }
+
       return {
         type: "approval",
         message: "NFT Approval Required",
         details: "Please approve the vault to transfer your NFTs first.",
-        action: context?.approveNFT
-          ? {
-            label: "Approve NFTs",
-            handler: async () => {
-              try {
-                await context.approveNFT?.();
-                customToast.success("Approval initiated. Please confirm in your wallet.");
-              } catch {
-                customToast.error("Failed to initiate approval");
-              }
-            },
-          }
-          : undefined,
+        action,
         originalError: error,
       };
     }
@@ -260,38 +258,46 @@ export function parseVaultError(
     }
 
     if (decoded.name === "ERC20InsufficientAllowance") {
+      const approveSCC = context?.approveSCC;
+      let action: VaultErrorState["action"] | undefined;
+      if (approveSCC) {
+        action = {
+          label: "Approve SCC",
+          handler: async () => {
+            try {
+              await approveSCC();
+              customToast.success("Approval initiated. Please confirm in your wallet.");
+            } catch {
+              customToast.error("Failed to initiate approval");
+            }
+          },
+        };
+      }
+
       return {
         type: "approval",
         message: "Approval Required",
         details: "Please approve the vault to spend your SCC tokens first.",
-        action: context?.approveSCC
-          ? {
-            label: "Approve SCC",
-            handler: async () => {
-              try {
-                await context.approveSCC?.();
-                customToast.success("Approval initiated. Please confirm in your wallet.");
-              } catch {
-                customToast.error("Failed to initiate approval");
-              }
-            },
-          }
-          : undefined,
+        action,
         originalError: error,
       };
     }
 
     if (decoded.name === "ERC20InsufficientBalance") {
+      const retry = context?.retry;
+      let action: VaultErrorState["action"] | undefined;
+      if (retry) {
+        action = {
+          label: "Try Again",
+          handler: retry,
+        };
+      }
+
       return {
         type: "insufficient-funds",
         message: "Insufficient SCC Balance",
         details: "You need 20 SCC to withdraw this NFT. You can get SCC by depositing other NFTs into the vault.",
-        action: context?.retry
-          ? {
-            label: "Try Again",
-            handler: context.retry,
-          }
-          : undefined,
+        action,
         originalError: error,
       };
     }
@@ -314,16 +320,20 @@ export function parseVaultError(
     errorString.includes("burn amount exceeds balance") ||
     errorString.includes("erc20: burn amount exceeds balance")
   ) {
+    const retry = context?.retry;
+    let action: VaultErrorState["action"] | undefined;
+    if (retry) {
+      action = {
+        label: "Try Again",
+        handler: retry,
+      };
+    }
+
     return {
       type: "insufficient-funds",
       message: "Insufficient SCC Balance",
       details: "You need 20 SCC to withdraw this NFT. You can get SCC by depositing other NFTs into the vault.",
-      action: context?.retry
-        ? {
-          label: "Try Again",
-          handler: context.retry,
-        }
-        : undefined,
+      action,
       originalError: error,
     };
   }
@@ -340,46 +350,54 @@ export function parseVaultError(
 
   // SCC approval needed
   if (errorString.includes("erc20: insufficient allowance") || errorString.includes("insufficient allowance")) {
+    const approveSCC = context?.approveSCC;
+    let action: VaultErrorState["action"] | undefined;
+    if (approveSCC) {
+      action = {
+        label: "Approve SCC",
+        handler: async () => {
+          try {
+            await approveSCC();
+            customToast.success("Approval initiated. Please confirm in your wallet.");
+          } catch {
+            customToast.error("Failed to initiate approval");
+          }
+        },
+      };
+    }
+
     return {
       type: "approval",
       message: "Approval Required",
       details: "Please approve the vault to spend your SCC tokens first.",
-      action: context?.approveSCC
-        ? {
-          label: "Approve SCC",
-          handler: async () => {
-            try {
-              await context.approveSCC?.();
-              customToast.success("Approval initiated. Please confirm in your wallet.");
-            } catch {
-              customToast.error("Failed to initiate approval");
-            }
-          },
-        }
-        : undefined,
+      action,
       originalError: error,
     };
   }
 
   // NFT approval needed
   if (errorString.includes("erc1155: caller is not token owner or approved") || errorString.includes("not approved")) {
+    const approveNFT = context?.approveNFT;
+    let action: VaultErrorState["action"] | undefined;
+    if (approveNFT) {
+      action = {
+        label: "Approve NFTs",
+        handler: async () => {
+          try {
+            await approveNFT();
+            customToast.success("Approval initiated. Please confirm in your wallet.");
+          } catch {
+            customToast.error("Failed to initiate approval");
+          }
+        },
+      };
+    }
+
     return {
       type: "approval",
       message: "NFT Approval Required",
       details: "Please approve the vault to transfer your NFTs first.",
-      action: context?.approveNFT
-        ? {
-          label: "Approve NFTs",
-          handler: async () => {
-            try {
-              await context.approveNFT?.();
-              customToast.success("Approval initiated. Please confirm in your wallet.");
-            } catch {
-              customToast.error("Failed to initiate approval");
-            }
-          },
-        }
-        : undefined,
+      action,
       originalError: error,
     };
   }
@@ -441,19 +459,25 @@ export function parseVaultError(
     errorString.includes("network") ||
     errorString.includes("fetch")
   ) {
+    const retry = context?.retry;
+    let action: VaultErrorState["action"];
+    if (retry) {
+      action = {
+        label: "Retry",
+        handler: retry,
+      };
+    } else {
+      action = {
+        label: "Refresh Page",
+        handler: () => window.location.reload(),
+      };
+    }
+
     return {
       type: "network",
       message: "Network Connection Issue",
       details: "Please check your connection and try again.",
-      action: context?.retry
-        ? {
-          label: "Retry",
-          handler: context.retry,
-        }
-        : {
-          label: "Refresh Page",
-          handler: () => window.location.reload(),
-        },
+      action,
       originalError: error,
     };
   }
@@ -476,12 +500,7 @@ export function parseVaultError(
       (typeof anyError?.shortMessage === "string" ? anyError.shortMessage : null) ||
       errorMessage ||
       "An unexpected error occurred. Please try again.",
-    action: context?.retry
-      ? {
-        label: "Try Again",
-        handler: context.retry,
-      }
-      : undefined,
+    action: context?.retry ? { label: "Try Again", handler: context.retry } : undefined,
     originalError: error,
   };
 }
@@ -491,18 +510,18 @@ export function parseVaultError(
  */
 export function getTransactionStatusMessage(status: TxStatus): string {
   switch (status) {
-  case TxStatus.SIGNING:
-    return "Please sign the transaction in your wallet...";
-  case TxStatus.PENDING:
-    return "Transaction submitted. Waiting for confirmation...";
-  case TxStatus.CONFIRMING:
-    return "Transaction is being confirmed...";
-  case TxStatus.SUCCESS:
-    return "Transaction completed successfully!";
-  case TxStatus.ERROR:
-    return "Transaction failed";
-  default:
-    return "";
+    case TxStatus.SIGNING:
+      return "Please sign the transaction in your wallet...";
+    case TxStatus.PENDING:
+      return "Transaction submitted. Waiting for confirmation...";
+    case TxStatus.CONFIRMING:
+      return "Transaction is being confirmed...";
+    case TxStatus.SUCCESS:
+      return "Transaction completed successfully!";
+    case TxStatus.ERROR:
+      return "Transaction failed";
+    default:
+      return "";
   }
 }
 

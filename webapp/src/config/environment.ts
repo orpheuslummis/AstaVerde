@@ -35,13 +35,7 @@ export type ChainSelection = (typeof CHAIN_OPTIONS)[number];
 
 // Validate required environment variables
 export function validateEnvironment(): void {
-  const required = [
-    "ASTAVERDE_ADDRESS",
-    "USDC_ADDRESS",
-    "ECOSTABILIZER_ADDRESS",
-    "SCC_ADDRESS",
-    "ALCHEMY_API_KEY",
-  ];
+  const required = ["ASTAVERDE_ADDRESS", "USDC_ADDRESS", "ECOSTABILIZER_ADDRESS", "SCC_ADDRESS", "ALCHEMY_API_KEY"];
 
   const missing = required.filter((key) => !ENV[key as keyof typeof ENV]);
 
