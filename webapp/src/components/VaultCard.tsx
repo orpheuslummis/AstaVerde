@@ -9,7 +9,7 @@ import { dispatchBalancesRefetch } from "../hooks/useGlobalEvent";
 import { useVault } from "../hooks/useVault";
 import { getEcoStabilizerContract } from "../config/contracts";
 import { customToast } from "../shared/utils/customToast";
-import { getTransactionStatusMessage, TxStatus } from "../utils/errors";
+import { getExplorerUrl, getTransactionStatusMessage, TxStatus } from "../utils/errors";
 import { ENV } from "../config/environment";
 import { CompactErrorDisplay, VaultErrorDisplay } from "./VaultErrorDisplay";
 
@@ -21,7 +21,7 @@ interface VaultCardProps {
 }
 
 export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCompact = true }: VaultCardProps) {
-  const { address } = useAccount();
+  const { address, chainId } = useAccount();
 
   // Single-system: use configured addresses only
 
@@ -335,9 +335,9 @@ export default function VaultCard({ tokenId, isRedeemed, onActionComplete, isCom
       {showTxStatus && (
         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
           <p className="text-sm text-blue-800 dark:text-blue-200">{txStatusMessage}</p>
-          {txHash && txStatus === TxStatus.CONFIRMING && (
+          {txHash && txStatus === TxStatus.CONFIRMING && getExplorerUrl(txHash, chainId) && (
             <a
-              href={`https://basescan.org/tx/${txHash}`}
+              href={getExplorerUrl(txHash, chainId)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block"
