@@ -529,12 +529,31 @@ export function getTransactionStatusMessage(status: TxStatus): string {
  * Get explorer URL for a transaction
  */
 export function getExplorerUrl(txHash: string, chainId?: number): string {
-  const baseExplorerUrl =
-    chainId === 8453
-      ? "https://basescan.org"
-      : chainId === 84532
-        ? "https://sepolia.basescan.org"
-        : "https://etherscan.io";
+  let baseExplorerUrl: string;
 
-  return `${baseExplorerUrl}/tx/${txHash}`;
+  switch (chainId) {
+    // Arbitrum
+    case 42161:
+      baseExplorerUrl = "https://arbiscan.io";
+      break;
+    case 421614:
+      baseExplorerUrl = "https://sepolia.arbiscan.io";
+      break;
+    // Base
+    case 8453:
+      baseExplorerUrl = "https://basescan.org";
+      break;
+    case 84532:
+      baseExplorerUrl = "https://sepolia.basescan.org";
+      break;
+    // Local development
+    case 31337:
+      baseExplorerUrl = ""; // No explorer for local
+      break;
+    // Default to Etherscan
+    default:
+      baseExplorerUrl = "https://etherscan.io";
+  }
+
+  return baseExplorerUrl ? `${baseExplorerUrl}/tx/${txHash}` : "";
 }
