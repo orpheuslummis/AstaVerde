@@ -15,15 +15,15 @@ module.exports = {
       colors: {
         // Semantic colors for vault operations
         vault: {
-          deposit: "var(--vault-deposit)",
-          withdraw: "var(--vault-withdraw)",
-          batch: "var(--vault-batch)",
+          deposit: "hsl(var(--vault-deposit))",
+          withdraw: "hsl(var(--vault-withdraw))",
+          batch: "hsl(var(--vault-batch))",
         },
         // Status colors
         status: {
-          available: "var(--status-available)",
-          vaulted: "var(--status-vaulted)",
-          redeemed: "var(--status-redeemed)",
+          available: "hsl(var(--status-available))",
+          vaulted: "hsl(var(--status-vaulted))",
+          redeemed: "hsl(var(--status-redeemed))",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
