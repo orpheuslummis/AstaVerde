@@ -1,16 +1,13 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useReadContract, useWalletClient, useWriteContract } from "wagmi";
 import { getFunctionKind, isReadFunctionByAbi, isWriteFunctionByAbi } from "../lib/abiInference";
 import { safeMulticall } from "../lib/safeMulticall";
-import type { ContractConfig, ExecuteFunction, ContractError } from "../shared/types/contracts";
+import type { ContractConfig, ExecuteFunction } from "../shared/types/contracts";
 import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
 
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function useContractInteraction(contractConfig: ContractConfig, functionName: string) {
-  const [isSimulating] = useState(false);
-  const [isPending] = useState(false);
-  const [error] = useState<ContractError>(null);
   const publicClient = useRateLimitedPublicClient();
   const { data: walletClient } = useWalletClient();
   const { writeContractAsync } = useWriteContract();
@@ -232,10 +229,6 @@ export function useContractInteraction(contractConfig: ContractConfig, functionN
 
   return {
     execute,
-    isSimulating,
-    isPending,
-    error,
-
     readData,
     refetchReadData,
     getTokensOfOwner,
