@@ -135,11 +135,11 @@ export default function MyTokensPage() {
           }
 
           const proceed = window.confirm(
-            `⚠️ Large Deposit\n\n` +
+            "⚠️ Large Deposit\n\n" +
             `Depositing ${mutableTokenIds.length} NFTs requires ${chunks.length} separate transactions ` +
             `(max ${DEPOSIT_BATCH_LIMIT} per batch).\n\n` +
             `This will require ${chunks.length} wallet confirmations.\n\n` +
-            `Continue?`,
+            "Continue?",
           );
 
           if (!proceed) {
@@ -240,11 +240,11 @@ export default function MyTokensPage() {
         }
 
         const proceed = window.confirm(
-          `⚠️ Large Withdrawal\n\n` +
+          "⚠️ Large Withdrawal\n\n" +
           `Withdrawing ${tokenIds.length} NFTs requires ${chunks.length} separate transactions ` +
           `(max ${WITHDRAW_BATCH_LIMIT} per batch).\n\n` +
           `This will require ${chunks.length} wallet confirmations.\n\n` +
-          `Continue?`,
+          "Continue?",
         );
 
         if (!proceed) return;
