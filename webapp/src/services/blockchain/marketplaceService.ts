@@ -12,6 +12,18 @@ import { ENV } from "../../config/environment";
 import type { BatchData, TokenDataObj, TokenDataTuple } from "../../features/marketplace/types";
 import { safeMulticall } from "../../lib/safeMulticall";
 
+/**
+ * Normalize a transaction hash to ensure it has the correct length (64 hex chars + 0x prefix).
+ * This fixes an issue where leading zeros can be stripped during JSON serialization,
+ * causing "hex string has length 62, want 64" errors.
+ */
+function normalizeHash(hash: `0x${string}`): `0x${string}` {
+  if (!hash || !hash.startsWith("0x")) return hash;
+  const hexPart = hash.slice(2);
+  const padded = hexPart.padStart(64, "0");
+  return `0x${padded}` as `0x${string}`;
+}
+
 export class MarketplaceService {
   constructor(
     private publicClient: PublicClient,
@@ -142,7 +154,7 @@ export class MarketplaceService {
     const contract = getAstaVerdeContract();
 
     // Try simulate first for clearer errors; fall back to direct write if it fails
-    let hash: `0x${string}`;
+    let rawHash: `0x${string}`;
     try {
       const { request } = await this.publicClient.simulateContract({
         ...contract,
@@ -150,10 +162,10 @@ export class MarketplaceService {
         args: [BigInt(batchId), exactTotalCost, BigInt(tokenAmount)],
         account: this.walletClient.account,
       });
-      hash = await this.walletClient.writeContract(request);
+      rawHash = await this.walletClient.writeContract(request);
     } catch (simError) {
       try {
-        hash = await this.walletClient.writeContract({
+        rawHash = await this.walletClient.writeContract({
           ...contract,
           functionName: "buyBatch",
           args: [BigInt(batchId), exactTotalCost, BigInt(tokenAmount)],
@@ -163,6 +175,7 @@ export class MarketplaceService {
         throw new Error(this.getRevertReason(writeError));
       }
     }
+    const hash = normalizeHash(rawHash);
 
     // Wait for confirmation with retry logic
     await this.waitForTransactionWithRetry(hash);
@@ -282,7 +295,7 @@ export class MarketplaceService {
 
       try {
         const isLocalChain = this.publicClient.chain?.id === 31337;
-        let approveTx: `0x${string}`;
+        let rawApproveTx: `0x${string}`;
 
         if (!isLocalChain) {
           try {
@@ -292,9 +305,9 @@ export class MarketplaceService {
               args: [astaverdeContract.address, approvalAmount],
               account: this.walletClient.account,
             });
-            approveTx = await this.walletClient.writeContract(request);
+            rawApproveTx = await this.walletClient.writeContract(request);
           } catch {
-            approveTx = await this.walletClient.writeContract({
+            rawApproveTx = await this.walletClient.writeContract({
               ...usdcContract,
               functionName: "approve",
               args: [astaverdeContract.address, approvalAmount],
@@ -302,13 +315,14 @@ export class MarketplaceService {
             });
           }
         } else {
-          approveTx = await this.walletClient.writeContract({
+          rawApproveTx = await this.walletClient.writeContract({
             ...usdcContract,
             functionName: "approve",
             args: [astaverdeContract.address, approvalAmount],
             account: this.walletClient.account,
           });
         }
+        const approveTx = normalizeHash(rawApproveTx);
 
         await this.publicClient.waitForTransactionReceipt({ hash: approveTx });
         console.log("Approval successful:", approveTx);

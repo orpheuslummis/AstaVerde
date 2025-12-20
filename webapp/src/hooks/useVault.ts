@@ -16,6 +16,19 @@ import type { VaultLoan } from "../features/vault/types";
 import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
 import { safeMulticall } from "../lib/safeMulticall";
 
+/**
+ * Normalize a transaction hash to ensure it has the correct length (64 hex chars + 0x prefix).
+ * This fixes an issue where leading zeros can be stripped during JSON serialization,
+ * causing "hex string has length 62, want 64" errors.
+ */
+function normalizeHash(hash: `0x${string}`): `0x${string}` {
+  if (!hash || !hash.startsWith("0x")) return hash;
+  const hexPart = hash.slice(2);
+  // Pad to 64 characters if shorter
+  const padded = hexPart.padStart(64, "0");
+  return `0x${padded}` as `0x${string}`;
+}
+
 export interface VaultHook {
   // Core functionality
   deposit: (tokenId: bigint) => Promise<void>;
@@ -199,13 +212,14 @@ export function useVault(): VaultHook {
         gasLimit = 100_000n;
       }
 
-      const hash = await writeContractAsync({
+      const rawHash = await writeContractAsync({
         ...assetConfig,
         functionName: "setApprovalForAll",
         args: [operator, true],
         account: address,
         ...(gasLimit ? { gas: gasLimit } : {}),
       });
+      const hash = normalizeHash(rawHash);
 
       const receipt = await publicClient?.waitForTransactionReceipt({ hash });
 
@@ -247,11 +261,12 @@ export function useVault(): VaultHook {
 
         customToast.info("Approving SCC transfers...");
 
-        const hash = await writeContractAsync({
+        const rawHash = await writeContractAsync({
           ...sccConfig,
           functionName: "approve",
           args: [ENV.ECOSTABILIZER_ADDRESS as `0x${string}`, amount],
         });
+        const hash = normalizeHash(rawHash);
 
         const receipt = await publicClient?.waitForTransactionReceipt({ hash });
 
@@ -418,11 +433,12 @@ export function useVault(): VaultHook {
 
         customToast.info("Depositing NFT to vault...");
 
-        const hash = await writeContractAsync({
+        const rawHash = await writeContractAsync({
           ...vaultContractConfig,
           functionName: "deposit",
           args: [tokenId],
         });
+        const hash = normalizeHash(rawHash);
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
@@ -501,12 +517,13 @@ export function useVault(): VaultHook {
           gasLimit = VAULT_GAS_LIMITS.WITHDRAW;
         }
 
-        const hash = await writeContractAsync({
+        const rawHash = await writeContractAsync({
           ...vaultConfig,
           functionName: "withdraw",
           args: [tokenId],
           ...(gasLimit ? { gas: gasLimit } : {}),
         });
+        const hash = normalizeHash(rawHash);
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
@@ -584,12 +601,13 @@ export function useVault(): VaultHook {
           cleanTokenIds[i] = BigInt(tokenIds[i].toString());
         }
 
-        const hash = await writeContractAsync({
+        const rawHash = await writeContractAsync({
           ...vaultConfig,
           functionName: "depositBatch",
           args: [cleanTokenIds],
           ...(gasLimit ? { gas: gasLimit } : {}),
         });
+        const hash = normalizeHash(rawHash);
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
@@ -650,11 +668,12 @@ export function useVault(): VaultHook {
 
         if (currentAllowance < requiredScc) {
           customToast.info("Approving SCC for withdrawal...");
-          const approveHash = await writeContractAsync({
+          const rawApproveHash = await writeContractAsync({
             ...sccConfig,
             functionName: "approve",
             args: [vaultConfig.address as `0x${string}`, requiredScc],
           });
+          const approveHash = normalizeHash(rawApproveHash);
           await publicClient?.waitForTransactionReceipt({ hash: approveHash });
           await refetchSccAllowance();
           // Small delay to ensure chain state is updated
@@ -669,12 +688,17 @@ export function useVault(): VaultHook {
           cleanTokenIds[i] = BigInt(tokenIds[i].toString());
         }
 
-        const hash = await writeContractAsync({
+        // Dynamic gas: ~60k per token + 100k buffer for base operations
+        const estimatedGas = BigInt(cleanTokenIds.length) * 60000n + 100000n;
+        const gasLimit = estimatedGas > 2000000n ? estimatedGas : 2000000n; // min 2M gas
+
+        const rawHash = await writeContractAsync({
           ...vaultConfig,
           functionName: "withdrawBatch",
           args: [cleanTokenIds],
-          gas: 1000000n, // Set explicit gas limit for batch operations
+          gas: gasLimit,
         });
+        const hash = normalizeHash(rawHash);
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
@@ -745,12 +769,13 @@ export function useVault(): VaultHook {
           gasLimit = VAULT_GAS_LIMITS.WITHDRAW;
         }
 
-        const hash = await writeContractAsync({
+        const rawHash = await writeContractAsync({
           ...vaultConfig,
           functionName: "withdraw",
           args: [tokenId],
           ...(gasLimit ? { gas: gasLimit } : {}),
         });
+        const hash = normalizeHash(rawHash);
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
