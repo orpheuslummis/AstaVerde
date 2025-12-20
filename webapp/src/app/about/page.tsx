@@ -95,6 +95,53 @@ export default function Page() {
               </ol>
             </div>
           </div>
+          <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
+            <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">
+              Q: How do I move USDC or ETH onto Arbitrum?
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300 mb-3">
+              A: A simple and commonly used option is CowSwap. CowSwap allows you to swap assets directly onto Arbitrum,
+              often with competitive pricing.
+            </p>
+            <a
+              href="https://swap.cow.fi/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline transition duration-300"
+            >
+              Go to CowSwap
+            </a>
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
+            <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">
+              Q: How do I get funds into my wallet to buy EcoAssets?
+            </h3>
+            <div className="text-gray-700 dark:text-gray-300">
+              <p className="mb-3">A: Once you have a Revolut account:</p>
+              <ul className="list-disc list-inside mb-4 space-y-1">
+                <li>You can buy USDC (and a small amount of ETH for transaction fees) directly in Revolut.</li>
+                <li>You can then send these funds on Arbitrum straight to your wallet.</li>
+              </ul>
+              <p className="font-semibold mb-2">Important:</p>
+              <p className="mb-4">
+                Acquisition costs are largely fixed. Buying $5 costs roughly the same as buying $200, so avoid making
+                many small purchases.
+              </p>
+              <p className="font-semibold mb-2">When sending from Revolut:</p>
+              <ol className="list-decimal list-inside space-y-2">
+                <li>Select USDC or Ethereum as the asset.</li>
+                <li>
+                  Under the network/chain option shown below the amount, switch it to Arbitrum if the funds are intended
+                  for EcoAsset purchases.
+                </li>
+                <li>Send the funds to your wallet.</li>
+              </ol>
+              <p className="mt-4 text-sm italic">
+                You will be prompted to confirm that your wallet supports Arbitrum. As usual, it&apos;s best practice to
+                send a small test amount first to confirm it arrives safely before sending the full balance.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </div>
