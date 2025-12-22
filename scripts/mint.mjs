@@ -109,6 +109,11 @@ async function mintTokens(isLocal, tokenCount) {
                 description: token.description,
                 external_url: `${EXTERNAL_URL}${token.id}`,
                 image: `${IPFS_PREFIX}${imageCid}`,
+                attributes: [
+                    { trait_type: "Type", value: "Carbon Offset" },
+                    { trait_type: "Producer Address", value: token.producer_address },
+                ],
+                // Keep properties for backward-compat with older metadata expectations
                 properties: [{ trait_type: "Producer Address", value: token.producer_address }],
             };
 
