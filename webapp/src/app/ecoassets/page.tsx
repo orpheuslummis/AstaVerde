@@ -77,7 +77,7 @@ export default function Page() {
 
         <div className="flex flex-col space-y-6 mt-12">
           <a
-            href="/Everything.about.eco.asset.pdf"
+            href="/Everything%20about%20eco%20asset.pdf"
             download
             className="eco-btn eco-btn-primary dark:bg-emerald-700 dark:hover:bg-emerald-600"
           >
