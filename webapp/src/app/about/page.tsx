@@ -18,7 +18,7 @@ export default function Page() {
                     sustainable practices are both recognized and rewarded.
         </p>
         <a
-          href="/Everything.about.eco.asset.pdf"
+          href="/Everything%20about%20eco%20asset.pdf"
           className="inline-block bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition duration-300 dark:bg-primary-dark dark:hover:bg-primary"
         >
                     Read Everything about Eco Assets before buying
