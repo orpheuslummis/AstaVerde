@@ -2,7 +2,7 @@
 
 ## Issue: NFTs Not Visible in Wallets
 
-This guide addresses the common issue where NFTs minted on AstaVerde are not visible in wallets, particularly on testnets like Base Sepolia.
+This guide addresses the common issue where NFTs minted on AstaVerde are not visible in wallets, particularly on testnets like Sepolia (currently Arbitrum Sepolia).
 
 ## Root Causes
 
@@ -19,30 +19,31 @@ Each NFT's metadata must follow the ERC-1155 metadata standard:
 
 ```json
 {
-  "name": "Carbon Offset #1",
-  "description": "Verified carbon offset from renewable energy project",
-  "image": "ipfs://QmXxx...",
-  "external_url": "https://astaverde.com/token/1",
-  "attributes": [
-    {
-      "trait_type": "Type",
-      "value": "Carbon Offset"
-    },
-    {
-      "trait_type": "Project",
-      "value": "Solar Farm Alpha"
-    },
-    {
-      "trait_type": "Tons CO2",
-      "value": "1"
-    }
-  ]
+    "name": "Carbon Offset #1",
+    "description": "Verified carbon offset from renewable energy project",
+    "image": "ipfs://QmXxx...",
+    "external_url": "https://astaverde.com/token/1",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Carbon Offset"
+        },
+        {
+            "trait_type": "Project",
+            "value": "Solar Farm Alpha"
+        },
+        {
+            "trait_type": "Tons CO2",
+            "value": "1"
+        }
+    ]
 }
 ```
 
 ### 2. Upload Metadata to IPFS
 
 Before minting, ensure:
+
 1. Metadata JSON is uploaded to IPFS
 2. Image files are uploaded to IPFS
 3. Both are pinned using a service like Pinata, Web3.Storage, or Infura
@@ -52,7 +53,7 @@ Before minting, ensure:
 Run the provided script to ensure the contract's base URI is properly configured:
 
 ```bash
-# For Base Sepolia testnet
+# For Sepolia testnet (currently Arbitrum Sepolia)
 node scripts/set-metadata-uri.js sepolia
 
 # For local development
@@ -74,25 +75,26 @@ node scripts/check-nft-metadata.js sepolia 1
 ## Wallet-Specific Instructions
 
 ### MetaMask
+
 1. Go to NFTs tab
 2. Click "Import NFTs"
 3. Enter contract address and token ID
 4. If not visible, wait 5-10 minutes for indexing
 
 ### Rainbow Wallet
+
 - Generally has good testnet support
 - NFTs should appear automatically after a few minutes
 
 ### Coinbase Wallet
+
 - Limited testnet NFT support
 - May not display testnet NFTs at all
 
 ### OpenSea Testnet
-Best way to verify NFTs are properly configured:
-1. Visit: https://testnets.opensea.io/
-2. Connect wallet
-3. Search for contract address
-4. Collection URL format: `https://testnets.opensea.io/assets/base-sepolia/[CONTRACT_ADDRESS]`
+
+If you use a marketplace/indexer for verification, make sure it supports your target network (Sepolia / Arbitrum Sepolia).
+Otherwise, validate directly by reading onchain `uri(tokenId)` and fetching the IPFS JSON via a public gateway.
 
 ## Minting Process with Proper Metadata
 
@@ -103,14 +105,14 @@ Create metadata JSON files for each token:
 ```javascript
 // Example: prepare-metadata.js
 const metadata = {
-  name: `Carbon Offset #${tokenId}`,
-  description: "Verified carbon offset from renewable energy project",
-  image: `ipfs://${imageCID}`,
-  attributes: [
-    { trait_type: "Type", value: "Carbon Offset" },
-    { trait_type: "Vintage", value: "2024" },
-    { trait_type: "Tons CO2", value: "1" }
-  ]
+    name: `Carbon Offset #${tokenId}`,
+    description: "Verified carbon offset from renewable energy project",
+    image: `ipfs://${imageCID}`,
+    attributes: [
+        { trait_type: "Type", value: "Carbon Offset" },
+        { trait_type: "Vintage", value: "2024" },
+        { trait_type: "Tons CO2", value: "1" },
+    ],
 };
 
 // Upload to IPFS and get CID
@@ -143,6 +145,7 @@ await astaVerde.mintBatch(producers, cids);
 ## Testing Tools
 
 ### Check Metadata Accessibility
+
 ```bash
 # Test if metadata is accessible
 curl https://ipfs.io/ipfs/[YOUR_CID]
@@ -153,27 +156,34 @@ curl https://gateway.pinata.cloud/ipfs/[YOUR_CID]
 ```
 
 ### Force Metadata Refresh
+
 Some wallets allow manual refresh:
+
 - MetaMask: Settings → Advanced → Clear activity tab data
 - OpenSea: Click the refresh metadata button on token page
 
 ## Common Issues and Solutions
 
 ### Issue: "Token does not exist" error
+
 **Solution**: Token hasn't been minted yet. Check `lastTokenID` on contract.
 
 ### Issue: Metadata loads but no image
+
 **Solution**: Image CID in metadata is invalid or not pinned. Re-upload image to IPFS.
 
 ### Issue: NFT visible on OpenSea but not wallet
+
 **Solution**: Wallet may not support testnet NFTs. Try importing manually or use different wallet.
 
 ### Issue: Changes not reflecting
+
 **Solution**: Clear wallet cache, wait for re-indexing, or try different RPC endpoint.
 
 ## Production Considerations
 
 For mainnet deployment:
+
 1. Use reliable IPFS pinning service with redundancy
 2. Consider using IPFS cluster or multiple pinning services
 3. Set up monitoring for IPFS gateway availability
@@ -185,4 +195,4 @@ For mainnet deployment:
 - [ERC-1155 Metadata Standard](https://eips.ethereum.org/EIPS/eip-1155#metadata)
 - [OpenSea Metadata Standards](https://docs.opensea.io/docs/metadata-standards)
 - [IPFS Best Practices](https://docs.ipfs.io/how-to/best-practices-for-nfts/)
-- [Base Network Documentation](https://docs.base.org/)
+- [Arbitrum Documentation](https://docs.arbitrum.io/)

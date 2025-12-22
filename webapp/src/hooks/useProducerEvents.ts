@@ -1,13 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { formatUnits } from "viem";
 import { useContractEvents } from "./useContractEvents";
+import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
 import { customToast } from "@/utils/customToast";
 import { ENV } from "@/config/environment";
-import type {
-  ProducerPaymentAccruedEvent,
-  ProducerPaymentClaimedEvent,
-} from "@/features/events/eventTypes";
+import type { ProducerPaymentAccruedEvent, ProducerPaymentClaimedEvent } from "@/features/events/eventTypes";
 import { EVENT_NAMES } from "@/features/events/eventTypes";
 
 interface ProducerEventsConfig {
@@ -21,16 +19,14 @@ interface ProducerEventsConfig {
  * Listens for ProducerPaymentAccrued and ProducerPaymentClaimed events
  * @param config Configuration options
  */
-export function useProducerEvents({
-  onBalanceUpdate,
-  showToasts = true,
-  enabled = true,
-}: ProducerEventsConfig = {}) {
+export function useProducerEvents({ onBalanceUpdate, showToasts = true, enabled = true }: ProducerEventsConfig = {}) {
   const { address } = useAccount();
+  const publicClient = useRateLimitedPublicClient();
   const [recentAccruals, setRecentAccruals] = useState<ProducerPaymentAccruedEvent[]>([]);
   const [recentClaims, setRecentClaims] = useState<ProducerPaymentClaimedEvent[]>([]);
   const [totalAccrued, setTotalAccrued] = useState<bigint>(0n);
   const [totalClaimed, setTotalClaimed] = useState<bigint>(0n);
+  const lastPolledBlockRef = useRef<bigint | null>(null);
 
   // Handle ProducerPaymentAccrued events
   const handlePaymentAccrued = useCallback(
@@ -64,13 +60,10 @@ export function useProducerEvents({
 
         if (showToasts) {
           const formattedAmount = formatUnits(event.amount, ENV.USDC_DECIMALS);
-          customToast.success(
-            `Successfully claimed ${formattedAmount} USDC`,
-            {
-              duration: 5000,
-              icon: "💰",
-            },
-          );
+          customToast.success(`Successfully claimed ${formattedAmount} USDC`, {
+            duration: 5000,
+            icon: "💰",
+          });
         }
 
         // Reset accruals since they've been claimed
@@ -89,6 +82,7 @@ export function useProducerEvents({
     eventName: EVENT_NAMES.ProducerPaymentAccrued,
     onEvent: handlePaymentAccrued,
     enabled: enabled && !!address,
+    watchEnabled: false,
   });
 
   // Watch for ProducerPaymentClaimed events
@@ -96,50 +90,77 @@ export function useProducerEvents({
     eventName: EVENT_NAMES.ProducerPaymentClaimed,
     onEvent: handlePaymentClaimed,
     enabled: enabled && !!address,
+    watchEnabled: false,
   });
 
-  // Load historical events on mount (last 100 blocks)
-  useEffect(() => {
-    if (!enabled || !address) return;
+  const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    const loadHistoricalEvents = async () => {
+  // Lightweight polling to keep producer balances current without hammering RPC
+  useEffect(() => {
+    if (!enabled || !address || !publicClient) return;
+
+    const logQueryGapMs = publicClient.chain?.id === 31337 ? 120 : 1_100;
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let isFetching = false;
+
+    const loadRecentEvents = async () => {
+      if (isFetching) return;
+      isFetching = true;
       try {
-        // Fetch recent historical events (approximately last hour)
-        const currentBlock = await window.ethereum?.request({
-          method: "eth_blockNumber",
+        const latest = await publicClient.getBlockNumber();
+        const fromBlock =
+          lastPolledBlockRef.current !== null ? lastPolledBlockRef.current + 1n : latest > 12n ? latest - 12n : 0n;
+        const toBlock = latest;
+
+        const accruals = await fetchAccruedHistory(fromBlock, toBlock);
+        await delay(logQueryGapMs);
+        const claims = await fetchClaimedHistory(fromBlock, toBlock);
+
+        if (cancelled) return;
+
+        accruals.forEach(({ data }) => {
+          if (data && data.producer.toLowerCase() === address.toLowerCase()) {
+            handlePaymentAccrued(data);
+          }
         });
 
-        if (currentBlock) {
-          const fromBlock = BigInt(currentBlock) - 100n; // Last ~100 blocks
+        claims.forEach(({ data }) => {
+          if (data && data.producer.toLowerCase() === address.toLowerCase()) {
+            handlePaymentClaimed(data);
+          }
+        });
 
-          const accruals = await fetchAccruedHistory(fromBlock);
-          const claims = await fetchClaimedHistory(fromBlock);
-
-          // Process historical events
-          accruals.forEach(({ data }) => {
-            if (data && data.producer.toLowerCase() === address.toLowerCase()) {
-              setRecentAccruals((prev) => [...prev, data]);
-              setTotalAccrued((prev) => prev + data.amount);
-            }
-          });
-
-          claims.forEach(({ data }) => {
-            if (data && data.producer.toLowerCase() === address.toLowerCase()) {
-              setRecentClaims((prev) => [...prev, data]);
-              setTotalClaimed((prev) => prev + data.amount);
-            }
-          });
-        }
+        lastPolledBlockRef.current = toBlock;
       } catch (error) {
         console.error("Error loading historical producer events:", error);
+      } finally {
+        isFetching = false;
       }
     };
 
-    loadHistoricalEvents();
-  }, [enabled, address, fetchAccruedHistory, fetchClaimedHistory]);
+    void loadRecentEvents();
+    pollTimer = setInterval(() => {
+      void loadRecentEvents();
+    }, 45000);
+
+    return () => {
+      cancelled = true;
+      if (pollTimer) clearInterval(pollTimer);
+    };
+  }, [
+    enabled,
+    address,
+    publicClient,
+    fetchAccruedHistory,
+    fetchClaimedHistory,
+    handlePaymentAccrued,
+    handlePaymentClaimed,
+  ]);
 
   // Clear state when account changes
   useEffect(() => {
+    lastPolledBlockRef.current = null;
     setRecentAccruals([]);
     setRecentClaims([]);
     setTotalAccrued(0n);

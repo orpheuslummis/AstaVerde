@@ -64,7 +64,7 @@
         "access": "public"
     },
     "scripts": {
-        "start": "npm run dev:local",
+        "start": "npm run dev:sepolia",
         "qa": "npm run qa:status && npm run qa:fast && npm run qa:full",
         "compile": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat compile && jq '{abi: .abi}' ./artifacts/contracts/AstaVerde.sol/AstaVerde.json > ./webapp/src/config/AstaVerde.json",
         "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
@@ -75,7 +75,7 @@
         "lint:fix": "npm run lint:js:fix && npm run prettier:write",
         "lint:js": "eslint . --ext .js,.mjs,.ts",
         "lint:js:fix": "eslint . --ext .js,.mjs,.ts --fix",
-        "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\"",
+        "lint:sol": "solhint --disc --max-warnings 0 \"contracts/**/*.sol\"",
         "prettier:check": "prettier --check \"**/*.{js,json,md,sol,ts,yml}\"",
         "prettier:write": "prettier --write \"**/*.{js,json,md,sol,ts,yml}\"",
         "qa:status": "cross-env TS_NODE_TRANSPILE_ONLY=true npx hardhat run scripts/status-check.js",
@@ -86,9 +86,10 @@
         "dev:local:stop": "node scripts/stop-local.js",
         "dev:local:seed": "cross-env TS_NODE_TRANSPILE_ONLY=true npx hardhat run scripts/seed-local.js --network localhost",
         "dev:sepolia": "node scripts/dev-sepolia.js",
-        "deploy:testnet": "node scripts/deploy-with-validation.js --network base-sepolia",
-        "deploy:mainnet": "node scripts/deploy-with-validation.js --network base-mainnet",
+        "deploy:testnet": "node scripts/deploy-with-validation.js --network arbitrum-sepolia",
+        "deploy:mainnet": "node scripts/deploy-with-validation.js --network arbitrum-one",
         "deploy:safe": "node scripts/deploy-with-validation.js",
+        "mint:testnet": "node scripts/mint-arbitrum-sepolia.js",
         "verify:contracts": "hardhat etherscan-verify --sleep",
         "pinata:pin": "node scripts/pinata-pin.mjs"
     },

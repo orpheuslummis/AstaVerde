@@ -14,7 +14,8 @@ contract MockUSDC is ERC20 {
         require(
             block.chainid == 31337 || // Hardhat local
                 block.chainid == 84532 || // Base Sepolia
-                block.chainid == 11155111, // Sepolia
+                block.chainid == 11155111 || // Sepolia
+                block.chainid == 421614, // Arbitrum Sepolia
             "MockUSDC: Production deployment forbidden"
         );
     }

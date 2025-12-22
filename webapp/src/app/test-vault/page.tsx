@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount, useWalletClient, usePublicClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import ecoStabilizerAbi from "../../config/EcoStabilizer.json";
 import astaVerdeAbi from "../../config/AstaVerde.json";
 import { getEcoStabilizerContract, getAstaVerdeContract } from "../../config/contracts";
 import DevOnly from "../../components/DevOnly";
 import { getErrorMessage, getErrorCause } from "../../shared/utils/error";
+import { useRateLimitedPublicClient } from "@/hooks/useRateLimitedPublicClient";
 
 export default function TestVaultPage() {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient();
+  const publicClient = useRateLimitedPublicClient();
   const [logs, setLogs] = useState<string[]>([]);
 
   const addLog = (message: string) => {

@@ -168,6 +168,11 @@ export default function MintBatch() {
             name: token.name,
             description: token.description,
             external_url: `${EXTERNAL_URL}${lastTokenId ? lastTokenId + i + 1 : ""}`,
+            attributes: [
+              { trait_type: "Type", value: "Carbon Offset" },
+              { trait_type: "Producer Address", value: token.producer_address },
+            ],
+            // Keep properties for backward-compat with older metadata expectations
             properties: [{ trait_type: "Producer Address", value: token.producer_address }],
           };
           if (imageCid) {

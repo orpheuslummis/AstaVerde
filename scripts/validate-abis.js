@@ -176,7 +176,7 @@ allValid = validateABI("EcoStabilizer", "artifacts/contracts/EcoStabilizer.sol/E
 allValid =
     validateABI("StabilizedCarbonCoin", "artifacts/contracts/StabilizedCarbonCoin.sol/StabilizedCarbonCoin.json") &&
     allValid;
-allValid = validateABI("MockUSDC", "artifacts/contracts/test/MockUSDC.sol/MockUSDC.json") && allValid;
+allValid = validateABI("MockUSDC", "artifacts/contracts/MockUSDC.sol/MockUSDC.json") && allValid;
 
 // Validate webapp config
 allValid = validateWebappConfig() && allValid;

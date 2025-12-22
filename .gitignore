@@ -41,15 +41,20 @@ webapp/webapp/
 
 # Temporary test files
 webapp/test-wallet-flow.js
-webapp/.env.sepolia
-webapp/.env.mainnet
-# Intentionally tracked public webapp env
-# (contains only NEXT_PUBLIC_* values)
-# webapp/.env is versioned on purpose
+
+# Webapp env files (untracked) — use webapp/.env.local / webapp/.env.*
+webapp/.env
+webapp/.env.*
+!webapp/.env.local.example
 
 # Root Sepolia env (contains secrets) — keep out of git
 .env.sepolia
 .env.mainnet
+
+# Root Arbitrum env (contains secrets) — keep out of git
+.env.arbitrum
+.env.arbitrum-sepolia
+.env.arbitrum-one
 
 # Root env (contains secrets) — keep out of git
 .env
@@ -59,4 +64,3 @@ webapp/.next/
 
 # ESLint reports
 eslint-report.json
-

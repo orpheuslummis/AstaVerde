@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { getAstaVerdeContract } from "../../../config/contracts";
-import { usePublicClient } from "wagmi";
+import { useRateLimitedPublicClient } from "@/hooks/useRateLimitedPublicClient";
 import Loader from "../../../components/Loader";
 import { fetchJsonFromIpfsWithFallback, resolveIpfsUriToUrl } from "../../../utils/ipfsHelper";
 
@@ -36,7 +36,7 @@ interface TokenDisplayData {
 }
 
 export default function Page({ params }: { params: { id: bigint } }) {
-  const publicClient = usePublicClient();
+  const publicClient = useRateLimitedPublicClient();
   const [tokenDisplay, setTokenDisplay] = useState<TokenDisplayData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

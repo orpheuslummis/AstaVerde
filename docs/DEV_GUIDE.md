@@ -7,7 +7,7 @@ Complete guide for developing on AstaVerde - project structure, setup, and devel
 ```
 astaverde/
 ├── contracts/          # Solidity smart contracts (0.8.27)
-│   ├── AstaVerde.sol   # Phase 1: Marketplace (live on Base)
+│   ├── AstaVerde.sol   # Phase 1: Marketplace
 │   ├── EcoStabilizer.sol # Phase 2: Vault system
 │   ├── StabilizedCarbonCoin.sol # SCC token
 │   └── IAstaVerde.sol  # Interface for vault integration
@@ -52,22 +52,19 @@ cd astaverde
 npm install
 cd webapp && npm install && cd ..
 
-# Set up environment
-cp .env.example .env
-cp webapp/.env.example webapp/.env.local
+# Set up environment (untracked)
+cp .env.local.example .env.local
+cp webapp/.env.local.example webapp/.env.local
 ```
 
 ### Start Development Environment
 
 ```bash
-# One command to start everything
-npm run dev
+# Deploy contracts to Arbitrum Sepolia
+npm run deploy:testnet
 
-# This runs:
-# 1. Local blockchain (Hardhat node)
-# 2. Contract deployment
-# 3. Test data seeding
-# 4. Webapp on http://localhost:3001
+# Start the webapp on Arbitrum Sepolia (http://localhost:3002)
+npm run dev:sepolia
 ```
 
 ## 💻 Development Workflow
@@ -77,7 +74,7 @@ npm run dev
 1. **Write contracts** in `contracts/`
 2. **Compile** with `npm run compile`
 3. **Test** with `npm run test`
-4. **Deploy locally** with `npm run dev`
+4. **Deploy to testnet** with `npm run deploy:testnet` (recommended; local stack via `npm run dev:local` is legacy)
 
 ```bash
 # Useful commands
@@ -112,31 +109,50 @@ npm run type-check
 
 ### Environment Variables
 
-**.env (root)**
+**.env.local (root)**
 
 ```bash
-# Deployment
-PRIVATE_KEY=0xac09...  # Deployer private key
+# Deployment wallet
+PRIVATE_KEY=0xac09...           # Deployer private key
+OWNER_ADDRESS=0x...             # Owner / Safe address (required for AstaVerde deploy)
+
+# RPC (choose one approach)
+ARBITRUM_SEPOLIA_RPC_URL=https://arb-sepolia.g.alchemy.com/v2/your-key
+ARBITRUM_MAINNET_RPC_URL=https://arb-mainnet.g.alchemy.com/v2/your-key
+# Or: provide a single Alchemy key used for templated URLs
 RPC_API_KEY=your-alchemy-key
 
-# Contract addresses (for existing deployments)
-AV_ADDR=0x...         # AstaVerde address
-VAULT_ADDR=0x...      # EcoStabilizer address
-SCC_ADDR=0x...        # SCC token address
+# Explorer verification
+ARBITRUM_SEPOLIA_EXPLORER_API_KEY=...
+ARBITRUM_MAINNET_EXPLORER_API_KEY=...
+
+# Optional deploy flags
+DEPLOY_VAULT_V2=false
+USE_EXISTING_ASTAVERDE=false
+AV_ADDR=0x...
+RENOUNCE_SCC_ADMIN=false
 ```
 
 **webapp/.env.local**
 
 ```bash
 # Chain selection
-NEXT_PUBLIC_CHAIN=localhost  # or baseSepolia, base
+NEXT_PUBLIC_CHAIN_SELECTION=arbitrum_sepolia
 
-# API keys
-NEXT_PUBLIC_ALCHEMY_ID=your-key
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your-key
+# Contract addresses
+NEXT_PUBLIC_ASTAVERDE_ADDRESS=0x...
+NEXT_PUBLIC_USDC_ADDRESS=0x...
+NEXT_PUBLIC_ECOSTABILIZER_ADDRESS=0x...
+NEXT_PUBLIC_SCC_ADDRESS=0x...
 
-# IPFS (optional for local dev)
-# Default read gateway is w3s.link; override if desired
+# RPC (choose one)
+NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL=https://arb-sepolia.g.alchemy.com/v2/your-key
+NEXT_PUBLIC_ALCHEMY_API_KEY=
+
+# WalletConnect (optional)
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=
+
+# IPFS (optional)
 NEXT_PUBLIC_IPFS_GATEWAY_URL=https://w3s.link/ipfs/
 ```
 
@@ -144,9 +160,9 @@ NEXT_PUBLIC_IPFS_GATEWAY_URL=https://w3s.link/ipfs/
 
 Supported networks configured in `hardhat.config.ts`:
 
-- **localhost**: Local Hardhat node
-- **baseSepolia**: Base testnet
-- **base**: Base mainnet
+- **arbitrum-sepolia**: Arbitrum Sepolia testnet
+- **arbitrum-one**: Arbitrum One mainnet
+- **localhost**: Local Hardhat node (legacy/local-only flows)
 
 ## 📦 Module Guidelines
 
@@ -340,7 +356,7 @@ npx hardhat balance <address> # Check balance
 - [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts)
 - [Wagmi Documentation](https://wagmi.sh)
 - [Next.js Documentation](https://nextjs.org/docs)
-- [Base Documentation](https://docs.base.org)
+- [Arbitrum Documentation](https://docs.arbitrum.io)
 
 ## 🤝 Contributing
 

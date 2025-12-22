@@ -1,13 +1,13 @@
 # AstaVerde - Carbon Offset NFT Ecosystem
 
-Carbon offset NFT marketplace with Dutch auction pricing and collateralized lending vault on Base L2.
+Carbon offset NFT marketplace with Dutch auction pricing and collateralized lending vault on Arbitrum.
 
 ## System Status
 
-- **v1**: ✅ Live on Base Mainnet (2024-11-15) - Dutch auction marketplace
+- **v1**: ✅ Dutch auction marketplace
 - **v2**: ✅ Released (2025-08-25) - EcoStabilizer vault (221 tests passing)
-- **QA Testing**: 🧪 Available on Base Sepolia testnet
-- **Deployment**: Ready for Base mainnet
+- **QA Testing**: 🧪 Available on Arbitrum Sepolia testnet
+- **Deployment**: Ready for Arbitrum One mainnet
 - **Gas Efficiency**: Deposit <150k, Withdraw <120k
 
 ## 📚 Documentation
@@ -44,10 +44,13 @@ npm install
 # Run tests
 npm run test
 
-# Start local development environment
-npm run dev:local
+# Configure webapp env (untracked)
+cp webapp/.env.local.example webapp/.env.local
 
-# Access webapp at http://localhost:3000
+# Start dev webapp (Arbitrum Sepolia)
+npm run dev:sepolia
+
+# Access webapp at http://localhost:3002
 ```
 
 ## Key Commands
@@ -55,10 +58,10 @@ npm run dev:local
 ```bash
 npm run test              # Run all tests
 npm run compile           # Compile contracts
-npm run dev:local         # Start local development environment
+npm run dev:sepolia       # Start webapp (Arbitrum Sepolia)
 npm run qa:fast           # Quick contract verification
-npm run deploy:testnet    # Deploy to Base Sepolia
-npm run deploy:mainnet    # Deploy to Base mainnet
+npm run deploy:testnet    # Deploy to Arbitrum Sepolia
+npm run deploy:mainnet    # Deploy to Arbitrum One
 ```
 
 See [AGENTS.md](AGENTS.md) for the complete command reference and workflows.
@@ -81,13 +84,13 @@ See [AGENTS.md](AGENTS.md) for the complete command reference and workflows.
 
 ## 🧪 v2 QA Testing
 
-The EcoStabilizer vault system is deployed on Base Sepolia testnet for client testing.
+The EcoStabilizer vault system is deployed on Arbitrum Sepolia testnet for client testing.
 
 ### For Testers
 
 - **[QA Testing Guide](./docs/QA_TESTING.md)** - Complete guide for testing the vault system
 - **Test URL**: [Vercel deployment URL - to be provided]
-- **Network**: Base Sepolia (testnet)
+- **Network**: Arbitrum Sepolia (testnet)
 
 ### For Developers
 
@@ -100,9 +103,8 @@ The EcoStabilizer vault system is deployed on Base Sepolia testnet for client te
 2. **Configure Webapp**:
 
     ```bash
-    cd webapp
-    cp .env.example .env.local
-    # Edit .env.local with testnet addresses
+    cp webapp/.env.local.example webapp/.env.local
+    # Edit webapp/.env.local with testnet addresses + RPC
     ```
 
 3. **Deploy to Vercel**:

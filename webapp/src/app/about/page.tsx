@@ -18,7 +18,7 @@ export default function Page() {
                     sustainable practices are both recognized and rewarded.
         </p>
         <a
-          href="/Everything.about.eco.asset.pdf"
+          href="/Everything%20about%20eco%20asset.pdf"
           className="inline-block bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition duration-300 dark:bg-primary-dark dark:hover:bg-primary"
         >
                     Read Everything about Eco Assets before buying
@@ -50,11 +50,11 @@ export default function Page() {
                             Q: Why don&apos;t the Ethereums work here to buy eco assets?
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
-                            A: This is on the Base network, which runs in parallel to the main Ethereum network and has
+                            A: This is on the Arbitrum network, which runs in parallel to the main Ethereum network and has
                             responsibilities to it in terms of its data integrity. But this means that you need the
-                            currencies that are used on this Base network. Coinbase wallets work natively with Base and
-                            the currency that you purchase in is USDC so make sure that the currency you have on your
-                            Base network wallet.
+                            currencies that are used on this Arbitrum network. Rainbow, Rabby, Coinbase wallets work
+                            natively with Arbitrum and the currency that you purchase in is USDC so make sure that the
+                            currency you have on your Arbitrum network wallet.
             </p>
           </div>
           <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
@@ -62,29 +62,28 @@ export default function Page() {
                             Q: What do I need to know about using my wallet here?
             </h3>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-                            A: Transactions here are conducted using Base native USDC, issued by Circle. For more
+                            A: Transactions here are conducted using Arbitrum native USDC, issued by Circle. For more
                             understanding:
             </p>
             <div className="space-y-2">
               <a
-                href="https://base.mirror.xyz/Ouwm--AtTIVyz40He3FxI0fDAC05lOQwN6EzFMD_2UM"
+                href="https://arbitrum.io/"
                 className="block text-primary hover:underline transition duration-300"
               >
-                                Learn about Base
+                                Learn about Arbitrum
               </a>
               <a
-                href="https://help.coinbase.com/en/coinbase/other-topics/other/base"
+                href="https://docs.arbitrum.io/arbitrum-bridge/usdc-arbitrum-one"
                 className="block text-primary hover:underline transition duration-300"
               >
-                                Base from Coinbase
-              </a>
-              <a
-                href="https://www.circle.com/blog/usdc-now-available-natively-on-base"
-                className="block text-primary hover:underline transition duration-300"
-              >
-                                USDC on Base
+                                USDC on Arbitrum
               </a>
             </div>
+            <p className="text-gray-700 dark:text-gray-300 mt-3">
+              We require native USDC (Circle): <span className="font-mono text-sm">0xaf88...e5831</span> on Arbitrum One and
+              <span className="font-mono text-sm"> 0x75fa...AA4d</span> on Arbitrum Sepolia. Bridged USDC.e (
+              <span className="font-mono text-sm">0xff97...5CC8</span>) will not work for purchases.
+            </p>
           </div>
           <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
             <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">Q: What do I need to buy eco assets?</h3>
@@ -92,8 +91,55 @@ export default function Page() {
               <p>A: You need two currencies:</p>
               <ol className="list-decimal list-inside mt-2">
                 <li>Enough USDC to make the auction price, and</li>
-                <li>A few dollars worth of Ethereums ON Base to pay for the transaction gas.</li>
+                <li>A few dollars worth of Ethereums ON Arbitrum to pay for the transaction gas.</li>
               </ol>
+            </div>
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
+            <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">
+              Q: How do I move USDC or ETH onto Arbitrum?
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300 mb-3">
+              A: A simple and commonly used option is CowSwap. CowSwap allows you to swap assets directly onto Arbitrum,
+              often with competitive pricing.
+            </p>
+            <a
+              href="https://swap.cow.fi/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline transition duration-300"
+            >
+              Go to CowSwap
+            </a>
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
+            <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">
+              Q: How do I get funds into my wallet to buy EcoAssets?
+            </h3>
+            <div className="text-gray-700 dark:text-gray-300">
+              <p className="mb-3">A: Once you have a Revolut account:</p>
+              <ul className="list-disc list-inside mb-4 space-y-1">
+                <li>You can buy USDC (and a small amount of ETH for transaction fees) directly in Revolut.</li>
+                <li>You can then send these funds on Arbitrum straight to your wallet.</li>
+              </ul>
+              <p className="font-semibold mb-2">Important:</p>
+              <p className="mb-4">
+                Acquisition costs are largely fixed. Buying $5 costs roughly the same as buying $200, so avoid making
+                many small purchases.
+              </p>
+              <p className="font-semibold mb-2">When sending from Revolut:</p>
+              <ol className="list-decimal list-inside space-y-2">
+                <li>Select USDC or Ethereum as the asset.</li>
+                <li>
+                  Under the network/chain option shown below the amount, switch it to Arbitrum if the funds are intended
+                  for EcoAsset purchases.
+                </li>
+                <li>Send the funds to your wallet.</li>
+              </ol>
+              <p className="mt-4 text-sm italic">
+                You will be prompted to confirm that your wallet supports Arbitrum. As usual, it&apos;s best practice to
+                send a small test amount first to confirm it arrives safely before sending the full balance.
+              </p>
             </div>
           </div>
         </div>

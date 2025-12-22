@@ -1,4 +1,4 @@
-import { base, baseSepolia } from "wagmi/chains";
+import { arbitrum, arbitrumSepolia, base, baseSepolia } from "wagmi/chains";
 import { ENV } from "./environment";
 import type { Chain } from "wagmi/chains";
 
@@ -22,22 +22,69 @@ const localChain: Chain = {
   testnet: true,
 };
 
+function buildHttpUrls(
+  overrideUrl: string,
+  alchemyUrl: string | undefined,
+  fallback: readonly string[],
+): readonly string[] {
+  if (overrideUrl) {
+    return [overrideUrl];
+  }
+  if (alchemyUrl) {
+    return [alchemyUrl];
+  }
+  return fallback;
+}
+
+const baseMainnetRpc = buildHttpUrls(
+  ENV.BASE_MAINNET_RPC_URL,
+  ENV.ALCHEMY_API_KEY ? `https://base-mainnet.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}` : undefined,
+  base.rpcUrls.default.http,
+);
+const baseSepoliaRpc = buildHttpUrls(
+  ENV.BASE_SEPOLIA_RPC_URL,
+  ENV.ALCHEMY_API_KEY ? `https://base-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}` : undefined,
+  baseSepolia.rpcUrls.default.http,
+);
+const arbitrumMainnetRpc = buildHttpUrls(
+  ENV.ARBITRUM_MAINNET_RPC_URL,
+  ENV.ALCHEMY_API_KEY ? `https://arb-mainnet.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}` : undefined,
+  arbitrum.rpcUrls.default.http,
+);
+const arbitrumSepoliaRpc = buildHttpUrls(
+  ENV.ARBITRUM_SEPOLIA_RPC_URL,
+  ENV.ALCHEMY_API_KEY ? `https://arb-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}` : undefined,
+  arbitrumSepolia.rpcUrls.default.http,
+);
+
 // Chain configurations with custom RPC endpoints
 export const chainConfigs = {
   base_mainnet: {
     ...base,
     rpcUrls: {
-      default: {
-        http: [`https://base-mainnet.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`],
-      },
+      default: { http: baseMainnetRpc },
+      public: { http: baseMainnetRpc },
     },
   },
   base_sepolia: {
     ...baseSepolia,
     rpcUrls: {
-      default: {
-        http: [`https://base-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}`],
-      },
+      default: { http: baseSepoliaRpc },
+      public: { http: baseSepoliaRpc },
+    },
+  },
+  arbitrum_mainnet: {
+    ...arbitrum,
+    rpcUrls: {
+      default: { http: arbitrumMainnetRpc },
+      public: { http: arbitrumMainnetRpc },
+    },
+  },
+  arbitrum_sepolia: {
+    ...arbitrumSepolia,
+    rpcUrls: {
+      default: { http: arbitrumSepoliaRpc },
+      public: { http: arbitrumSepoliaRpc },
     },
   },
   local: localChain,
@@ -59,7 +106,11 @@ export function getConfiguredChains(): readonly [Chain, ...Chain[]] {
 
 // Check if we're on a testnet
 export function isTestnet(): boolean {
-  return ENV.CHAIN_SELECTION === "base_sepolia" || ENV.CHAIN_SELECTION === "local";
+  return (
+    ENV.CHAIN_SELECTION === "base_sepolia" ||
+    ENV.CHAIN_SELECTION === "arbitrum_sepolia" ||
+    ENV.CHAIN_SELECTION === "local"
+  );
 }
 
 // Check if we're on local development
@@ -70,13 +121,17 @@ export function isLocalDevelopment(): boolean {
 // Get chain name for display
 export function getChainDisplayName(): string {
   switch (ENV.CHAIN_SELECTION) {
-  case "base_mainnet":
-    return "Base";
-  case "base_sepolia":
-    return "Base Sepolia";
-  case "local":
-    return "Local Network";
-  default:
-    return "Unknown Network";
+    case "base_mainnet":
+      return "Base";
+    case "base_sepolia":
+      return "Base Sepolia";
+    case "arbitrum_mainnet":
+      return "Arbitrum One";
+    case "arbitrum_sepolia":
+      return "Arbitrum Sepolia";
+    case "local":
+      return "Local Network";
+    default:
+      return "Unknown Network";
   }
 }

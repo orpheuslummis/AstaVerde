@@ -1,7 +1,7 @@
 # EcoStabilizer Vault — _Developer‑Ready_ Implementation Spec (v0.3, 24 Jul 2025)
 
 > **Changes from v0.2**
-> • Production chain switched to **Base Mainnet** (OP‑Stack L2).
+> • Production chain target is **Arbitrum One**.
 > • Vault is deployed _alongside_ the already‑live `AstaVerde` contract (address passed in constructor — no changes to the original code).
 > • **Redeemed EcoAssets are strictly ineligible** as collateral (enforced on‑chain).
 > • No treasury LP, no abandoned‑loan forfeiture mechanism in MVP.
@@ -10,16 +10,16 @@
 
 ## 0 │ Scope & Assumptions
 
-- _EcoAsset_ NFTs are the **ERC‑1155** tokens minted by the existing `AstaVerde` contract **already deployed on Base**. The Vault references it via constructor parameter.
+- _EcoAsset_ NFTs are the **ERC‑1155** tokens minted by the existing `AstaVerde` contract (deployed on the target chain). The Vault references it via constructor parameter.
 - Only **un‑redeemed** EcoAssets can be deposited; this is enforced by querying `isRedeemed(tokenId)` on `AstaVerde`.
-- **Networks** – Sepolia (test) ▶ Base Mainnet (prod). Native **USDC.e** liquidity is available on Base for SCC ↔ USDC pools.
+- **Networks** – Sepolia (test; currently Arbitrum Sepolia) ▶ Arbitrum One (prod). Prefer native **USDC** (not USDC.e) for SCC ↔ USDC pools.
 - Contracts are **non‑upgradeable** in v0.3; future upgrades require new deployments + optional migrator.
 
 ---
 
 ## 1 │ Contract Topology & High‑Level Responsibilities
 
-| Contract                         | Base                                                        | Deployed by         | Key Responsibilities                                                      |
+| Contract                         | Dependencies                                                | Deployed by         | Key Responsibilities                                                      |
 | -------------------------------- | ----------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------- |
 | **`StabilizedCarbonCoin` (SCC)** | `ERC20`, `AccessControl`                                    | Vault deployer      | Fungible debt token, `MINTER_ROLE` exclusively granted to Vault.          |
 | **`EcoStabilizer` (Vault)**      | `ReentrancyGuard`, `Pausable`, `Ownable`, `ERC1155Receiver` | Deployer (same EOA) | Holds NFTs as collateral, mints/burns SCC, validates _un‑redeemed_ state. |
@@ -183,7 +183,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
 
 - Added **redeemed‑asset guard** in `deposit()`.
 - Deployment script MUST **renounce `MINTER_ROLE` and `DEFAULT_ADMIN_ROLE`** from deployer after assigning vault.
-- Confirm Base‑specific ERC‑1155 safe‑transfer quirks (same as mainnet—no change).
+- Confirm ERC‑1155 safe‑transfer behavior on the target chain (should match mainnet).
 
 ---
 
@@ -198,14 +198,14 @@ All previous tests remain.
 
 ---
 
-## 5 │ Deployment Notes for Base
+## 5 │ Deployment Notes (Arbitrum One)
 
-- **USDC address:** `0xd9aA147f52ACa67747d34cE24dA23A4eA897C3E8` (native Circle USDC on Base - verify before deployment).
+- **USDC:** prefer native Circle USDC on Arbitrum One (not USDC.e) — verify before deployment.
 - Environment variables:
 
     ```ini
-    AV_ADDR=0xExistingAstaVerdeOnBase
-    BASE_RPC=https://mainnet.base.org
+    AV_ADDR=0xExistingAstaVerdeOnArbitrumOne
+    ARBITRUM_MAINNET_RPC_URL=https://arb-mainnet.g.alchemy.com/v2/your-key
     PRIVATE_KEY=...
     ```
 
@@ -214,7 +214,7 @@ All previous tests remain.
     2. Deploy **EcoStabilizer** with `AV_ADDR` & `SCC_ADDR`.
     3. Call `grantRole(MINTER_ROLE, VAULT_ADDR)` on SCC.
     4. **Renounce** both `MINTER_ROLE` and `DEFAULT_ADMIN_ROLE` from deployer.
-    5. Verify both contracts on BaseScan.
+    5. Verify both contracts on Arbiscan.
     6. Run smoke test: deposit testnet NFT → mint SCC → withdraw.
 
 ---
@@ -223,7 +223,7 @@ All previous tests remain.
 
 1. Add `IAstaVerde` interface inheriting from `IERC1155`.
 2. Insert redeemed‑token unit test.
-3. Update deployment script for Base.
+3. Update deployment script for Arbitrum One.
 4. Review README (remove treasury LP & forfeiture mentions).
 
 ## Appendix: the initial spec
@@ -438,12 +438,12 @@ export function useVault() {
 
 Tasks
 
-- Deploy SCC to Base Mainnet
-- Deploy EcoStabilizer to Base Mainnet
+- Deploy SCC to Arbitrum One
+- Deploy EcoStabilizer to Arbitrum One
 - Grant `MINTER_ROLE` to EcoStabilizer
 - Renounce admin roles
-- Configure webapp via env files (`webapp/.env.mainnet`) and `webapp/src/config/environment.ts`/`constants.ts` (do not hardcode addresses)
-- Verify on Base Explorer
+- Configure webapp via `webapp/.env.local` (local dev) or Vercel env vars (production) and `webapp/src/config/environment.ts`/`constants.ts` (do not hardcode addresses)
+- Verify on Arbiscan
 
 Pre‑Deployment Checklist
 
@@ -451,7 +451,7 @@ Pre‑Deployment Checklist
 - Audit final contract code
 - Prepare deployment tx sequence
 - Fund deployer for gas
-- Test on Base Sepolia first
+- Test on Sepolia first (currently Arbitrum Sepolia)
 
 ---
 
@@ -460,14 +460,11 @@ Pre‑Deployment Checklist
 Getting Started
 
 ```bash
-# Ensure environment is ready
-npm run verify:deploy
+# Deploy contracts to Sepolia (currently Arbitrum Sepolia)
+npm run deploy:testnet
 
-# Start webapp development
-npm run webapp:dev
-
-# Test vault integration locally
-npm run task:mint:local
+# Configure webapp/.env.local with deployed addresses, then start the webapp
+npm run dev:sepolia
 ```
 
 Key Technical Details
@@ -483,13 +480,13 @@ Security Considerations
 - Exact‑NFT recovery, no liquidations
 - Burns must equal minted amount (20 SCC per NFT)
 
-Testing Flow
+Testing Flow (recommended: Arbitrum Sepolia)
 
-1. `npm run task:mint:local` to mint test NFTs
-2. Connect wallet to localhost:3000
-3. Deposit → receive 20 SCC
-4. Withdraw → burn 20 SCC → reclaim NFT
-5. Try depositing redeemed NFT (should revert)
+1. `npm run deploy:testnet` to deploy contracts to Arbitrum Sepolia
+2. Copy deployed addresses into `webapp/.env.local`
+3. `npm run dev:sepolia` and connect wallet on `http://localhost:3002`
+4. Mint test NFTs via `npm run mint:testnet` (or the webapp admin page, if available)
+5. Deposit → receive 20 SCC → withdraw → burn 20 SCC → reclaim NFT; try depositing redeemed NFT (should revert)
 
 Gas Targets
 
@@ -512,7 +509,7 @@ Frontend complete when
 
 Production ready when
 
-- Contracts deployed to Base Mainnet
+- Contracts deployed to Arbitrum One
 - Webapp connected to mainnet contracts
 - Functionality tested on mainnet
 - User documentation published
@@ -523,7 +520,7 @@ Production ready when
 
 - Canonical overview: root `README.md`
 - Smart Contracts: `contracts/EcoStabilizer.sol`, `contracts/StabilizedCarbonCoin.sol`
-- Tests: `test/EcoStabilizer.ts`, `test/IntegrationPhase1Phase2.ts`, `test/SCCInvariants.ts`
-- Deployment: `deploy/deploy_ecostabilizer.ts`
+- Tests: `test/EcoStabilizer.test.ts`, `test/Integration.test.ts`, `test/StabilizedCarbonCoin.test.ts`
+- Deployment: `deploy/deploy.ts`
 - Webapp config: `webapp/src/config/environment.ts`, `webapp/src/config/constants.ts`
 - ABIs: `webapp/src/config/EcoStabilizer.json`, `webapp/src/config/StabilizedCarbonCoin.json`

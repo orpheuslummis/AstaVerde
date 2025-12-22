@@ -4,14 +4,14 @@ import { ConnectKitButton } from "connectkit";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatUnits } from "viem";
-import { useAccount, useBalance, useBlockNumber } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
 import { ENV } from "../config/environment";
 import { getUsdcContract, getSccContract } from "../config/contracts";
 import { useIsProducer } from "../hooks/useIsProducer";
-import { useDebounce } from "../hooks/useDebounce";
 import { useAppContext } from "../contexts/AppContext";
+import { useAstaVerdeBalancesRefetch } from "../hooks/useGlobalEvent";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
@@ -45,21 +45,54 @@ export function Header({ links }: HeaderProps) {
     },
   });
 
-  // Watch new blocks to keep balances fresh after on-chain actions
-  // Use debouncing to avoid excessive refetches
-  const { data: blockNumber } = useBlockNumber({
-    watch: true,
-    query: { enabled: isConnected },
-  });
+  const refreshInFlightRef = useRef(false);
+  const refreshPendingRef = useRef(false);
 
-  // Debounce block number changes by 5 seconds to reduce refetch frequency
-  const debouncedBlockNumber = useDebounce(blockNumber, 5000);
+  const refreshBalances = useCallback(async () => {
+    if (!isConnected || !address) return;
 
+    if (refreshInFlightRef.current) {
+      refreshPendingRef.current = true;
+      return;
+    }
+
+    refreshInFlightRef.current = true;
+    refreshPendingRef.current = false;
+
+    const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    try {
+      // Refetch immediately, then retry a couple times to smooth over transient 429s/timeouts.
+      const delays = [0, 1500, 3000];
+      for (const delayMs of delays) {
+        if (delayMs) await pause(delayMs);
+
+        const usdcRes = await refetchUsdcBalance();
+        const sccRes = sccConfig ? await refetchSccBalance() : undefined;
+
+        const usdcOk = !usdcRes.isError;
+        const sccOk = !sccConfig || !sccRes?.isError;
+
+        if (usdcOk && sccOk) break;
+      }
+    } finally {
+      refreshInFlightRef.current = false;
+      if (refreshPendingRef.current) {
+        refreshPendingRef.current = false;
+        void refreshBalances();
+      }
+    }
+  }, [address, isConnected, refetchSccBalance, refetchUsdcBalance, sccConfig]);
+
+  // Initial load + whenever wallet/chain changes.
   useEffect(() => {
-    if (!isConnected || !debouncedBlockNumber) return;
-    void refetchUsdcBalance();
-    if (sccConfig) void refetchSccBalance();
-  }, [debouncedBlockNumber, isConnected, sccConfig, refetchUsdcBalance, refetchSccBalance]);
+    void refreshBalances();
+  }, [refreshBalances]);
+
+  // Refresh balances after successful txs (mint/buy/claim/vault ops, etc).
+  useAstaVerdeBalancesRefetch(() => {
+    void refreshBalances();
+  }, [refreshBalances]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement | null>(null);
@@ -123,114 +156,107 @@ export function Header({ links }: HeaderProps) {
         </Link>
       </div>
 
-      <nav className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center flex-grow`}>
-        <ul className="flex flex-col lg:flex-row lg:space-x-2 space-y-2 lg:space-y-0 items-center lg:justify-center flex-grow">
+      <nav className={`${isMenuOpen ? "block" : "hidden"} lg:flex lg:items-center`}>
+        <ul className="flex flex-col lg:flex-row lg:gap-1 space-y-2 lg:space-y-0 items-center">
           {links.map((link, index) => (
             <React.Fragment key={link.url}>
-              <li className="lg:mr-4">
-                <span
-                  className={`group hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
-                    pathname === link.url ? "bg-white/20 dark:bg-gray-700" : ""
-                  }`}
-                >
-                  {link.name === "My Eco Assets" ? (
-                    <button
-                      type="button"
+              <li className="flex">
+                {link.name === "My Eco Assets" ? (
+                  <span
+                    className={`hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-3 py-2 transition duration-300 ease-in-out whitespace-nowrap ${
+                      pathname === link.url ? "bg-white/20 dark:bg-gray-700" : ""
+                    } ${isConnected ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                    onClick={() => isConnected && router.push("/mytokens")}
+                    onKeyDown={(e) => e.key === "Enter" && isConnected && router.push("/mytokens")}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <span
                       className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 ${
                         pathname === link.url ? "text-white dark:text-white" : ""
-                      } ${isConnected ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (isConnected) {
-                          router.push("/mytokens");
-                        }
-                      }}
-                      disabled={!isConnected}
+                      }`}
                     >
                       {link.name}
-                    </button>
-                  ) : (
-                    <Link href={link.url}>
-                      <span
-                        className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 ${
-                          pathname === link.url ? "text-white dark:text-white" : ""
-                        }`}
-                      >
-                        {link.name}
-                      </span>
-                    </Link>
-                  )}
-                </span>
+                    </span>
+                  </span>
+                ) : (
+                  <Link
+                    href={link.url}
+                    className={`hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-3 py-2 transition duration-300 ease-in-out whitespace-nowrap ${
+                      pathname === link.url ? "bg-white/20 dark:bg-gray-700" : ""
+                    }`}
+                  >
+                    <span
+                      className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 ${
+                        pathname === link.url ? "text-white dark:text-white" : ""
+                      }`}
+                    >
+                      {link.name}
+                    </span>
+                  </Link>
+                )}
               </li>
               {/* Show Producer Dashboard after My Eco Assets if user is a producer */}
               {link.name === "My Eco Assets" && isProducer && (
-                <li key="producer-dashboard" className="lg:mr-4">
-                  <span
-                    className={`group hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
+                <li key="producer-dashboard" className="flex">
+                  <Link
+                    href="/producer"
+                    className={`hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-3 py-2 transition duration-300 ease-in-out whitespace-nowrap flex items-center gap-1 ${
                       pathname === "/producer" ? "bg-white/20 dark:bg-gray-700" : ""
                     }`}
                   >
-                    <Link href="/producer">
-                      <span
-                        className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 flex items-center gap-1 ${
-                          pathname === "/producer" ? "text-white dark:text-white" : ""
-                        }`}
-                      >
-                        <span>💰</span> Producer Dashboard
-                        {producerBalance && producerBalance > 0n && (
-                          <span className="ml-1 bg-emerald-500 text-white text-xs rounded-full px-2 py-0.5">
-                            {formatUnits(producerBalance, 6)}
-                          </span>
-                        )}
+                    <span
+                      className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 ${
+                        pathname === "/producer" ? "text-white dark:text-white" : ""
+                      }`}
+                    >
+                      Producer
+                    </span>
+                    {producerBalance && producerBalance > 0n && (
+                      <span className="bg-emerald-500 text-white text-xs rounded-full px-2 py-0.5">
+                        {formatUnits(producerBalance, 6)}
                       </span>
-                    </Link>
-                  </span>
+                    )}
+                  </Link>
                 </li>
               )}
               {/* Show Admin link if the connected user is admin */}
               {link.name === "About" && isAdmin && (
-                <li key="admin-link" className="lg:mr-4">
-                  <span
-                    className={`group hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-4 py-2 transition duration-300 ease-in-out ${
+                <li key="admin-link" className="flex">
+                  <Link
+                    href="/admin"
+                    className={`hover:bg-white/20 dark:hover:bg-gray-700 rounded-lg px-3 py-2 transition duration-300 ease-in-out whitespace-nowrap ${
                       pathname === "/admin" ? "bg-white/20 dark:bg-gray-700" : ""
                     }`}
                   >
-                    <Link href="/admin">
-                      <span
-                        className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 flex items-center gap-1 ${
-                          pathname === "/admin" ? "text-white dark:text-white" : ""
-                        }`}
-                      >
-                        <span>🛡️</span> Admin
-                      </span>
-                    </Link>
-                  </span>
+                    <span
+                      className={`text-white/90 dark:text-gray-300 hover:text-white dark:hover:text-white transition-colors duration-300 ${
+                        pathname === "/admin" ? "text-white dark:text-white" : ""
+                      }`}
+                    >
+                      Admin
+                    </span>
+                  </Link>
                 </li>
               )}
             </React.Fragment>
           ))}
-          {isConnected && (
-            <>
-              <li className="lg:ml-auto">
-                <div className="bg-white/10 dark:bg-gray-700 text-white dark:text-gray-200 rounded-lg px-2 py-1 text-xs" data-testid="usdc-balance">
-                  <span className="font-medium">USDC: </span>
-                  <span className="font-bold">{Number.parseFloat(usdcBalanceFormatted).toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
-                </div>
-              </li>
-              {sccConfig && (
-                <li className="ml-2">
-                  <div className="bg-emerald-500/20 dark:bg-emerald-700 text-white dark:text-gray-200 rounded-lg px-2 py-1 text-xs" data-testid="scc-balance">
-                    <span className="font-medium">🏦 SCC: </span>
-                    <span className="font-bold">{Number.parseFloat(sccBalanceFormatted).toFixed(2)}</span>
-                  </div>
-                </li>
-              )}
-            </>
-          )}
         </ul>
       </nav>
 
-      <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+      <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+        {isConnected && (
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="bg-white/15 text-white text-xs font-medium rounded px-2 py-0.5 whitespace-nowrap" data-testid="usdc-balance">
+              {Number.parseFloat(usdcBalanceFormatted).toLocaleString(undefined, {maximumFractionDigits: 0})} USDC
+            </span>
+            {sccConfig && (
+              <span className="bg-white/15 text-white text-xs font-medium rounded px-2 py-0.5 whitespace-nowrap" data-testid="scc-balance">
+                {Number.parseFloat(sccBalanceFormatted).toFixed(0)} SCC
+              </span>
+            )}
+          </div>
+        )}
         <ThemeToggle />
         <div data-testid="connect-wallet">
           <ConnectKitButton />

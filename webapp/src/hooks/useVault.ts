@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { parseEther } from "viem";
-import { useAccount, usePublicClient, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import {
   getEcoStabilizerContract,
   getSccContract,
@@ -11,8 +11,23 @@ import { customToast } from "../shared/utils/customToast";
 import { ENV } from "../config/environment";
 import { VAULT_GAS_LIMITS } from "../config/constants";
 import { parseVaultError, TxStatus, VaultErrorState } from "../utils/errors";
-import { dispatchRefetch } from "./useGlobalEvent";
+import { dispatchBalancesRefetch } from "./useGlobalEvent";
 import type { VaultLoan } from "../features/vault/types";
+import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
+import { safeMulticall } from "../lib/safeMulticall";
+
+/**
+ * Normalize a transaction hash to ensure it has the correct length (64 hex chars + 0x prefix).
+ * This fixes an issue where leading zeros can be stripped during JSON serialization,
+ * causing "hex string has length 62, want 64" errors.
+ */
+function normalizeHash(hash: `0x${string}`): `0x${string}` {
+  if (!hash || !hash.startsWith("0x")) return hash;
+  const hexPart = hash.slice(2);
+  // Pad to 64 characters if shorter
+  const padded = hexPart.padStart(64, "0");
+  return `0x${padded}` as `0x${string}`;
+}
 
 export interface VaultHook {
   // Core functionality
@@ -49,9 +64,10 @@ export interface VaultHook {
 }
 
 const SCC_PER_ASSET = parseEther("20");
+const MINTER_ROLE = "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6" as const;
 
 export function useVault(): VaultHook {
-  const publicClient = usePublicClient();
+  const publicClient = useRateLimitedPublicClient();
   const { address } = useAccount();
 
   // State
@@ -67,14 +83,6 @@ export function useVault(): VaultHook {
   // Transaction management
   const { writeContractAsync } = useWriteContract();
   const [currentTxHash, setCurrentTxHash] = useState<`0x${string}` | undefined>();
-
-  const {
-    isLoading: isConfirming,
-    isSuccess: isConfirmed,
-    error: txError,
-  } = useWaitForTransactionReceipt({
-    hash: currentTxHash,
-  });
 
   // Check if vault contracts are available
   const isVaultAvailable = useMemo(() => {
@@ -163,6 +171,251 @@ export function useVault(): VaultHook {
     }
   }, [isVaultAvailable, address, refetchSccBalance, refetchSccAllowance, refetchUserLoans, refetchNftApproval]);
 
+  // Approval functions
+  const approveNFT = useCallback(async () => {
+    if (!address || !isVaultAvailable) {
+      throw new Error("Wallet not connected or vault not available");
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      customToast.info("Approving NFT transfers...");
+
+      // Resolve operator from current vault config to avoid ENV drift
+      const vaultConfig = getVaultContractConfig();
+      const operator = vaultConfig.address as `0x${string}`;
+
+      // Prepare AstaVerde (ERC1155) contract config
+      const assetConfig = getAssetContractConfig();
+
+      // Prevent accidental self-approval (will revert onchain)
+      if (operator.toLowerCase() === address.toLowerCase()) {
+        throw new Error("Invalid operator: cannot approve your own address");
+      }
+
+      // Provide explicit gas to avoid wallet-side "Missing gas limit" on some RPCs
+      let gasLimit: bigint | undefined;
+      try {
+        if (publicClient && address) {
+          const estimate = await publicClient.estimateContractGas({
+            ...assetConfig,
+            functionName: "setApprovalForAll",
+            args: [operator, true],
+            account: address,
+          });
+          gasLimit = (estimate * 120n) / 100n; // 20% buffer
+        }
+      } catch {
+        // Fall back to a conservative limit; ERC1155 approval is cheap
+        gasLimit = 100_000n;
+      }
+
+      const rawHash = await writeContractAsync({
+        ...assetConfig,
+        functionName: "setApprovalForAll",
+        args: [operator, true],
+        account: address,
+        ...(gasLimit ? { gas: gasLimit } : {}),
+      });
+      const hash = normalizeHash(rawHash);
+
+      const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+
+      if (receipt?.status === "success") {
+        await refetchNftApproval();
+        customToast.success("NFT approval granted!");
+      } else {
+        throw new Error("Approval failed");
+      }
+    } catch (err) {
+      const errorMessage = (err as Error)?.message || "Failed to approve NFT transfers";
+      setError(errorMessage);
+      customToast.error(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    address,
+    isVaultAvailable,
+    writeContractAsync,
+    publicClient,
+    refetchNftApproval,
+    getVaultContractConfig,
+    getAssetContractConfig,
+  ]);
+
+  const approveSCC = useCallback(
+    async (amount: bigint = SCC_PER_ASSET) => {
+      if (!address || !isVaultAvailable) {
+        throw new Error("Wallet not connected or vault not available");
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const sccConfig = getSccConfig();
+
+        customToast.info("Approving SCC transfers...");
+
+        const rawHash = await writeContractAsync({
+          ...sccConfig,
+          functionName: "approve",
+          args: [ENV.ECOSTABILIZER_ADDRESS as `0x${string}`, amount],
+        });
+        const hash = normalizeHash(rawHash);
+
+        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+
+        if (receipt?.status === "success") {
+          await refetchSccAllowance();
+          customToast.success("SCC approval granted!");
+        } else {
+          throw new Error("Approval failed");
+        }
+      } catch (err) {
+        const errorMessage = (err as Error)?.message || "Failed to approve SCC";
+        setError(errorMessage);
+        customToast.error(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [address, isVaultAvailable, getSccConfig, writeContractAsync, publicClient, refetchSccAllowance],
+  );
+
+  const diagnoseDepositFailure = useCallback(
+    async (tokenId: bigint): Promise<VaultErrorState | null> => {
+      if (!publicClient || !address || !isVaultAvailable || !vaultAddress) return null;
+
+      try {
+        const vaultConfig = getVaultContractConfig();
+        const assetConfig = getAssetContractConfig();
+        const sccConfig = getSccConfig();
+
+        const results = await safeMulticall(publicClient, {
+          allowFailure: true,
+          contracts: [
+            { ...vaultConfig, functionName: "paused" },
+            { ...vaultConfig, functionName: "ecoAsset" },
+            { ...vaultConfig, functionName: "scc" },
+            { ...assetConfig, functionName: "paused" },
+            { ...assetConfig, functionName: "isApprovedForAll", args: [address, vaultAddress] },
+            { ...assetConfig, functionName: "balanceOf", args: [address, tokenId] },
+            { ...assetConfig, functionName: "isRedeemed", args: [tokenId] },
+            { ...sccConfig, functionName: "hasRole", args: [MINTER_ROLE, vaultAddress] },
+          ],
+        });
+
+        const get = <T>(i: number): T | null => {
+          const res = results[i];
+          if (!res || res.status !== "success") return null;
+          return res.result as T;
+        };
+
+        const vaultPaused = get<boolean>(0);
+        const vaultEcoAsset = get<`0x${string}`>(1);
+        const vaultScc = get<`0x${string}`>(2);
+        const assetPaused = get<boolean>(3);
+        const approvedForAll = get<boolean>(4);
+        const balance = get<bigint>(5);
+        const redeemed = get<boolean>(6);
+        const vaultIsMinter = get<boolean>(7);
+
+        if (vaultEcoAsset && vaultEcoAsset.toLowerCase() !== assetConfig.address.toLowerCase()) {
+          return {
+            type: "contract",
+            message: "Vault Address Mismatch",
+            details:
+              "This vault is wired to a different AstaVerde contract than the UI is configured for. Update your env addresses to match the deployed contracts.",
+            originalError: { vaultEcoAsset, uiEcoAsset: assetConfig.address },
+          };
+        }
+
+        if (vaultScc && vaultScc.toLowerCase() !== sccConfig.address.toLowerCase()) {
+          return {
+            type: "contract",
+            message: "Vault Address Mismatch",
+            details:
+              "This vault is wired to a different SCC contract than the UI is configured for. Update your env addresses to match the deployed contracts.",
+            originalError: { vaultScc, uiScc: sccConfig.address },
+          };
+        }
+
+        if (vaultPaused) {
+          return {
+            type: "contract",
+            message: "Vault Temporarily Unavailable",
+            details: "The EcoStabilizer vault contract is paused.",
+          };
+        }
+
+        if (assetPaused) {
+          return {
+            type: "contract",
+            message: "Marketplace Temporarily Unavailable",
+            details: "The AstaVerde NFT contract is paused, so transfers are disabled.",
+          };
+        }
+
+        if (redeemed) {
+          return {
+            type: "contract",
+            message: "NFT Already Redeemed",
+            details: "This NFT has been redeemed and cannot be deposited to the vault.",
+          };
+        }
+
+        if (typeof balance === "bigint" && balance === 0n) {
+          return {
+            type: "contract",
+            message: "Not NFT Owner",
+            details: "You must own this NFT to deposit it into the vault.",
+          };
+        }
+
+        if (approvedForAll === false) {
+          return {
+            type: "approval",
+            message: "NFT Approval Required",
+            details: "Please approve the vault to transfer your NFTs first.",
+            action: {
+              label: "Approve NFTs",
+              handler: async () => approveNFT(),
+            },
+          };
+        }
+
+        if (vaultIsMinter === false) {
+          return {
+            type: "contract",
+            message: "Vault Misconfigured",
+            details:
+              "EcoStabilizer is missing SCC MINTER_ROLE, so deposits cannot mint SCC. Redeploy or grant MINTER_ROLE to the vault address.",
+          };
+        }
+      } catch {
+        // ignore — diagnostics are best-effort only
+      }
+
+      return null;
+    },
+    [
+      address,
+      approveNFT,
+      getAssetContractConfig,
+      getSccConfig,
+      getVaultContractConfig,
+      isVaultAvailable,
+      publicClient,
+      vaultAddress,
+    ],
+  );
+
   // Core vault functions with proper async handling
   const deposit = useCallback(
     async (tokenId: bigint) => {
@@ -180,11 +433,12 @@ export function useVault(): VaultHook {
 
         customToast.info("Depositing NFT to vault...");
 
-        const hash = await writeContractAsync({
+        const rawHash = await writeContractAsync({
           ...vaultContractConfig,
           functionName: "deposit",
           args: [tokenId],
         });
+        const hash = normalizeHash(rawHash);
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
@@ -196,16 +450,20 @@ export function useVault(): VaultHook {
           setTxStatus(TxStatus.SUCCESS);
           customToast.success("NFT successfully deposited!");
           await refreshContractData();
-          dispatchRefetch();
+          dispatchBalancesRefetch();
         } else {
           throw new Error("Transaction failed");
         }
       } catch (err) {
-        const parsedError = parseVaultError(err, {
+        let parsedError = parseVaultError(err, {
           operation: "deposit",
           approveNFT: async () => approveNFT(),
           retry: () => deposit(tokenId),
         });
+        if (parsedError.type === "unknown") {
+          const diagnosed = await diagnoseDepositFailure(tokenId);
+          if (diagnosed) parsedError = { ...diagnosed, originalError: err };
+        }
         setError((err as Error)?.message || "Failed to deposit NFT");
         setVaultError(parsedError);
         setTxStatus(TxStatus.ERROR);
@@ -216,7 +474,16 @@ export function useVault(): VaultHook {
         setCurrentTxHash(undefined);
       }
     },
-    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
+    [
+      address,
+      approveNFT,
+      diagnoseDepositFailure,
+      getVaultContractConfig,
+      isVaultAvailable,
+      publicClient,
+      refreshContractData,
+      writeContractAsync,
+    ],
   );
 
   const withdraw = useCallback(
@@ -250,12 +517,13 @@ export function useVault(): VaultHook {
           gasLimit = VAULT_GAS_LIMITS.WITHDRAW;
         }
 
-        const hash = await writeContractAsync({
+        const rawHash = await writeContractAsync({
           ...vaultConfig,
           functionName: "withdraw",
           args: [tokenId],
           ...(gasLimit ? { gas: gasLimit } : {}),
         });
+        const hash = normalizeHash(rawHash);
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
@@ -267,7 +535,7 @@ export function useVault(): VaultHook {
           setTxStatus(TxStatus.SUCCESS);
           customToast.success("NFT successfully withdrawn!");
           await refreshContractData();
-          dispatchRefetch();
+          dispatchBalancesRefetch();
         } else {
           throw new Error("Transaction failed");
         }
@@ -287,7 +555,7 @@ export function useVault(): VaultHook {
         setCurrentTxHash(undefined);
       }
     },
-    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
+    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData, approveSCC],
   );
 
   // Batch operations
@@ -333,12 +601,13 @@ export function useVault(): VaultHook {
           cleanTokenIds[i] = BigInt(tokenIds[i].toString());
         }
 
-        const hash = await writeContractAsync({
+        const rawHash = await writeContractAsync({
           ...vaultConfig,
           functionName: "depositBatch",
           args: [cleanTokenIds],
           ...(gasLimit ? { gas: gasLimit } : {}),
         });
+        const hash = normalizeHash(rawHash);
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
@@ -349,7 +618,7 @@ export function useVault(): VaultHook {
           setTxStatus(TxStatus.SUCCESS);
           customToast.success(`Successfully deposited ${tokenIds.length} NFTs!`);
           await refreshContractData();
-          dispatchRefetch();
+          dispatchBalancesRefetch();
         } else {
           throw new Error("Transaction failed");
         }
@@ -399,11 +668,12 @@ export function useVault(): VaultHook {
 
         if (currentAllowance < requiredScc) {
           customToast.info("Approving SCC for withdrawal...");
-          const approveHash = await writeContractAsync({
+          const rawApproveHash = await writeContractAsync({
             ...sccConfig,
             functionName: "approve",
             args: [vaultConfig.address as `0x${string}`, requiredScc],
           });
+          const approveHash = normalizeHash(rawApproveHash);
           await publicClient?.waitForTransactionReceipt({ hash: approveHash });
           await refetchSccAllowance();
           // Small delay to ensure chain state is updated
@@ -418,12 +688,17 @@ export function useVault(): VaultHook {
           cleanTokenIds[i] = BigInt(tokenIds[i].toString());
         }
 
-        const hash = await writeContractAsync({
+        // Dynamic gas: ~60k per token + 100k buffer for base operations
+        const estimatedGas = BigInt(cleanTokenIds.length) * 60000n + 100000n;
+        const gasLimit = estimatedGas > 2000000n ? estimatedGas : 2000000n; // min 2M gas
+
+        const rawHash = await writeContractAsync({
           ...vaultConfig,
           functionName: "withdrawBatch",
           args: [cleanTokenIds],
-          gas: 1000000n, // Set explicit gas limit for batch operations
+          gas: gasLimit,
         });
+        const hash = normalizeHash(rawHash);
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
@@ -434,7 +709,7 @@ export function useVault(): VaultHook {
           setTxStatus(TxStatus.SUCCESS);
           customToast.success(`Successfully withdrew ${tokenIds.length} NFTs!`);
           await refreshContractData();
-          dispatchRefetch();
+          dispatchBalancesRefetch();
         } else {
           throw new Error("Transaction failed");
         }
@@ -494,12 +769,13 @@ export function useVault(): VaultHook {
           gasLimit = VAULT_GAS_LIMITS.WITHDRAW;
         }
 
-        const hash = await writeContractAsync({
+        const rawHash = await writeContractAsync({
           ...vaultConfig,
           functionName: "withdraw",
           args: [tokenId],
           ...(gasLimit ? { gas: gasLimit } : {}),
         });
+        const hash = normalizeHash(rawHash);
 
         setCurrentTxHash(hash);
         setTxStatus(TxStatus.CONFIRMING);
@@ -510,7 +786,7 @@ export function useVault(): VaultHook {
           setTxStatus(TxStatus.SUCCESS);
           customToast.success("NFT successfully withdrawn!");
           await refreshContractData();
-          dispatchRefetch();
+          dispatchBalancesRefetch();
         } else {
           throw new Error("Transaction failed");
         }
@@ -530,122 +806,7 @@ export function useVault(): VaultHook {
         setCurrentTxHash(undefined);
       }
     },
-    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData],
-  );
-
-  // Approval functions
-  const approveNFT = useCallback(async () => {
-    if (!address || !isVaultAvailable) {
-      throw new Error("Wallet not connected or vault not available");
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      customToast.info("Approving NFT transfers...");
-
-      // Resolve operator from current vault config to avoid ENV drift
-      const vaultConfig = getVaultContractConfig();
-      const operator = vaultConfig.address as `0x${string}`;
-
-      // Prepare AstaVerde (ERC1155) contract config
-      const assetConfig = getAssetContractConfig();
-
-      // Prevent accidental self-approval (will revert onchain)
-      if (operator.toLowerCase() === address.toLowerCase()) {
-        throw new Error("Invalid operator: cannot approve your own address");
-      }
-
-      // Provide explicit gas to avoid wallet-side "Missing gas limit" on some RPCs
-      let gasLimit: bigint | undefined;
-      try {
-        if (publicClient && address) {
-          const estimate = await publicClient.estimateContractGas({
-            ...assetConfig,
-            functionName: "setApprovalForAll",
-            args: [operator, true],
-            account: address,
-          });
-          gasLimit = (estimate * 120n) / 100n; // 20% buffer
-        }
-      } catch {
-        // Fall back to a conservative limit; ERC1155 approval is cheap
-        gasLimit = 100_000n;
-      }
-
-      const hash = await writeContractAsync({
-        ...assetConfig,
-        functionName: "setApprovalForAll",
-        args: [operator, true],
-        account: address,
-        ...(gasLimit ? { gas: gasLimit } : {}),
-      });
-
-      const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-
-      if (receipt?.status === "success") {
-        await refetchNftApproval();
-        customToast.success("NFT approval granted!");
-      } else {
-        throw new Error("Approval failed");
-      }
-    } catch (err) {
-      const errorMessage = (err as Error)?.message || "Failed to approve NFT transfers";
-      setError(errorMessage);
-      customToast.error(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [
-    address,
-    isVaultAvailable,
-    writeContractAsync,
-    publicClient,
-    refetchNftApproval,
-    getVaultContractConfig,
-    getAssetContractConfig,
-  ]);
-
-  const approveSCC = useCallback(
-    async (amount: bigint = SCC_PER_ASSET) => {
-      if (!address || !isVaultAvailable) {
-        throw new Error("Wallet not connected or vault not available");
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const sccConfig = getSccConfig();
-
-        customToast.info("Approving SCC transfers...");
-
-        const hash = await writeContractAsync({
-          ...sccConfig,
-          functionName: "approve",
-          args: [ENV.ECOSTABILIZER_ADDRESS as `0x${string}`, amount],
-        });
-
-        const receipt = await publicClient?.waitForTransactionReceipt({ hash });
-
-        if (receipt?.status === "success") {
-          await refetchSccAllowance();
-          customToast.success("SCC approval granted!");
-        } else {
-          throw new Error("Approval failed");
-        }
-      } catch (err) {
-        const errorMessage = (err as Error)?.message || "Failed to approve SCC";
-        setError(errorMessage);
-        customToast.error(errorMessage);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [address, isVaultAvailable, getSccConfig, writeContractAsync, publicClient, refetchSccAllowance],
+    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData, approveSCC],
   );
 
   // Read functions
@@ -710,7 +871,7 @@ export function useVault(): VaultHook {
 
     // Status
     isVaultAvailable,
-    isLoading: isLoading || isConfirming,
+    isLoading,
     error,
     vaultError,
     txStatus,

@@ -9,8 +9,8 @@ import ErrorBoundary from "../components/ErrorBoundary";
 
 export const metadata = {
   title: "AstaVerde - Carbon Offset Marketplace",
-  description: "Trade tokenized carbon offsets on the Base blockchain",
-  keywords: "carbon offsets, NFT, blockchain, Base, environmental",
+  description: "Trade tokenized carbon offsets on the Arbitrum blockchain",
+  keywords: "carbon offsets, NFT, blockchain, Arbitrum, environmental",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

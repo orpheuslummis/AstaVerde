@@ -3,7 +3,11 @@
 
 export const ENV = {
   // Chain configuration
-  CHAIN_SELECTION: (process.env.NEXT_PUBLIC_CHAIN_SELECTION || "base_sepolia") as ChainSelection,
+  CHAIN_SELECTION: (process.env.NEXT_PUBLIC_CHAIN_SELECTION || "arbitrum_sepolia") as ChainSelection,
+  BASE_MAINNET_RPC_URL: process.env.NEXT_PUBLIC_BASE_MAINNET_RPC_URL || "",
+  BASE_SEPOLIA_RPC_URL: process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || "",
+  ARBITRUM_MAINNET_RPC_URL: process.env.NEXT_PUBLIC_ARBITRUM_MAINNET_RPC_URL || "",
+  ARBITRUM_SEPOLIA_RPC_URL: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || "",
 
   // Contract addresses - single system (new)
   ASTAVERDE_ADDRESS: process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS || "",
@@ -26,18 +30,12 @@ export const ENV = {
   DEBUG: (process.env.NEXT_PUBLIC_DEBUG || "false").toLowerCase() === "true",
 } as const;
 
-export const CHAIN_OPTIONS = ["local", "base_sepolia", "base_mainnet"] as const;
+export const CHAIN_OPTIONS = ["local", "base_sepolia", "base_mainnet", "arbitrum_sepolia", "arbitrum_mainnet"] as const;
 export type ChainSelection = (typeof CHAIN_OPTIONS)[number];
 
 // Validate required environment variables
 export function validateEnvironment(): void {
-  const required = [
-    "ASTAVERDE_ADDRESS",
-    "USDC_ADDRESS",
-    "ECOSTABILIZER_ADDRESS",
-    "SCC_ADDRESS",
-    "ALCHEMY_API_KEY",
-  ];
+  const required = ["ASTAVERDE_ADDRESS", "USDC_ADDRESS", "ECOSTABILIZER_ADDRESS", "SCC_ADDRESS", "ALCHEMY_API_KEY"];
 
   const missing = required.filter((key) => !ENV[key as keyof typeof ENV]);
 

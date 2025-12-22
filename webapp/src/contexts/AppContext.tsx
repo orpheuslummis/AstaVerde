@@ -17,6 +17,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const hasLoadedBatchesRef = useRef(false);
+  const lastBatchIdRef = useRef<bigint | null>(null);
+  const fetchLockRef = useRef(false);
 
   // Canonical contract configs
   const astaverdeContractConfig = getAstaVerdeContract();
@@ -24,22 +26,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { execute: getLastBatchID } = useContractInteraction(astaverdeContractConfig, "lastBatchID");
   const { execute: getBatchInfo } = useContractInteraction(astaverdeContractConfig, "getBatchInfo");
 
-  // Prime ABI/types; data not used directly here
-  useReadContract({
-    ...astaverdeContractConfig,
-    functionName: "lastBatchID",
-  });
-
-  // Note: Removed useReadContracts as it was causing BigInt serialization issues
-  // and the data wasn't being used. Batches are fetched via fetchBatches() instead.
+  // Prime ABI/types; data not used directly here. Avoid extra RPC load by keeping this disabled.
+  // Batches are fetched via fetchBatches() instead.
 
   const { data: contractOwner } = useReadContract({
     ...astaverdeContractConfig,
     functionName: "owner",
+    query: {
+      staleTime: 60_000,
+      cacheTime: 300_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
   });
 
   const fetchBatches = useCallback(async () => {
+    if (fetchLockRef.current) return;
+    fetchLockRef.current = true;
     if (!getLastBatchID || !getBatchInfo) {
+      fetchLockRef.current = false;
       return;
     }
 
@@ -48,11 +53,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       debugLog("batches", { lastBatchID: lastBatchID?.toString?.() ?? String(lastBatchID) });
 
       if (lastBatchID !== undefined && lastBatchID > 0n) {
-        const batchPromises = [];
+        const batchesInfo = [];
         for (let i = 1n; i <= lastBatchID; i++) {
-          batchPromises.push(getBatchInfo(i));
+          // Fetch batch info sequentially to avoid RPC burst
+          const info = await getBatchInfo(i);
+          batchesInfo.push(info);
         }
-        const batchesInfo = await Promise.all(batchPromises);
 
         const processedBatches = batchesInfo.map((batchInfo) => {
           const [batchId, tokenIds, creationTime, price, remainingTokens] = batchInfo;
@@ -68,10 +74,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setBatches(processedBatches);
         debugLog("batches", { loaded: processedBatches.length });
         hasLoadedBatchesRef.current = true;
+        lastBatchIdRef.current = lastBatchID;
       } else {
         setBatches([]);
         debugLog("batches", { loaded: 0 });
         hasLoadedBatchesRef.current = true;
+        lastBatchIdRef.current = lastBatchID ?? 0n;
       }
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -80,6 +88,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (hasLoadedBatchesRef.current) {
         customToast.error("Failed to fetch batches");
       }
+    } finally {
+      fetchLockRef.current = false;
     }
   }, [getLastBatchID, getBatchInfo]);
 

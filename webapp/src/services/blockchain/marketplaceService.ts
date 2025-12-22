@@ -1,5 +1,3 @@
-import { multicall } from "@wagmi/core";
-import type { Config } from "wagmi";
 import type { PublicClient, WalletClient } from "viem";
 import { formatUnits } from "viem";
 import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
@@ -12,13 +10,51 @@ import {
 } from "../../config/constants";
 import { ENV } from "../../config/environment";
 import type { BatchData, TokenDataObj, TokenDataTuple } from "../../features/marketplace/types";
+import { safeMulticall } from "../../lib/safeMulticall";
+
+/**
+ * Normalize a transaction hash to ensure it has the correct length (64 hex chars + 0x prefix).
+ * This fixes an issue where leading zeros can be stripped during JSON serialization,
+ * causing "hex string has length 62, want 64" errors.
+ */
+function normalizeHash(hash: `0x${string}`): `0x${string}` {
+  if (!hash || !hash.startsWith("0x")) return hash;
+  const hexPart = hash.slice(2);
+  const padded = hexPart.padStart(64, "0");
+  return `0x${padded}` as `0x${string}`;
+}
 
 export class MarketplaceService {
   constructor(
     private publicClient: PublicClient,
     private walletClient: WalletClient | undefined,
-    private wagmiConfig: Config,
   ) {}
+
+  private async assertWalletOnExpectedChain(): Promise<void> {
+    if (!this.walletClient) return;
+
+    const expectedChainId = this.publicClient.chain?.id;
+    if (!expectedChainId) return;
+
+    const walletClientAny = this.walletClient as unknown as {
+      chain?: { id?: number };
+      getChainId?: () => Promise<number>;
+    };
+
+    let walletChainId: number | undefined = walletClientAny.chain?.id;
+    if (!walletChainId && typeof walletClientAny.getChainId === "function") {
+      try {
+        walletChainId = await walletClientAny.getChainId();
+      } catch {
+        return;
+      }
+    }
+
+    if (walletChainId && walletChainId !== expectedChainId) {
+      const expectedName = this.publicClient.chain?.name ?? `chainId ${expectedChainId}`;
+      throw new Error(`Wrong network (wallet chainId ${walletChainId}). Please switch your wallet to ${expectedName}.`);
+    }
+  }
 
   // Batch operations
   async getCurrentBatchPrice(batchId: number): Promise<bigint> {
@@ -57,6 +93,8 @@ export class MarketplaceService {
     if (!this.walletClient) {
       throw new Error("Wallet not connected");
     }
+
+    await this.assertWalletOnExpectedChain();
 
     // Get fresh price at time of purchase
     const currentUnitPrice = await this.getCurrentBatchPrice(batchId);
@@ -104,7 +142,9 @@ export class MarketplaceService {
     });
 
     if (balance < exactTotalCost) {
-      throw new Error(`Insufficient USDC balance. Need ${exactTotalCost.toString()} but have ${balance.toString()}`);
+      throw new Error(
+        `Insufficient USDC balance. Need ${formatUnits(exactTotalCost, ENV.USDC_DECIMALS)} but have ${formatUnits(balance, ENV.USDC_DECIMALS)}.`,
+      );
     }
 
     // Check and handle USDC approval
@@ -114,7 +154,7 @@ export class MarketplaceService {
     const contract = getAstaVerdeContract();
 
     // Try simulate first for clearer errors; fall back to direct write if it fails
-    let hash: `0x${string}`;
+    let rawHash: `0x${string}`;
     try {
       const { request } = await this.publicClient.simulateContract({
         ...contract,
@@ -122,10 +162,10 @@ export class MarketplaceService {
         args: [BigInt(batchId), exactTotalCost, BigInt(tokenAmount)],
         account: this.walletClient.account,
       });
-      hash = await this.walletClient.writeContract(request);
+      rawHash = await this.walletClient.writeContract(request);
     } catch (simError) {
       try {
-        hash = await this.walletClient.writeContract({
+        rawHash = await this.walletClient.writeContract({
           ...contract,
           functionName: "buyBatch",
           args: [BigInt(batchId), exactTotalCost, BigInt(tokenAmount)],
@@ -135,6 +175,7 @@ export class MarketplaceService {
         throw new Error(this.getRevertReason(writeError));
       }
     }
+    const hash = normalizeHash(rawHash);
 
     // Wait for confirmation with retry logic
     await this.waitForTransactionWithRetry(hash);
@@ -165,7 +206,7 @@ export class MarketplaceService {
         args: [ownerAddress, BigInt(start + index)],
       }));
 
-      const results = await multicall(this.wagmiConfig, {
+      const results = await safeMulticall(this.publicClient, {
         contracts: calls as any[],
         allowFailure: true,
       });
@@ -200,7 +241,7 @@ export class MarketplaceService {
     const contract = getAstaVerdeContract();
 
     // v2-only API: compose from dedicated getters
-    const [producerRes, cidRes, redeemedRes] = await multicall(this.wagmiConfig, {
+    const [producerRes, cidRes, redeemedRes] = await safeMulticall(this.publicClient, {
       contracts: [
         { ...contract, functionName: "getTokenProducer", args: [tokenId] },
         { ...contract, functionName: "getTokenCid", args: [tokenId] },
@@ -253,20 +294,41 @@ export class MarketplaceService {
       const approvalAmount = amount * APPROVAL_BUFFER_FACTOR;
 
       try {
-        // Skip simulation and directly execute approval
-        // Simulation might be failing due to viem/wagmi issues with local network
-        const approveTx = await this.walletClient!.writeContract({
-          ...usdcContract,
-          functionName: "approve",
-          args: [astaverdeContract.address, approvalAmount],
-          account: this.walletClient!.account,
-        });
+        const isLocalChain = this.publicClient.chain?.id === 31337;
+        let rawApproveTx: `0x${string}`;
+
+        if (!isLocalChain) {
+          try {
+            const { request } = await this.publicClient.simulateContract({
+              ...usdcContract,
+              functionName: "approve",
+              args: [astaverdeContract.address, approvalAmount],
+              account: this.walletClient.account,
+            });
+            rawApproveTx = await this.walletClient.writeContract(request);
+          } catch {
+            rawApproveTx = await this.walletClient.writeContract({
+              ...usdcContract,
+              functionName: "approve",
+              args: [astaverdeContract.address, approvalAmount],
+              account: this.walletClient.account,
+            });
+          }
+        } else {
+          rawApproveTx = await this.walletClient.writeContract({
+            ...usdcContract,
+            functionName: "approve",
+            args: [astaverdeContract.address, approvalAmount],
+            account: this.walletClient.account,
+          });
+        }
+        const approveTx = normalizeHash(rawApproveTx);
 
         await this.publicClient.waitForTransactionReceipt({ hash: approveTx });
         console.log("Approval successful:", approveTx);
       } catch (error) {
         console.error("Approval error details:", error);
-        throw error;
+        throw Object.assign(new Error(`USDC approval failed: ${this.getRevertReason(error)}`), { cause: error });
       }
     }
   }
@@ -311,7 +373,16 @@ export class MarketplaceService {
   }
 
   private getRevertReason(error: unknown): string {
-    const err = error as { data?: { message?: string }; shortMessage?: string; message?: string };
-    return err?.data?.message || err?.shortMessage || err?.message || "Transaction failed without a reason.";
+    const seen = new Set<unknown>();
+    let current: any = error;
+
+    for (let depth = 0; depth < 6 && current && !seen.has(current); depth++) {
+      seen.add(current);
+      const message = current?.data?.message || current?.shortMessage || current?.message;
+      if (typeof message === "string" && message.trim().length > 0) return message;
+      current = current?.cause;
+    }
+
+    return "Transaction failed without a reason.";
   }
 }

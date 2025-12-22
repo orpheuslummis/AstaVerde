@@ -12,6 +12,7 @@ import { useContractInteraction } from "../../hooks/useContractInteraction";
 import { useAdminDashboardEvents } from "../../hooks/useAdminEvents";
 import { getAstaVerdeContract, getUsdcContract } from "../../config/contracts";
 import { customToast } from "../../utils/customToast";
+import { dispatchBalancesRefetch } from "../../hooks/useGlobalEvent";
 import { MaxPriceUpdateIterationsControl, RecoverSurplusUSDCControl } from "./GasOptimizationControls";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { ContractStatus, OwnershipTransfer } from "./OwnershipAndStatus";
@@ -25,7 +26,7 @@ const MintBatch = dynamic(() => import("./MintBatch"), {
 
 function AdminControls() {
   const { isAdmin } = useAppContext();
-  const { stats, batchUsageHistory, highlightGasControl } = useAdminDashboardEvents();
+  const { stats, highlightGasControl, lastIterationWarning, surplusRecoveryHistory } = useAdminDashboardEvents(isAdmin);
 
   if (!isAdmin) {
     return <div>You do not have permission to access this page.</div>;
@@ -83,7 +84,7 @@ function AdminControls() {
       <h3 className="px-6 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Funds</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
         <ClaimPlatformFunds />
-        <RecoverSurplusUSDCControl />
+        <RecoverSurplusUSDCControl surplusRecoveryHistory={surplusRecoveryHistory} />
       </div>
 
       {/* Pricing & Fees */}
@@ -107,7 +108,10 @@ function AdminControls() {
           defaultOpen={false}
           forceOpen={highlightGasControl}
         >
-          <MaxPriceUpdateIterationsControl />
+          <MaxPriceUpdateIterationsControl
+            highlightGasControl={highlightGasControl}
+            lastIterationWarning={lastIterationWarning}
+          />
         </CollapsibleSection>
       </div>
 
@@ -128,12 +132,19 @@ function MintUSDCControl() {
   const [amount, setAmount] = useState<string>("1000");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isTestEnv = ENV.CHAIN_SELECTION === "base_sepolia" || ENV.CHAIN_SELECTION === "local";
   const usdcContractConfig = getUsdcContract();
+  const supportsMint = (usdcContractConfig.abi as unknown as Array<{ type?: string; name?: string }>).some(
+    (item) => item?.type === "function" && item?.name === "mint",
+  );
+
+  const isTestEnv =
+    ENV.CHAIN_SELECTION === "arbitrum_sepolia" ||
+    ENV.CHAIN_SELECTION === "base_sepolia" ||
+    ENV.CHAIN_SELECTION === "local";
   const { execute } = useContractInteraction(usdcContractConfig, "mint");
 
   const onMint = async () => {
-    if (!isTestEnv) return;
+    if (!supportsMint) return;
     if (!to || !isAddress(to)) {
       customToast.error("Enter a valid recipient address");
       return;
@@ -146,10 +157,18 @@ function MintUSDCControl() {
       setIsSubmitting(true);
       const value = parseUnits(amount, ENV.USDC_DECIMALS);
       await execute(to, value);
+      if (address && to.toLowerCase() === address.toLowerCase()) {
+        dispatchBalancesRefetch();
+      }
       customToast.success(`Minted ${amount} USDC to ${to.slice(0, 6)}…${to.slice(-4)}`);
     } catch (err) {
       console.error("Mint USDC error:", err);
-      customToast.error("Mint failed. Are you on Base Sepolia/local?");
+      const message = String((err as Error)?.message || "");
+      if (message.toLowerCase().includes("caller is not a minter")) {
+        customToast.error("This USDC contract is not a MockUSDC faucet. Check NEXT_PUBLIC_USDC_ADDRESS / network.");
+      } else {
+        customToast.error("Mint failed. Are you on a MockUSDC test deployment?");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -159,14 +178,21 @@ function MintUSDCControl() {
     <ControlContainer title="Mint Testnet USDC" id="mint-usdc">
       {!isTestEnv ? (
         <div className="text-sm text-amber-600 dark:text-amber-400">
-          Hidden on mainnet. Switch to Base Sepolia or local to use the test faucet.
+          Hidden on mainnet. Switch to Arbitrum Sepolia/Base Sepolia/local to use the test faucet.
         </div>
       ) : !isAdmin ? (
         <div className="text-sm text-gray-500">Admin only.</div>
+      ) : !supportsMint ? (
+        <div className="text-sm text-amber-600 dark:text-amber-400">
+          This environment is configured with a non-mintable USDC (eg Circle FiatToken). Redeploy with MockUSDC or set
+          `NEXT_PUBLIC_USDC_ADDRESS` to your deployed MockUSDC address.
+          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">Current USDC: {usdcContractConfig.address}</div>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="text-xs text-gray-500 dark:text-gray-400">
             Calls MockUSDC.mint on {ENV.CHAIN_SELECTION.replace("_", " ")} (decimals {ENV.USDC_DECIMALS}).
+            Current USDC: {usdcContractConfig.address}
           </div>
           <input
             type="text"
@@ -189,7 +215,7 @@ function MintUSDCControl() {
               type="button"
               className="btn btn-primary"
               onClick={onMint}
-              disabled={!isTestEnv || isSubmitting}
+              disabled={!supportsMint || isSubmitting}
             >
               {isSubmitting ? "Minting…" : "Mint"}
             </button>
@@ -279,6 +305,7 @@ function ClaimPlatformFunds() {
 
     try {
       await adminControls.claimPlatformFunds(address);
+      dispatchBalancesRefetch();
       customToast.success("Platform funds claimed successfully");
     } catch (error) {
       console.error("Error claiming platform funds:", error);

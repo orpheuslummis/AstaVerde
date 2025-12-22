@@ -104,6 +104,9 @@ export default function MyTokensPage() {
   }), [stats]);
 
   // Handle bulk deposit
+  // Contract allows 20 tokens, but 10 is safer for gas limits
+  const DEPOSIT_BATCH_LIMIT = 10;
+
   const handleDepositAll = useCallback(async (tokenIds: bigint[], batchId: string) => {
     if (!tokenIds || tokenIds.length === 0) return;
 
@@ -124,8 +127,37 @@ export default function MyTokensPage() {
 
       // Treat unknown version as V2 (single-system contracts ship V2)
       if (vaultVersion === "V2" || vaultVersion === null) {
-        setBulkDepositProgress({ current: mutableTokenIds.length, total: mutableTokenIds.length });
-        await depositBatch(mutableTokenIds);
+        // Contract limits batch deposits to 20 tokens at a time
+        if (mutableTokenIds.length > DEPOSIT_BATCH_LIMIT) {
+          const chunks: bigint[][] = [];
+          for (let i = 0; i < mutableTokenIds.length; i += DEPOSIT_BATCH_LIMIT) {
+            chunks.push(mutableTokenIds.slice(i, i + DEPOSIT_BATCH_LIMIT));
+          }
+
+          const proceed = window.confirm(
+            "⚠️ Large Deposit\n\n" +
+            `Depositing ${mutableTokenIds.length} NFTs requires ${chunks.length} separate transactions ` +
+            `(max ${DEPOSIT_BATCH_LIMIT} per batch).\n\n` +
+            `This will require ${chunks.length} wallet confirmations.\n\n` +
+            "Continue?",
+          );
+
+          if (!proceed) {
+            setDepositingBatchId(null);
+            setBulkDepositProgress({ current: 0, total: 0 });
+            return;
+          }
+
+          let deposited = 0;
+          for (let i = 0; i < chunks.length; i++) {
+            await depositBatch(chunks[i]);
+            deposited += chunks[i].length;
+            setBulkDepositProgress({ current: deposited, total: mutableTokenIds.length });
+          }
+        } else {
+          setBulkDepositProgress({ current: mutableTokenIds.length, total: mutableTokenIds.length });
+          await depositBatch(mutableTokenIds);
+        }
       } else {
         const estimatedGas = mutableTokenIds.length * 120000;
         const proceed = window.confirm(
@@ -172,6 +204,9 @@ export default function MyTokensPage() {
   }, [fetchTokens]);
 
   // Handle bulk withdraw
+  // Contract allows 20 tokens, but 10 is safer for gas limits
+  const WITHDRAW_BATCH_LIMIT = 10;
+
   const handleWithdrawAll = useCallback(async (tokenIds: bigint[]) => {
     if (!tokenIds || tokenIds.length === 0) return;
 
@@ -196,7 +231,31 @@ export default function MyTokensPage() {
         return;
       }
 
-      await withdrawBatch(tokenIds);
+      // Contract limits batch withdrawals to 20 tokens at a time
+      // Split into chunks if needed
+      if (tokenIds.length > WITHDRAW_BATCH_LIMIT) {
+        const chunks: bigint[][] = [];
+        for (let i = 0; i < tokenIds.length; i += WITHDRAW_BATCH_LIMIT) {
+          chunks.push(tokenIds.slice(i, i + WITHDRAW_BATCH_LIMIT));
+        }
+
+        const proceed = window.confirm(
+          "⚠️ Large Withdrawal\n\n" +
+          `Withdrawing ${tokenIds.length} NFTs requires ${chunks.length} separate transactions ` +
+          `(max ${WITHDRAW_BATCH_LIMIT} per batch).\n\n` +
+          `This will require ${chunks.length} wallet confirmations.\n\n` +
+          "Continue?",
+        );
+
+        if (!proceed) return;
+
+        for (let i = 0; i < chunks.length; i++) {
+          await withdrawBatch(chunks[i]);
+        }
+      } else {
+        await withdrawBatch(tokenIds);
+      }
+
       await fetchTokens();
     } catch (error) {
       console.error("Error during bulk withdraw:", error);

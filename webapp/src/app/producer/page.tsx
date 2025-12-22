@@ -8,6 +8,7 @@ import { customToast } from "@/utils/customToast";
 import { useRouter } from "next/navigation";
 import { useIsProducer } from "@/hooks/useIsProducer";
 import { useProducerDashboardEvents } from "@/hooks/useProducerEvents";
+import { dispatchBalancesRefetch } from "@/hooks/useGlobalEvent";
 import Loader from "@/components/Loader";
 import { ENV } from "@/config/environment";
 
@@ -55,6 +56,7 @@ export default function ProducerDashboard() {
       customToast.success("Funds claimed successfully!");
       setIsClaiming(false);
       refetchProducerStatus();
+      dispatchBalancesRefetch();
     }
   }, [isSuccess, isClaiming, refetchProducerStatus]);
 

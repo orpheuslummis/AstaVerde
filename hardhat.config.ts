@@ -16,11 +16,15 @@ const ownerAddress: string | undefined = process.env.OWNER_ADDRESS;
 // Optional direct RPC URL overrides (prefer these in CI or when rate-limited)
 const BASE_MAINNET_RPC_URL: string | undefined = process.env.BASE_MAINNET_RPC_URL;
 const BASE_SEPOLIA_RPC_URL: string | undefined = process.env.BASE_SEPOLIA_RPC_URL;
+const ARBITRUM_MAINNET_RPC_URL: string | undefined = process.env.ARBITRUM_MAINNET_RPC_URL;
+const ARBITRUM_SEPOLIA_RPC_URL: string | undefined = process.env.ARBITRUM_SEPOLIA_RPC_URL;
 
 const chainIds = {
     hardhat: 31337,
     "base-sepolia": 84532,
     "base-mainnet": 8453,
+    "arbitrum-sepolia": 421_614,
+    "arbitrum-one": 42_161,
 };
 
 function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
@@ -34,6 +38,12 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
             break;
         case "base-sepolia":
             jsonRpcUrl = BASE_SEPOLIA_RPC_URL || `https://base-sepolia.g.alchemy.com/v2/${rpcApiKey}`;
+            break;
+        case "arbitrum-one":
+            jsonRpcUrl = ARBITRUM_MAINNET_RPC_URL || `https://arb-mainnet.g.alchemy.com/v2/${rpcApiKey}`;
+            break;
+        case "arbitrum-sepolia":
+            jsonRpcUrl = ARBITRUM_SEPOLIA_RPC_URL || `https://arb-sepolia.g.alchemy.com/v2/${rpcApiKey}`;
             break;
         default:
             jsonRpcUrl = "";
@@ -100,6 +110,30 @@ const config: HardhatUserConfig = {
             gasPrice: "auto",
             gasMultiplier: 1.2,
         },
+        "arbitrum-one": {
+            ...getChainConfig("arbitrum-one"),
+            accounts: privateKey ? [privateKey] : [],
+            verify: {
+                etherscan: {
+                    apiKey: process.env.ARBITRUM_MAINNET_EXPLORER_API_KEY,
+                },
+            },
+            timeout: 300000,
+            gasPrice: "auto",
+            gasMultiplier: 1.1,
+        },
+        "arbitrum-sepolia": {
+            ...getChainConfig("arbitrum-sepolia"),
+            accounts: privateKey ? [privateKey] : [],
+            verify: {
+                etherscan: {
+                    apiKey: process.env.ARBITRUM_SEPOLIA_EXPLORER_API_KEY,
+                },
+            },
+            timeout: 300000,
+            gasPrice: "auto",
+            gasMultiplier: 1.2,
+        },
     },
     etherscan: {
         apiKey: {
@@ -107,6 +141,10 @@ const config: HardhatUserConfig = {
             base: process.env.BASE_MAINNET_EXPLORER_API_KEY!,
             // Map our network alias to the same Base mainnet key
             "base-mainnet": process.env.BASE_MAINNET_EXPLORER_API_KEY!,
+            "arbitrum-one": process.env.ARBITRUM_MAINNET_EXPLORER_API_KEY!,
+            "arbitrum-sepolia": process.env.ARBITRUM_SEPOLIA_EXPLORER_API_KEY!,
+            arbitrumOne: process.env.ARBITRUM_MAINNET_EXPLORER_API_KEY!,
+            arbitrumSepolia: process.env.ARBITRUM_SEPOLIA_EXPLORER_API_KEY!,
         },
         customChains: [
             {
@@ -124,6 +162,22 @@ const config: HardhatUserConfig = {
                 urls: {
                     apiURL: "https://api.basescan.org/api",
                     browserURL: "https://basescan.org",
+                },
+            },
+            {
+                network: "arbitrum-one",
+                chainId: 42_161,
+                urls: {
+                    apiURL: "https://api.arbiscan.io/api",
+                    browserURL: "https://arbiscan.io",
+                },
+            },
+            {
+                network: "arbitrum-sepolia",
+                chainId: 421_614,
+                urls: {
+                    apiURL: "https://api-sepolia.arbiscan.io/api",
+                    browserURL: "https://sepolia.arbiscan.io",
                 },
             },
         ],

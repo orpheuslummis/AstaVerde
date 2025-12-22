@@ -7,8 +7,8 @@ Comprehensive testing guide for AstaVerde - covering automated tests, local QA, 
 ### One-Command Testing Solutions
 
 ```bash
-# Complete local dev environment (contracts + webapp + test data)
-npm run dev
+# Start the webapp against Sepolia (currently Arbitrum Sepolia)
+npm run dev:sepolia
 
 # Fast QA testing (~450ms)
 npm run qa:fast
@@ -32,22 +32,15 @@ npm run coverage
 
 ## 🧪 Testing Environments
 
-### 1. Local Development (`npm run dev`)
+### 1. Sepolia Webapp (`npm run dev:sepolia`)
 
-Provides complete environment with:
+Provides a testnet-connected webapp for manual QA:
 
-- Local Hardhat node
-- Deployed contracts
-- Funded test accounts
-- Mock IPFS data
-- Test NFTs and scenarios
+- Uses `webapp/.env.local` (untracked) for addresses + RPC
+- Runs on `http://localhost:3002`
+- Wallet + UI flows test against the current Sepolia target (Arbitrum Sepolia)
 
-**Test Scenarios Available:**
-
-- `npm run dev:basic` - Simple marketplace with few tokens
-- `npm run dev:marketplace` - Active marketplace simulation
-- `npm run dev:vault` - Vault testing with deposits/withdrawals
-- `npm run dev:local` - Local full stack (node + deploy + webapp)
+Note: `npm run dev:local` (local Hardhat full stack) is considered legacy in the current workflow.
 
 ### 2. Quick QA Scripts
 
@@ -64,13 +57,13 @@ npm run qa:full
 
 ### 3. Manual Testing Pages
 
-Access these pages when running `npm run dev`:
+Access these pages when running `npm run dev:sepolia`:
 
-- `http://localhost:3001/` - Main marketplace
-- `http://localhost:3001/mytokens` - Token management & vault
-- `http://localhost:3001/test-vault` - Vault testing interface
-- `http://localhost:3001/debug-approve` - Approval debugging
-- `http://localhost:3001/admin` - Admin functions
+- `http://localhost:3002/` - Main marketplace
+- `http://localhost:3002/mytokens` - Token management & vault
+- `http://localhost:3002/test-vault` - Vault testing interface
+- `http://localhost:3002/debug-approve` - Approval debugging
+- `http://localhost:3002/admin` - Admin functions
 
 ## 🔍 Webapp Testing Focus
 

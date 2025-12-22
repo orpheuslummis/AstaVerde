@@ -77,7 +77,7 @@ export default function Page() {
 
         <div className="flex flex-col space-y-6 mt-12">
           <a
-            href="/Everything.about.eco.asset.pdf"
+            href="/Everything%20about%20eco%20asset.pdf"
             download
             className="eco-btn eco-btn-primary dark:bg-emerald-700 dark:hover:bg-emerald-600"
           >
@@ -103,10 +103,6 @@ export default function Page() {
                         wallet, Rabby wallet and others. To move funds from your bank to your wallet, you will use a
                         regulated exchange such as Coinbase, Kraken, or Revolut depending on your country. Once you have
                         your funds on an exchange, you can move them to your wallet to purchase eco assets.
-          </p>
-          <p className="text-gray-700 dark:text-gray-300 mt-2">
-            <strong>Note:</strong> Different exchanges and wallets will have different or no fees to get
-                        USDC on Base and Ethereum on Base.
           </p>
         </div>
       </div>
