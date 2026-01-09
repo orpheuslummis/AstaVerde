@@ -18,19 +18,24 @@ const isE2EMode =
 // Configure wallet connection
 // For local development, don't use WalletConnect to avoid connection errors
 const hasWC = hasWalletConnectProjectId();
+// Force Coinbase to use EOA wallets to avoid Smart Wallet/passkey addresses.
+const coinbaseWalletPreference = "eoaOnly" as const;
 const baseConfig = isLocalDevelopment()
   ? ({
       appName: "Asta Verde",
+      coinbaseWalletPreference,
       chains,
     } as const)
   : hasWC
     ? ({
         appName: "Asta Verde",
         walletConnectProjectId: ENV.WALLET_CONNECT_PROJECT_ID,
+        coinbaseWalletPreference,
         chains,
       } as const)
     : ({
         appName: "Asta Verde",
+        coinbaseWalletPreference,
         chains,
       } as const);
 
