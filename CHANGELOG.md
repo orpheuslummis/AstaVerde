@@ -64,6 +64,17 @@ modified. This section is the client-readable summary; the engineering record is
 
 - `mint.mjs`, `testmint.mjs` (Base-only, random producer addresses), `verify-vault.js` (calls a getter that does not exist), `smoke_test_vault.mjs` (assertions that cannot fail), `seed-local.js` (calls `ownerOf` on an ERC-1155) — Why: broken or Base-era; each is listed with its reason in `scripts/archive/README.md`.
 
+### Contracts
+
+No Solidity changes. A mechanism-level examination of the contracts (journal entry
+`2026-09-20-agent-contracts-review.md`) found no bug and re-confirmed the accounting invariant
+and the closed refund-siphon fix. Its output is settings and runbook steps for mainnet:
+
+- `maxPriceUpdateIterations` set to 25 by the owner right after handoff (the default 100 was tuned for L2 gas; on Ethereum it can add over 1M gas to a buyer's purchase when many batches sit unsold) — Why: caps the buyer's gas tax at about 230k while keeping price updates working for up to 25 live batches per quarter.
+- `maxBatchSize` stays at 50 — Why: a 100-token mint is 21M gas, a third of an Ethereum block.
+- SCC admin role: recommend renouncing at deploy rather than keeping it — Why: the vault address is fixed, so the role has no legitimate future use and could mint unlimited SCC if the key leaked.
+- Three behaviours the client should know: pausing either contract freezes vault collateral with no user exit; the owner key can re-price all open inventory to near zero, so the owner should be a multisig; USDC accrued to a producer that Circle blocklists is stranded.
+
 ### Still to come in this section
 
 Dependency updates judged safe; the Sepolia QA round; the mainnet deployment and handoff; the production cutover.
