@@ -56,6 +56,11 @@ webapp/.env.*
 .env.arbitrum-sepolia
 .env.arbitrum-one
 
+# Root Ethereum env (contains secrets) — keep out of git; the .example files are tracked
+.env.ethereum
+.env.ethereum-sepolia
+.env.ethereum-mainnet
+
 # Root env (contains secrets) — keep out of git
 .env
 
