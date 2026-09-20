@@ -2,11 +2,9 @@
 // Non-environment specific configuration values
 
 // IPFS Configuration
+// Gateways are configured per deployment (NEXT_PUBLIC_IPFS_GATEWAY_URL and the
+// optional NEXT_PUBLIC_IPFS_FALLBACK_GATEWAY_URL), never hardcoded here.
 export const IPFS_PREFIX = "ipfs://";
-export const WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION = true;
-export const WEB3_STORAGE_GATEWAY_PREFIX = "https://";
-export const WEB3_STORAGE_GATEWAY_SUFFIX = ".ipfs.w3s.link/";
-export const FALLBACK_IPFS_GATEWAY_URL = "https://dweb.link/ipfs/";
 
 // Event polling
 // Reorg safety margin: pollers only query up to (head - this) and only advance

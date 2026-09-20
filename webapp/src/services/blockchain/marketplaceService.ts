@@ -193,7 +193,7 @@ export class MarketplaceService {
         account: walletClient.account,
       });
       rawHash = await walletClient.writeContract({ ...request, gas: (gas * GAS_HEADROOM_PERCENT) / 100n });
-    } catch (simError) {
+    } catch {
       try {
         rawHash = await this.walletClient.writeContract({
           ...contract,

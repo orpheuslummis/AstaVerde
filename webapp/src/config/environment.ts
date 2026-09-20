@@ -21,9 +21,10 @@ export const ENV = {
   ALCHEMY_API_KEY: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || "",
   WALLET_CONNECT_PROJECT_ID: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "",
 
-  // IPFS Configuration
-  // Default to Web3.Storage's public gateway (path-style); env can override.
-  IPFS_GATEWAY_URL: process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL || "https://w3s.link/ipfs/",
+  // IPFS Configuration (path-style gateways ending in /ipfs/). Primary is the
+  // storage provider's gateway; the fallback is optional.
+  IPFS_GATEWAY_URL: process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL || "",
+  IPFS_FALLBACK_GATEWAY_URL: process.env.NEXT_PUBLIC_IPFS_FALLBACK_GATEWAY_URL || "",
 
   // Token Configuration
   USDC_DECIMALS: Number(process.env.NEXT_PUBLIC_USDC_DECIMALS) || 6,

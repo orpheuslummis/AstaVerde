@@ -1,10 +1,5 @@
 import { ENV } from "../config/environment";
-import {
-  FALLBACK_IPFS_GATEWAY_URL,
-  WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION,
-  WEB3_STORAGE_GATEWAY_PREFIX,
-  WEB3_STORAGE_GATEWAY_SUFFIX,
-} from "../config/constants";
+import { buildUploadAuthorizationMessage } from "./uploadAuth";
 
 export interface TokenMetadata {
   name: string;
@@ -13,53 +8,63 @@ export interface TokenMetadata {
   image: File | null;
 }
 
-let cachedW3Client: unknown | null = null;
-export async function initializeWeb3StorageClient() {
-  try {
-    if (cachedW3Client) return cachedW3Client;
-    const { create } = await import("@web3-storage/w3up-client");
-    cachedW3Client = await create();
-    return cachedW3Client;
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Failed to load Web3Storage client:", error);
-    throw error;
-  }
+// Upload authorization: the owner signs one message per mint (see uploadAuth.ts);
+// the server route checks it and issues a short-lived Pinata signed URL per file.
+export interface UploadAuthorization {
+  address: string;
+  message: string;
+  signature: string;
 }
 
-export async function uploadToIPFS(client: unknown, content: File | string, contentType: string): Promise<string> {
-  if (!client) {
-    throw new Error("Web3Storage client is not initialized");
-  }
-  try {
-    const blob = content instanceof File ? content : new Blob([content], { type: contentType });
-    const cid = await client.uploadFile(blob);
-    return cid.toString();
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Error in uploadToIPFS:", error);
-    throw new Error(`Failed to upload to IPFS: ${(error as Error).message}`);
-  }
+export function createUploadAuthorizationMessage(chainId: number, contract: string): string {
+  return buildUploadAuthorizationMessage(chainId, contract, Math.floor(Date.now() / 1000));
 }
 
-export async function connectToSpace(client: unknown, email: string, spaceName: string) {
-  if (!client) {
-    throw new Error("Web3Storage client is not initialized");
+export interface UploadKeyStatus {
+  configured: boolean;
+  expiresAt: string | null;
+  gateway: string | null;
+}
+
+export async function fetchUploadKeyStatus(): Promise<UploadKeyStatus> {
+  const res = await fetch("/api/ipfs/upload-url", { method: "GET", cache: "no-store" });
+  if (!res.ok) throw new Error(`Upload status check failed (${res.status})`);
+  return (await res.json()) as UploadKeyStatus;
+}
+
+async function requestSignedUploadUrl(auth: UploadAuthorization, filename: string): Promise<string> {
+  const res = await fetch("/api/ipfs/upload-url", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...auth, filename }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+  if (!res.ok || !body.url) {
+    throw new Error(body.error || `Upload authorization failed (${res.status})`);
   }
-  try {
-    const userAccount = await client.login(email);
-    const space = await client.createSpace(spaceName);
-    await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for plan selection
-    await userAccount.provision(space.did());
-    await space.createRecovery(userAccount.did());
-    await space.save();
-    await client.setCurrentSpace(space.did());
-    return client;
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Error connecting to space:", error);
-    throw error;
+  return body.url;
+}
+
+// Uploads one file (or a JSON string) to IPFS through the storage provider and
+// returns its CID. Throws with a readable message on any failure.
+export async function uploadToIPFS(
+  auth: UploadAuthorization,
+  content: File | string,
+  contentType: string,
+  filename: string,
+): Promise<string> {
+  const blob = content instanceof File ? content : new Blob([content], { type: contentType });
+  const url = await requestSignedUploadUrl(auth, filename);
+  const form = new FormData();
+  form.append("file", blob, filename);
+  form.append("network", "public");
+  const res = await fetch(url, { method: "POST", body: form });
+  const body = (await res.json().catch(() => ({}))) as { data?: { cid?: string }; error?: unknown };
+  const cid = body.data?.cid;
+  if (!res.ok || !cid) {
+    throw new Error(`Failed to upload ${filename} to IPFS (${res.status})`);
   }
+  return cid;
 }
 
 export async function fetchJsonFromIpfsWithFallback(
@@ -205,32 +210,17 @@ export async function fetchJsonFromIpfsWithFallback(
     return { data: mockData, gateway: "local-mock" };
   }
 
-  // Try primary gateway (slightly longer timeout; 1 retry)
-  const primary = await tryGateway(ENV.IPFS_GATEWAY_URL, "primary", 5000, 1);
-  if (primary) return primary;
-
-  // Try web3.storage gateway (second attempt)
-  if (WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION) {
-    // For host-style gateway, the full URL is https://<cid>.ipfs.w3s.link/
-    // We must NOT append the CID again to the path.
-    const web3StorageGatewayUrl = `${WEB3_STORAGE_GATEWAY_PREFIX}${cid}${WEB3_STORAGE_GATEWAY_SUFFIX}`;
-    try {
-      const res = await fetchWithTimeout(web3StorageGatewayUrl, 5000);
-      if (res.ok) {
-        const data = await res.json();
-        const u = new URL(web3StorageGatewayUrl);
-        const gatewayBase = `${u.protocol}//${u.hostname}/`;
-        return { data, gateway: gatewayBase } as const;
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn("w3s.link host gateway failed", e);
-    }
+  // Gateways come from the environment only; no provider hostnames in code.
+  const gateways = [ENV.IPFS_GATEWAY_URL, ENV.IPFS_FALLBACK_GATEWAY_URL].filter((g): g is string => Boolean(g));
+  if (gateways.length === 0) {
+    // eslint-disable-next-line no-console
+    console.warn("No IPFS gateway configured (NEXT_PUBLIC_IPFS_GATEWAY_URL)");
+    return null;
   }
-
-  // Try fallback gateway (third attempt)
-  const fallback = await tryGateway(FALLBACK_IPFS_GATEWAY_URL, "fallback", 5000, 1);
-  if (fallback) return fallback;
+  for (const [idx, gateway] of gateways.entries()) {
+    const hit = await tryGateway(gateway, idx === 0 ? "primary" : "fallback", 5000, 1);
+    if (hit) return hit;
+  }
 
   return null;
 }
@@ -246,14 +236,7 @@ export function resolveIpfsUriToUrl(ipfsUri: string | undefined | null, gateway?
 
   if (ipfsUri && ipfsUri.startsWith("ipfs://")) {
     const cid = ipfsUri.replace("ipfs://", "");
-    // Handle subdomain gateway structure if the provided gateway is a base for it (e.g., "https://*.ipfs.w3s.link/")
-    // This is a simplified check. A more robust solution might involve checking specific hostnames.
-    if (effectiveGateway.includes(".w3s.link")) {
-      // Check if it's the w3s.link special gateway
-      return `${WEB3_STORAGE_GATEWAY_PREFIX}${cid}${WEB3_STORAGE_GATEWAY_SUFFIX}`;
-    } else {
-      return `${effectiveGateway}${cid}`;
-    }
+    return effectiveGateway ? `${effectiveGateway}${cid}` : "";
   }
   return ipfsUri || "";
 }
