@@ -8,6 +8,7 @@ import { debugLog } from "../../utils/debug";
 import type { ContractConfig } from "../../shared/types/contracts";
 
 const ARBITRUM_SEPOLIA_NATIVE_USDC = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
+const ETHEREUM_SEPOLIA_NATIVE_USDC = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
 
 function shouldUseMockUsdcAbi() {
   if (ENV.CHAIN_SELECTION === "local" || ENV.CHAIN_SELECTION === "base_sepolia") return true;
@@ -16,6 +17,11 @@ function shouldUseMockUsdcAbi() {
   // If the configured address is not the canonical FiatToken, assume it's our MockUSDC.
   if (ENV.CHAIN_SELECTION === "arbitrum_sepolia") {
     return (ENV.USDC_ADDRESS || "").toLowerCase() !== ARBITRUM_SEPOLIA_NATIVE_USDC.toLowerCase();
+  }
+
+  // Ethereum Sepolia: same rule against the canonical Circle Sepolia USDC.
+  if (ENV.CHAIN_SELECTION === "ethereum_sepolia") {
+    return (ENV.USDC_ADDRESS || "").toLowerCase() !== ETHEREUM_SEPOLIA_NATIVE_USDC.toLowerCase();
   }
 
   return false;

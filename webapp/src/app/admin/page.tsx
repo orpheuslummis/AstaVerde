@@ -138,6 +138,7 @@ function MintUSDCControl() {
   );
 
   const isTestEnv =
+    ENV.CHAIN_SELECTION === "ethereum_sepolia" ||
     ENV.CHAIN_SELECTION === "arbitrum_sepolia" ||
     ENV.CHAIN_SELECTION === "base_sepolia" ||
     ENV.CHAIN_SELECTION === "local";
