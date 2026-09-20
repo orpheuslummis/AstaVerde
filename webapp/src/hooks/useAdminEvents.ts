@@ -3,6 +3,7 @@ import { formatUnits } from "viem";
 import { useContractEvents } from "./useContractEvents";
 import { customToast } from "@/utils/customToast";
 import { ENV } from "@/config/environment";
+import { EVENT_POLL_CONFIRMATIONS } from "@/config/constants";
 import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
 import type {
   PriceUpdateIterationLimitReachedEvent,
@@ -155,9 +156,13 @@ export function useAdminEvents({
       isFetching = true;
       try {
         const latest = await publicClient.getBlockNumber();
+        // Stay a couple of blocks behind the head so a reorg cannot drop a log
+        // we have already recorded and advanced the cursor past.
+        const toBlock = latest > EVENT_POLL_CONFIRMATIONS ? latest - EVENT_POLL_CONFIRMATIONS : 0n;
         const fromBlock =
-          lastPolledBlockRef.current !== null ? lastPolledBlockRef.current + 1n : latest > 6n ? latest - 6n : 0n;
-        const toBlock = latest;
+          lastPolledBlockRef.current !== null ? lastPolledBlockRef.current + 1n : toBlock > 6n ? toBlock - 6n : 0n;
+        // No newly confirmed blocks since the last poll: nothing to query.
+        if (fromBlock > toBlock) return;
 
         const iterations = await fetchIterationHistory(fromBlock, toBlock);
         await delay(publicClient.chain?.id === 31337 ? 250 : LOG_QUERY_GAP_MS);
