@@ -40,7 +40,11 @@ export const VAULT_GAS_LIMITS = {
 
 // Batch Operations
 export const BATCH_SIZE_FOR_TOKEN_QUERY = 500;
-export const APPROVAL_BUFFER_FACTOR = 100n;
+// USDC allowance granted when a purchase needs approval, as a multiple of that purchase.
+// 2x lets a buyer make a second purchase of the same size without a new approval while
+// keeping the standing allowance small (the previous 100x left a 23,000 USDC allowance
+// after a single 230 USDC buy, which wallets flag and which is oversized on mainnet).
+export const APPROVAL_BUFFER_FACTOR = 2n;
 
 // Transaction Settings
 // Receipt polling budget, sized for Ethereum L1 (~12 s blocks).

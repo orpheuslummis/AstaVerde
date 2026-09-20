@@ -50,6 +50,7 @@ modified. This section is the client-readable summary; the engineering record is
 - A reverted transaction is reported as reverted immediately — Why: it used to be caught by the retry loop and surface as a timeout.
 - "Marketplace is paused" and "Not enough tokens available" now reach the user before the wallet prompt — Why: those checks threw inside a handler that discarded them.
 - Vault gas fallbacks raised (withdraw 120k → 160k, deposit 230k → 280k) — Why: the old withdraw fallback was below the measured worst case.
+- USDC approval buffer reduced from 100× to 2× the purchase amount — Why: after one 230 USDC purchase the marketplace held a 23,000 USDC standing allowance, oversized for real USDC on mainnet; 2× still spares a repeat buyer the second approval.
 
 ### Documentation and scripts
 
