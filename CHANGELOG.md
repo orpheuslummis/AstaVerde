@@ -41,6 +41,8 @@ change, described under Contracts. This section is the client-readable summary o
 
 #### Changed
 
+- Client QA round, 2026-09-20: the welcome modal's two placeholder links ("Explore Eco Assets", "Read our Terms of Service", both pointing nowhere) removed; the "Eco Asset Guide (PDF)" downloads removed from the About and Eco Assets pages together with the PDF itself; the Eco Assets page carries the client's new wording for the description component and the ISO 14064-3 paragraph; the About-page FAQ wording confirmed by the client — Why: requested by the client after his test round.
+- WalletConnect's verification frame is allowed by the site's Content Security Policy — Why: the mainnet owner is a Safe, which connects through WalletConnect; without this the frame was blocked and logged an error.
 - All user-facing copy now names Ethereum and Circle USDC: page metadata, the welcome modal, the About page FAQ and the required-USDC paragraph. The Arbitrum-only warning about bridged USDC.e is removed — Why: it does not apply on mainnet.
 - Two About-page items await the client's wording and are marked in the code: the first FAQ item (the old question was Arbitrum-specific) and the "how to get USDC into your wallet" section (the CowSwap and Revolut walkthroughs were Arbitrum routes). The eco-asset PDF may also need a new version.
 
