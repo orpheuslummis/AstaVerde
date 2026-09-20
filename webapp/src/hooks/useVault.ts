@@ -688,7 +688,11 @@ export function useVault(): VaultHook {
           cleanTokenIds[i] = BigInt(tokenIds[i].toString());
         }
 
-        // Dynamic gas: ~60k per token + 100k buffer for base operations
+        // Dynamic gas: ~60k per token + 100k buffer for base operations.
+        // Measured withdrawBatch (this tree): 153,112 - 268,101, i.e. ~95k base
+        // + ~57k marginal per token, so the contract's 20-token cap
+        // (EcoStabilizer.sol: require(tokenIds.length <= 20)) lands near 1.25M.
+        // The 2M floor therefore covers a full batch with ~60% headroom.
         const estimatedGas = BigInt(cleanTokenIds.length) * 60000n + 100000n;
         const gasLimit = estimatedGas > 2000000n ? estimatedGas : 2000000n; // min 2M gas
 
