@@ -1,7 +1,6 @@
 import { ENV } from "../config/environment";
 import {
   FALLBACK_IPFS_GATEWAY_URL,
-  CLOUDFLARE_IPFS_GATEWAY_URL,
   WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION,
   WEB3_STORAGE_GATEWAY_PREFIX,
   WEB3_STORAGE_GATEWAY_SUFFIX,
@@ -232,10 +231,6 @@ export async function fetchJsonFromIpfsWithFallback(
   // Try fallback gateway (third attempt)
   const fallback = await tryGateway(FALLBACK_IPFS_GATEWAY_URL, "fallback", 5000, 1);
   if (fallback) return fallback;
-
-  // Try Cloudflare IPFS gateway (fourth attempt)
-  const cloudflare = await tryGateway(CLOUDFLARE_IPFS_GATEWAY_URL, "cloudflare", 5000, 1);
-  if (cloudflare) return cloudflare;
 
   return null;
 }

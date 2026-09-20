@@ -7,7 +7,12 @@ export const WEB3_STORAGE_GATEWAY_HOST_CONSTRUCTION = true;
 export const WEB3_STORAGE_GATEWAY_PREFIX = "https://";
 export const WEB3_STORAGE_GATEWAY_SUFFIX = ".ipfs.w3s.link/";
 export const FALLBACK_IPFS_GATEWAY_URL = "https://dweb.link/ipfs/";
-export const CLOUDFLARE_IPFS_GATEWAY_URL = "https://cloudflare-ipfs.com/ipfs/";
+
+// Event polling
+// Reorg safety margin: pollers only query up to (head - this) and only advance
+// their cursor that far, so a log seen at the chain head is never recorded from
+// a block that may still be reorged away.
+export const EVENT_POLL_CONFIRMATIONS = 2n;
 
 // External URLs
 export const EXTERNAL_URL = "https://ecotradezone.bionerg.com/token/";

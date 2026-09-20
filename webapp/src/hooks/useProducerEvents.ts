@@ -5,6 +5,7 @@ import { useContractEvents } from "./useContractEvents";
 import { useRateLimitedPublicClient } from "./useRateLimitedPublicClient";
 import { customToast } from "@/utils/customToast";
 import { ENV } from "@/config/environment";
+import { EVENT_POLL_CONFIRMATIONS } from "@/config/constants";
 import type { ProducerPaymentAccruedEvent, ProducerPaymentClaimedEvent } from "@/features/events/eventTypes";
 import { EVENT_NAMES } from "@/features/events/eventTypes";
 
@@ -109,9 +110,13 @@ export function useProducerEvents({ onBalanceUpdate, showToasts = true, enabled 
       isFetching = true;
       try {
         const latest = await publicClient.getBlockNumber();
+        // Stay a couple of blocks behind the head so a reorg cannot drop a log
+        // we have already recorded and advanced the cursor past.
+        const toBlock = latest > EVENT_POLL_CONFIRMATIONS ? latest - EVENT_POLL_CONFIRMATIONS : 0n;
         const fromBlock =
-          lastPolledBlockRef.current !== null ? lastPolledBlockRef.current + 1n : latest > 12n ? latest - 12n : 0n;
-        const toBlock = latest;
+          lastPolledBlockRef.current !== null ? lastPolledBlockRef.current + 1n : toBlock > 12n ? toBlock - 12n : 0n;
+        // No newly confirmed blocks since the last poll: nothing to query.
+        if (fromBlock > toBlock) return;
 
         const accruals = await fetchAccruedHistory(fromBlock, toBlock);
         await delay(logQueryGapMs);

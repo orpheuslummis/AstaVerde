@@ -54,3 +54,8 @@ yarn-error.log*
 
 \*.tsbuildinfo
 next-env.d.ts
+
+# The repo-root .gitignore has a bare "types" pattern (for the root typechain
+# output), which also swallows any directory named types under webapp/. Keep the
+# shared type modules tracked.
+!src/shared/types/
