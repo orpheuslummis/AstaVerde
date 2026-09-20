@@ -8,8 +8,8 @@ import { parseUploadAuthorizationMessage, UPLOAD_AUTH_MAX_AGE_SECONDS } from "@/
 //
 // The Pinata key stays on the server. The browser proves it controls the
 // contract owner by signing a message (EOA or ERC-1271 smart account); when the
-// owner is a Safe, any of its signers is also accepted, so an operator can mint
-// from their own wallet without a threshold signature for every file. The
+// owner is a Safe, any of its signers is also accepted for the upload step; the
+// mint transaction itself is still onlyOwner and must come from the Safe. The
 // signed URL then lets the browser upload one file directly to Pinata.
 
 export const runtime = "nodejs";
