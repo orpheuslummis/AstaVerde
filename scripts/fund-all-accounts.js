@@ -1,7 +1,7 @@
-const { ethers } = require("hardhat");
+const { deployments, ethers } = require("hardhat");
 
 async function main() {
-    const usdcAddress = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e";
+    const usdcAddress = (await deployments.get("MockUSDC")).address;
 
     // Get the MockUSDC contract
     const MockUSDC = await ethers.getContractFactory("MockUSDC");
