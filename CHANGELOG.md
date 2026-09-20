@@ -52,6 +52,7 @@ modified. This section is the client-readable summary; the engineering record is
 - Vault gas fallbacks raised (withdraw 120k → 160k, deposit 230k → 280k) — Why: the old withdraw fallback was below the measured worst case.
 - USDC approval buffer reduced from 100× to 2× the purchase amount — Why: after one 230 USDC purchase the marketplace held a 23,000 USDC standing allowance, oversized for real USDC on mainnet; 2× still spares a repeat buyer the second approval.
 - Purchases now carry the app's own gas estimate and retry their pre-flight check once after a short pause — Why: right after an approval confirms, a wallet whose RPC node lags can fail to estimate gas and refuse the purchase with "missing gas limit" (seen in Sepolia testing).
+- A wallet connected on the wrong network now gets a "switch network" prompt instead of a warning badge and a refused purchase — Why: seen in Sepolia testing; the app is single-chain and buyers should be steered, not blocked.
 - Admin mint form stops adding tokens at the contract's `maxBatchSize` and says so — Why: it used to upload every image to IPFS and then fail at the contract.
 - Admin and producer event feeds read two blocks behind the chain head — Why: a one-block reorg on Ethereum could otherwise drop a recorded event permanently.
 - Bulk vault withdraw shows a message when the vault list changed under it instead of silently doing nothing.
