@@ -414,6 +414,39 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         console.log(`- AstaVerde contract: ${vaultAstaVerde}`);
         console.log(`- SCC contract: ${vaultSCC}`);
 
+        // EcoStabilizer is Ownable(msg.sender): the deployer owns it. Hand it to the configured
+        // owner when one is set, so AstaVerde and the vault end up under the same owner.
+        if (ownerAddress.toLowerCase() !== deployer.toLowerCase()) {
+            console.log(`\nTransferring EcoStabilizer ownership to ${ownerAddress}...`);
+            const transferTx = await vaultContract.transferOwnership(ownerAddress);
+            await transferTx.wait(waitConfirmations);
+            const newVaultOwner = await vaultContract.owner();
+            if (newVaultOwner.toLowerCase() !== ownerAddress.toLowerCase()) {
+                throw new Error(`Vault ownership transfer failed: owner() is ${newVaultOwner}`);
+            }
+            console.log(`✓ EcoStabilizer owner is now ${newVaultOwner}`);
+        } else {
+            console.log(
+                "\nEcoStabilizer owner is the deployer (no OWNER_ADDRESS set); hand over later with npm run handoff",
+            );
+        }
+
+        // Optional: hand SCC DEFAULT_ADMIN_ROLE to the owner instead of renouncing it.
+        if (process.env.TRANSFER_SCC_ADMIN === "true" && ownerAddress.toLowerCase() !== deployer.toLowerCase()) {
+            console.log(`\nHanding SCC DEFAULT_ADMIN_ROLE to ${ownerAddress}...`);
+            const DEFAULT_ADMIN_ROLE = await sccContract.DEFAULT_ADMIN_ROLE();
+            const grantAdminTx = await sccContract.grantRole(DEFAULT_ADMIN_ROLE, ownerAddress);
+            await grantAdminTx.wait(waitConfirmations);
+            if (!(await sccContract.hasRole(DEFAULT_ADMIN_ROLE, ownerAddress))) {
+                throw new Error("Abort: owner did not receive SCC DEFAULT_ADMIN_ROLE");
+            }
+            const dropTx = await sccContract.renounceRole(DEFAULT_ADMIN_ROLE, deployer);
+            await dropTx.wait(waitConfirmations);
+            console.log(
+                `✓ SCC admin: owner has it, deployer renounced (${!(await sccContract.hasRole(DEFAULT_ADMIN_ROLE, deployer))})`,
+            );
+        }
+
         console.log("\n✅ v2 Vault contracts deployed successfully!");
         console.log(`- SCC: ${scc.address}`);
         console.log(`- EcoStabilizer: ${vault.address}`);

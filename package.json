@@ -88,6 +88,7 @@
         "dev:sepolia": "node scripts/dev-sepolia.js",
         "deploy:testnet": "node scripts/deploy-with-validation.js --network ethereum-sepolia",
         "deploy:mainnet": "node scripts/deploy-with-validation.js --network ethereum-mainnet",
+        "handoff": "hardhat run scripts/handoff.js",
         "deploy:arbitrum-testnet": "node scripts/deploy-with-validation.js --network arbitrum-sepolia",
         "deploy:arbitrum-mainnet": "node scripts/deploy-with-validation.js --network arbitrum-one",
         "deploy:safe": "node scripts/deploy-with-validation.js",
