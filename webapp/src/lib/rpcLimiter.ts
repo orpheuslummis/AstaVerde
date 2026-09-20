@@ -17,13 +17,13 @@ let cooldownUntil = 0;
 let rateLimitStrikes = 0;
 let drainTimer: ReturnType<typeof setTimeout> | null = null;
 
-// A deliberately conservative, provider-generic throughput cap. The unit is our
-// own estimated cost (see METHOD_CREDITS below), which is app-sized and matches
-// no provider's published weights, so this number is not a provider quota:
-// it is a ceiling chosen to stay well inside the smallest plan we expect to run
-// on. All configured URLs are Alchemy, whose unit is compute units per second
-// (free tier 330 CU/s at the time of writing, pay-as-you-go higher); this cap
-// plus the 429 backoff below keeps us under that without tracking CU exactly.
+// A generic throughput ceiling, expressed in the app's own estimated cost unit
+// (see METHOD_CREDITS below), not in any provider's billing unit. All configured
+// URLs are Alchemy, whose unit is compute units per second (free tier 330 CU/s
+// at the time of writing, pay-as-you-go higher), and these weights are not
+// calibrated to CU: 450 of them can exceed 330 CU/s. So this is a smoothing cap,
+// not a quota guarantee. The 429 backoff below is what actually holds us under
+// the provider's limit; raise or lower this only alongside the weights.
 const CREDIT_BUDGET_PER_SECOND = 450;
 const CREDIT_WINDOW_MS = 1000;
 
@@ -31,9 +31,9 @@ const MAX_CONCURRENT = 4;
 const COOLDOWN_BASE_MS = 2_000;
 const COOLDOWN_MAX_MS = 60_000;
 
-// Estimated per-method costs, app-sized rather than copied from any provider's
-// published weight table. Default cost for unknown methods: keep this relatively
-// low to avoid over-throttling common reads like `eth_call` while still capping.
+// App-chosen per-method cost estimates, in the same unit as the budget above.
+// Default cost for unknown methods: keep this relatively low to avoid
+// over-throttling common reads like `eth_call` while still enforcing a cap.
 const DEFAULT_METHOD_CREDITS = 25;
 const METHOD_CREDITS: Record<string, number> = {
   eth_chainId: 2,
