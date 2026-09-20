@@ -4,16 +4,15 @@ This directory contains development, testing, and QA utilities for the AstaVerde
 
 ## 📋 Quick Reference
 
-| Script                  | Purpose                                | Usage                               |
-| ----------------------- | -------------------------------------- | ----------------------------------- |
-| `start-local-node.js`   | Automated Hardhat node + deployment    | `node scripts/start-local-node.js`  |
-| `manual-qa-flows.js`    | Interactive manual testing interface   | `node scripts/manual-qa-flows.js`   |
-| `qa-scenarios.js`       | Automated QA scenario validation       | `node scripts/qa-scenarios.js`      |
-| `status-check.js`       | **Ultra-fast system health check**     | `npm run qa:status`                 |
-| `fast-qa.js`            | **Fast critical path testing**         | `npm run qa:fast`                   |
-| `claude-friendly-qa.js` | **Comprehensive QA suite**             | `npm run qa:full`                   |
-| `webapp-debug.js`       | **Webapp error monitoring for agents** | `node scripts/webapp-debug.js`      |
-| `smoke_test_vault.mjs`  | Vault functionality smoke test         | `node scripts/smoke_test_vault.mjs` |
+| Script                  | Purpose                                | Usage                              |
+| ----------------------- | -------------------------------------- | ---------------------------------- |
+| `start-local-node.js`   | Automated Hardhat node + deployment    | `node scripts/start-local-node.js` |
+| `manual-qa-flows.js`    | Interactive manual testing interface   | `node scripts/manual-qa-flows.js`  |
+| `qa-scenarios.js`       | Automated QA scenario validation       | `node scripts/qa-scenarios.js`     |
+| `status-check.js`       | **Ultra-fast system health check**     | `npm run qa:status`                |
+| `fast-qa.js`            | **Fast critical path testing**         | `npm run qa:fast`                  |
+| `claude-friendly-qa.js` | **Comprehensive QA suite**             | `npm run qa:full`                  |
+| `webapp-debug.js`       | **Webapp error monitoring for agents** | `node scripts/webapp-debug.js`     |
 
 ## 🚀 Local Development Setup
 
@@ -99,22 +98,9 @@ node scripts/claude-friendly-qa.js
 
 ### Production Readiness Testing
 
-```bash
-# Test vault functionality against deployed contracts
-node scripts/smoke_test_vault.mjs
-```
-
-**Requirements:**
-
-- Set `BASE_RPC` and `PRIVATE_KEY` environment variables
-- Deployment info in `deployments/ecostabilizer-{chainId}.json`
-
-**Validates:**
-
-- Contract reference integrity
-- SCC constants (symbol, decimals, 20 SCC per asset)
-- Functional deposit/withdraw if test NFTs available
-- Gas consumption targets
+The vault smoke test (`smoke_test_vault.mjs`) was archived on 2026-09-20 — see
+`scripts/archive/README.md`. There is currently no replacement; use `npm run qa:full` against a local
+node, and check deployed vault state with `node scripts/check-vault-state.js`.
 
 ## 📊 Event Monitoring
 
@@ -142,11 +128,9 @@ const toBlock = BigInt("5282950");
 
 ### NFT Minting Utilities
 
-```bash
-# Mint test NFTs (Phase 1)
-node scripts/mint.mjs
-node scripts/testmint.mjs
-```
+The Base-era `mint.mjs` and `testmint.mjs` were archived on 2026-09-20 — see
+`scripts/archive/README.md`. Use `npm run mint:testnet` (Ethereum Sepolia) or
+`npm run mint:arbitrum-testnet` instead.
 
 ### Development Helpers
 
@@ -160,13 +144,10 @@ node scripts/randomethaddress.mjs
 ### Environment Variables
 
 ```ini
-# For production testing
-BASE_RPC=https://mainnet.base.org
+# Deploy / helper script secrets (root .env.local)
 PRIVATE_KEY=0x...
-
-# For testnet
-BASE_RPC=https://sepolia.base.org
-PRIVATE_KEY=0x...
+ETHEREUM_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your-key
+ETHEREUM_MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/your-key
 
 # Optional: Custom contract addresses
 AV_ADDR=0x...  # Existing AstaVerde contract
@@ -259,13 +240,10 @@ node scripts/webapp-debug.js logs
 # 1. Deploy to testnet
 npm run deploy:testnet
 
-# 2. Run smoke test
-node scripts/smoke_test_vault.mjs
-
-# 3. Run full QA scenarios
+# 2. Run full QA scenarios
 node scripts/qa-scenarios.js
 
-# 4. Monitor events
+# 3. Monitor events
 cd scripts/events && node index.mjs
 ```
 

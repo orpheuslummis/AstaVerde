@@ -123,5 +123,5 @@ This repository uses Hardhat (contracts), a Next.js webapp, and helper scripts. 
 ## Pointers
 
 - Need a quick sanity check? `npm run qa:status`.
-- Local minting/example data: see `scripts/mint-local-batch.js` and `scripts/seed-local.js`.
+- Local minting/example data: see `scripts/mint-local-batch.js`.
 - Events/monitoring: `scripts/events/`.

@@ -25,6 +25,5 @@ The old Hardhat-local full stack still exists but is not the primary workflow:
 
 - Start: `npm run dev:local`
 - Stop: `npm run dev:local:stop`
-- Seed: `npm run dev:local:seed`
 
 It deploys to a local Hardhat node, writes `webapp/.env.local` with local addresses, then runs the webapp on port 3000/3001.

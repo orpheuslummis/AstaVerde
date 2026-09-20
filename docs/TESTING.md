@@ -171,8 +171,8 @@ await ethereum.request({
 ### Useful Scripts
 
 ```bash
-# Verify contract state
-node scripts/verify-vault.js
+# Inspect local vault state (local Hardhat node; addresses are hardcoded local defaults)
+node scripts/check-vault-state.js
 
 ```
 
@@ -205,7 +205,7 @@ node scripts/verify-vault.js
 
 ### Issue: "Transaction reverted"
 
-**Solution**: Check contract state with `verify-vault.js`, might need to unpause
+**Solution**: Check contract state with `scripts/check-vault-state.js`, might need to unpause
 
 ### Issue: "IPFS timeout"
 

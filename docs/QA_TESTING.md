@@ -214,9 +214,9 @@ These flows test the most important contract interactions via the webapp UI:
 
 1. Install MetaMask browser extension from [metamask.io](https://metamask.io)
 2. Create or import a wallet
-3. **Select Ethereum Sepolia** - MetaMask ships with it: enable Settings → Advanced → "Show test
-   networks", then pick `Sepolia` from the network dropdown (chain ID `11155111`, currency `ETH`,
-   explorer https://sepolia.etherscan.io). No manual RPC entry is needed.
+3. **Select Ethereum Sepolia** - MetaMask ships with it: turn on the "Show test networks" setting,
+   then pick `Sepolia` from the network dropdown (chain ID `11155111`, currency `ETH`, explorer
+   https://sepolia.etherscan.io). No manual RPC entry is needed.
 
 ### 2. Get Test Funds
 
