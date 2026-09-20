@@ -9,13 +9,12 @@ export function OnboardingModal() {
   useEffect(() => {
     // Skip modal in test environments
     const isTestEnvironment =
-      typeof window !== "undefined" && (
-        window.Cypress ||
+      typeof window !== "undefined" &&
+      (window.Cypress ||
         (window as unknown as { __PLAYWRIGHT__?: boolean }).__PLAYWRIGHT__ || // Add Playwright detection
         process.env.NODE_ENV === "test" ||
         localStorage.getItem("e2e-testing") === "true" ||
-        localStorage.getItem("skipOnboarding") === "true"
-      );
+        localStorage.getItem("skipOnboarding") === "true");
 
     if (isTestEnvironment) {
       setShowModal(false);
@@ -49,7 +48,10 @@ export function OnboardingModal() {
         <div className="p-8 overflow-y-auto max-h-[calc(90vh-180px)]">
           <div className="space-y-8">
             <section className="text-center mb-8">
-              <p className="text-xl text-gray-700 dark:text-gray-300">You&apos;re about to enter a revolutionary marketplace for environmental assets. Before you dive in, here&apos;s what you need to know:</p>
+              <p className="text-xl text-gray-700 dark:text-gray-300">
+                You&apos;re about to enter a revolutionary marketplace for environmental assets. Before you dive in,
+                here&apos;s what you need to know:
+              </p>
             </section>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -57,12 +59,14 @@ export function OnboardingModal() {
                 {
                   icon: <ShieldCheckIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "Web3 Powered Security",
-                  description: "AstaVerde operates on secure blockchain technology. Connect your crypto wallet to participate and ensure the safety of your transactions.",
+                  description:
+                    "AstaVerde operates on secure blockchain technology. Connect your crypto wallet to participate and ensure the safety of your transactions.",
                 },
                 {
                   icon: <CurrencyDollarIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "USDC Transactions",
-                  description: "We use USDC (issued by Circle) on Ethereum mainnet for all transactions. Ensure your wallet is compatible and funded.",
+                  description:
+                    "We use USDC (issued by Circle) on Ethereum mainnet for all transactions. Ensure your wallet is compatible and funded.",
                   link: {
                     text: "Learn more about USDC",
                     href: "https://www.circle.com/usdc",
@@ -71,23 +75,31 @@ export function OnboardingModal() {
                 {
                   icon: <InformationCircleIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "Understanding Eco Assets",
-                  description: "Eco Assets represent real environmental impact. Once redeemed, they're recorded in your wallet and lose their tradable value.",
+                  description:
+                    "Eco Assets represent real environmental impact. Once redeemed, they're recorded in your wallet and lose their tradable value.",
                   link: { text: "Explore Eco Assets", href: "#" },
                 },
                 {
                   icon: <ShieldCheckIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "Your Responsibilities",
-                  description: "Trading Eco Assets may have tax implications. You're responsible for complying with local regulations.",
+                  description:
+                    "Trading Eco Assets may have tax implications. You're responsible for complying with local regulations.",
                   link: { text: "Read our Terms of Service", href: "#" },
                 },
               ].map((item, index) => (
-                <section key={index} className="flex items-start space-x-4 bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md">
+                <section
+                  key={index}
+                  className="flex items-start space-x-4 bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md"
+                >
                   {item.icon}
                   <div>
                     <h3 className="text-xl font-semibold mb-2 text-emerald-600 dark:text-emerald-400">{item.title}</h3>
                     <p className="text-gray-600 dark:text-gray-300">{item.description}</p>
                     {item.link && (
-                      <a href={item.link.href} className="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 mt-2 inline-block">
+                      <a
+                        href={item.link.href}
+                        className="text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 mt-2 inline-block"
+                      >
                         {item.link.text}
                       </a>
                     )}
@@ -97,7 +109,9 @@ export function OnboardingModal() {
             </div>
 
             <section className="text-center mt-8">
-              <p className="text-lg text-gray-700 dark:text-gray-300">By entering AstaVerde, you acknowledge that you understand and agree to these terms.</p>
+              <p className="text-lg text-gray-700 dark:text-gray-300">
+                By entering AstaVerde, you acknowledge that you understand and agree to these terms.
+              </p>
             </section>
           </div>
         </div>

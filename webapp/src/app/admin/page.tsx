@@ -187,13 +187,15 @@ function MintUSDCControl() {
         <div className="text-sm text-amber-600 dark:text-amber-400">
           This environment is configured with a non-mintable USDC (eg Circle FiatToken). Redeploy with MockUSDC or set
           `NEXT_PUBLIC_USDC_ADDRESS` to your deployed MockUSDC address.
-          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">Current USDC: {usdcContractConfig.address}</div>
+          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Current USDC: {usdcContractConfig.address}
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            Calls MockUSDC.mint on {ENV.CHAIN_SELECTION.replace("_", " ")} (decimals {ENV.USDC_DECIMALS}).
-            Current USDC: {usdcContractConfig.address}
+            Calls MockUSDC.mint on {ENV.CHAIN_SELECTION.replace("_", " ")} (decimals {ENV.USDC_DECIMALS}). Current USDC:{" "}
+            {usdcContractConfig.address}
           </div>
           <input
             type="text"
@@ -212,12 +214,7 @@ function MintUSDCControl() {
               placeholder="Amount (USDC)"
               className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={onMint}
-              disabled={!supportsMint || isSubmitting}
-            >
+            <button type="button" className="btn btn-primary" onClick={onMint} disabled={!supportsMint || isSubmitting}>
               {isSubmitting ? "Minting…" : "Mint"}
             </button>
           </div>
@@ -277,15 +274,10 @@ function PauseContractControl() {
           disabled={isContractPaused as boolean}
           onClick={handlePause}
         >
-                    Pause
+          Pause
         </button>
-        <button
-          type="button"
-          className="btn btn-secondary flex-1"
-          disabled={!isContractPaused}
-          onClick={handleUnpause}
-        >
-                    Unpause
+        <button type="button" className="btn btn-secondary flex-1" disabled={!isContractPaused} onClick={handleUnpause}>
+          Unpause
         </button>
       </div>
     </ControlContainer>
@@ -318,9 +310,7 @@ function ClaimPlatformFunds() {
     <ControlContainer title="Claim Platform Funds">
       <div className="flex flex-col gap-4">
         {typeof platformFunds === "bigint" && (
-          <div className="text-gray-600 dark:text-gray-300">
-            Available Funds: {formatUSDCWithUnit(platformFunds)}
-          </div>
+          <div className="text-gray-600 dark:text-gray-300">Available Funds: {formatUSDCWithUnit(platformFunds)}</div>
         )}
         <button
           type="button"
@@ -328,7 +318,7 @@ function ClaimPlatformFunds() {
           onClick={handleClaim}
           disabled={!platformFunds || platformFunds === 0n}
         >
-                    Claim Platform Funds
+          Claim Platform Funds
         </button>
       </div>
     </ControlContainer>
@@ -339,10 +329,7 @@ function PriceFloorControl() {
   const { adminControls } = useAppContext();
   const [priceFloor, setPriceFloor] = useState("");
   const astaverdeContractConfig = getAstaVerdeContract();
-  const { execute: getPriceFloor } = useContractInteraction(
-    astaverdeContractConfig,
-    "priceFloor",
-  );
+  const { execute: getPriceFloor } = useContractInteraction(astaverdeContractConfig, "priceFloor");
 
   const [currentValue, setCurrentValue] = useState<bigint>();
 
@@ -380,13 +367,8 @@ function PriceFloorControl() {
                              dark:border-gray-600 dark:bg-gray-700 dark:text-white
                              transition-all duration-200"
         />
-        <button
-          type="button"
-          className="btn btn-primary w-full"
-          disabled={!priceFloor}
-          onClick={handleSetPriceFloor}
-        >
-                    Set Price Floor
+        <button type="button" className="btn btn-primary w-full" disabled={!priceFloor} onClick={handleSetPriceFloor}>
+          Set Price Floor
         </button>
       </div>
       {typeof currentValue === "bigint" && (
@@ -437,13 +419,8 @@ function BasePriceControl() {
                              dark:border-gray-600 dark:bg-gray-700 dark:text-white
                              transition-all duration-200"
         />
-        <button
-          type="button"
-          className="btn btn-primary w-full"
-          disabled={!basePrice}
-          onClick={handleSetBasePrice}
-        >
-                    Set Base Price
+        <button type="button" className="btn btn-primary w-full" disabled={!basePrice} onClick={handleSetBasePrice}>
+          Set Base Price
         </button>
       </div>
       {typeof currentBasePrice === "bigint" && (
@@ -497,11 +474,13 @@ function MaxBatchSizeControl() {
           disabled={!maxBatchSize}
           onClick={handleSetMaxBatchSize}
         >
-                    Set Max Batch Size
+          Set Max Batch Size
         </button>
       </div>
       {typeof currentMaxBatchSize === "bigint" && (
-        <div className="text-gray-600 dark:text-gray-300 mt-4">Current Max Batch Size: {currentMaxBatchSize.toString()}</div>
+        <div className="text-gray-600 dark:text-gray-300 mt-4">
+          Current Max Batch Size: {currentMaxBatchSize.toString()}
+        </div>
       )}
     </ControlContainer>
   );
@@ -522,11 +501,7 @@ function AuctionTimeThresholdsControl() {
   });
 
   const handleSetAuctionTimeThresholds = async () => {
-    if (
-      dayIncreaseThreshold &&
-            dayDecreaseThreshold &&
-            BigInt(dayIncreaseThreshold) < BigInt(dayDecreaseThreshold)
-    ) {
+    if (dayIncreaseThreshold && dayDecreaseThreshold && BigInt(dayIncreaseThreshold) < BigInt(dayDecreaseThreshold)) {
       try {
         await adminControls.setAuctionDayThresholds(dayIncreaseThreshold, dayDecreaseThreshold);
         customToast.success("Auction time thresholds updated successfully");
@@ -570,17 +545,17 @@ function AuctionTimeThresholdsControl() {
           disabled={!dayIncreaseThreshold || !dayDecreaseThreshold}
           onClick={handleSetAuctionTimeThresholds}
         >
-                    Set Time Thresholds
+          Set Time Thresholds
         </button>
       </div>
       {typeof currentDayIncreaseThreshold === "bigint" && (
         <div className="text-gray-600 dark:text-gray-300 mt-4">
-                    Current Day Increase Threshold: {currentDayIncreaseThreshold.toString()}
+          Current Day Increase Threshold: {currentDayIncreaseThreshold.toString()}
         </div>
       )}
       {typeof currentDayDecreaseThreshold === "bigint" && (
         <div className="text-gray-600 dark:text-gray-300 mt-4">
-                    Current Day Decrease Threshold: {currentDayDecreaseThreshold.toString()}
+          Current Day Decrease Threshold: {currentDayDecreaseThreshold.toString()}
         </div>
       )}
     </ControlContainer>
@@ -635,12 +610,12 @@ function PlatformPercentageControl() {
           disabled={!platformSharePercentage}
           onClick={handleSetPlatformSharePercentage}
         >
-                    Set Platform Share
+          Set Platform Share
         </button>
       </div>
       {typeof currentPlatformSharePercentage === "bigint" && (
         <div className="text-gray-600 dark:text-gray-300 mt-4">
-                    Current Platform Share Percentage: {currentPlatformSharePercentage.toString()}%
+          Current Platform Share Percentage: {currentPlatformSharePercentage.toString()}%
         </div>
       )}
     </ControlContainer>
@@ -651,10 +626,7 @@ function DailyPriceDecayControl() {
   const { adminControls } = useAppContext();
   const [dailyPriceDecay, setDailyPriceDecay] = useState("");
   const astaverdeContractConfig = getAstaVerdeContract();
-  const { execute: getDailyPriceDecay } = useContractInteraction(
-    astaverdeContractConfig,
-    "dailyPriceDecay",
-  );
+  const { execute: getDailyPriceDecay } = useContractInteraction(astaverdeContractConfig, "dailyPriceDecay");
 
   const [currentValue, setCurrentValue] = useState<bigint>();
 
@@ -704,13 +676,11 @@ function DailyPriceDecayControl() {
           disabled={!dailyPriceDecay}
           onClick={handleSetDailyPriceDecay}
         >
-                    Set Daily Price Decay
+          Set Daily Price Decay
         </button>
       </div>
       {typeof currentValue === "bigint" && (
-        <div className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-          Current: {formatUSDCPerDay(currentValue)}
-        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-300 mt-2">Current: {formatUSDCPerDay(currentValue)}</div>
       )}
     </ControlContainer>
   );
@@ -720,10 +690,7 @@ function PriceAdjustDeltaControl() {
   const { adminControls } = useAppContext();
   const [priceAdjustDelta, setPriceAdjustDelta] = useState("");
   const astaverdeContractConfig = getAstaVerdeContract();
-  const { execute: getPriceAdjustDelta } = useContractInteraction(
-    astaverdeContractConfig,
-    "priceAdjustDelta",
-  );
+  const { execute: getPriceAdjustDelta } = useContractInteraction(astaverdeContractConfig, "priceAdjustDelta");
 
   const handleSetPriceAdjustDelta = async () => {
     if (priceAdjustDelta) {
@@ -767,7 +734,7 @@ function PriceAdjustDeltaControl() {
           disabled={!priceAdjustDelta}
           onClick={handleSetPriceAdjustDelta}
         >
-                    Set Price Delta
+          Set Price Delta
         </button>
       </div>
       {typeof currentValue === "bigint" && (

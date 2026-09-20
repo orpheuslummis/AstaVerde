@@ -2,8 +2,9 @@
 
 ## Priority: HIGH (Operational Risk)
 
-- **Status: ✅ FIXED**
-- **Last Checked: 2025-08-13**
+- **Status: ✅ FIXED (2026-09-20, branch `ethereum`, for the Ethereum mainnet redeploy)**
+- **Last Checked: 2026-09-20**
+- **Correction:** the 2025-08-13 entry below recorded this as fixed, but the `trustedVault` code it describes was never committed; the Arbitrum One deployment still has the lockup. The fix now in the repo: `EcoStabilizer.withdraw`/`withdrawBatch` are no longer pausable; `AstaVerde.trustedVault` (owner-set) lets the vault return collateral while the marketplace is paused; deposits stay blocked while paused. Tests: `test/PauseExit.test.ts`.
 
 ## ✅ FIXED STATUS
 
