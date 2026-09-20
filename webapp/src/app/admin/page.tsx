@@ -179,7 +179,7 @@ function MintUSDCControl() {
     <ControlContainer title="Mint Testnet USDC" id="mint-usdc">
       {!isTestEnv ? (
         <div className="text-sm text-amber-600 dark:text-amber-400">
-          Hidden on mainnet. Switch to Arbitrum Sepolia/Base Sepolia/local to use the test faucet.
+          Hidden on mainnet. Switch to Ethereum Sepolia/Arbitrum Sepolia/Base Sepolia/local to use the test faucet.
         </div>
       ) : !isAdmin ? (
         <div className="text-sm text-gray-500">Admin only.</div>
