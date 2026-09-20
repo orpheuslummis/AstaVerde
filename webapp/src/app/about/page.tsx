@@ -45,17 +45,7 @@ export default function Page() {
       <section>
         <h2 className="text-2xl font-bold mb-6 text-primary dark:text-primary-dark">FAQ</h2>
         <div className="space-y-6">
-          <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
-            <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">
-                            Q: Why don&apos;t the Ethereums work here to buy eco assets?
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300">
-                            A: This marketplace runs on Ethereum mainnet. You pay for eco assets in USDC, and you only
-                            need a little ETH on top of that to cover the transaction gas. Rainbow, Rabby, Coinbase
-                            wallets all work here, just make sure the USDC you hold is on the Ethereum network itself
-                            and not on a layer-2 network.
-            </p>
-          </div>
+          {/* TBD(client): first FAQ item. Old question "Why don't the Ethereums work here to buy eco assets?" was Arbitrum-specific; client to supply the mainnet wording or drop the item. */}
           <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
             <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">
                             Q: What do I need to know about using my wallet here?
