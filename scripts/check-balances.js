@@ -2,7 +2,6 @@
 
 const { ethers } = require("ethers");
 const fs = require("fs");
-const chalk = require("chalk");
 
 // Contract addresses
 const USDC_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
@@ -36,30 +35,30 @@ async function checkBalances() {
         const sccContract = new ethers.Contract(SCC_ADDRESS, sccAbi, provider);
         const astaverdeContract = new ethers.Contract(ASTAVERDE_ADDRESS, astaverdeAbi, provider);
 
-        console.log(chalk.bold.cyan("\n🏦 AstaVerde Test Account Balances\n"));
-        console.log(chalk.gray("=".repeat(80)));
+        console.log("\n🏦 AstaVerde Test Account Balances\n");
+        console.log("=".repeat(80));
 
         // Get last token ID for NFT checking
         const lastTokenId = await astaverdeContract.lastTokenID();
 
         for (const [name, address] of Object.entries(TEST_ACCOUNTS)) {
-            console.log(chalk.bold.yellow(`\n${name}:`));
-            console.log(chalk.gray(`Address: ${address}`));
+            console.log(`\n${name}:`);
+            console.log(`Address: ${address}`);
 
             // Get ETH balance
             const ethBalance = await provider.getBalance(address);
             const ethFormatted = ethers.formatEther(ethBalance);
-            console.log(`  ${chalk.green("ETH:")} ${ethFormatted}`);
+            console.log(`  ETH: ${ethFormatted}`);
 
             // Get USDC balance
             const usdcBalance = await usdcContract.balanceOf(address);
             const usdcFormatted = ethers.formatUnits(usdcBalance, 6);
-            console.log(`  ${chalk.blue("USDC:")} ${usdcFormatted}`);
+            console.log(`  USDC: ${usdcFormatted}`);
 
             // Get SCC balance
             const sccBalance = await sccContract.balanceOf(address);
             const sccFormatted = ethers.formatUnits(sccBalance, 18);
-            console.log(`  ${chalk.magenta("SCC:")} ${sccFormatted}`);
+            console.log(`  SCC: ${sccFormatted}`);
 
             // Count NFTs owned
             let nftCount = 0;
@@ -73,17 +72,17 @@ async function checkBalances() {
             }
 
             if (nftCount > 0) {
-                console.log(`  ${chalk.cyan("NFTs:")} ${nftCount} tokens (IDs: ${ownedTokens.join(", ")})`);
+                console.log(`  NFTs: ${nftCount} tokens (IDs: ${ownedTokens.join(", ")})`);
             } else {
-                console.log(`  ${chalk.cyan("NFTs:")} 0 tokens`);
+                console.log("  NFTs: 0 tokens");
             }
         }
 
-        console.log(chalk.gray("\n" + "=".repeat(80)));
-        console.log(chalk.bold.green("\n✅ Balance check complete!\n"));
+        console.log("\n" + "=".repeat(80));
+        console.log("\n✅ Balance check complete!\n");
     } catch (error) {
-        console.error(chalk.red("\n❌ Error checking balances:"), error.message);
-        console.log(chalk.yellow("\n💡 Make sure the local node is running: npm run dev"));
+        console.error("\n❌ Error checking balances:", error.message);
+        console.log("\n💡 Make sure the local node is running: npm run dev");
         process.exit(1);
     }
 }
