@@ -15,7 +15,7 @@ modified. This section is the client-readable summary; the engineering record is
 
 - Hardhat networks `ethereum-sepolia` (chain 11155111, the QA testnet) and `ethereum-mainnet` (chain 1) — Why: the deploy tooling only knew Base and Arbitrum.
 - Circle USDC on Ethereum mainnet (`0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`) as the payment token in the deploy script's native-USDC map. On Sepolia a MockUSDC is deployed automatically for testing — Why: same pattern as Arbitrum: canonical USDC on mainnet, a mintable test token on the testnet.
-- Env templates `.env.ethereum-sepolia.example` and `.env.ethereum-mainnet.example` with every deploy flag named — Why: mainnet flags (`DEPLOY_VAULT_V2`, `RENOUNCE_SCC_ADMIN` / `TRANSFER_SCC_ADMIN`) must be explicit, not inherited.
+- Env templates `.env.ethereum-sepolia.example` and `.env.ethereum-mainnet.example` with every deploy flag named — Why: mainnet flags (`DEPLOY_VAULT_V2`, `RENOUNCE_SCC_ADMIN`) must be explicit, not inherited.
 - `npm run handoff` (`scripts/handoff.js`): transfers ownership of AstaVerde and the EcoStabilizer vault to a new owner, optionally moves or renounces the SCC admin role, and reads every owner and role back on-chain before reporting success — Why: in December the vault ownership had to be transferred by hand; the mainnet handoff should be one command with a built-in check.
 - The deploy script transfers vault ownership to `OWNER_ADDRESS` when one is set — Why: the vault is owned by whoever deploys it; AstaVerde already took its owner as a parameter, the vault did not.
 - Deployment records for Ethereum (`deployments/ethereum-sepolia/`, later `deployments/ethereum-mainnet/`) are now tracked in git — Why: the Arbitrum addresses were only ever on one laptop.
@@ -86,7 +86,8 @@ that was never fixed. The rest of its output is settings and runbook steps for m
 
 #### Changed
 
-- `npm audit fix` (no forced upgrades) at the root and in the webapp; seven unused root dependencies removed; OpenZeppelin pinned to the exact version the contracts were compiled with (5.4.0, bytecode unchanged); wagmi pinned to 2.16.1 because the newer connector package breaks the build — Why: cuts open advisories from 131 to 86 and removes every critical from the deploy tooling. The one remaining critical is Next.js 14 itself, whose fix is the Next 15 migration, a separate job (blocked on React 19 and connectkit). The webapp's viem moved 2.33 → 2.56, so the Sepolia QA round doubles as the wallet-flow test for it.
+- Root (deploy tooling): `npm audit fix` without forced upgrades, seven unused dependencies removed, OpenZeppelin pinned to the exact version the contracts compile against (5.4.0, bytecode unchanged) — Why: removes every critical advisory from the tooling that handles the deploy key.
+- Webapp: Next.js 14.2.31 → 14.2.35 only — Why: the only webapp advisories that are both reachable on the server and fixable on the 14.x line (two React Server Components denial-of-service issues and a middleware redirect issue). No wallet-library versions changed. Next.js 14 is otherwise end-of-life for security fixes; the Next 15 migration is a separate job.
 - Webapp `engines.node` pinned to 22.x — Why: Vercel's default is now Node 24 and local is 22; an unpinned project builds on whatever Vercel's default is that week.
 
 ### Still to come in this section
