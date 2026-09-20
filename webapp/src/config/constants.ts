@@ -26,9 +26,16 @@ export const navigationLinks = [
 // Vault Constants
 export const SCC_PER_ASSET = 20n * 10n ** 18n; // 20 SCC with 18 decimals
 export const VAULT_GAS_LIMITS = {
-  // Per AGENTS.md (2025-08-27): current target ~215k, cap 230k
-  DEPOSIT: 230_000n,
-  WITHDRAW: 120_000n,
+  // Fallback gas LIMITS used only when estimateContractGas fails. AGENTS.md's
+  // "deposit <230k / withdraw <120k" are contract efficiency targets, not limits:
+  // a limit is a ceiling and unused gas is refunded, so it is sized above the
+  // measured worst case, not at it. Underestimating burns the whole limit on an
+  // out-of-gas revert, which on L1 costs real ETH.
+  // Measured (REPORT_GAS=true npx hardhat test, this tree):
+  //   deposit  167,170 - 215,670  ->  215,670 x 1.3 = 280,371
+  //   withdraw 110,596 - 121,548  ->  121,548 x 1.3 = 158,012
+  DEPOSIT: 280_000n,
+  WITHDRAW: 160_000n,
 } as const;
 
 // Batch Operations
