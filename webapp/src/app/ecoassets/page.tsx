@@ -34,18 +34,19 @@ export default function Page() {
           <li className="flex items-start">
             <span className="text-primary mr-2">•</span>
             <span>
-              <strong>Description:</strong> Contains the link to the redacted audit report image hosted on
-                            the blockchain, which specific tonne from the audit that you are purchasing, the link to the
-                            production usage image hosted on the blockchain, and the link to the Methodology audited
-                            against.
+              <strong>Description:</strong> Contains a link to a folder that holds: a list of the exact burns that
+                            created your tonne; images of biomass, pyrolysis and biochar that demonstrate proper burns; and
+                            the hydrogen-to-carbon ratio from the latest lab report, which has been reproduced through
+                            consistent pyrolysis process profiles. These are the complete proofs of your carbon tonne.
             </span>
           </li>
         </ul>
 
         <p className="mb-6 text-gray-700 dark:text-gray-300">
-                    Every tonne of carbon removal in eco assets has been audited for an independent auditor&apos;s opinion
-                    for how many tonnes are removed in accordance with ISO 14064-3. This includes meeting the EU&apos;s
-                    concept of additionality.
+                    Every tonne of carbon removal in Eco Assets has undergone the same ISO 14064-3 preparation that has
+                    already passed a series of demonstration audits. Brokers under NDA can review the complete
+                    audit-ready, AI-verified package prepared to meet ISO 14064. This includes meeting the EU concept of
+                    additionality.
         </p>
 
         <p className="mb-6 text-gray-700 dark:text-gray-300">
@@ -76,13 +77,6 @@ export default function Page() {
         </p>
 
         <div className="flex flex-col space-y-6 mt-12">
-          <a
-            href="/Everything%20about%20eco%20asset.pdf"
-            download
-            className="eco-btn eco-btn-primary dark:bg-emerald-700 dark:hover:bg-emerald-600"
-          >
-                        Eco Asset Guide (PDF)
-          </a>
           <a
             href="https://xd.adobe.com/view/642e9fdf-2a25-4424-a4d0-d68c748a8c2b-317d/?fullscreen"
             target="_blank"

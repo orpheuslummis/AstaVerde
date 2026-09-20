@@ -17,12 +17,6 @@ export default function Page() {
                     real-world environmental benefit, EcoTradeZone fosters a new, eco-conscious economy where
                     sustainable practices are both recognized and rewarded.
         </p>
-        <a
-          href="/Everything%20about%20eco%20asset.pdf"
-          className="inline-block bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition duration-300 dark:bg-primary-dark dark:hover:bg-primary"
-        >
-                    Read Everything about Eco Assets before buying
-        </a>
       </section>
 
       <section className="mb-12 bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
@@ -45,7 +39,6 @@ export default function Page() {
       <section>
         <h2 className="text-2xl font-bold mb-6 text-primary dark:text-primary-dark">FAQ</h2>
         <div className="space-y-6">
-          {/* TBD(client): first FAQ item. Old question "Why don't the Ethereums work here to buy eco assets?" was Arbitrum-specific; client to supply the mainnet wording or drop the item. */}
           <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
             <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">
                             Q: What do I need to know about using my wallet here?
@@ -82,7 +75,6 @@ export default function Page() {
               </ol>
             </div>
           </div>
-          {/* TODO(client): funding guidance for Ethereum mainnet. Client to supply text: how to buy USDC on an exchange and withdraw on the Ethereum network. */}
           <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
             <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">
               Q: How do I get USDC and ETH into my wallet?

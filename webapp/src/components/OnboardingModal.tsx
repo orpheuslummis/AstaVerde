@@ -72,13 +72,11 @@ export function OnboardingModal() {
                   icon: <InformationCircleIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "Understanding Eco Assets",
                   description: "Eco Assets represent real environmental impact. Once redeemed, they're recorded in your wallet and lose their tradable value.",
-                  link: { text: "Explore Eco Assets", href: "#" },
                 },
                 {
                   icon: <ShieldCheckIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "Your Responsibilities",
                   description: "Trading Eco Assets may have tax implications. You're responsible for complying with local regulations.",
-                  link: { text: "Read our Terms of Service", href: "#" },
                 },
               ].map((item, index) => (
                 <section key={index} className="flex items-start space-x-4 bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md">

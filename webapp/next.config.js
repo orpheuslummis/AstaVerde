@@ -61,6 +61,7 @@ const nextConfig = {
               "object-src 'none'",
               "base-uri 'self'",
               "frame-ancestors 'none'",
+              "frame-src 'self' https://verify.walletconnect.org https://verify.walletconnect.com", // WalletConnect verification frame (Safe / mobile wallets)
             ].join("; "),
           },
           {
