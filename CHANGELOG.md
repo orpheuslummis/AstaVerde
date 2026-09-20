@@ -75,6 +75,7 @@ modified. This section is the client-readable summary; the engineering record is
 #### Fixed (local developer scripts, none ship)
 
 - Vault-state helper skipped the first loan (pagination offset); two state helpers hardcoded the 70/30 revenue split instead of reading it from the contract; four funding helpers pointed at addresses that no local deploy produces; a QA helper printed a timestamp where it meant the batch price; two helpers used an undeclared colour library; the local start/stop scripts killed every Hardhat node and Next dev server on the machine rather than this checkout's.
+- Sixteen local developer scripts read contract addresses from the Hardhat deployment records instead of hardcoded values that matched no deployment — Why: a call to an address with no code returns zeros instead of failing, so those scripts reported empty balances and empty vaults for accounts that held funds. A small shared helper also checks that code exists at each address.
 
 ### Contracts
 
