@@ -6,35 +6,36 @@ export default function Page() {
       <section className="mb-12">
         <h1 className="text-4xl font-bold mb-6 text-primary dark:text-primary-dark">EcoTradeZone</h1>
         <p className="text-lg leading-relaxed mb-6 text-gray-700 dark:text-gray-300">
-          EcoTradeZone revolutionizes the way biochar production is valued and traded. It stands as a unique marketplace
-          where the diligent work of biochar producers is transformed into tangible tokens, each representing their
-          creation. These tokens are not just symbolic; they embody the genuine environmental impact of the
-          producers&apos; efforts, quantified as one tonne of carbon dioxide equivalent. At EcoTradeZone, these tokens
-          can be both purchased and redeemed, offering a direct and meaningful way to participate in climate action.
-          This system not only incentivizes biochar production but also connects the efforts of producers with
-          individuals and organizations eager to contribute to global carbon reduction. By making each token a claimable
-          representation of a real-world environmental benefit, EcoTradeZone fosters a new, eco-conscious economy where
-          sustainable practices are both recognized and rewarded.
+                    EcoTradeZone revolutionizes the way biochar production is valued and traded. It stands as a unique
+                    marketplace where the diligent work of biochar producers is transformed into tangible tokens, each
+                    representing their creation. These tokens are not just symbolic; they embody the genuine
+                    environmental impact of the producers&apos; efforts, quantified as one tonne of carbon dioxide
+                    equivalent. At EcoTradeZone, these tokens can be both purchased and redeemed, offering a direct and
+                    meaningful way to participate in climate action. This system not only incentivizes biochar
+                    production but also connects the efforts of producers with individuals and organizations eager to
+                    contribute to global carbon reduction. By making each token a claimable representation of a
+                    real-world environmental benefit, EcoTradeZone fosters a new, eco-conscious economy where
+                    sustainable practices are both recognized and rewarded.
         </p>
         <a
           href="/Everything%20about%20eco%20asset.pdf"
           className="inline-block bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition duration-300 dark:bg-primary-dark dark:hover:bg-primary"
         >
-          Read Everything about Eco Assets before buying
+                    Read Everything about Eco Assets before buying
         </a>
       </section>
 
       <section className="mb-12 bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
         <h2 className="text-2xl font-bold mb-4 text-primary dark:text-primary-dark">Bug Report</h2>
         <p className="mb-4 text-gray-700 dark:text-gray-300">
-          Please tell us about any bugs you find, we want to keep this place running smoothly to help producers get
-          their earnings. There may be some small rewards for bugs found, depending on the bug.
+                    Please tell us about any bugs you find, we want to keep this place running smoothly to help
+                    producers get their earnings. There may be some small rewards for bugs found, depending on the bug.
         </p>
         <div className="bg-white dark:bg-gray-600 p-4 rounded-md shadow-sm">
           <p className="mb-2 dark:text-gray-300">
-            Email:{" "}
+                        Email:{" "}
             <a href="mailto:chris@bionerg.com" className="text-primary dark:text-primary-dark hover:underline">
-              chris@bionerg.com
+                            chris@bionerg.com
             </a>
           </p>
           <p className="dark:text-gray-300">Title: Bug Found</p>
@@ -47,23 +48,24 @@ export default function Page() {
           {/* TBD(client): first FAQ item. Old question "Why don't the Ethereums work here to buy eco assets?" was Arbitrum-specific; client to supply the mainnet wording or drop the item. */}
           <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
             <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">
-              Q: What do I need to know about using my wallet here?
+                            Q: What do I need to know about using my wallet here?
             </h3>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              A: Transactions here are conducted using USDC, issued by Circle, on Ethereum. For more understanding:
+                            A: Transactions here are conducted using USDC, issued by Circle, on Ethereum. For more
+                            understanding:
             </p>
             <div className="space-y-2">
               <a
                 href="https://ethereum.org/what-is-ethereum"
                 className="block text-primary hover:underline transition duration-300"
               >
-                Learn about Ethereum
+                                Learn about Ethereum
               </a>
               <a
                 href="https://www.circle.com/usdc"
                 className="block text-primary hover:underline transition duration-300"
               >
-                USDC
+                                USDC
               </a>
             </div>
             <p className="text-gray-700 dark:text-gray-300 mt-3">
@@ -71,9 +73,7 @@ export default function Page() {
             </p>
           </div>
           <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg">
-            <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">
-              Q: What do I need to buy eco assets?
-            </h3>
+            <h3 className="font-bold text-lg mb-2 text-primary dark:text-primary-dark">Q: What do I need to buy eco assets?</h3>
             <div className="text-gray-700 dark:text-gray-300">
               <p>A: You need two currencies:</p>
               <ol className="list-decimal list-inside mt-2">

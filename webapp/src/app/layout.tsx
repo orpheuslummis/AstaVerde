@@ -23,7 +23,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Header links={navigationLinks} />
             <div className="flex-grow container">
               <main>
-                <ErrorBoundary>{children}</ErrorBoundary>
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
               </main>
             </div>
             <Footer />

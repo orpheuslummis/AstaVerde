@@ -555,15 +555,7 @@ export function useVault(): VaultHook {
         setCurrentTxHash(undefined);
       }
     },
-    [
-      address,
-      isVaultAvailable,
-      getVaultContractConfig,
-      writeContractAsync,
-      publicClient,
-      refreshContractData,
-      approveSCC,
-    ],
+    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData, approveSCC],
   );
 
   // Batch operations
@@ -818,15 +810,7 @@ export function useVault(): VaultHook {
         setCurrentTxHash(undefined);
       }
     },
-    [
-      address,
-      isVaultAvailable,
-      getVaultContractConfig,
-      writeContractAsync,
-      publicClient,
-      refreshContractData,
-      approveSCC,
-    ],
+    [address, isVaultAvailable, getVaultContractConfig, writeContractAsync, publicClient, refreshContractData, approveSCC],
   );
 
   // Read functions
