@@ -91,7 +91,7 @@ that was never fixed. The rest of its output is settings and runbook steps for m
 
 ### Still to come in this section
 
-The Sepolia QA round; the mainnet deployment and handoff; the production cutover.
+The Sepolia QA round with the client (the contracts and the web app have each had one end-to-end run on Sepolia already); the mainnet deployment and handoff; the production cutover.
 
 ## [Unreleased] - 2025-08-26
 
