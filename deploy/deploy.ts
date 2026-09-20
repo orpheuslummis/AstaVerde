@@ -414,6 +414,28 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         console.log(`- AstaVerde contract: ${vaultAstaVerde}`);
         console.log(`- SCC contract: ${vaultSCC}`);
 
+        // Register the vault on AstaVerde so users can reclaim collateral even while the
+        // marketplace is paused. Owner-only, so it must happen while the deployer is still owner.
+        if (useExistingAV) {
+            console.warn(
+                "\n⚠️  USE_EXISTING_ASTAVERDE: call setTrustedVault(" + vault.address + ") from the AstaVerde owner.",
+            );
+        } else if (ownerAddress.toLowerCase() === deployer.toLowerCase()) {
+            const avForVault = await hre.ethers.getContractAt("AstaVerde", astaVerdeAddress);
+            const tvTx = await avForVault.setTrustedVault(vault.address);
+            await tvTx.wait(waitConfirmations);
+            const tv = await avForVault.trustedVault();
+            if (tv.toLowerCase() !== vault.address.toLowerCase()) {
+                throw new Error(`setTrustedVault failed: trustedVault() is ${tv}`);
+            }
+            console.log(`✓ AstaVerde.trustedVault = ${tv}`);
+        } else {
+            throw new Error(
+                "OWNER_ADDRESS differs from the deployer, so the deployer cannot call setTrustedVault. " +
+                    "Deploy with OWNER_ADDRESS empty, then hand over with npm run handoff.",
+            );
+        }
+
         // EcoStabilizer is Ownable(msg.sender): the deployer owns it. Hand it to the configured
         // owner when one is set, so AstaVerde and the vault end up under the same owner.
         if (ownerAddress.toLowerCase() !== deployer.toLowerCase()) {

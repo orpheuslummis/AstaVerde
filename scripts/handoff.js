@@ -34,6 +34,29 @@ async function main() {
     const failures = [];
     const want = newOwner.toLowerCase();
 
+    // Refuse to hand AstaVerde over while the vault is not registered as trustedVault: after the
+    // transfer only the new owner could fix it, and until then a pause would lock vault collateral.
+    {
+        const avAddr = readDeployment(network.name, "AstaVerde");
+        const vaultAddr0 = readDeployment(network.name, "EcoStabilizer");
+        if (avAddr && vaultAddr0) {
+            const av = await ethers.getContractAt("AstaVerde", avAddr);
+            const tv = (await av.trustedVault()).toLowerCase();
+            if (tv !== vaultAddr0.toLowerCase()) {
+                if ((await av.owner()).toLowerCase() === me.toLowerCase()) {
+                    const tx = await av.setTrustedVault(vaultAddr0);
+                    await tx.wait();
+                    console.log(`AstaVerde: setTrustedVault(${vaultAddr0}) tx ${tx.hash}`);
+                } else {
+                    throw new Error(
+                        `AstaVerde.trustedVault() is ${tv}, expected the vault ${vaultAddr0}; the current owner must call setTrustedVault first`,
+                    );
+                }
+            }
+            console.log(`AstaVerde: trustedVault() = ${await av.trustedVault()}`);
+        }
+    }
+
     for (const name of ["AstaVerde", "EcoStabilizer"]) {
         const addr = readDeployment(network.name, name);
         if (!addr) {

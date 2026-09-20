@@ -30,7 +30,7 @@ import "./IAstaVerde.sol";
  *
  * SECURITY:
  * - ReentrancyGuard on all state-changing functions
- * - Pausable for emergency situations
+ * - Pausable for emergency situations: pause blocks new deposits only; users can always repay SCC and withdraw their NFT
  * - Access control via Ownable for admin functions
  * - Indexed view functions for predictable gas on reads
  * - CEI (Checks-Effects-Interactions) pattern throughout
@@ -179,7 +179,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
      *
      * @param tokenId The ID of the NFT to withdraw
      */
-    function withdraw(uint256 tokenId) external nonReentrant whenNotPaused {
+    function withdraw(uint256 tokenId) external nonReentrant {
         _withdrawInternal(tokenId);
     }
 
@@ -311,7 +311,7 @@ contract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {
      * @param tokenIds Array of token IDs to withdraw
      * @dev Requires sufficient SCC balance for all withdrawals
      */
-    function withdrawBatch(uint256[] calldata tokenIds) external nonReentrant whenNotPaused {
+    function withdrawBatch(uint256[] calldata tokenIds) external nonReentrant {
         require(tokenIds.length > 0, "empty array");
         require(tokenIds.length <= 20, "too many tokens");
 

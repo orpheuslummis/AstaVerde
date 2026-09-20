@@ -18,7 +18,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
  * @dev Batch-based minting with time-decaying prices and dynamic base price adjustments
  *
  * DEPLOYMENT:
- * - Live on Base mainnet with canonical USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913)
+ * - Payment token is the canonical Circle USDC of the deployment chain (set at deploy; enforced on Base 8453)
  * - USDC token address is immutable (set in constructor, validated for 6 decimals)
  *
  * KEY MECHANICS:
@@ -39,7 +39,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
  * - Price updates add ~100k-300k gas to buyBatch() calls (buyer pays)
  * - Use larger batches (up to maxBatchSize=50) to minimize total batch count
  * - Monitor PriceUpdateIterationLimitReached events for tuning
- * - Iteration cap ensures bounded gas but may delay price adjustments (eventual consistency)
+ * - Iteration cap bounds gas; batches beyond the cap in the 90-day window are not evaluated (starvation, not delay)
  */
 contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -115,6 +115,10 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
     mapping(uint256 => uint256) public batchFinalPrice;
     mapping(uint256 => bool) public batchUsedInPriceDecrease;
 
+    /// @notice Vault allowed to move tokens out (return collateral) while the marketplace is paused.
+    address public trustedVault;
+
+    event TrustedVaultSet(address indexed vault);
     event PlatformSharePercentageSet(uint256 platformSharePercentage);
     // Base price changes are surfaced via BasePriceAdjusted in v2
     event PlatformPriceFloorAdjusted(uint256 newPrice, uint256 timestamp);
@@ -247,13 +251,31 @@ contract AstaVerde is ERC1155, ERC1155Pausable, ERC1155Holder, Ownable, Reentran
         _unpause();
     }
 
+    /**
+     * @notice Designate the EcoStabilizer vault whose outbound transfers bypass the pause.
+     * @dev Owner-only. Set once after the vault is deployed. Setting it to address(0) disables the bypass.
+     *      The bypass covers transfers FROM the vault only (users reclaiming collateral). Transfers TO the
+     *      vault (new deposits) stay blocked while paused: pause blocks entry, never exit.
+     */
+    function setTrustedVault(address vault) external onlyOwner {
+        trustedVault = vault;
+        emit TrustedVaultSet(vault);
+    }
+
     function _update(
         address from,
         address to,
         uint256[] memory ids,
         uint256[] memory values
     ) internal override(ERC1155, ERC1155Pausable) {
-        super._update(from, to, ids, values);
+        // While paused, the only transfers allowed are the vault returning collateral to users.
+        // ERC1155Pausable._update reverts under pause, so route the vault's outbound transfers
+        // straight to ERC1155._update. Everything else keeps the pausable path.
+        if (paused() && trustedVault != address(0) && from == trustedVault) {
+            ERC1155._update(from, to, ids, values);
+        } else {
+            super._update(from, to, ids, values);
+        }
     }
 
     function setPlatformSharePercentage(uint256 newSharePercentage) external onlyOwner whenNotPaused {

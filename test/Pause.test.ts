@@ -210,25 +210,23 @@ describe("Pause Functionality Tests", function () {
             );
         });
 
-        it("Should block withdrawals during pause", async function () {
-            // Setup: Make a deposit first
+        it("Should allow withdrawals during vault pause (pause blocks entry, never exit)", async function () {
+            // Setup: Make deposits first
             await ecoStabilizer.unpause();
             await ecoStabilizer.connect(buyer).deposit(1);
+            await ecoStabilizer.connect(buyer).deposit(2);
 
             // Approve SCC for withdrawal
             await scc.connect(buyer).approve(await ecoStabilizer.getAddress(), ethers.MaxUint256);
 
             await ecoStabilizer.pause();
 
-            await expect(ecoStabilizer.connect(buyer).withdraw(1)).to.be.revertedWithCustomError(
-                ecoStabilizer,
-                "EnforcedPause",
-            );
+            await ecoStabilizer.connect(buyer).withdraw(1);
+            expect(await astaVerde.balanceOf(buyer.address, 1)).to.equal(1);
 
-            await expect(ecoStabilizer.connect(buyer).withdrawBatch([1])).to.be.revertedWithCustomError(
-                ecoStabilizer,
-                "EnforcedPause",
-            );
+            await ecoStabilizer.connect(buyer).withdrawBatch([2]);
+            expect(await astaVerde.balanceOf(buyer.address, 2)).to.equal(1);
+            expect(await scc.balanceOf(buyer.address)).to.equal(0);
         });
 
         it("Should allow adminSweepNFT regardless of pause state", async function () {
