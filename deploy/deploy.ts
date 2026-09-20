@@ -453,22 +453,6 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
             );
         }
 
-        // Optional: hand SCC DEFAULT_ADMIN_ROLE to the owner instead of renouncing it.
-        if (process.env.TRANSFER_SCC_ADMIN === "true" && ownerAddress.toLowerCase() !== deployer.toLowerCase()) {
-            console.log(`\nHanding SCC DEFAULT_ADMIN_ROLE to ${ownerAddress}...`);
-            const DEFAULT_ADMIN_ROLE = await sccContract.DEFAULT_ADMIN_ROLE();
-            const grantAdminTx = await sccContract.grantRole(DEFAULT_ADMIN_ROLE, ownerAddress);
-            await grantAdminTx.wait(waitConfirmations);
-            if (!(await sccContract.hasRole(DEFAULT_ADMIN_ROLE, ownerAddress))) {
-                throw new Error("Abort: owner did not receive SCC DEFAULT_ADMIN_ROLE");
-            }
-            const dropTx = await sccContract.renounceRole(DEFAULT_ADMIN_ROLE, deployer);
-            await dropTx.wait(waitConfirmations);
-            console.log(
-                `✓ SCC admin: owner has it, deployer renounced (${!(await sccContract.hasRole(DEFAULT_ADMIN_ROLE, deployer))})`,
-            );
-        }
-
         console.log("\n✅ v2 Vault contracts deployed successfully!");
         console.log(`- SCC: ${scc.address}`);
         console.log(`- EcoStabilizer: ${vault.address}`);

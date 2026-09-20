@@ -3,11 +3,10 @@
  * Hand a deployment over to its final owner, then read every role back on-chain.
  *
  *   NEW_OWNER=0x... npx hardhat run scripts/handoff.js --network ethereum-sepolia
- *   NEW_OWNER=0x... TRANSFER_SCC_ADMIN=true npx hardhat run scripts/handoff.js --network ethereum-mainnet
+ *   NEW_OWNER=0x... RENOUNCE_SCC_ADMIN=true npx hardhat run scripts/handoff.js --network ethereum-mainnet
  *
  * - AstaVerde.transferOwnership(NEW_OWNER)      (skipped if already the owner)
  * - EcoStabilizer.transferOwnership(NEW_OWNER)  (skipped if not deployed or already the owner)
- * - if TRANSFER_SCC_ADMIN=true: grant SCC DEFAULT_ADMIN_ROLE to NEW_OWNER, then the signer renounces
  * - if RENOUNCE_SCC_ADMIN=true: the signer renounces SCC DEFAULT_ADMIN_ROLE (only if the vault holds MINTER_ROLE)
  * Exits non-zero unless every read-back matches.
  */
@@ -86,20 +85,7 @@ async function main() {
         const scc = await ethers.getContractAt("StabilizedCarbonCoin", sccAddr);
         const ADMIN = await scc.DEFAULT_ADMIN_ROLE();
         const MINTER = await scc.MINTER_ROLE();
-        if (process.env.TRANSFER_SCC_ADMIN === "true") {
-            if (!(await scc.hasRole(ADMIN, newOwner))) {
-                const tx = await scc.grantRole(ADMIN, newOwner);
-                await tx.wait();
-                console.log(`SCC: granted DEFAULT_ADMIN_ROLE to ${newOwner} (tx ${tx.hash})`);
-            }
-            if (!(await scc.hasRole(ADMIN, newOwner)))
-                failures.push("SCC: new owner did not receive DEFAULT_ADMIN_ROLE");
-            if (await scc.hasRole(ADMIN, me)) {
-                const tx = await scc.renounceRole(ADMIN, me);
-                await tx.wait();
-                console.log(`SCC: signer renounced DEFAULT_ADMIN_ROLE (tx ${tx.hash})`);
-            }
-        } else if (process.env.RENOUNCE_SCC_ADMIN === "true") {
+        if (process.env.RENOUNCE_SCC_ADMIN === "true") {
             if (vaultAddr && !(await scc.hasRole(MINTER, vaultAddr))) {
                 failures.push("SCC: vault lacks MINTER_ROLE, refusing to renounce admin");
             } else if (await scc.hasRole(ADMIN, me)) {
