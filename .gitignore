@@ -9,7 +9,7 @@ coverage
 dist
 node_modules
 types
-deployments
+deployments/*
 tmp
 
 # files
@@ -69,3 +69,7 @@ webapp/.next/
 
 # ESLint reports
 eslint-report.json
+
+# Ethereum deployment records are tracked (addresses and ABIs for the live and QA deployments)
+!deployments/ethereum-sepolia/
+!deployments/ethereum-mainnet/

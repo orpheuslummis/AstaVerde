@@ -170,22 +170,14 @@ const config: HardhatUserConfig = {
         },
     },
     etherscan: {
-        apiKey: {
-            "base-sepolia": process.env.BASE_SEPOLIA_EXPLORER_API_KEY!,
-            base: process.env.BASE_MAINNET_EXPLORER_API_KEY!,
-            // Map our network alias to the same Base mainnet key
-            "base-mainnet": process.env.BASE_MAINNET_EXPLORER_API_KEY!,
-            "arbitrum-one": process.env.ARBITRUM_MAINNET_EXPLORER_API_KEY!,
-            "arbitrum-sepolia": process.env.ARBITRUM_SEPOLIA_EXPLORER_API_KEY!,
-            arbitrumOne: process.env.ARBITRUM_MAINNET_EXPLORER_API_KEY!,
-            arbitrumSepolia: process.env.ARBITRUM_SEPOLIA_EXPLORER_API_KEY!,
-            // Ethereum L1 uses a single Etherscan (V2) key. `sepolia` and `mainnet` are the
-            // built-in hardhat-verify chain names; the aliases match our network names.
-            sepolia: process.env.ETHERSCAN_API_KEY!,
-            mainnet: process.env.ETHERSCAN_API_KEY!,
-            "ethereum-sepolia": process.env.ETHERSCAN_API_KEY!,
-            "ethereum-mainnet": process.env.ETHERSCAN_API_KEY!,
-        },
+        // Etherscan API V2: one key for every Etherscan-family explorer (Ethereum, Arbitrum,
+        // Base, ...). A per-network key MAP switches hardhat-verify into the retired V1
+        // mode and verification fails with "deprecated V1 endpoint", so this must be a string.
+        apiKey:
+            process.env.ETHERSCAN_API_KEY ||
+            process.env.ARBITRUM_MAINNET_EXPLORER_API_KEY ||
+            process.env.BASE_MAINNET_EXPLORER_API_KEY ||
+            "",
         customChains: [
             {
                 network: "base-sepolia",

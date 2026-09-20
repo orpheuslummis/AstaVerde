@@ -1,0 +1,948 @@
+{
+  "address": "0xed338C3aFD53186dC1128B1971C2413aCc8F7407",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_ecoAsset",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_scc",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "EnforcedPause",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ExpectedPause",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableInvalidOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableUnauthorizedAccount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ReentrancyGuardReentrantCall",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "Deposited",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "EmergencyNFTWithdrawn",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "Paused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "Unpaused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "Withdrawn",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "MAX_PAGE_SIZE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "SCC_PER_ASSET",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "adminSweepNFT",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "deposit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "tokenIds",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "depositBatch",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "ecoAsset",
+      "outputs": [
+        {
+          "internalType": "contract IAstaVerde",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getTotalActiveLoans",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        }
+      ],
+      "name": "getUserLoanCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        }
+      ],
+      "name": "getUserLoans",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "out",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        }
+      ],
+      "name": "getUserLoansIndexed",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "tokenIds",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256",
+          "name": "nextOffset",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "loans",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "active",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "name": "onERC1155BatchReceived",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "name": "onERC1155Received",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "paused",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "scc",
+      "outputs": [
+        {
+          "internalType": "contract StabilizedCarbonCoin",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes4",
+          "name": "interfaceId",
+          "type": "bytes4"
+        }
+      ],
+      "name": "supportsInterface",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalActiveLoans",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "unpause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "tokenIds",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "withdrawBatch",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0xd6797272ed1f5175bcf81da13931ba4768f5948e6a15b30498084540f38a80c2",
+  "receipt": {
+    "to": null,
+    "from": "0x9e9a47214d503C1cFFF115Fa9bDf98Df12AC6f6A",
+    "contractAddress": "0xed338C3aFD53186dC1128B1971C2413aCc8F7407",
+    "transactionIndex": 86,
+    "gasUsed": "1668598",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000400000020000000000000000000800000000000000000000000000000000400000000000000000000000000000000000000000000010000000000000020000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000004000000000020000000000000000000000000000000000000000000000000000000000000000004",
+    "blockHash": "0x83de866a6eda430d265c547e6f8079ec85a3bd4ec83a8d2cba6c0c89dfa783b7",
+    "transactionHash": "0xd6797272ed1f5175bcf81da13931ba4768f5948e6a15b30498084540f38a80c2",
+    "logs": [
+      {
+        "transactionIndex": 86,
+        "blockNumber": 11741182,
+        "transactionHash": "0xd6797272ed1f5175bcf81da13931ba4768f5948e6a15b30498084540f38a80c2",
+        "address": "0xed338C3aFD53186dC1128B1971C2413aCc8F7407",
+        "topics": [
+          "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x0000000000000000000000009e9a47214d503c1cfff115fa9bdf98df12ac6f6a"
+        ],
+        "data": "0x",
+        "logIndex": 128,
+        "blockHash": "0x83de866a6eda430d265c547e6f8079ec85a3bd4ec83a8d2cba6c0c89dfa783b7"
+      }
+    ],
+    "blockNumber": 11741182,
+    "cumulativeGasUsed": "8038103",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0xd5949461Ac560619a5d9261a5b4F3E5373123eD0",
+    "0xFBfcE641BCB6BF1E06CB859c41788699BBC84B46"
+  ],
+  "numDeployments": 1,
+  "solcInputHash": "8da5e95205303b2eae9e91688e66e5a5",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.27+commit.40a35a09\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_ecoAsset\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_scc\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"EnforcedPause\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ExpectedPause\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ReentrancyGuardReentrantCall\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"EmergencyNFTWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Unpaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"Withdrawn\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"MAX_PAGE_SIZE\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"SCC_PER_ASSET\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"adminSweepNFT\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"tokenIds\",\"type\":\"uint256[]\"}],\"name\":\"depositBatch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ecoAsset\",\"outputs\":[{\"internalType\":\"contract IAstaVerde\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getTotalActiveLoans\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"getUserLoanCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"getUserLoans\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"out\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"offset\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"limit\",\"type\":\"uint256\"}],\"name\":\"getUserLoansIndexed\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"tokenIds\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256\",\"name\":\"nextOffset\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"loans\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"borrower\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"active\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"onERC1155BatchReceived\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"onERC1155Received\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"scc\",\"outputs\":[{\"internalType\":\"contract StabilizedCarbonCoin\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalActiveLoans\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unpause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"tokenId\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256[]\",\"name\":\"tokenIds\",\"type\":\"uint256[]\"}],\"name\":\"withdrawBatch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"author\":\"AstaVerde Team\",\"details\":\"Non-fungible CDP system with no liquidation risk and fixed issuance rate DEPLOYMENT: - Deploy after AstaVerde (Phase 1) contract is live - Deploy sequence: SCC token \\u2192 EcoStabilizer \\u2192 grant MINTER_ROLE \\u2192 renounce admin - SCC token address and AstaVerde address are immutable after deployment - Owner should be a multisig wallet for production deployments KEY MECHANICS: - Fixed rate: Each NFT collateralizes exactly 20 SCC (no oracles needed) - No liquidations: Users always reclaim their original NFT upon repayment - Non-fungible CDPs: Each NFT maintains unique identity through loan lifecycle - Redeemed protection: Only un-redeemed carbon offsets accepted as collateral - Pull pattern: Prevents DoS attacks during batch operations SECURITY: - ReentrancyGuard on all state-changing functions - Pausable for emergency situations - Access control via Ownable for admin functions - Indexed view functions for predictable gas on reads - CEI (Checks-Effects-Interactions) pattern throughout GAS OPTIMIZATION: - Batch operations save ~75% gas vs sequential calls - Target gas usage: <150k for deposit, <120k for withdraw - Indexed view functions and pagination for large datasets INTEGRATION: - Works with existing AstaVerde ERC-1155 NFTs - SCC minting exclusive to this vault (enforced by MINTER_ROLE) - Price stability through arbitrage with AstaVerde primary market\",\"errors\":{\"EnforcedPause()\":[{\"details\":\"The operation failed because the contract is paused.\"}],\"ExpectedPause()\":[{\"details\":\"The operation failed because the contract is not paused.\"}],\"OwnableInvalidOwner(address)\":[{\"details\":\"The owner is not a valid owner account. (eg. `address(0)`)\"}],\"OwnableUnauthorizedAccount(address)\":[{\"details\":\"The caller account is not authorized to perform an operation.\"}],\"ReentrancyGuardReentrantCall()\":[{\"details\":\"Unauthorized reentrant call.\"}]},\"events\":{\"Deposited(address,uint256)\":{\"params\":{\"tokenId\":\"The ID of the deposited NFT\",\"user\":\"The address depositing the NFT\"}},\"EmergencyNFTWithdrawn(address,uint256)\":{\"params\":{\"to\":\"The address receiving the swept NFT\",\"tokenId\":\"The ID of the swept NFT\"}},\"Paused(address)\":{\"details\":\"Emitted when the pause is triggered by `account`.\"},\"Unpaused(address)\":{\"details\":\"Emitted when the pause is lifted by `account`.\"},\"Withdrawn(address,uint256)\":{\"params\":{\"tokenId\":\"The ID of the withdrawn NFT\",\"user\":\"The address withdrawing the NFT\"}}},\"kind\":\"dev\",\"methods\":{\"adminSweepNFT(uint256,address)\":{\"details\":\"Only for NFTs without active loans (prevents stealing collateral) Use cases: - User accidentally sends NFT directly to vault - Cleanup of test/abandoned NFTs - Recovery from failed transactions\",\"params\":{\"to\":\"The address to send the NFT to\",\"tokenId\":\"The ID of the NFT to sweep\"}},\"constructor\":{\"details\":\"Sets immutable references to AstaVerde and SCC contracts\",\"params\":{\"_ecoAsset\":\"Address of the AstaVerde ERC-1155 contract\",\"_scc\":\"Address of the StabilizedCarbonCoin ERC-20 contract\"}},\"deposit(uint256)\":{\"details\":\"Implements CEI pattern, checks redemption status, mints fixed SCC amount Requirements: - Token must not have an active loan - Caller must own the NFT - NFT must not be redeemed (real-world carbon offset not claimed) - Contract must not be paused\",\"params\":{\"tokenId\":\"The ID of the AstaVerde NFT to deposit\"}},\"depositBatch(uint256[])\":{\"details\":\"Gas efficient batch operation (saves ~75% gas vs sequential deposits)\",\"params\":{\"tokenIds\":\"Array of token IDs to deposit\"}},\"getUserLoansIndexed(address,uint256,uint256)\":{\"returns\":{\"nextOffset\":\"Next offset to continue from (0 if end reached)\",\"tokenIds\":\"Slice of user's active loan IDs\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"pause()\":{\"details\":\"Only callable by owner, typically for emergency situations\"},\"paused()\":{\"details\":\"Returns true if the contract is paused, and false otherwise.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.\"},\"supportsInterface(bytes4)\":{\"details\":\"Returns true if this contract implements the interface defined by `interfaceId`. See the corresponding https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[ERC section] to learn more about how these ids are created. This function call must use less than 30 000 gas.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"},\"unpause()\":{\"details\":\"Only callable by owner after addressing pause reason\"},\"withdraw(uint256)\":{\"details\":\"Burns SCC from caller and returns the exact NFT originally deposited Requirements: - Caller must be the original borrower - Loan must be active - Caller must have 20 SCC balance - Contract must not be paused\",\"params\":{\"tokenId\":\"The ID of the NFT to withdraw\"}},\"withdrawBatch(uint256[])\":{\"details\":\"Requires sufficient SCC balance for all withdrawals\",\"params\":{\"tokenIds\":\"Array of token IDs to withdraw\"}}},\"stateVariables\":{\"SCC_PER_ASSET\":{\"details\":\"Eliminates oracle dependency by using fixed collateralization ratio\"},\"ecoAsset\":{\"details\":\"Set in constructor, cannot be changed after deployment\"},\"loans\":{\"details\":\"tokenId \\u2192 Loan structure containing borrower and status\"},\"scc\":{\"details\":\"This vault must have exclusive MINTER_ROLE on the SCC contract\"}},\"title\":\"EcoStabilizer - NFT Collateralization Vault for Carbon Offsets\",\"version\":1},\"userdoc\":{\"events\":{\"Deposited(address,uint256)\":{\"notice\":\"Emitted when a user deposits an NFT and receives SCC\"},\"EmergencyNFTWithdrawn(address,uint256)\":{\"notice\":\"Emitted when admin sweeps an unsolicited NFT\"},\"Withdrawn(address,uint256)\":{\"notice\":\"Emitted when a user repays SCC and withdraws their NFT\"}},\"kind\":\"user\",\"methods\":{\"MAX_PAGE_SIZE()\":{\"notice\":\"Maximum items per paginated query to ensure bounded gas usage\"},\"SCC_PER_ASSET()\":{\"notice\":\"Fixed SCC issuance rate per NFT collateral (20 SCC with 18 decimals)\"},\"adminSweepNFT(uint256,address)\":{\"notice\":\"Recover unsolicited NFTs sent to the vault\"},\"constructor\":{\"notice\":\"Initialize the EcoStabilizer vault\"},\"deposit(uint256)\":{\"notice\":\"Deposit an AstaVerde NFT as collateral and receive 20 SCC\"},\"depositBatch(uint256[])\":{\"notice\":\"Deposit multiple NFTs in a single transaction\"},\"ecoAsset()\":{\"notice\":\"Reference to the AstaVerde ERC-1155 contract for carbon offset NFTs\"},\"getTotalActiveLoans()\":{\"notice\":\"Get total count of active loans across all users (O(1))\"},\"getUserLoanCount(address)\":{\"notice\":\"Get user's loan count (O(1))\"},\"getUserLoans(address)\":{\"notice\":\"Get user's active loans (O(k) copy from indexed storage)\"},\"getUserLoansIndexed(address,uint256,uint256)\":{\"notice\":\"Get user's active loans with offset/limit over indexed storage\"},\"loans(uint256)\":{\"notice\":\"Mapping from token ID to loan information\"},\"pause()\":{\"notice\":\"Pause all deposits and withdrawals\"},\"scc()\":{\"notice\":\"Reference to the SCC ERC-20 token contract\"},\"totalActiveLoans()\":{\"notice\":\"Total number of active loans across all users\"},\"unpause()\":{\"notice\":\"Resume deposits and withdrawals after pause\"},\"withdraw(uint256)\":{\"notice\":\"Repay 20 SCC and withdraw your collateralized NFT\"},\"withdrawBatch(uint256[])\":{\"notice\":\"Withdraw multiple NFTs in a single transaction\"}},\"notice\":\"Enables 1:1 collateralization of AstaVerde NFTs for fixed SCC loans\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/EcoStabilizer.sol\":\"EcoStabilizer\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"none\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":800},\"remappings\":[],\"viaIR\":true},\"sources\":{\"@openzeppelin/contracts/access/AccessControl.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.4.0) (access/AccessControl.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {IAccessControl} from \\\"./IAccessControl.sol\\\";\\nimport {Context} from \\\"../utils/Context.sol\\\";\\nimport {IERC165, ERC165} from \\\"../utils/introspection/ERC165.sol\\\";\\n\\n/**\\n * @dev Contract module that allows children to implement role-based access\\n * control mechanisms. This is a lightweight version that doesn't allow enumerating role\\n * members except through off-chain means by accessing the contract event logs. Some\\n * applications may benefit from on-chain enumerability, for those cases see\\n * {AccessControlEnumerable}.\\n *\\n * Roles are referred to by their `bytes32` identifier. These should be exposed\\n * in the external API and be unique. The best way to achieve this is by\\n * using `public constant` hash digests:\\n *\\n * ```solidity\\n * bytes32 public constant MY_ROLE = keccak256(\\\"MY_ROLE\\\");\\n * ```\\n *\\n * Roles can be used to represent a set of permissions. To restrict access to a\\n * function call, use {hasRole}:\\n *\\n * ```solidity\\n * function foo() public {\\n *     require(hasRole(MY_ROLE, msg.sender));\\n *     ...\\n * }\\n * ```\\n *\\n * Roles can be granted and revoked dynamically via the {grantRole} and\\n * {revokeRole} functions. Each role has an associated admin role, and only\\n * accounts that have a role's admin role can call {grantRole} and {revokeRole}.\\n *\\n * By default, the admin role for all roles is `DEFAULT_ADMIN_ROLE`, which means\\n * that only accounts with this role will be able to grant or revoke other\\n * roles. More complex role relationships can be created by using\\n * {_setRoleAdmin}.\\n *\\n * WARNING: The `DEFAULT_ADMIN_ROLE` is also its own admin: it has permission to\\n * grant and revoke this role. Extra precautions should be taken to secure\\n * accounts that have been granted it. We recommend using {AccessControlDefaultAdminRules}\\n * to enforce additional security measures for this role.\\n */\\nabstract contract AccessControl is Context, IAccessControl, ERC165 {\\n    struct RoleData {\\n        mapping(address account => bool) hasRole;\\n        bytes32 adminRole;\\n    }\\n\\n    mapping(bytes32 role => RoleData) private _roles;\\n\\n    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;\\n\\n    /**\\n     * @dev Modifier that checks that an account has a specific role. Reverts\\n     * with an {AccessControlUnauthorizedAccount} error including the required role.\\n     */\\n    modifier onlyRole(bytes32 role) {\\n        _checkRole(role);\\n        _;\\n    }\\n\\n    /// @inheritdoc IERC165\\n    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {\\n        return interfaceId == type(IAccessControl).interfaceId || super.supportsInterface(interfaceId);\\n    }\\n\\n    /**\\n     * @dev Returns `true` if `account` has been granted `role`.\\n     */\\n    function hasRole(bytes32 role, address account) public view virtual returns (bool) {\\n        return _roles[role].hasRole[account];\\n    }\\n\\n    /**\\n     * @dev Reverts with an {AccessControlUnauthorizedAccount} error if `_msgSender()`\\n     * is missing `role`. Overriding this function changes the behavior of the {onlyRole} modifier.\\n     */\\n    function _checkRole(bytes32 role) internal view virtual {\\n        _checkRole(role, _msgSender());\\n    }\\n\\n    /**\\n     * @dev Reverts with an {AccessControlUnauthorizedAccount} error if `account`\\n     * is missing `role`.\\n     */\\n    function _checkRole(bytes32 role, address account) internal view virtual {\\n        if (!hasRole(role, account)) {\\n            revert AccessControlUnauthorizedAccount(account, role);\\n        }\\n    }\\n\\n    /**\\n     * @dev Returns the admin role that controls `role`. See {grantRole} and\\n     * {revokeRole}.\\n     *\\n     * To change a role's admin, use {_setRoleAdmin}.\\n     */\\n    function getRoleAdmin(bytes32 role) public view virtual returns (bytes32) {\\n        return _roles[role].adminRole;\\n    }\\n\\n    /**\\n     * @dev Grants `role` to `account`.\\n     *\\n     * If `account` had not been already granted `role`, emits a {RoleGranted}\\n     * event.\\n     *\\n     * Requirements:\\n     *\\n     * - the caller must have ``role``'s admin role.\\n     *\\n     * May emit a {RoleGranted} event.\\n     */\\n    function grantRole(bytes32 role, address account) public virtual onlyRole(getRoleAdmin(role)) {\\n        _grantRole(role, account);\\n    }\\n\\n    /**\\n     * @dev Revokes `role` from `account`.\\n     *\\n     * If `account` had been granted `role`, emits a {RoleRevoked} event.\\n     *\\n     * Requirements:\\n     *\\n     * - the caller must have ``role``'s admin role.\\n     *\\n     * May emit a {RoleRevoked} event.\\n     */\\n    function revokeRole(bytes32 role, address account) public virtual onlyRole(getRoleAdmin(role)) {\\n        _revokeRole(role, account);\\n    }\\n\\n    /**\\n     * @dev Revokes `role` from the calling account.\\n     *\\n     * Roles are often managed via {grantRole} and {revokeRole}: this function's\\n     * purpose is to provide a mechanism for accounts to lose their privileges\\n     * if they are compromised (such as when a trusted device is misplaced).\\n     *\\n     * If the calling account had been revoked `role`, emits a {RoleRevoked}\\n     * event.\\n     *\\n     * Requirements:\\n     *\\n     * - the caller must be `callerConfirmation`.\\n     *\\n     * May emit a {RoleRevoked} event.\\n     */\\n    function renounceRole(bytes32 role, address callerConfirmation) public virtual {\\n        if (callerConfirmation != _msgSender()) {\\n            revert AccessControlBadConfirmation();\\n        }\\n\\n        _revokeRole(role, callerConfirmation);\\n    }\\n\\n    /**\\n     * @dev Sets `adminRole` as ``role``'s admin role.\\n     *\\n     * Emits a {RoleAdminChanged} event.\\n     */\\n    function _setRoleAdmin(bytes32 role, bytes32 adminRole) internal virtual {\\n        bytes32 previousAdminRole = getRoleAdmin(role);\\n        _roles[role].adminRole = adminRole;\\n        emit RoleAdminChanged(role, previousAdminRole, adminRole);\\n    }\\n\\n    /**\\n     * @dev Attempts to grant `role` to `account` and returns a boolean indicating if `role` was granted.\\n     *\\n     * Internal function without access restriction.\\n     *\\n     * May emit a {RoleGranted} event.\\n     */\\n    function _grantRole(bytes32 role, address account) internal virtual returns (bool) {\\n        if (!hasRole(role, account)) {\\n            _roles[role].hasRole[account] = true;\\n            emit RoleGranted(role, account, _msgSender());\\n            return true;\\n        } else {\\n            return false;\\n        }\\n    }\\n\\n    /**\\n     * @dev Attempts to revoke `role` from `account` and returns a boolean indicating if `role` was revoked.\\n     *\\n     * Internal function without access restriction.\\n     *\\n     * May emit a {RoleRevoked} event.\\n     */\\n    function _revokeRole(bytes32 role, address account) internal virtual returns (bool) {\\n        if (hasRole(role, account)) {\\n            _roles[role].hasRole[account] = false;\\n            emit RoleRevoked(role, account, _msgSender());\\n            return true;\\n        } else {\\n            return false;\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x1a6b4f6b7798ab80929d491b89d5427a9b3338c0fd1acd0ba325f69c6f1646af\",\"license\":\"MIT\"},\"@openzeppelin/contracts/access/IAccessControl.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.4.0) (access/IAccessControl.sol)\\n\\npragma solidity >=0.8.4;\\n\\n/**\\n * @dev External interface of AccessControl declared to support ERC-165 detection.\\n */\\ninterface IAccessControl {\\n    /**\\n     * @dev The `account` is missing a role.\\n     */\\n    error AccessControlUnauthorizedAccount(address account, bytes32 neededRole);\\n\\n    /**\\n     * @dev The caller of a function is not the expected one.\\n     *\\n     * NOTE: Don't confuse with {AccessControlUnauthorizedAccount}.\\n     */\\n    error AccessControlBadConfirmation();\\n\\n    /**\\n     * @dev Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole`\\n     *\\n     * `DEFAULT_ADMIN_ROLE` is the starting admin for all roles, despite\\n     * {RoleAdminChanged} not being emitted to signal this.\\n     */\\n    event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole);\\n\\n    /**\\n     * @dev Emitted when `account` is granted `role`.\\n     *\\n     * `sender` is the account that originated the contract call. This account bears the admin role (for the granted role).\\n     * Expected in cases where the role was granted using the internal {AccessControl-_grantRole}.\\n     */\\n    event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);\\n\\n    /**\\n     * @dev Emitted when `account` is revoked `role`.\\n     *\\n     * `sender` is the account that originated the contract call:\\n     *   - if using `revokeRole`, it is the admin role bearer\\n     *   - if using `renounceRole`, it is the role bearer (i.e. `account`)\\n     */\\n    event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);\\n\\n    /**\\n     * @dev Returns `true` if `account` has been granted `role`.\\n     */\\n    function hasRole(bytes32 role, address account) external view returns (bool);\\n\\n    /**\\n     * @dev Returns the admin role that controls `role`. See {grantRole} and\\n     * {revokeRole}.\\n     *\\n     * To change a role's admin, use {AccessControl-_setRoleAdmin}.\\n     */\\n    function getRoleAdmin(bytes32 role) external view returns (bytes32);\\n\\n    /**\\n     * @dev Grants `role` to `account`.\\n     *\\n     * If `account` had not been already granted `role`, emits a {RoleGranted}\\n     * event.\\n     *\\n     * Requirements:\\n     *\\n     * - the caller must have ``role``'s admin role.\\n     */\\n    function grantRole(bytes32 role, address account) external;\\n\\n    /**\\n     * @dev Revokes `role` from `account`.\\n     *\\n     * If `account` had been granted `role`, emits a {RoleRevoked} event.\\n     *\\n     * Requirements:\\n     *\\n     * - the caller must have ``role``'s admin role.\\n     */\\n    function revokeRole(bytes32 role, address account) external;\\n\\n    /**\\n     * @dev Revokes `role` from the calling account.\\n     *\\n     * Roles are often managed via {grantRole} and {revokeRole}: this function's\\n     * purpose is to provide a mechanism for accounts to lose their privileges\\n     * if they are compromised (such as when a trusted device is misplaced).\\n     *\\n     * If the calling account had been granted `role`, emits a {RoleRevoked}\\n     * event.\\n     *\\n     * Requirements:\\n     *\\n     * - the caller must be `callerConfirmation`.\\n     */\\n    function renounceRole(bytes32 role, address callerConfirmation) external;\\n}\\n\",\"keccak256\":\"0xbff9f59c84e5337689161ce7641c0ef8e872d6a7536fbc1f5133f128887aba3c\",\"license\":\"MIT\"},\"@openzeppelin/contracts/access/Ownable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (access/Ownable.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {Context} from \\\"../utils/Context.sol\\\";\\n\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * The initial owner is set to the address provided by the deployer. This can\\n * later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n */\\nabstract contract Ownable is Context {\\n    address private _owner;\\n\\n    /**\\n     * @dev The caller account is not authorized to perform an operation.\\n     */\\n    error OwnableUnauthorizedAccount(address account);\\n\\n    /**\\n     * @dev The owner is not a valid owner account. (eg. `address(0)`)\\n     */\\n    error OwnableInvalidOwner(address owner);\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the address provided by the deployer as the initial owner.\\n     */\\n    constructor(address initialOwner) {\\n        if (initialOwner == address(0)) {\\n            revert OwnableInvalidOwner(address(0));\\n        }\\n        _transferOwnership(initialOwner);\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        _checkOwner();\\n        _;\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if the sender is not the owner.\\n     */\\n    function _checkOwner() internal view virtual {\\n        if (owner() != _msgSender()) {\\n            revert OwnableUnauthorizedAccount(_msgSender());\\n        }\\n    }\\n\\n    /**\\n     * @dev Leaves the contract without owner. It will not be possible to call\\n     * `onlyOwner` functions. Can only be called by the current owner.\\n     *\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\n     * thereby disabling any functionality that is only available to the owner.\\n     */\\n    function renounceOwnership() public virtual onlyOwner {\\n        _transferOwnership(address(0));\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        if (newOwner == address(0)) {\\n            revert OwnableInvalidOwner(address(0));\\n        }\\n        _transferOwnership(newOwner);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Internal function without access restriction.\\n     */\\n    function _transferOwnership(address newOwner) internal virtual {\\n        address oldOwner = _owner;\\n        _owner = newOwner;\\n        emit OwnershipTransferred(oldOwner, newOwner);\\n    }\\n}\\n\",\"keccak256\":\"0xff6d0bb2e285473e5311d9d3caacb525ae3538a80758c10649a4d61029b017bb\",\"license\":\"MIT\"},\"@openzeppelin/contracts/interfaces/draft-IERC6093.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.4.0) (interfaces/draft-IERC6093.sol)\\npragma solidity >=0.8.4;\\n\\n/**\\n * @dev Standard ERC-20 Errors\\n * Interface of the https://eips.ethereum.org/EIPS/eip-6093[ERC-6093] custom errors for ERC-20 tokens.\\n */\\ninterface IERC20Errors {\\n    /**\\n     * @dev Indicates an error related to the current `balance` of a `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     * @param balance Current balance for the interacting account.\\n     * @param needed Minimum amount required to perform a transfer.\\n     */\\n    error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);\\n\\n    /**\\n     * @dev Indicates a failure with the token `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     */\\n    error ERC20InvalidSender(address sender);\\n\\n    /**\\n     * @dev Indicates a failure with the token `receiver`. Used in transfers.\\n     * @param receiver Address to which tokens are being transferred.\\n     */\\n    error ERC20InvalidReceiver(address receiver);\\n\\n    /**\\n     * @dev Indicates a failure with the `spender`\\u2019s `allowance`. Used in transfers.\\n     * @param spender Address that may be allowed to operate on tokens without being their owner.\\n     * @param allowance Amount of tokens a `spender` is allowed to operate with.\\n     * @param needed Minimum amount required to perform a transfer.\\n     */\\n    error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);\\n\\n    /**\\n     * @dev Indicates a failure with the `approver` of a token to be approved. Used in approvals.\\n     * @param approver Address initiating an approval operation.\\n     */\\n    error ERC20InvalidApprover(address approver);\\n\\n    /**\\n     * @dev Indicates a failure with the `spender` to be approved. Used in approvals.\\n     * @param spender Address that may be allowed to operate on tokens without being their owner.\\n     */\\n    error ERC20InvalidSpender(address spender);\\n}\\n\\n/**\\n * @dev Standard ERC-721 Errors\\n * Interface of the https://eips.ethereum.org/EIPS/eip-6093[ERC-6093] custom errors for ERC-721 tokens.\\n */\\ninterface IERC721Errors {\\n    /**\\n     * @dev Indicates that an address can't be an owner. For example, `address(0)` is a forbidden owner in ERC-20.\\n     * Used in balance queries.\\n     * @param owner Address of the current owner of a token.\\n     */\\n    error ERC721InvalidOwner(address owner);\\n\\n    /**\\n     * @dev Indicates a `tokenId` whose `owner` is the zero address.\\n     * @param tokenId Identifier number of a token.\\n     */\\n    error ERC721NonexistentToken(uint256 tokenId);\\n\\n    /**\\n     * @dev Indicates an error related to the ownership over a particular token. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     * @param tokenId Identifier number of a token.\\n     * @param owner Address of the current owner of a token.\\n     */\\n    error ERC721IncorrectOwner(address sender, uint256 tokenId, address owner);\\n\\n    /**\\n     * @dev Indicates a failure with the token `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     */\\n    error ERC721InvalidSender(address sender);\\n\\n    /**\\n     * @dev Indicates a failure with the token `receiver`. Used in transfers.\\n     * @param receiver Address to which tokens are being transferred.\\n     */\\n    error ERC721InvalidReceiver(address receiver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator`\\u2019s approval. Used in transfers.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     * @param tokenId Identifier number of a token.\\n     */\\n    error ERC721InsufficientApproval(address operator, uint256 tokenId);\\n\\n    /**\\n     * @dev Indicates a failure with the `approver` of a token to be approved. Used in approvals.\\n     * @param approver Address initiating an approval operation.\\n     */\\n    error ERC721InvalidApprover(address approver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator` to be approved. Used in approvals.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     */\\n    error ERC721InvalidOperator(address operator);\\n}\\n\\n/**\\n * @dev Standard ERC-1155 Errors\\n * Interface of the https://eips.ethereum.org/EIPS/eip-6093[ERC-6093] custom errors for ERC-1155 tokens.\\n */\\ninterface IERC1155Errors {\\n    /**\\n     * @dev Indicates an error related to the current `balance` of a `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     * @param balance Current balance for the interacting account.\\n     * @param needed Minimum amount required to perform a transfer.\\n     * @param tokenId Identifier number of a token.\\n     */\\n    error ERC1155InsufficientBalance(address sender, uint256 balance, uint256 needed, uint256 tokenId);\\n\\n    /**\\n     * @dev Indicates a failure with the token `sender`. Used in transfers.\\n     * @param sender Address whose tokens are being transferred.\\n     */\\n    error ERC1155InvalidSender(address sender);\\n\\n    /**\\n     * @dev Indicates a failure with the token `receiver`. Used in transfers.\\n     * @param receiver Address to which tokens are being transferred.\\n     */\\n    error ERC1155InvalidReceiver(address receiver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator`\\u2019s approval. Used in transfers.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     * @param owner Address of the current owner of a token.\\n     */\\n    error ERC1155MissingApprovalForAll(address operator, address owner);\\n\\n    /**\\n     * @dev Indicates a failure with the `approver` of a token to be approved. Used in approvals.\\n     * @param approver Address initiating an approval operation.\\n     */\\n    error ERC1155InvalidApprover(address approver);\\n\\n    /**\\n     * @dev Indicates a failure with the `operator` to be approved. Used in approvals.\\n     * @param operator Address that may be allowed to operate on tokens without being their owner.\\n     */\\n    error ERC1155InvalidOperator(address operator);\\n\\n    /**\\n     * @dev Indicates an array length mismatch between ids and values in a safeBatchTransferFrom operation.\\n     * Used in batch transfers.\\n     * @param idsLength Length of the array of token identifiers\\n     * @param valuesLength Length of the array of token amounts\\n     */\\n    error ERC1155InvalidArrayLength(uint256 idsLength, uint256 valuesLength);\\n}\\n\",\"keccak256\":\"0x19fdfb0f3b89a230e7dbd1cf416f1a6b531a3ee5db4da483f946320fc74afc0e\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC1155/IERC1155.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.4.0) (token/ERC1155/IERC1155.sol)\\n\\npragma solidity >=0.6.2;\\n\\nimport {IERC165} from \\\"../../utils/introspection/IERC165.sol\\\";\\n\\n/**\\n * @dev Required interface of an ERC-1155 compliant contract, as defined in the\\n * https://eips.ethereum.org/EIPS/eip-1155[ERC].\\n */\\ninterface IERC1155 is IERC165 {\\n    /**\\n     * @dev Emitted when `value` amount of tokens of type `id` are transferred from `from` to `to` by `operator`.\\n     */\\n    event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value);\\n\\n    /**\\n     * @dev Equivalent to multiple {TransferSingle} events, where `operator`, `from` and `to` are the same for all\\n     * transfers.\\n     */\\n    event TransferBatch(\\n        address indexed operator,\\n        address indexed from,\\n        address indexed to,\\n        uint256[] ids,\\n        uint256[] values\\n    );\\n\\n    /**\\n     * @dev Emitted when `account` grants or revokes permission to `operator` to transfer their tokens, according to\\n     * `approved`.\\n     */\\n    event ApprovalForAll(address indexed account, address indexed operator, bool approved);\\n\\n    /**\\n     * @dev Emitted when the URI for token type `id` changes to `value`, if it is a non-programmatic URI.\\n     *\\n     * If an {URI} event was emitted for `id`, the standard\\n     * https://eips.ethereum.org/EIPS/eip-1155#metadata-extensions[guarantees] that `value` will equal the value\\n     * returned by {IERC1155MetadataURI-uri}.\\n     */\\n    event URI(string value, uint256 indexed id);\\n\\n    /**\\n     * @dev Returns the value of tokens of token type `id` owned by `account`.\\n     */\\n    function balanceOf(address account, uint256 id) external view returns (uint256);\\n\\n    /**\\n     * @dev xref:ROOT:erc1155.adoc#batch-operations[Batched] version of {balanceOf}.\\n     *\\n     * Requirements:\\n     *\\n     * - `accounts` and `ids` must have the same length.\\n     */\\n    function balanceOfBatch(\\n        address[] calldata accounts,\\n        uint256[] calldata ids\\n    ) external view returns (uint256[] memory);\\n\\n    /**\\n     * @dev Grants or revokes permission to `operator` to transfer the caller's tokens, according to `approved`,\\n     *\\n     * Emits an {ApprovalForAll} event.\\n     *\\n     * Requirements:\\n     *\\n     * - `operator` cannot be the zero address.\\n     */\\n    function setApprovalForAll(address operator, bool approved) external;\\n\\n    /**\\n     * @dev Returns true if `operator` is approved to transfer ``account``'s tokens.\\n     *\\n     * See {setApprovalForAll}.\\n     */\\n    function isApprovedForAll(address account, address operator) external view returns (bool);\\n\\n    /**\\n     * @dev Transfers a `value` amount of tokens of type `id` from `from` to `to`.\\n     *\\n     * WARNING: This function can potentially allow a reentrancy attack when transferring tokens\\n     * to an untrusted contract, when invoking {IERC1155Receiver-onERC1155Received} on the receiver.\\n     * Ensure to follow the checks-effects-interactions pattern and consider employing\\n     * reentrancy guards when interacting with untrusted contracts.\\n     *\\n     * Emits a {TransferSingle} event.\\n     *\\n     * Requirements:\\n     *\\n     * - `to` cannot be the zero address.\\n     * - If the caller is not `from`, it must have been approved to spend ``from``'s tokens via {setApprovalForAll}.\\n     * - `from` must have a balance of tokens of type `id` of at least `value` amount.\\n     * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the\\n     * acceptance magic value.\\n     */\\n    function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes calldata data) external;\\n\\n    /**\\n     * @dev xref:ROOT:erc1155.adoc#batch-operations[Batched] version of {safeTransferFrom}.\\n     *\\n     * WARNING: This function can potentially allow a reentrancy attack when transferring tokens\\n     * to an untrusted contract, when invoking {IERC1155Receiver-onERC1155BatchReceived} on the receiver.\\n     * Ensure to follow the checks-effects-interactions pattern and consider employing\\n     * reentrancy guards when interacting with untrusted contracts.\\n     *\\n     * Emits either a {TransferSingle} or a {TransferBatch} event, depending on the length of the array arguments.\\n     *\\n     * Requirements:\\n     *\\n     * - `ids` and `values` must have the same length.\\n     * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155BatchReceived} and return the\\n     * acceptance magic value.\\n     */\\n    function safeBatchTransferFrom(\\n        address from,\\n        address to,\\n        uint256[] calldata ids,\\n        uint256[] calldata values,\\n        bytes calldata data\\n    ) external;\\n}\\n\",\"keccak256\":\"0xf189f9b417fe1931e1ab706838aff1128528694a9fcdb5ff7665197f2ca57d09\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.4.0) (token/ERC1155/IERC1155Receiver.sol)\\n\\npragma solidity >=0.6.2;\\n\\nimport {IERC165} from \\\"../../utils/introspection/IERC165.sol\\\";\\n\\n/**\\n * @dev Interface that must be implemented by smart contracts in order to receive\\n * ERC-1155 token transfers.\\n */\\ninterface IERC1155Receiver is IERC165 {\\n    /**\\n     * @dev Handles the receipt of a single ERC-1155 token type. This function is\\n     * called at the end of a `safeTransferFrom` after the balance has been updated.\\n     *\\n     * NOTE: To accept the transfer, this must return\\n     * `bytes4(keccak256(\\\"onERC1155Received(address,address,uint256,uint256,bytes)\\\"))`\\n     * (i.e. 0xf23a6e61, or its own function selector).\\n     *\\n     * @param operator The address which initiated the transfer (i.e. msg.sender)\\n     * @param from The address which previously owned the token\\n     * @param id The ID of the token being transferred\\n     * @param value The amount of tokens being transferred\\n     * @param data Additional data with no specified format\\n     * @return `bytes4(keccak256(\\\"onERC1155Received(address,address,uint256,uint256,bytes)\\\"))` if transfer is allowed\\n     */\\n    function onERC1155Received(\\n        address operator,\\n        address from,\\n        uint256 id,\\n        uint256 value,\\n        bytes calldata data\\n    ) external returns (bytes4);\\n\\n    /**\\n     * @dev Handles the receipt of a multiple ERC-1155 token types. This function\\n     * is called at the end of a `safeBatchTransferFrom` after the balances have\\n     * been updated.\\n     *\\n     * NOTE: To accept the transfer(s), this must return\\n     * `bytes4(keccak256(\\\"onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)\\\"))`\\n     * (i.e. 0xbc197c81, or its own function selector).\\n     *\\n     * @param operator The address which initiated the batch transfer (i.e. msg.sender)\\n     * @param from The address which previously owned the token\\n     * @param ids An array containing ids of each token being transferred (order and length must match values array)\\n     * @param values An array containing amounts of each token being transferred (order and length must match ids array)\\n     * @param data Additional data with no specified format\\n     * @return `bytes4(keccak256(\\\"onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)\\\"))` if transfer is allowed\\n     */\\n    function onERC1155BatchReceived(\\n        address operator,\\n        address from,\\n        uint256[] calldata ids,\\n        uint256[] calldata values,\\n        bytes calldata data\\n    ) external returns (bytes4);\\n}\\n\",\"keccak256\":\"0x6ec6d7fce29668ede560c7d2e10f9d10de3473f5298e431e70a5767db42fa620\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.4.0) (token/ERC1155/utils/ERC1155Holder.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {IERC165, ERC165} from \\\"../../../utils/introspection/ERC165.sol\\\";\\nimport {IERC1155Receiver} from \\\"../IERC1155Receiver.sol\\\";\\n\\n/**\\n * @dev Simple implementation of `IERC1155Receiver` that will allow a contract to hold ERC-1155 tokens.\\n *\\n * IMPORTANT: When inheriting this contract, you must include a way to use the received tokens, otherwise they will be\\n * stuck.\\n */\\nabstract contract ERC1155Holder is ERC165, IERC1155Receiver {\\n    /// @inheritdoc IERC165\\n    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {\\n        return interfaceId == type(IERC1155Receiver).interfaceId || super.supportsInterface(interfaceId);\\n    }\\n\\n    function onERC1155Received(\\n        address,\\n        address,\\n        uint256,\\n        uint256,\\n        bytes memory\\n    ) public virtual override returns (bytes4) {\\n        return this.onERC1155Received.selector;\\n    }\\n\\n    function onERC1155BatchReceived(\\n        address,\\n        address,\\n        uint256[] memory,\\n        uint256[] memory,\\n        bytes memory\\n    ) public virtual override returns (bytes4) {\\n        return this.onERC1155BatchReceived.selector;\\n    }\\n}\\n\",\"keccak256\":\"0x845cd93ae5216fb91ab3085c632006cdff95460134dd83f3519c1b08cc3e1b4a\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/ERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.4.0) (token/ERC20/ERC20.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {IERC20} from \\\"./IERC20.sol\\\";\\nimport {IERC20Metadata} from \\\"./extensions/IERC20Metadata.sol\\\";\\nimport {Context} from \\\"../../utils/Context.sol\\\";\\nimport {IERC20Errors} from \\\"../../interfaces/draft-IERC6093.sol\\\";\\n\\n/**\\n * @dev Implementation of the {IERC20} interface.\\n *\\n * This implementation is agnostic to the way tokens are created. This means\\n * that a supply mechanism has to be added in a derived contract using {_mint}.\\n *\\n * TIP: For a detailed writeup see our guide\\n * https://forum.openzeppelin.com/t/how-to-implement-erc20-supply-mechanisms/226[How\\n * to implement supply mechanisms].\\n *\\n * The default value of {decimals} is 18. To change this, you should override\\n * this function so it returns a different value.\\n *\\n * We have followed general OpenZeppelin Contracts guidelines: functions revert\\n * instead returning `false` on failure. This behavior is nonetheless\\n * conventional and does not conflict with the expectations of ERC-20\\n * applications.\\n */\\nabstract contract ERC20 is Context, IERC20, IERC20Metadata, IERC20Errors {\\n    mapping(address account => uint256) private _balances;\\n\\n    mapping(address account => mapping(address spender => uint256)) private _allowances;\\n\\n    uint256 private _totalSupply;\\n\\n    string private _name;\\n    string private _symbol;\\n\\n    /**\\n     * @dev Sets the values for {name} and {symbol}.\\n     *\\n     * Both values are immutable: they can only be set once during construction.\\n     */\\n    constructor(string memory name_, string memory symbol_) {\\n        _name = name_;\\n        _symbol = symbol_;\\n    }\\n\\n    /**\\n     * @dev Returns the name of the token.\\n     */\\n    function name() public view virtual returns (string memory) {\\n        return _name;\\n    }\\n\\n    /**\\n     * @dev Returns the symbol of the token, usually a shorter version of the\\n     * name.\\n     */\\n    function symbol() public view virtual returns (string memory) {\\n        return _symbol;\\n    }\\n\\n    /**\\n     * @dev Returns the number of decimals used to get its user representation.\\n     * For example, if `decimals` equals `2`, a balance of `505` tokens should\\n     * be displayed to a user as `5.05` (`505 / 10 ** 2`).\\n     *\\n     * Tokens usually opt for a value of 18, imitating the relationship between\\n     * Ether and Wei. This is the default value returned by this function, unless\\n     * it's overridden.\\n     *\\n     * NOTE: This information is only used for _display_ purposes: it in\\n     * no way affects any of the arithmetic of the contract, including\\n     * {IERC20-balanceOf} and {IERC20-transfer}.\\n     */\\n    function decimals() public view virtual returns (uint8) {\\n        return 18;\\n    }\\n\\n    /// @inheritdoc IERC20\\n    function totalSupply() public view virtual returns (uint256) {\\n        return _totalSupply;\\n    }\\n\\n    /// @inheritdoc IERC20\\n    function balanceOf(address account) public view virtual returns (uint256) {\\n        return _balances[account];\\n    }\\n\\n    /**\\n     * @dev See {IERC20-transfer}.\\n     *\\n     * Requirements:\\n     *\\n     * - `to` cannot be the zero address.\\n     * - the caller must have a balance of at least `value`.\\n     */\\n    function transfer(address to, uint256 value) public virtual returns (bool) {\\n        address owner = _msgSender();\\n        _transfer(owner, to, value);\\n        return true;\\n    }\\n\\n    /// @inheritdoc IERC20\\n    function allowance(address owner, address spender) public view virtual returns (uint256) {\\n        return _allowances[owner][spender];\\n    }\\n\\n    /**\\n     * @dev See {IERC20-approve}.\\n     *\\n     * NOTE: If `value` is the maximum `uint256`, the allowance is not updated on\\n     * `transferFrom`. This is semantically equivalent to an infinite approval.\\n     *\\n     * Requirements:\\n     *\\n     * - `spender` cannot be the zero address.\\n     */\\n    function approve(address spender, uint256 value) public virtual returns (bool) {\\n        address owner = _msgSender();\\n        _approve(owner, spender, value);\\n        return true;\\n    }\\n\\n    /**\\n     * @dev See {IERC20-transferFrom}.\\n     *\\n     * Skips emitting an {Approval} event indicating an allowance update. This is not\\n     * required by the ERC. See {xref-ERC20-_approve-address-address-uint256-bool-}[_approve].\\n     *\\n     * NOTE: Does not update the allowance if the current allowance\\n     * is the maximum `uint256`.\\n     *\\n     * Requirements:\\n     *\\n     * - `from` and `to` cannot be the zero address.\\n     * - `from` must have a balance of at least `value`.\\n     * - the caller must have allowance for ``from``'s tokens of at least\\n     * `value`.\\n     */\\n    function transferFrom(address from, address to, uint256 value) public virtual returns (bool) {\\n        address spender = _msgSender();\\n        _spendAllowance(from, spender, value);\\n        _transfer(from, to, value);\\n        return true;\\n    }\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from `from` to `to`.\\n     *\\n     * This internal function is equivalent to {transfer}, and can be used to\\n     * e.g. implement automatic token fees, slashing mechanisms, etc.\\n     *\\n     * Emits a {Transfer} event.\\n     *\\n     * NOTE: This function is not virtual, {_update} should be overridden instead.\\n     */\\n    function _transfer(address from, address to, uint256 value) internal {\\n        if (from == address(0)) {\\n            revert ERC20InvalidSender(address(0));\\n        }\\n        if (to == address(0)) {\\n            revert ERC20InvalidReceiver(address(0));\\n        }\\n        _update(from, to, value);\\n    }\\n\\n    /**\\n     * @dev Transfers a `value` amount of tokens from `from` to `to`, or alternatively mints (or burns) if `from`\\n     * (or `to`) is the zero address. All customizations to transfers, mints, and burns should be done by overriding\\n     * this function.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function _update(address from, address to, uint256 value) internal virtual {\\n        if (from == address(0)) {\\n            // Overflow check required: The rest of the code assumes that totalSupply never overflows\\n            _totalSupply += value;\\n        } else {\\n            uint256 fromBalance = _balances[from];\\n            if (fromBalance < value) {\\n                revert ERC20InsufficientBalance(from, fromBalance, value);\\n            }\\n            unchecked {\\n                // Overflow not possible: value <= fromBalance <= totalSupply.\\n                _balances[from] = fromBalance - value;\\n            }\\n        }\\n\\n        if (to == address(0)) {\\n            unchecked {\\n                // Overflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.\\n                _totalSupply -= value;\\n            }\\n        } else {\\n            unchecked {\\n                // Overflow not possible: balance + value is at most totalSupply, which we know fits into a uint256.\\n                _balances[to] += value;\\n            }\\n        }\\n\\n        emit Transfer(from, to, value);\\n    }\\n\\n    /**\\n     * @dev Creates a `value` amount of tokens and assigns them to `account`, by transferring it from address(0).\\n     * Relies on the `_update` mechanism\\n     *\\n     * Emits a {Transfer} event with `from` set to the zero address.\\n     *\\n     * NOTE: This function is not virtual, {_update} should be overridden instead.\\n     */\\n    function _mint(address account, uint256 value) internal {\\n        if (account == address(0)) {\\n            revert ERC20InvalidReceiver(address(0));\\n        }\\n        _update(address(0), account, value);\\n    }\\n\\n    /**\\n     * @dev Destroys a `value` amount of tokens from `account`, lowering the total supply.\\n     * Relies on the `_update` mechanism.\\n     *\\n     * Emits a {Transfer} event with `to` set to the zero address.\\n     *\\n     * NOTE: This function is not virtual, {_update} should be overridden instead\\n     */\\n    function _burn(address account, uint256 value) internal {\\n        if (account == address(0)) {\\n            revert ERC20InvalidSender(address(0));\\n        }\\n        _update(account, address(0), value);\\n    }\\n\\n    /**\\n     * @dev Sets `value` as the allowance of `spender` over the `owner`'s tokens.\\n     *\\n     * This internal function is equivalent to `approve`, and can be used to\\n     * e.g. set automatic allowances for certain subsystems, etc.\\n     *\\n     * Emits an {Approval} event.\\n     *\\n     * Requirements:\\n     *\\n     * - `owner` cannot be the zero address.\\n     * - `spender` cannot be the zero address.\\n     *\\n     * Overrides to this logic should be done to the variant with an additional `bool emitEvent` argument.\\n     */\\n    function _approve(address owner, address spender, uint256 value) internal {\\n        _approve(owner, spender, value, true);\\n    }\\n\\n    /**\\n     * @dev Variant of {_approve} with an optional flag to enable or disable the {Approval} event.\\n     *\\n     * By default (when calling {_approve}) the flag is set to true. On the other hand, approval changes made by\\n     * `_spendAllowance` during the `transferFrom` operation set the flag to false. This saves gas by not emitting any\\n     * `Approval` event during `transferFrom` operations.\\n     *\\n     * Anyone who wishes to continue emitting `Approval` events on the`transferFrom` operation can force the flag to\\n     * true using the following override:\\n     *\\n     * ```solidity\\n     * function _approve(address owner, address spender, uint256 value, bool) internal virtual override {\\n     *     super._approve(owner, spender, value, true);\\n     * }\\n     * ```\\n     *\\n     * Requirements are the same as {_approve}.\\n     */\\n    function _approve(address owner, address spender, uint256 value, bool emitEvent) internal virtual {\\n        if (owner == address(0)) {\\n            revert ERC20InvalidApprover(address(0));\\n        }\\n        if (spender == address(0)) {\\n            revert ERC20InvalidSpender(address(0));\\n        }\\n        _allowances[owner][spender] = value;\\n        if (emitEvent) {\\n            emit Approval(owner, spender, value);\\n        }\\n    }\\n\\n    /**\\n     * @dev Updates `owner`'s allowance for `spender` based on spent `value`.\\n     *\\n     * Does not update the allowance value in case of infinite allowance.\\n     * Revert if not enough allowance is available.\\n     *\\n     * Does not emit an {Approval} event.\\n     */\\n    function _spendAllowance(address owner, address spender, uint256 value) internal virtual {\\n        uint256 currentAllowance = allowance(owner, spender);\\n        if (currentAllowance < type(uint256).max) {\\n            if (currentAllowance < value) {\\n                revert ERC20InsufficientAllowance(spender, currentAllowance, value);\\n            }\\n            unchecked {\\n                _approve(owner, spender, currentAllowance - value, false);\\n            }\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x86b7b71a6aedefdad89b607378eeab1dcc5389b9ea7d17346d08af01d7190994\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.4.0) (token/ERC20/IERC20.sol)\\n\\npragma solidity >=0.4.16;\\n\\n/**\\n * @dev Interface of the ERC-20 standard as defined in the ERC.\\n */\\ninterface IERC20 {\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to {approve}. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n\\n    /**\\n     * @dev Returns the value of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the value of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from the caller's account to `to`.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transfer(address to, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\\n     * zero by default.\\n     *\\n     * This value changes when {approve} or {transferFrom} are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets a `value` amount of tokens as the allowance of `spender` over the\\n     * caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an {Approval} event.\\n     */\\n    function approve(address spender, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from `from` to `to` using the\\n     * allowance mechanism. `value` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transferFrom(address from, address to, uint256 value) external returns (bool);\\n}\\n\",\"keccak256\":\"0x74ed01eb66b923d0d0cfe3be84604ac04b76482a55f9dd655e1ef4d367f95bc2\",\"license\":\"MIT\"},\"@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.4.0) (token/ERC20/extensions/IERC20Metadata.sol)\\n\\npragma solidity >=0.6.2;\\n\\nimport {IERC20} from \\\"../IERC20.sol\\\";\\n\\n/**\\n * @dev Interface for the optional metadata functions from the ERC-20 standard.\\n */\\ninterface IERC20Metadata is IERC20 {\\n    /**\\n     * @dev Returns the name of the token.\\n     */\\n    function name() external view returns (string memory);\\n\\n    /**\\n     * @dev Returns the symbol of the token.\\n     */\\n    function symbol() external view returns (string memory);\\n\\n    /**\\n     * @dev Returns the decimals places of the token.\\n     */\\n    function decimals() external view returns (uint8);\\n}\\n\",\"keccak256\":\"0xd6fa4088198f04eef10c5bce8a2f4d60554b7ec4b987f684393c01bf79b94d9f\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.1) (utils/Context.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes calldata) {\\n        return msg.data;\\n    }\\n\\n    function _contextSuffixLength() internal view virtual returns (uint256) {\\n        return 0;\\n    }\\n}\\n\",\"keccak256\":\"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Pausable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.3.0) (utils/Pausable.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {Context} from \\\"../utils/Context.sol\\\";\\n\\n/**\\n * @dev Contract module which allows children to implement an emergency stop\\n * mechanism that can be triggered by an authorized account.\\n *\\n * This module is used through inheritance. It will make available the\\n * modifiers `whenNotPaused` and `whenPaused`, which can be applied to\\n * the functions of your contract. Note that they will not be pausable by\\n * simply including this module, only once the modifiers are put in place.\\n */\\nabstract contract Pausable is Context {\\n    bool private _paused;\\n\\n    /**\\n     * @dev Emitted when the pause is triggered by `account`.\\n     */\\n    event Paused(address account);\\n\\n    /**\\n     * @dev Emitted when the pause is lifted by `account`.\\n     */\\n    event Unpaused(address account);\\n\\n    /**\\n     * @dev The operation failed because the contract is paused.\\n     */\\n    error EnforcedPause();\\n\\n    /**\\n     * @dev The operation failed because the contract is not paused.\\n     */\\n    error ExpectedPause();\\n\\n    /**\\n     * @dev Modifier to make a function callable only when the contract is not paused.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must not be paused.\\n     */\\n    modifier whenNotPaused() {\\n        _requireNotPaused();\\n        _;\\n    }\\n\\n    /**\\n     * @dev Modifier to make a function callable only when the contract is paused.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must be paused.\\n     */\\n    modifier whenPaused() {\\n        _requirePaused();\\n        _;\\n    }\\n\\n    /**\\n     * @dev Returns true if the contract is paused, and false otherwise.\\n     */\\n    function paused() public view virtual returns (bool) {\\n        return _paused;\\n    }\\n\\n    /**\\n     * @dev Throws if the contract is paused.\\n     */\\n    function _requireNotPaused() internal view virtual {\\n        if (paused()) {\\n            revert EnforcedPause();\\n        }\\n    }\\n\\n    /**\\n     * @dev Throws if the contract is not paused.\\n     */\\n    function _requirePaused() internal view virtual {\\n        if (!paused()) {\\n            revert ExpectedPause();\\n        }\\n    }\\n\\n    /**\\n     * @dev Triggers stopped state.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must not be paused.\\n     */\\n    function _pause() internal virtual whenNotPaused {\\n        _paused = true;\\n        emit Paused(_msgSender());\\n    }\\n\\n    /**\\n     * @dev Returns to normal state.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must be paused.\\n     */\\n    function _unpause() internal virtual whenPaused {\\n        _paused = false;\\n        emit Unpaused(_msgSender());\\n    }\\n}\\n\",\"keccak256\":\"0xdb484371dfbb848cb6f5d70464e9ac9b2900e4164ead76bbce4fef0b44bcc68f\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/ReentrancyGuard.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.1.0) (utils/ReentrancyGuard.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Contract module that helps prevent reentrant calls to a function.\\n *\\n * Inheriting from `ReentrancyGuard` will make the {nonReentrant} modifier\\n * available, which can be applied to functions to make sure there are no nested\\n * (reentrant) calls to them.\\n *\\n * Note that because there is a single `nonReentrant` guard, functions marked as\\n * `nonReentrant` may not call one another. This can be worked around by making\\n * those functions `private`, and then adding `external` `nonReentrant` entry\\n * points to them.\\n *\\n * TIP: If EIP-1153 (transient storage) is available on the chain you're deploying at,\\n * consider using {ReentrancyGuardTransient} instead.\\n *\\n * TIP: If you would like to learn more about reentrancy and alternative ways\\n * to protect against it, check out our blog post\\n * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].\\n */\\nabstract contract ReentrancyGuard {\\n    // Booleans are more expensive than uint256 or any type that takes up a full\\n    // word because each write operation emits an extra SLOAD to first read the\\n    // slot's contents, replace the bits taken up by the boolean, and then write\\n    // back. This is the compiler's defense against contract upgrades and\\n    // pointer aliasing, and it cannot be disabled.\\n\\n    // The values being non-zero value makes deployment a bit more expensive,\\n    // but in exchange the refund on every call to nonReentrant will be lower in\\n    // amount. Since refunds are capped to a percentage of the total\\n    // transaction's gas, it is best to keep them low in cases like this one, to\\n    // increase the likelihood of the full refund coming into effect.\\n    uint256 private constant NOT_ENTERED = 1;\\n    uint256 private constant ENTERED = 2;\\n\\n    uint256 private _status;\\n\\n    /**\\n     * @dev Unauthorized reentrant call.\\n     */\\n    error ReentrancyGuardReentrantCall();\\n\\n    constructor() {\\n        _status = NOT_ENTERED;\\n    }\\n\\n    /**\\n     * @dev Prevents a contract from calling itself, directly or indirectly.\\n     * Calling a `nonReentrant` function from another `nonReentrant`\\n     * function is not supported. It is possible to prevent this from happening\\n     * by making the `nonReentrant` function external, and making it call a\\n     * `private` function that does the actual work.\\n     */\\n    modifier nonReentrant() {\\n        _nonReentrantBefore();\\n        _;\\n        _nonReentrantAfter();\\n    }\\n\\n    function _nonReentrantBefore() private {\\n        // On the first call to nonReentrant, _status will be NOT_ENTERED\\n        if (_status == ENTERED) {\\n            revert ReentrancyGuardReentrantCall();\\n        }\\n\\n        // Any calls to nonReentrant after this point will fail\\n        _status = ENTERED;\\n    }\\n\\n    function _nonReentrantAfter() private {\\n        // By storing the original value once again, a refund is triggered (see\\n        // https://eips.ethereum.org/EIPS/eip-2200)\\n        _status = NOT_ENTERED;\\n    }\\n\\n    /**\\n     * @dev Returns true if the reentrancy guard is currently set to \\\"entered\\\", which indicates there is a\\n     * `nonReentrant` function in the call stack.\\n     */\\n    function _reentrancyGuardEntered() internal view returns (bool) {\\n        return _status == ENTERED;\\n    }\\n}\\n\",\"keccak256\":\"0x11a5a79827df29e915a12740caf62fe21ebe27c08c9ae3e09abe9ee3ba3866d3\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/introspection/ERC165.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.4.0) (utils/introspection/ERC165.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {IERC165} from \\\"./IERC165.sol\\\";\\n\\n/**\\n * @dev Implementation of the {IERC165} interface.\\n *\\n * Contracts that want to implement ERC-165 should inherit from this contract and override {supportsInterface} to check\\n * for the additional interface id that will be supported. For example:\\n *\\n * ```solidity\\n * function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {\\n *     return interfaceId == type(MyInterface).interfaceId || super.supportsInterface(interfaceId);\\n * }\\n * ```\\n */\\nabstract contract ERC165 is IERC165 {\\n    /// @inheritdoc IERC165\\n    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {\\n        return interfaceId == type(IERC165).interfaceId;\\n    }\\n}\\n\",\"keccak256\":\"0x2d9dc2fe26180f74c11c13663647d38e259e45f95eb88f57b61d2160b0109d3e\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/introspection/IERC165.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.4.0) (utils/introspection/IERC165.sol)\\n\\npragma solidity >=0.4.16;\\n\\n/**\\n * @dev Interface of the ERC-165 standard, as defined in the\\n * https://eips.ethereum.org/EIPS/eip-165[ERC].\\n *\\n * Implementers can declare support of contract interfaces, which can then be\\n * queried by others ({ERC165Checker}).\\n *\\n * For an implementation, see {ERC165}.\\n */\\ninterface IERC165 {\\n    /**\\n     * @dev Returns true if this contract implements the interface defined by\\n     * `interfaceId`. See the corresponding\\n     * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[ERC section]\\n     * to learn more about how these ids are created.\\n     *\\n     * This function call must use less than 30 000 gas.\\n     */\\n    function supportsInterface(bytes4 interfaceId) external view returns (bool);\\n}\\n\",\"keccak256\":\"0x8891738ffe910f0cf2da09566928589bf5d63f4524dd734fd9cedbac3274dd5c\",\"license\":\"MIT\"},\"contracts/EcoStabilizer.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.27;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC1155/IERC1155.sol\\\";\\nimport \\\"@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol\\\";\\nimport \\\"@openzeppelin/contracts/utils/ReentrancyGuard.sol\\\";\\nimport \\\"@openzeppelin/contracts/utils/Pausable.sol\\\";\\nimport \\\"@openzeppelin/contracts/access/Ownable.sol\\\";\\nimport \\\"./StabilizedCarbonCoin.sol\\\";\\nimport \\\"./IAstaVerde.sol\\\";\\n\\n/**\\n * @title EcoStabilizer - NFT Collateralization Vault for Carbon Offsets\\n * @author AstaVerde Team\\n * @notice Enables 1:1 collateralization of AstaVerde NFTs for fixed SCC loans\\n * @dev Non-fungible CDP system with no liquidation risk and fixed issuance rate\\n *\\n * DEPLOYMENT:\\n * - Deploy after AstaVerde (Phase 1) contract is live\\n * - Deploy sequence: SCC token \\u2192 EcoStabilizer \\u2192 grant MINTER_ROLE \\u2192 renounce admin\\n * - SCC token address and AstaVerde address are immutable after deployment\\n * - Owner should be a multisig wallet for production deployments\\n *\\n * KEY MECHANICS:\\n * - Fixed rate: Each NFT collateralizes exactly 20 SCC (no oracles needed)\\n * - No liquidations: Users always reclaim their original NFT upon repayment\\n * - Non-fungible CDPs: Each NFT maintains unique identity through loan lifecycle\\n * - Redeemed protection: Only un-redeemed carbon offsets accepted as collateral\\n * - Pull pattern: Prevents DoS attacks during batch operations\\n *\\n * SECURITY:\\n * - ReentrancyGuard on all state-changing functions\\n * - Pausable for emergency situations\\n * - Access control via Ownable for admin functions\\n * - Indexed view functions for predictable gas on reads\\n * - CEI (Checks-Effects-Interactions) pattern throughout\\n *\\n * GAS OPTIMIZATION:\\n * - Batch operations save ~75% gas vs sequential calls\\n * - Target gas usage: <150k for deposit, <120k for withdraw\\n * - Indexed view functions and pagination for large datasets\\n *\\n * INTEGRATION:\\n * - Works with existing AstaVerde ERC-1155 NFTs\\n * - SCC minting exclusive to this vault (enforced by MINTER_ROLE)\\n * - Price stability through arbitrage with AstaVerde primary market\\n */\\ncontract EcoStabilizer is ERC1155Holder, ReentrancyGuard, Pausable, Ownable {\\n    /** CONSTANTS **/\\n    /// @notice Fixed SCC issuance rate per NFT collateral (20 SCC with 18 decimals)\\n    /// @dev Eliminates oracle dependency by using fixed collateralization ratio\\n    uint256 public constant SCC_PER_ASSET = 20 * 1e18; // 20 SCC, 18 decimals\\n\\n    /// @notice Maximum items per paginated query to ensure bounded gas usage\\n    uint256 public constant MAX_PAGE_SIZE = 2000; // Maximum items per paginated query\\n\\n    /** IMMUTABLES **/\\n    /// @notice Reference to the AstaVerde ERC-1155 contract for carbon offset NFTs\\n    /// @dev Set in constructor, cannot be changed after deployment\\n    IAstaVerde public immutable ecoAsset; // ERC1155 + token data\\n\\n    /// @notice Reference to the SCC ERC-20 token contract\\n    /// @dev This vault must have exclusive MINTER_ROLE on the SCC contract\\n    StabilizedCarbonCoin public immutable scc;\\n\\n    /** STATE **/\\n    /**\\n     * @notice Loan information for each collateralized NFT\\n     * @dev Tracks borrower address and active status for each tokenId\\n     * @param borrower The address that deposited the NFT and received SCC\\n     * @param active Whether the loan is currently active (NFT deposited, SCC not repaid)\\n     */\\n    struct Loan {\\n        address borrower;\\n        bool active;\\n    }\\n\\n    /// @notice Mapping from token ID to loan information\\n    /// @dev tokenId \\u2192 Loan structure containing borrower and status\\n    mapping(uint256 => Loan) public loans; // tokenId \\u2192 Loan\\n\\n    /** INDEXED STATE **/\\n    /// @notice Per-user list of active loan token IDs\\n    mapping(address => uint256[]) private userLoanIds;\\n    /// @notice Index of token ID in a user's loan list (for O(1) removals)\\n    mapping(address => mapping(uint256 => uint256)) private userLoanIndex;\\n    /// @notice Total number of active loans across all users\\n    uint256 public totalActiveLoans;\\n\\n    /** EVENTS **/\\n    /// @notice Emitted when a user deposits an NFT and receives SCC\\n    /// @param user The address depositing the NFT\\n    /// @param tokenId The ID of the deposited NFT\\n    event Deposited(address indexed user, uint256 indexed tokenId);\\n\\n    /// @notice Emitted when a user repays SCC and withdraws their NFT\\n    /// @param user The address withdrawing the NFT\\n    /// @param tokenId The ID of the withdrawn NFT\\n    event Withdrawn(address indexed user, uint256 indexed tokenId);\\n\\n    /// @notice Emitted when admin sweeps an unsolicited NFT\\n    /// @param to The address receiving the swept NFT\\n    /// @param tokenId The ID of the swept NFT\\n    event EmergencyNFTWithdrawn(address indexed to, uint256 indexed tokenId);\\n\\n    // No additional events required for indexing\\n\\n    /**\\n     * @notice Initialize the EcoStabilizer vault\\n     * @dev Sets immutable references to AstaVerde and SCC contracts\\n     * @param _ecoAsset Address of the AstaVerde ERC-1155 contract\\n     * @param _scc Address of the StabilizedCarbonCoin ERC-20 contract\\n     */\\n    constructor(address _ecoAsset, address _scc) Ownable(msg.sender) {\\n        require(_ecoAsset != address(0), \\\"invalid ecoAsset\\\");\\n        require(_scc != address(0), \\\"invalid scc\\\");\\n        ecoAsset = IAstaVerde(_ecoAsset);\\n        scc = StabilizedCarbonCoin(_scc);\\n    }\\n\\n    /*\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500  INTERNAL: INDEX HELPERS  \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500*/\\n    function _addToUserIndex(address user, uint256 tokenId) internal {\\n        userLoanIndex[user][tokenId] = userLoanIds[user].length;\\n        userLoanIds[user].push(tokenId);\\n    }\\n\\n    function _removeFromUserIndex(address user, uint256 tokenId) internal {\\n        uint256 idx = userLoanIndex[user][tokenId];\\n        uint256 lastIdx = userLoanIds[user].length - 1;\\n        if (idx != lastIdx) {\\n            uint256 moved = userLoanIds[user][lastIdx];\\n            userLoanIds[user][idx] = moved;\\n            userLoanIndex[user][moved] = idx;\\n        }\\n        userLoanIds[user].pop();\\n        delete userLoanIndex[user][tokenId];\\n    }\\n\\n    /*\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500  CORE FUNCTIONS  \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500*/\\n\\n    /**\\n     * @notice Deposit an AstaVerde NFT as collateral and receive 20 SCC\\n     * @dev Implements CEI pattern, checks redemption status, mints fixed SCC amount\\n     *\\n     * Requirements:\\n     * - Token must not have an active loan\\n     * - Caller must own the NFT\\n     * - NFT must not be redeemed (real-world carbon offset not claimed)\\n     * - Contract must not be paused\\n     *\\n     * @param tokenId The ID of the AstaVerde NFT to deposit\\n     */\\n    function deposit(uint256 tokenId) external nonReentrant whenNotPaused {\\n        require(!loans[tokenId].active, \\\"loan active\\\");\\n        require(ecoAsset.balanceOf(msg.sender, tokenId) > 0, \\\"not token owner\\\");\\n        require(!ecoAsset.isRedeemed(tokenId), \\\"redeemed asset\\\");\\n\\n        // Update state first (CEI pattern)\\n        loans[tokenId] = Loan(msg.sender, true);\\n        _addToUserIndex(msg.sender, tokenId);\\n        totalActiveLoans += 1;\\n\\n        // External interactions after state changes\\n        ecoAsset.safeTransferFrom(msg.sender, address(this), tokenId, 1, \\\"\\\");\\n        scc.mint(msg.sender, SCC_PER_ASSET);\\n\\n        emit Deposited(msg.sender, tokenId);\\n    }\\n\\n    /**\\n     * @notice Repay 20 SCC and withdraw your collateralized NFT\\n     * @dev Burns SCC from caller and returns the exact NFT originally deposited\\n     *\\n     * Requirements:\\n     * - Caller must be the original borrower\\n     * - Loan must be active\\n     * - Caller must have 20 SCC balance\\n     * - Contract must not be paused\\n     *\\n     * @param tokenId The ID of the NFT to withdraw\\n     */\\n    function withdraw(uint256 tokenId) external nonReentrant whenNotPaused {\\n        _withdrawInternal(tokenId);\\n    }\\n\\n    /**\\n     * @notice Internal withdraw logic used by both single and batch operations\\n     * @dev Separated to avoid code duplication while maintaining security\\n     * @param tokenId The ID of the NFT to withdraw\\n     */\\n    function _withdrawInternal(uint256 tokenId) internal {\\n        Loan memory loan = loans[tokenId];\\n        require(loan.active && loan.borrower == msg.sender, \\\"not borrower\\\");\\n\\n        // Update state first (CEI pattern)\\n        _removeFromUserIndex(loan.borrower, tokenId);\\n        totalActiveLoans -= 1;\\n        delete loans[tokenId];\\n\\n        // Collect repayment then return collateral\\n        scc.transferFrom(msg.sender, address(this), SCC_PER_ASSET);\\n        scc.burn(SCC_PER_ASSET);\\n        ecoAsset.safeTransferFrom(address(this), msg.sender, tokenId, 1, \\\"\\\");\\n\\n        emit Withdrawn(msg.sender, tokenId);\\n    }\\n\\n    /*\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500  ADMIN  \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500*/\\n\\n    /**\\n     * @notice Pause all deposits and withdrawals\\n     * @dev Only callable by owner, typically for emergency situations\\n     */\\n    function pause() external onlyOwner {\\n        _pause();\\n    }\\n\\n    /**\\n     * @notice Resume deposits and withdrawals after pause\\n     * @dev Only callable by owner after addressing pause reason\\n     */\\n    function unpause() external onlyOwner {\\n        _unpause();\\n    }\\n\\n    // Removed: maxScanRange configuration and event; no longer needed with indices\\n\\n    /**\\n     * @notice Recover unsolicited NFTs sent to the vault\\n     * @dev Only for NFTs without active loans (prevents stealing collateral)\\n     *\\n     * Use cases:\\n     * - User accidentally sends NFT directly to vault\\n     * - Cleanup of test/abandoned NFTs\\n     * - Recovery from failed transactions\\n     *\\n     * @param tokenId The ID of the NFT to sweep\\n     * @param to The address to send the NFT to\\n     */\\n    function adminSweepNFT(uint256 tokenId, address to) external onlyOwner {\\n        require(!loans[tokenId].active, \\\"loan active\\\");\\n        require(to != address(0), \\\"invalid address\\\");\\n        ecoAsset.safeTransferFrom(address(this), to, tokenId, 1, \\\"\\\");\\n        emit EmergencyNFTWithdrawn(to, tokenId);\\n    }\\n\\n    /*\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500  VIEW FUNCTIONS  \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500*/\\n    /// @notice Get user's active loans (O(k) copy from indexed storage)\\n    function getUserLoans(address user) external view returns (uint256[] memory out) {\\n        uint256 len = userLoanIds[user].length;\\n        out = new uint256[](len);\\n        for (uint256 i = 0; i < len; i++) {\\n            out[i] = userLoanIds[user][i];\\n        }\\n    }\\n\\n    /// @notice Get total count of active loans across all users (O(1))\\n    function getTotalActiveLoans() external view returns (uint256) {\\n        return totalActiveLoans;\\n    }\\n\\n    /// @notice Get user's loan count (O(1))\\n    function getUserLoanCount(address user) external view returns (uint256) {\\n        return userLoanIds[user].length;\\n    }\\n\\n    /*\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500  BATCH OPERATIONS  \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500*/\\n\\n    /**\\n     * @notice Deposit multiple NFTs in a single transaction\\n     * @param tokenIds Array of token IDs to deposit\\n     * @dev Gas efficient batch operation (saves ~75% gas vs sequential deposits)\\n     */\\n    function depositBatch(uint256[] calldata tokenIds) external nonReentrant whenNotPaused {\\n        require(tokenIds.length > 0, \\\"empty array\\\");\\n        require(tokenIds.length <= 20, \\\"too many tokens\\\"); // Reasonable limit to prevent gas issues\\n\\n        uint256 totalSCC = 0;\\n\\n        for (uint256 i = 0; i < tokenIds.length; i++) {\\n            uint256 tokenId = tokenIds[i];\\n\\n            // Check each token\\n            require(!loans[tokenId].active, \\\"loan active\\\");\\n            require(ecoAsset.balanceOf(msg.sender, tokenId) > 0, \\\"not token owner\\\");\\n            require(!ecoAsset.isRedeemed(tokenId), \\\"redeemed asset\\\");\\n\\n            // Record the loan\\n            loans[tokenId] = Loan({borrower: msg.sender, active: true});\\n            _addToUserIndex(msg.sender, tokenId);\\n            totalActiveLoans += 1;\\n\\n            totalSCC += SCC_PER_ASSET;\\n\\n            emit Deposited(msg.sender, tokenId);\\n        }\\n\\n        // Transfer all NFTs in one batch call\\n        uint256[] memory amounts = new uint256[](tokenIds.length);\\n        for (uint256 i = 0; i < tokenIds.length; i++) {\\n            amounts[i] = 1;\\n        }\\n        ecoAsset.safeBatchTransferFrom(msg.sender, address(this), tokenIds, amounts, \\\"\\\");\\n\\n        // Mint all SCC at once\\n        scc.mint(msg.sender, totalSCC);\\n    }\\n\\n    /**\\n     * @notice Withdraw multiple NFTs in a single transaction\\n     * @param tokenIds Array of token IDs to withdraw\\n     * @dev Requires sufficient SCC balance for all withdrawals\\n     */\\n    function withdrawBatch(uint256[] calldata tokenIds) external nonReentrant whenNotPaused {\\n        require(tokenIds.length > 0, \\\"empty array\\\");\\n        require(tokenIds.length <= 20, \\\"too many tokens\\\");\\n\\n        uint256 totalSCC = tokenIds.length * SCC_PER_ASSET;\\n\\n        // Check SCC balance upfront\\n        require(scc.balanceOf(msg.sender) >= totalSCC, \\\"insufficient SCC\\\");\\n\\n        for (uint256 i = 0; i < tokenIds.length; i++) {\\n            uint256 tokenId = tokenIds[i];\\n\\n            // Verify ownership of each loan\\n            require(loans[tokenId].active, \\\"loan not active\\\");\\n            require(loans[tokenId].borrower == msg.sender, \\\"not borrower\\\");\\n\\n            // Clear the loan via index removal and delete\\n            _removeFromUserIndex(msg.sender, tokenId);\\n            totalActiveLoans -= 1;\\n            delete loans[tokenId];\\n\\n            emit Withdrawn(msg.sender, tokenId);\\n        }\\n\\n        // Collect repayment then burn all SCC at once\\n        scc.transferFrom(msg.sender, address(this), totalSCC);\\n        scc.burn(totalSCC);\\n\\n        // Transfer all NFTs back in one batch call\\n        uint256[] memory amounts = new uint256[](tokenIds.length);\\n        for (uint256 i = 0; i < tokenIds.length; i++) {\\n            amounts[i] = 1;\\n        }\\n        ecoAsset.safeBatchTransferFrom(address(this), msg.sender, tokenIds, amounts, \\\"\\\");\\n    }\\n\\n    /*\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500  INDEXED VIEW FUNCTIONS  \\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500*/\\n    /// @notice Get user's active loans with offset/limit over indexed storage\\n    /// @return tokenIds Slice of user's active loan IDs\\n    /// @return nextOffset Next offset to continue from (0 if end reached)\\n    function getUserLoansIndexed(\\n        address user,\\n        uint256 offset,\\n        uint256 limit\\n    ) external view returns (uint256[] memory tokenIds, uint256 nextOffset) {\\n        require(limit > 0 && limit <= MAX_PAGE_SIZE, \\\"invalid limit\\\");\\n        uint256 len = userLoanIds[user].length;\\n        if (offset >= len) {\\n            return (new uint256[](0), 0);\\n        }\\n        uint256 end = offset + limit;\\n        if (end > len) {\\n            end = len;\\n        }\\n        uint256 size = end - offset;\\n        tokenIds = new uint256[](size);\\n        for (uint256 i = 0; i < size; i++) {\\n            tokenIds[i] = userLoanIds[user][offset + i];\\n        }\\n        nextOffset = end < len ? end : 0;\\n    }\\n}\\n\",\"keccak256\":\"0xc56d79a19505698dc55108528d90f209de57638bbb492d060d325f381334cc73\",\"license\":\"MIT\"},\"contracts/IAstaVerde.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.27;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC1155/IERC1155.sol\\\";\\n\\n/**\\n * @title IAstaVerde Interface\\n * @dev Extends IERC1155 to provide access to AstaVerde-specific functions needed by EcoStabilizer vault\\n *\\n * This interface enables the vault contract to:\\n * - Check redemption status via isRedeemed() for vault collateral validation\\n * - Verify NFTs haven't been redeemed before accepting as collateral\\n * - Handle standard ERC1155 transfers for vault deposits/withdrawals\\n * - Get the latest token ID for validation purposes\\n *\\n * The vault requires redemption status checks because only un-redeemed EcoAssets\\n * can be deposited as collateral per Phase 2 specifications.\\n */\\ninterface IAstaVerde is IERC1155 {\\n    /**\\n     * @notice Get the most recently minted token ID\\n     * @return The highest token ID that has been minted\\n     */\\n    function lastTokenID() external view returns (uint256);\\n\\n    /**\\n     * @notice Check if a token has been redeemed\\n     * @param tokenId The ID of the token to check\\n     * @return Whether the token has been redeemed\\n     * @dev Provides a stable interface that doesn't depend on internal struct layout\\n     */\\n    function isRedeemed(uint256 tokenId) external view returns (bool);\\n}\\n\",\"keccak256\":\"0x639affe8517d637da869fb9f738f5c2fc88e465ad1f9212d8c0df4417b52cc3e\",\"license\":\"MIT\"},\"contracts/StabilizedCarbonCoin.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.27;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/ERC20.sol\\\";\\nimport \\\"@openzeppelin/contracts/access/AccessControl.sol\\\";\\n\\n/**\\n * @title StabilizedCarbonCoin - Debt Token for Carbon Offset Collateralization\\n * @author AstaVerde Team\\n * @notice ERC-20 token representing debt against collateralized AstaVerde NFTs\\n * @dev Mintable exclusively by EcoStabilizer vault with 1B supply cap\\n *\\n * DEPLOYMENT:\\n * - Deploy before EcoStabilizer vault\\n * - Grant MINTER_ROLE to vault address after vault deployment\\n * - Renounce DEFAULT_ADMIN_ROLE for immutable access control\\n * - Supply cap of 1B SCC enforced on-chain\\n *\\n * KEY MECHANICS:\\n * - Fixed issuance: 20 SCC per collateralized NFT\\n * - Exclusive minting: Only EcoStabilizer vault can mint\\n * - Burn mechanisms: Direct burn() and approved burnFrom()\\n * - No transfer fees: Standard ERC-20 transfers\\n * - 18 decimals for standard DeFi compatibility\\n *\\n * SECURITY:\\n * - Role-based access control via OpenZeppelin AccessControl\\n * - MINTER_ROLE restricted to single vault address\\n * - Supply cap prevents unlimited inflation\\n * - Zero address checks on all operations\\n * - Amount validation to prevent zero-value operations\\n *\\n * PRICE STABILITY:\\n * - Arbitrage mechanism with AstaVerde primary market\\n * - If 20 SCC < new NFT price: buy SCC, withdraw NFT, sell on primary\\n * - If 20 SCC > new NFT price: buy NFT, deposit for SCC, sell SCC\\n * - Natural equilibrium around 1/20th of NFT floor price\\n */\\ncontract StabilizedCarbonCoin is ERC20, AccessControl {\\n    /// @notice Role identifier for minting privileges\\n    /// @dev Should be granted exclusively to EcoStabilizer vault\\n    bytes32 public constant MINTER_ROLE = keccak256(\\\"MINTER_ROLE\\\");\\n\\n    /** SUPPLY CAP **/\\n    /// @notice Maximum total supply of SCC tokens (1 billion with 18 decimals)\\n    /// @dev Enforced in mint() to prevent inflation beyond ecosystem capacity\\n    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 1e18; // 1B SCC maximum supply\\n\\n    /**\\n     * @notice Initialize the StabilizedCarbonCoin token\\n     * @dev Sets up access control and optionally grants MINTER_ROLE to vault\\n     *\\n     * Deployment patterns:\\n     * 1. With vault address: Deploy SCC with vault address to grant MINTER_ROLE immediately\\n     * 2. Without vault (address(0)): Deploy SCC first, then grant MINTER_ROLE after vault deployment\\n     *\\n     * Post-deployment:\\n     * - Admin should grant MINTER_ROLE to vault if not done in constructor\\n     * - Admin should renounce DEFAULT_ADMIN_ROLE for immutable access control\\n     *\\n     * @param vault Address of the EcoStabilizer vault (or address(0) for later assignment)\\n     */\\n    constructor(address vault) ERC20(\\\"Stabilized Carbon Coin\\\", \\\"SCC\\\") {\\n        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);\\n\\n        // Optionally grant MINTER_ROLE during deployment to prevent race condition\\n        if (vault != address(0)) {\\n            _grantRole(MINTER_ROLE, vault);\\n        }\\n        // If vault is address(0), MINTER_ROLE granted explicitly after vault deployment\\n    }\\n\\n    /**\\n     * @notice Mint new SCC tokens to a specified address\\n     * @dev Only callable by addresses with MINTER_ROLE (should be vault only)\\n     *\\n     * Requirements:\\n     * - Caller must have MINTER_ROLE\\n     * - Recipient cannot be zero address\\n     * - Amount must be greater than 0\\n     * - Total supply after minting cannot exceed MAX_SUPPLY\\n     *\\n     * @param to Address to receive the minted tokens\\n     * @param amount Number of tokens to mint (typically 20e18 per NFT)\\n     */\\n    function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) {\\n        require(to != address(0), \\\"mint to zero address\\\");\\n        require(amount > 0, \\\"mint zero amount\\\");\\n        require(totalSupply() + amount <= MAX_SUPPLY, \\\"exceeds max supply\\\");\\n        _mint(to, amount);\\n    }\\n\\n    /**\\n     * @notice Burn SCC tokens from caller's balance\\n     * @dev Used by EcoStabilizer during NFT withdrawal process\\n     *\\n     * Requirements:\\n     * - Amount must be greater than 0\\n     * - Caller must have sufficient balance\\n     *\\n     * @param amount Number of tokens to burn\\n     */\\n    function burn(uint256 amount) external {\\n        require(amount > 0, \\\"burn zero amount\\\");\\n        _burn(msg.sender, amount);\\n    }\\n\\n    /**\\n     * @notice Burn SCC tokens from another address with approval\\n     * @dev Alternative burn mechanism using ERC-20 allowance pattern\\n     *\\n     * Requirements:\\n     * - Account cannot be zero address\\n     * - Amount must be greater than 0\\n     * - Caller must have sufficient allowance from account\\n     * - Account must have sufficient balance\\n     *\\n     * Usage:\\n     * - Can be used for delegated burning scenarios\\n     * - Useful for smart contract integrations\\n     *\\n     * @param account Address to burn tokens from\\n     * @param amount Number of tokens to burn\\n     */\\n    function burnFrom(address account, uint256 amount) external {\\n        require(account != address(0), \\\"burn from zero address\\\");\\n        require(amount > 0, \\\"burn zero amount\\\");\\n        _spendAllowance(account, msg.sender, amount);\\n        _burn(account, amount);\\n    }\\n\\n    /**\\n     * @notice Get the number of decimals used by the token\\n     * @dev Standard 18 decimals for ERC-20 compatibility\\n     * @return Always returns 18\\n     */\\n    function decimals() public pure override returns (uint8) {\\n        return 18;\\n    }\\n}\\n\",\"keccak256\":\"0x0004bf19d8655981f806d0d915a91828232539d78f723402131b2ecb98562e5e\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x60c0346101bf57601f611e4238819003918201601f19168301916001600160401b038311848410176101c45780849260409485528339810103126101bf57610052602061004b836101da565b92016101da565b600160005533156101a95760018054610100600160a81b0319811633600881811b610100600160a81b031692909217909355604051949291901c6001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0600080a36001600160a01b031691821561017457506001600160a01b03169081156101415760805260a052604051611c5390816101ef82396080518181816102840152818161076401528181610b6301528181610f10015281816110fe0152611268015260a051818181610310015281816108b201528181610a830152818161103501526111c40152f35b60405162461bcd60e51b815260206004820152600b60248201526a696e76616c69642073636360a81b6044820152606490fd5b62461bcd60e51b815260206004820152601060248201526f1a5b9d985b1a59081958dbd05cdcd95d60821b6044820152606490fd5b631e4fbdf760e01b600052600060045260246000fd5b600080fd5b634e487b7160e01b600052604160045260246000fd5b51906001600160a01b03821682036101bf5756fe608080604052600436101561001357600080fd5b600090813560e01c90816301ffc9a7146113fa5750806302bf321f1461136b5780632e1a7d4d1461112257806337989f33146110de5780633f4ba83a1461107657806348f4da2014611059578063543acd50146110155780635b2cb00a14610eb25780635c975abb14610e8f578063715018a614610e235780637fa8bf4f14610dff5780638456cb5914610da55780638da5cb5b14610d7b57806390ed04f2146105fe5780639c8d415614610a12578063aa3b6867146109da578063b6b55f2514610700578063bc197c8114610667578063d44415761461061c578063dc63af41146105fe578063e1ec3c68146105be578063e3c7309b1461023c578063f23a6e61146101e15763f2fde38b1461012957600080fd5b346101de5760203660031901126101de5761014261144f565b61014a611a9a565b6001600160a01b0381169081156101ca576001600160a01b039074ffffffffffffffffffffffffffffffffffffffff006001549160081b1674ffffffffffffffffffffffffffffffffffffffff001982161760015560081c167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08380a380f35b631e4fbdf760e01b83526004839052602483fd5b80fd5b50346101de5760a03660031901126101de576101fb61144f565b50610204611465565b5060843567ffffffffffffffff8111610238576102259036906004016115cc565b5060405163f23a6e6160e01b8152602090f35b5080fd5b50346101de5761024b366114af565b610256929192611a5b565b61025e611a7d565b6102698115156116e3565b610276601482111561172f565b819082936001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016945b8281106103d557506102b782611623565b94845b8381106103c05750948585963b156103bc576102f29386809460405196879586948593631759616b60e11b85523033600487016117ef565b03925af19081156103b1578391610399575b50506001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016803b15610395576040516340c10f1960e01b8152336004820152602481019290925282908290818381604481015b03925af1801561038a57610375575b506001905580f35b8161037f91611535565b6101de57803861036d565b6040513d84823e3d90fd5b5050fd5b816103a391611535565b6103ae578138610304565b50fd5b6040513d85823e3d90fd5b8580fd5b8060016103ce81938a611683565b52016102ba565b6103e081848461177b565b359384865260026020526103fe60ff604088205460a01c1615611697565b604051627eeac760e11b8152336004820152602481018690526020816044818b5afa801561057e578790610589575b6104399150151561186f565b60405163032d33cd60e41b8152600481018690526020816024818b5afa90811561057e5790610470918891610550575b50156118bb565b60405161047c81611503565b338152602081016001815286885260026020526001600160a01b036040892092511674ffffffffffffffffffffffffffffffffffffffffff1960ff60a01b84549351151560a01b169216171790556104d48533611beb565b6005546001810180911161053c576005556801158e460913d000008101809111610528579060019194337f2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c48880a3016102a6565b634e487b7160e01b86526011600452602486fd5b634e487b7160e01b87526011600452602487fd5b610571915060203d8111610577575b6105698183611535565b8101906117d7565b38610469565b503d61055f565b6040513d89823e3d90fd5b5060203d81116105b7575b61059e8183611535565b602082600092810103126101de5750610439905161042d565b503d610594565b50346101de5760203660031901126101de576040809160043581526002602052205460ff8251916001600160a01b038116835260a01c1615156020820152f35b50346101de57806003193601126101de576020600554604051908152f35b50346101de5760603660031901126101de5761065d61064961063c61144f565b604435906024359061192a565b60405192839260408452604084019061147b565b9060208301520390f35b50346101de5760a03660031901126101de5761068161144f565b5061068a611465565b5060443567ffffffffffffffff8111610238576106ab90369060040161156f565b5060643567ffffffffffffffff8111610238576106cc90369060040161156f565b5060843567ffffffffffffffff8111610238576106ed9036906004016115cc565b5060405163bc197c8160e01b8152602090f35b50346101de5760203660031901126101de5760043561071d611a5b565b610725611a7d565b808252600260205261074160ff604084205460a01c1615611697565b604051627eeac760e11b8152336004820152602481018290526001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001690602081604481855afa80156109965784906109a1575b6107a79150151561186f565b60405163032d33cd60e41b815260048101839052602081602481855afa8015610996576107db91859161097d5750156118bb565b6040516107e781611503565b338152602081016001815283855260026020526001600160a01b036040862092511674ffffffffffffffffffffffffffffffffffffffffff1960ff60a01b84549351151560a01b1692161717905561083f8233611beb565b60055460018101809111610969576005558290803b1561023857604051637921219560e11b8152336004820152306024820152604481018490526001606482015260a06084820152600060a4820152908290829060c490829084905af1801561038a57610954575b506001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016803b15610238578180916044604051809481936340c10f1960e01b83523360048401526801158e460913d0000060248401525af1801561038a5761093f575b5050337f2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c48380a36001815580f35b8161094991611535565b610238578138610911565b8161095e91611535565b6102385781386108a7565b634e487b7160e01b84526011600452602484fd5b610571915060203d602011610577576105698183611535565b6040513d86823e3d90fd5b506020813d6020116109d2575b816109bb60209383611535565b810103126109cd576107a7905161079b565b600080fd5b3d91506109ae565b50346101de5760203660031901126101de5760406020916001600160a01b03610a0161144f565b168152600383522054604051908152f35b50346101de57610a21366114af565b610a2c929192611a5b565b610a34611a7d565b8015610a4081156116e3565b610a4d601483111561172f565b6801158e460913d000008202908282046801158e460913d00000141715610d67576040516370a0823160e01b81523360048201527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03169190602081602481865afa908115610bff579082918691610d32575b5010610ced57835b838110610c0a57506040516323b872dd60e01b81523360048201523060248201526044810182905260208160648188875af18015610bff57610be2575b50813b15610bde578391602483926040519485938492630852cd8d60e31b845260048401525af180156103b157908391610bc9575b5050610b4c81611623565b92825b828110610bb4575082936001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016803b15610bb05761035e9385809460405196879586948593631759616b60e11b85523330600487016117ef565b8480fd5b806001610bc2819388611683565b5201610b4f565b81610bd391611535565b610238578138610b41565b8380fd5b610bfa9060203d602011610577576105698183611535565b610b0c565b6040513d87823e3d90fd5b610c1581858861177b565b35808652600260205260ff604087205460a01c1615610ca8578086526002602052610c4e336001600160a01b036040892054161461178b565b610c588133611ac6565b600554600019810190811161053c5790600192916005558087526002602052866040812055337f7084f5476618d8e60b11ef0d7d3f06914655adb8793e28ff7f018d4c76d505d58880a301610acf565b60405162461bcd60e51b815260206004820152600f60248201527f6c6f616e206e6f742061637469766500000000000000000000000000000000006044820152606490fd5b60405162461bcd60e51b815260206004820152601060248201527f696e73756666696369656e7420534343000000000000000000000000000000006044820152606490fd5b9150506020813d602011610d5f575b81610d4e60209383611535565b810103126109cd5781905138610ac7565b3d9150610d41565b634e487b7160e01b83526011600452602483fd5b50346101de57806003193601126101de5760206001600160a01b0360015460081c16604051908152f35b50346101de57806003193601126101de57610dbe611a9a565b610dc6611a7d565b600160ff19815416176001557f62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a2586020604051338152a180f35b50346101de57806003193601126101de5760206040516801158e460913d000008152f35b50346101de57806003193601126101de57610e3c611a9a565b806001600160a01b0360015474ffffffffffffffffffffffffffffffffffffffff0019811660015560081c167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a380f35b50346101de57806003193601126101de57602060ff600154166040519015158152f35b50346101de5760403660031901126101de57600435610ecf611465565b610ed7611a9a565b8183526002602052610ef360ff604085205460a01c1615611697565b6001600160a01b038116908115610fd05783906001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016803b15610fcc57604051637921219560e11b81523060048201526001600160a01b03929092166024830152604482018590526001606483015260a06084830152600060a48301528290829060c490829084905af1801561038a57610fb7575b50807f1b79409798ab74f249555c31f93a33061f18d32656851f4453cce197524f103691a380f35b81610fc191611535565b610fcc578238610f8f565b8280fd5b60405162461bcd60e51b815260206004820152600f60248201527f696e76616c6964206164647265737300000000000000000000000000000000006044820152606490fd5b50346101de57806003193601126101de5760206040516001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000168152f35b50346101de57806003193601126101de5760206040516107d08152f35b50346101de57806003193601126101de5761108f611a9a565b60015460ff8116156110cf5760ff19166001557f5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa6020604051338152a180f35b638dfc202b60e01b8252600482fd5b50346101de57806003193601126101de5760206040516001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000168152f35b50346101de5760203660031901126101de5760043590611140611a5b565b611148611a7d565b818152600260205261119a826001600160a01b03604084206111936040519161117083611503565b5460ff8482169182855260a01c1615159081602085015281611361575b5061178b565b5116611ac6565b600554600019810190811161134d5760055581815260026020528060408120556001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000166040516323b872dd60e01b81523360048201523060248201526801158e460913d00000604482015260208160648186865af180156103b157611330575b50803b1561023857818091602460405180948193630852cd8d60e31b83526801158e460913d0000060048401525af1801561038a57611320575b5090816001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016803b1561023857604051637921219560e11b8152306004820152336024820152604481018490526001606482015260a06084820152600060a4820152908290829060c490829084905af1801561038a5761130b575b5050337f7084f5476618d8e60b11ef0d7d3f06914655adb8793e28ff7f018d4c76d505d58380a36001815580f35b8161131591611535565b6102385781386112dd565b8161132a91611535565b3861125b565b6113489060203d602011610577576105698183611535565b611221565b634e487b7160e01b82526011600452602482fd5b905033143861118d565b50346101de5760203660031901126101de576001600160a01b0361138d61144f565b169081815260036020526040812054906113a682611623565b92815b8381106113ca57604051602080825281906113c69082018861147b565b0390f35b60019082845260036020526113e28160408620611655565b90549060031b1c6113f38288611683565b52016113a9565b9050346102385760203660031901126102385760043563ffffffff60e01b8116809103610fcc5760209250630271189760e51b811490811561143e575b5015158152f35b6301ffc9a760e01b14905038611437565b600435906001600160a01b03821682036109cd57565b602435906001600160a01b03821682036109cd57565b906020808351928381520192019060005b8181106114995750505090565b825184526020938401939092019160010161148c565b9060206003198301126109cd5760043567ffffffffffffffff81116109cd57826023820112156109cd5780600401359267ffffffffffffffff84116109cd5760248460051b830101116109cd576024019190565b6040810190811067ffffffffffffffff82111761151f57604052565b634e487b7160e01b600052604160045260246000fd5b90601f8019910116810190811067ffffffffffffffff82111761151f57604052565b67ffffffffffffffff811161151f5760051b60200190565b9080601f830112156109cd57813561158681611557565b926115946040519485611535565b81845260208085019260051b8201019283116109cd57602001905b8282106115bc5750505090565b81358152602091820191016115af565b81601f820112156109cd5780359067ffffffffffffffff821161151f5760405192611601601f8401601f191660200185611535565b828452602083830101116109cd57816000926020809301838601378301015290565b9061162d82611557565b61163a6040519182611535565b828152809261164b601f1991611557565b0190602036910137565b805482101561166d5760005260206000200190600090565b634e487b7160e01b600052603260045260246000fd5b805182101561166d5760209160051b010190565b1561169e57565b60405162461bcd60e51b815260206004820152600b60248201527f6c6f616e206163746976650000000000000000000000000000000000000000006044820152606490fd5b156116ea57565b60405162461bcd60e51b815260206004820152600b60248201527f656d7074792061727261790000000000000000000000000000000000000000006044820152606490fd5b1561173657565b60405162461bcd60e51b815260206004820152600f60248201527f746f6f206d616e7920746f6b656e7300000000000000000000000000000000006044820152606490fd5b919081101561166d5760051b0190565b1561179257565b60405162461bcd60e51b815260206004820152600c60248201527f6e6f7420626f72726f77657200000000000000000000000000000000000000006044820152606490fd5b908160209103126109cd575180151581036109cd5790565b9394916001600160a01b03809216855216602084015260a060408401528360a08401527f07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff84116109cd5760c061185e9260209560051b809183870137840181858203016060860152019061147b565b906080818303910152600081520190565b1561187657565b60405162461bcd60e51b815260206004820152600f60248201527f6e6f7420746f6b656e206f776e657200000000000000000000000000000000006044820152606490fd5b156118c257565b60405162461bcd60e51b815260206004820152600e60248201527f72656465656d65642061737365740000000000000000000000000000000000006044820152606490fd5b9190820180921161191457565b634e487b7160e01b600052601160045260246000fd5b92919283151580611a4f575b15611a0a576001600160a01b03169283600052600360205260406000205490818310156119e8576119679083611907565b918183116119df575b808303908382116119145761198482611623565b9560005b8381106119a3575050505081101561199d5790565b50600090565b6001908260005260036020526119c760406000206119c18387611907565b90611655565b90549060031b1c6119d8828b611683565b5201611988565b91508091611970565b50505090506040516119fb602082611535565b60008152600036813790600090565b60405162461bcd60e51b815260206004820152600d60248201527f696e76616c6964206c696d6974000000000000000000000000000000000000006044820152606490fd5b506107d0841115611936565b600260005414611a6c576002600055565b633ee5aeb560e01b60005260046000fd5b60ff60015416611a8957565b63d93c066560e01b60005260046000fd5b6001600160a01b0360015460081c163303611ab157565b63118cdaa760e01b6000523360045260246000fd5b6001600160a01b0316806000526004602052604060002082600052602052604060002054816000526003602052604060002054600019810190811161191457808203611b77575b5050806000526003602052604060002080548015611b61576000190190611b348282611655565b8154906000199060031b1b1916905555600052600460205260406000209060005260205260006040812055565b634e487b7160e01b600052603160045260246000fd5b611b8e908360005260036020526040600020611655565b90549060031b1c826000526003602052611bc981611bb0846040600020611655565b90919082549060031b91821b91600019901b1916179055565b8260005260046020526040600020906000526020526040600020553880611b0d565b6001600160a01b031660008181526003602081815260408084208054600484528286208887528452918520829055949093525291906801000000000000000083101561151f5782611bb0916001611c4495018155611655565b56fea164736f6c634300081b000a",
+  "deployedBytecode": "0x608080604052600436101561001357600080fd5b600090813560e01c90816301ffc9a7146113fa5750806302bf321f1461136b5780632e1a7d4d1461112257806337989f33146110de5780633f4ba83a1461107657806348f4da2014611059578063543acd50146110155780635b2cb00a14610eb25780635c975abb14610e8f578063715018a614610e235780637fa8bf4f14610dff5780638456cb5914610da55780638da5cb5b14610d7b57806390ed04f2146105fe5780639c8d415614610a12578063aa3b6867146109da578063b6b55f2514610700578063bc197c8114610667578063d44415761461061c578063dc63af41146105fe578063e1ec3c68146105be578063e3c7309b1461023c578063f23a6e61146101e15763f2fde38b1461012957600080fd5b346101de5760203660031901126101de5761014261144f565b61014a611a9a565b6001600160a01b0381169081156101ca576001600160a01b039074ffffffffffffffffffffffffffffffffffffffff006001549160081b1674ffffffffffffffffffffffffffffffffffffffff001982161760015560081c167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08380a380f35b631e4fbdf760e01b83526004839052602483fd5b80fd5b50346101de5760a03660031901126101de576101fb61144f565b50610204611465565b5060843567ffffffffffffffff8111610238576102259036906004016115cc565b5060405163f23a6e6160e01b8152602090f35b5080fd5b50346101de5761024b366114af565b610256929192611a5b565b61025e611a7d565b6102698115156116e3565b610276601482111561172f565b819082936001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016945b8281106103d557506102b782611623565b94845b8381106103c05750948585963b156103bc576102f29386809460405196879586948593631759616b60e11b85523033600487016117ef565b03925af19081156103b1578391610399575b50506001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016803b15610395576040516340c10f1960e01b8152336004820152602481019290925282908290818381604481015b03925af1801561038a57610375575b506001905580f35b8161037f91611535565b6101de57803861036d565b6040513d84823e3d90fd5b5050fd5b816103a391611535565b6103ae578138610304565b50fd5b6040513d85823e3d90fd5b8580fd5b8060016103ce81938a611683565b52016102ba565b6103e081848461177b565b359384865260026020526103fe60ff604088205460a01c1615611697565b604051627eeac760e11b8152336004820152602481018690526020816044818b5afa801561057e578790610589575b6104399150151561186f565b60405163032d33cd60e41b8152600481018690526020816024818b5afa90811561057e5790610470918891610550575b50156118bb565b60405161047c81611503565b338152602081016001815286885260026020526001600160a01b036040892092511674ffffffffffffffffffffffffffffffffffffffffff1960ff60a01b84549351151560a01b169216171790556104d48533611beb565b6005546001810180911161053c576005556801158e460913d000008101809111610528579060019194337f2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c48880a3016102a6565b634e487b7160e01b86526011600452602486fd5b634e487b7160e01b87526011600452602487fd5b610571915060203d8111610577575b6105698183611535565b8101906117d7565b38610469565b503d61055f565b6040513d89823e3d90fd5b5060203d81116105b7575b61059e8183611535565b602082600092810103126101de5750610439905161042d565b503d610594565b50346101de5760203660031901126101de576040809160043581526002602052205460ff8251916001600160a01b038116835260a01c1615156020820152f35b50346101de57806003193601126101de576020600554604051908152f35b50346101de5760603660031901126101de5761065d61064961063c61144f565b604435906024359061192a565b60405192839260408452604084019061147b565b9060208301520390f35b50346101de5760a03660031901126101de5761068161144f565b5061068a611465565b5060443567ffffffffffffffff8111610238576106ab90369060040161156f565b5060643567ffffffffffffffff8111610238576106cc90369060040161156f565b5060843567ffffffffffffffff8111610238576106ed9036906004016115cc565b5060405163bc197c8160e01b8152602090f35b50346101de5760203660031901126101de5760043561071d611a5b565b610725611a7d565b808252600260205261074160ff604084205460a01c1615611697565b604051627eeac760e11b8152336004820152602481018290526001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001690602081604481855afa80156109965784906109a1575b6107a79150151561186f565b60405163032d33cd60e41b815260048101839052602081602481855afa8015610996576107db91859161097d5750156118bb565b6040516107e781611503565b338152602081016001815283855260026020526001600160a01b036040862092511674ffffffffffffffffffffffffffffffffffffffffff1960ff60a01b84549351151560a01b1692161717905561083f8233611beb565b60055460018101809111610969576005558290803b1561023857604051637921219560e11b8152336004820152306024820152604481018490526001606482015260a06084820152600060a4820152908290829060c490829084905af1801561038a57610954575b506001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016803b15610238578180916044604051809481936340c10f1960e01b83523360048401526801158e460913d0000060248401525af1801561038a5761093f575b5050337f2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c48380a36001815580f35b8161094991611535565b610238578138610911565b8161095e91611535565b6102385781386108a7565b634e487b7160e01b84526011600452602484fd5b610571915060203d602011610577576105698183611535565b6040513d86823e3d90fd5b506020813d6020116109d2575b816109bb60209383611535565b810103126109cd576107a7905161079b565b600080fd5b3d91506109ae565b50346101de5760203660031901126101de5760406020916001600160a01b03610a0161144f565b168152600383522054604051908152f35b50346101de57610a21366114af565b610a2c929192611a5b565b610a34611a7d565b8015610a4081156116e3565b610a4d601483111561172f565b6801158e460913d000008202908282046801158e460913d00000141715610d67576040516370a0823160e01b81523360048201527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03169190602081602481865afa908115610bff579082918691610d32575b5010610ced57835b838110610c0a57506040516323b872dd60e01b81523360048201523060248201526044810182905260208160648188875af18015610bff57610be2575b50813b15610bde578391602483926040519485938492630852cd8d60e31b845260048401525af180156103b157908391610bc9575b5050610b4c81611623565b92825b828110610bb4575082936001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016803b15610bb05761035e9385809460405196879586948593631759616b60e11b85523330600487016117ef565b8480fd5b806001610bc2819388611683565b5201610b4f565b81610bd391611535565b610238578138610b41565b8380fd5b610bfa9060203d602011610577576105698183611535565b610b0c565b6040513d87823e3d90fd5b610c1581858861177b565b35808652600260205260ff604087205460a01c1615610ca8578086526002602052610c4e336001600160a01b036040892054161461178b565b610c588133611ac6565b600554600019810190811161053c5790600192916005558087526002602052866040812055337f7084f5476618d8e60b11ef0d7d3f06914655adb8793e28ff7f018d4c76d505d58880a301610acf565b60405162461bcd60e51b815260206004820152600f60248201527f6c6f616e206e6f742061637469766500000000000000000000000000000000006044820152606490fd5b60405162461bcd60e51b815260206004820152601060248201527f696e73756666696369656e7420534343000000000000000000000000000000006044820152606490fd5b9150506020813d602011610d5f575b81610d4e60209383611535565b810103126109cd5781905138610ac7565b3d9150610d41565b634e487b7160e01b83526011600452602483fd5b50346101de57806003193601126101de5760206001600160a01b0360015460081c16604051908152f35b50346101de57806003193601126101de57610dbe611a9a565b610dc6611a7d565b600160ff19815416176001557f62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a2586020604051338152a180f35b50346101de57806003193601126101de5760206040516801158e460913d000008152f35b50346101de57806003193601126101de57610e3c611a9a565b806001600160a01b0360015474ffffffffffffffffffffffffffffffffffffffff0019811660015560081c167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a380f35b50346101de57806003193601126101de57602060ff600154166040519015158152f35b50346101de5760403660031901126101de57600435610ecf611465565b610ed7611a9a565b8183526002602052610ef360ff604085205460a01c1615611697565b6001600160a01b038116908115610fd05783906001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016803b15610fcc57604051637921219560e11b81523060048201526001600160a01b03929092166024830152604482018590526001606483015260a06084830152600060a48301528290829060c490829084905af1801561038a57610fb7575b50807f1b79409798ab74f249555c31f93a33061f18d32656851f4453cce197524f103691a380f35b81610fc191611535565b610fcc578238610f8f565b8280fd5b60405162461bcd60e51b815260206004820152600f60248201527f696e76616c6964206164647265737300000000000000000000000000000000006044820152606490fd5b50346101de57806003193601126101de5760206040516001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000168152f35b50346101de57806003193601126101de5760206040516107d08152f35b50346101de57806003193601126101de5761108f611a9a565b60015460ff8116156110cf5760ff19166001557f5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa6020604051338152a180f35b638dfc202b60e01b8252600482fd5b50346101de57806003193601126101de5760206040516001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000168152f35b50346101de5760203660031901126101de5760043590611140611a5b565b611148611a7d565b818152600260205261119a826001600160a01b03604084206111936040519161117083611503565b5460ff8482169182855260a01c1615159081602085015281611361575b5061178b565b5116611ac6565b600554600019810190811161134d5760055581815260026020528060408120556001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000166040516323b872dd60e01b81523360048201523060248201526801158e460913d00000604482015260208160648186865af180156103b157611330575b50803b1561023857818091602460405180948193630852cd8d60e31b83526801158e460913d0000060048401525af1801561038a57611320575b5090816001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016803b1561023857604051637921219560e11b8152306004820152336024820152604481018490526001606482015260a06084820152600060a4820152908290829060c490829084905af1801561038a5761130b575b5050337f7084f5476618d8e60b11ef0d7d3f06914655adb8793e28ff7f018d4c76d505d58380a36001815580f35b8161131591611535565b6102385781386112dd565b8161132a91611535565b3861125b565b6113489060203d602011610577576105698183611535565b611221565b634e487b7160e01b82526011600452602482fd5b905033143861118d565b50346101de5760203660031901126101de576001600160a01b0361138d61144f565b169081815260036020526040812054906113a682611623565b92815b8381106113ca57604051602080825281906113c69082018861147b565b0390f35b60019082845260036020526113e28160408620611655565b90549060031b1c6113f38288611683565b52016113a9565b9050346102385760203660031901126102385760043563ffffffff60e01b8116809103610fcc5760209250630271189760e51b811490811561143e575b5015158152f35b6301ffc9a760e01b14905038611437565b600435906001600160a01b03821682036109cd57565b602435906001600160a01b03821682036109cd57565b906020808351928381520192019060005b8181106114995750505090565b825184526020938401939092019160010161148c565b9060206003198301126109cd5760043567ffffffffffffffff81116109cd57826023820112156109cd5780600401359267ffffffffffffffff84116109cd5760248460051b830101116109cd576024019190565b6040810190811067ffffffffffffffff82111761151f57604052565b634e487b7160e01b600052604160045260246000fd5b90601f8019910116810190811067ffffffffffffffff82111761151f57604052565b67ffffffffffffffff811161151f5760051b60200190565b9080601f830112156109cd57813561158681611557565b926115946040519485611535565b81845260208085019260051b8201019283116109cd57602001905b8282106115bc5750505090565b81358152602091820191016115af565b81601f820112156109cd5780359067ffffffffffffffff821161151f5760405192611601601f8401601f191660200185611535565b828452602083830101116109cd57816000926020809301838601378301015290565b9061162d82611557565b61163a6040519182611535565b828152809261164b601f1991611557565b0190602036910137565b805482101561166d5760005260206000200190600090565b634e487b7160e01b600052603260045260246000fd5b805182101561166d5760209160051b010190565b1561169e57565b60405162461bcd60e51b815260206004820152600b60248201527f6c6f616e206163746976650000000000000000000000000000000000000000006044820152606490fd5b156116ea57565b60405162461bcd60e51b815260206004820152600b60248201527f656d7074792061727261790000000000000000000000000000000000000000006044820152606490fd5b1561173657565b60405162461bcd60e51b815260206004820152600f60248201527f746f6f206d616e7920746f6b656e7300000000000000000000000000000000006044820152606490fd5b919081101561166d5760051b0190565b1561179257565b60405162461bcd60e51b815260206004820152600c60248201527f6e6f7420626f72726f77657200000000000000000000000000000000000000006044820152606490fd5b908160209103126109cd575180151581036109cd5790565b9394916001600160a01b03809216855216602084015260a060408401528360a08401527f07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff84116109cd5760c061185e9260209560051b809183870137840181858203016060860152019061147b565b906080818303910152600081520190565b1561187657565b60405162461bcd60e51b815260206004820152600f60248201527f6e6f7420746f6b656e206f776e657200000000000000000000000000000000006044820152606490fd5b156118c257565b60405162461bcd60e51b815260206004820152600e60248201527f72656465656d65642061737365740000000000000000000000000000000000006044820152606490fd5b9190820180921161191457565b634e487b7160e01b600052601160045260246000fd5b92919283151580611a4f575b15611a0a576001600160a01b03169283600052600360205260406000205490818310156119e8576119679083611907565b918183116119df575b808303908382116119145761198482611623565b9560005b8381106119a3575050505081101561199d5790565b50600090565b6001908260005260036020526119c760406000206119c18387611907565b90611655565b90549060031b1c6119d8828b611683565b5201611988565b91508091611970565b50505090506040516119fb602082611535565b60008152600036813790600090565b60405162461bcd60e51b815260206004820152600d60248201527f696e76616c6964206c696d6974000000000000000000000000000000000000006044820152606490fd5b506107d0841115611936565b600260005414611a6c576002600055565b633ee5aeb560e01b60005260046000fd5b60ff60015416611a8957565b63d93c066560e01b60005260046000fd5b6001600160a01b0360015460081c163303611ab157565b63118cdaa760e01b6000523360045260246000fd5b6001600160a01b0316806000526004602052604060002082600052602052604060002054816000526003602052604060002054600019810190811161191457808203611b77575b5050806000526003602052604060002080548015611b61576000190190611b348282611655565b8154906000199060031b1b1916905555600052600460205260406000209060005260205260006040812055565b634e487b7160e01b600052603160045260246000fd5b611b8e908360005260036020526040600020611655565b90549060031b1c826000526003602052611bc981611bb0846040600020611655565b90919082549060031b91821b91600019901b1916179055565b8260005260046020526040600020906000526020526040600020553880611b0d565b6001600160a01b031660008181526003602081815260408084208054600484528286208887528452918520829055949093525291906801000000000000000083101561151f5782611bb0916001611c4495018155611655565b56fea164736f6c634300081b000a",
+  "devdoc": {
+    "author": "AstaVerde Team",
+    "details": "Non-fungible CDP system with no liquidation risk and fixed issuance rate DEPLOYMENT: - Deploy after AstaVerde (Phase 1) contract is live - Deploy sequence: SCC token → EcoStabilizer → grant MINTER_ROLE → renounce admin - SCC token address and AstaVerde address are immutable after deployment - Owner should be a multisig wallet for production deployments KEY MECHANICS: - Fixed rate: Each NFT collateralizes exactly 20 SCC (no oracles needed) - No liquidations: Users always reclaim their original NFT upon repayment - Non-fungible CDPs: Each NFT maintains unique identity through loan lifecycle - Redeemed protection: Only un-redeemed carbon offsets accepted as collateral - Pull pattern: Prevents DoS attacks during batch operations SECURITY: - ReentrancyGuard on all state-changing functions - Pausable for emergency situations - Access control via Ownable for admin functions - Indexed view functions for predictable gas on reads - CEI (Checks-Effects-Interactions) pattern throughout GAS OPTIMIZATION: - Batch operations save ~75% gas vs sequential calls - Target gas usage: <150k for deposit, <120k for withdraw - Indexed view functions and pagination for large datasets INTEGRATION: - Works with existing AstaVerde ERC-1155 NFTs - SCC minting exclusive to this vault (enforced by MINTER_ROLE) - Price stability through arbitrage with AstaVerde primary market",
+    "errors": {
+      "EnforcedPause()": [
+        {
+          "details": "The operation failed because the contract is paused."
+        }
+      ],
+      "ExpectedPause()": [
+        {
+          "details": "The operation failed because the contract is not paused."
+        }
+      ],
+      "OwnableInvalidOwner(address)": [
+        {
+          "details": "The owner is not a valid owner account. (eg. `address(0)`)"
+        }
+      ],
+      "OwnableUnauthorizedAccount(address)": [
+        {
+          "details": "The caller account is not authorized to perform an operation."
+        }
+      ],
+      "ReentrancyGuardReentrantCall()": [
+        {
+          "details": "Unauthorized reentrant call."
+        }
+      ]
+    },
+    "events": {
+      "Deposited(address,uint256)": {
+        "params": {
+          "tokenId": "The ID of the deposited NFT",
+          "user": "The address depositing the NFT"
+        }
+      },
+      "EmergencyNFTWithdrawn(address,uint256)": {
+        "params": {
+          "to": "The address receiving the swept NFT",
+          "tokenId": "The ID of the swept NFT"
+        }
+      },
+      "Paused(address)": {
+        "details": "Emitted when the pause is triggered by `account`."
+      },
+      "Unpaused(address)": {
+        "details": "Emitted when the pause is lifted by `account`."
+      },
+      "Withdrawn(address,uint256)": {
+        "params": {
+          "tokenId": "The ID of the withdrawn NFT",
+          "user": "The address withdrawing the NFT"
+        }
+      }
+    },
+    "kind": "dev",
+    "methods": {
+      "adminSweepNFT(uint256,address)": {
+        "details": "Only for NFTs without active loans (prevents stealing collateral) Use cases: - User accidentally sends NFT directly to vault - Cleanup of test/abandoned NFTs - Recovery from failed transactions",
+        "params": {
+          "to": "The address to send the NFT to",
+          "tokenId": "The ID of the NFT to sweep"
+        }
+      },
+      "constructor": {
+        "details": "Sets immutable references to AstaVerde and SCC contracts",
+        "params": {
+          "_ecoAsset": "Address of the AstaVerde ERC-1155 contract",
+          "_scc": "Address of the StabilizedCarbonCoin ERC-20 contract"
+        }
+      },
+      "deposit(uint256)": {
+        "details": "Implements CEI pattern, checks redemption status, mints fixed SCC amount Requirements: - Token must not have an active loan - Caller must own the NFT - NFT must not be redeemed (real-world carbon offset not claimed) - Contract must not be paused",
+        "params": {
+          "tokenId": "The ID of the AstaVerde NFT to deposit"
+        }
+      },
+      "depositBatch(uint256[])": {
+        "details": "Gas efficient batch operation (saves ~75% gas vs sequential deposits)",
+        "params": {
+          "tokenIds": "Array of token IDs to deposit"
+        }
+      },
+      "getUserLoansIndexed(address,uint256,uint256)": {
+        "returns": {
+          "nextOffset": "Next offset to continue from (0 if end reached)",
+          "tokenIds": "Slice of user's active loan IDs"
+        }
+      },
+      "owner()": {
+        "details": "Returns the address of the current owner."
+      },
+      "pause()": {
+        "details": "Only callable by owner, typically for emergency situations"
+      },
+      "paused()": {
+        "details": "Returns true if the contract is paused, and false otherwise."
+      },
+      "renounceOwnership()": {
+        "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner."
+      },
+      "supportsInterface(bytes4)": {
+        "details": "Returns true if this contract implements the interface defined by `interfaceId`. See the corresponding https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[ERC section] to learn more about how these ids are created. This function call must use less than 30 000 gas."
+      },
+      "transferOwnership(address)": {
+        "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+      },
+      "unpause()": {
+        "details": "Only callable by owner after addressing pause reason"
+      },
+      "withdraw(uint256)": {
+        "details": "Burns SCC from caller and returns the exact NFT originally deposited Requirements: - Caller must be the original borrower - Loan must be active - Caller must have 20 SCC balance - Contract must not be paused",
+        "params": {
+          "tokenId": "The ID of the NFT to withdraw"
+        }
+      },
+      "withdrawBatch(uint256[])": {
+        "details": "Requires sufficient SCC balance for all withdrawals",
+        "params": {
+          "tokenIds": "Array of token IDs to withdraw"
+        }
+      }
+    },
+    "stateVariables": {
+      "SCC_PER_ASSET": {
+        "details": "Eliminates oracle dependency by using fixed collateralization ratio"
+      },
+      "ecoAsset": {
+        "details": "Set in constructor, cannot be changed after deployment"
+      },
+      "loans": {
+        "details": "tokenId → Loan structure containing borrower and status"
+      },
+      "scc": {
+        "details": "This vault must have exclusive MINTER_ROLE on the SCC contract"
+      }
+    },
+    "title": "EcoStabilizer - NFT Collateralization Vault for Carbon Offsets",
+    "version": 1
+  },
+  "userdoc": {
+    "events": {
+      "Deposited(address,uint256)": {
+        "notice": "Emitted when a user deposits an NFT and receives SCC"
+      },
+      "EmergencyNFTWithdrawn(address,uint256)": {
+        "notice": "Emitted when admin sweeps an unsolicited NFT"
+      },
+      "Withdrawn(address,uint256)": {
+        "notice": "Emitted when a user repays SCC and withdraws their NFT"
+      }
+    },
+    "kind": "user",
+    "methods": {
+      "MAX_PAGE_SIZE()": {
+        "notice": "Maximum items per paginated query to ensure bounded gas usage"
+      },
+      "SCC_PER_ASSET()": {
+        "notice": "Fixed SCC issuance rate per NFT collateral (20 SCC with 18 decimals)"
+      },
+      "adminSweepNFT(uint256,address)": {
+        "notice": "Recover unsolicited NFTs sent to the vault"
+      },
+      "constructor": {
+        "notice": "Initialize the EcoStabilizer vault"
+      },
+      "deposit(uint256)": {
+        "notice": "Deposit an AstaVerde NFT as collateral and receive 20 SCC"
+      },
+      "depositBatch(uint256[])": {
+        "notice": "Deposit multiple NFTs in a single transaction"
+      },
+      "ecoAsset()": {
+        "notice": "Reference to the AstaVerde ERC-1155 contract for carbon offset NFTs"
+      },
+      "getTotalActiveLoans()": {
+        "notice": "Get total count of active loans across all users (O(1))"
+      },
+      "getUserLoanCount(address)": {
+        "notice": "Get user's loan count (O(1))"
+      },
+      "getUserLoans(address)": {
+        "notice": "Get user's active loans (O(k) copy from indexed storage)"
+      },
+      "getUserLoansIndexed(address,uint256,uint256)": {
+        "notice": "Get user's active loans with offset/limit over indexed storage"
+      },
+      "loans(uint256)": {
+        "notice": "Mapping from token ID to loan information"
+      },
+      "pause()": {
+        "notice": "Pause all deposits and withdrawals"
+      },
+      "scc()": {
+        "notice": "Reference to the SCC ERC-20 token contract"
+      },
+      "totalActiveLoans()": {
+        "notice": "Total number of active loans across all users"
+      },
+      "unpause()": {
+        "notice": "Resume deposits and withdrawals after pause"
+      },
+      "withdraw(uint256)": {
+        "notice": "Repay 20 SCC and withdraw your collateralized NFT"
+      },
+      "withdrawBatch(uint256[])": {
+        "notice": "Withdraw multiple NFTs in a single transaction"
+      }
+    },
+    "notice": "Enables 1:1 collateralization of AstaVerde NFTs for fixed SCC loans",
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 4420,
+        "contract": "contracts/EcoStabilizer.sol:EcoStabilizer",
+        "label": "_status",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 4310,
+        "contract": "contracts/EcoStabilizer.sol:EcoStabilizer",
+        "label": "_paused",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_bool"
+      },
+      {
+        "astId": 388,
+        "contract": "contracts/EcoStabilizer.sol:EcoStabilizer",
+        "label": "_owner",
+        "offset": 1,
+        "slot": "1",
+        "type": "t_address"
+      },
+      {
+        "astId": 10638,
+        "contract": "contracts/EcoStabilizer.sol:EcoStabilizer",
+        "label": "loans",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_mapping(t_uint256,t_struct(Loan)10632_storage)"
+      },
+      {
+        "astId": 10644,
+        "contract": "contracts/EcoStabilizer.sol:EcoStabilizer",
+        "label": "userLoanIds",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_mapping(t_address,t_array(t_uint256)dyn_storage)"
+      },
+      {
+        "astId": 10651,
+        "contract": "contracts/EcoStabilizer.sol:EcoStabilizer",
+        "label": "userLoanIndex",
+        "offset": 0,
+        "slot": "4",
+        "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))"
+      },
+      {
+        "astId": 10654,
+        "contract": "contracts/EcoStabilizer.sol:EcoStabilizer",
+        "label": "totalActiveLoans",
+        "offset": 0,
+        "slot": "5",
+        "type": "t_uint256"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_array(t_uint256)dyn_storage": {
+        "base": "t_uint256",
+        "encoding": "dynamic_array",
+        "label": "uint256[]",
+        "numberOfBytes": "32"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256[])",
+        "numberOfBytes": "32",
+        "value": "t_array(t_uint256)dyn_storage"
+      },
+      "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => mapping(uint256 => uint256))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_uint256,t_uint256)"
+      },
+      "t_mapping(t_uint256,t_struct(Loan)10632_storage)": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => struct EcoStabilizer.Loan)",
+        "numberOfBytes": "32",
+        "value": "t_struct(Loan)10632_storage"
+      },
+      "t_mapping(t_uint256,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_struct(Loan)10632_storage": {
+        "encoding": "inplace",
+        "label": "struct EcoStabilizer.Loan",
+        "members": [
+          {
+            "astId": 10629,
+            "contract": "contracts/EcoStabilizer.sol:EcoStabilizer",
+            "label": "borrower",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address"
+          },
+          {
+            "astId": 10631,
+            "contract": "contracts/EcoStabilizer.sol:EcoStabilizer",
+            "label": "active",
+            "offset": 20,
+            "slot": "0",
+            "type": "t_bool"
+          }
+        ],
+        "numberOfBytes": "32"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}
