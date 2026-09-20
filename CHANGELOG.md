@@ -81,7 +81,7 @@ change, described under Contracts. This section is the client-readable summary o
 ### Contracts
 
 One targeted change, everything else unchanged. A mechanism-level examination of the contracts
-(journal entry `2026-09-20-agent-contracts-review.md`) found no bug in what the code does, re-confirmed
+(September 2026) found no bug in what the code does, re-confirmed
 the accounting invariant and the closed refund-siphon fix, and found one documented-as-fixed issue
 that was never fixed. The rest of its output is settings and runbook steps for mainnet.
 
