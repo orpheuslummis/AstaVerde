@@ -69,6 +69,11 @@ modified. This section is the client-readable summary; the engineering record is
 #### Archived (moved to `scripts/archive/`, nothing deleted)
 
 - `mint.mjs`, `testmint.mjs` (Base-only, random producer addresses), `verify-vault.js` (calls a getter that does not exist), `smoke_test_vault.mjs` (assertions that cannot fail), `seed-local.js` (calls `ownerOf` on an ERC-1155) — Why: broken or Base-era; each is listed with its reason in `scripts/archive/README.md`.
+- `dev-dashboard.html` (loaded ethers from a CDN, hardcoded local addresses, a "copy deployer private key" button, referenced nowhere).
+
+#### Fixed (local developer scripts, none ship)
+
+- Vault-state helper skipped the first loan (pagination offset); two state helpers hardcoded the 70/30 revenue split instead of reading it from the contract; four funding helpers pointed at addresses that no local deploy produces; a QA helper printed a timestamp where it meant the batch price; two helpers used an undeclared colour library; the local start/stop scripts killed every Hardhat node and Next dev server on the machine rather than this checkout's.
 
 ### Contracts
 
