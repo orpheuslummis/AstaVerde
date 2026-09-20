@@ -19,7 +19,7 @@ modified. This section is the client-readable summary; the engineering record is
 - `npm run handoff` (`scripts/handoff.js`): transfers ownership of AstaVerde and the EcoStabilizer vault to a new owner, optionally moves or renounces the SCC admin role, and reads every owner and role back on-chain before reporting success — Why: in December the vault ownership had to be transferred by hand; the mainnet handoff should be one command with a built-in check.
 - The deploy script transfers vault ownership to `OWNER_ADDRESS` when one is set — Why: the vault is owned by whoever deploys it; AstaVerde already took its owner as a parameter, the vault did not.
 - Deployment records for Ethereum (`deployments/ethereum-sepolia/`, later `deployments/ethereum-mainnet/`) are now tracked in git — Why: the Arbitrum addresses were only ever on one laptop.
-- First Ethereum Sepolia deployment (2026-09-20), all four contracts verified on Sepolia Etherscan: AstaVerde `0xd5949461Ac560619a5d9261a5b4F3E5373123eD0`, StabilizedCarbonCoin `0xFBfcE641BCB6BF1E06CB859c41788699BBC84B46`, EcoStabilizer `0xed338C3aFD53186dC1128B1971C2413aCc8F7407`, MockUSDC `0x34eceD602B9DB47e0B56932B491ca59c4b02Ecc5`.
+- Ethereum Sepolia QA deployment (2026-09-20, second deploy, includes the pause-exit fix), all four contracts verified on Sepolia Etherscan: AstaVerde `0x088c523088389a4E6a69A8a2Cc7E765EB1038523`, StabilizedCarbonCoin `0xB31D17B9BA321D576dC9B3d90a7D0F79ceB265BD`, EcoStabilizer `0x0eFDfD5b07Cd1717eb822Ed4A73924F1070F13eB`, MockUSDC `0xB72FAA704cd5b39E4a04D89F913567C8a6D8cC5d`. The first deployment of the same night (AstaVerde `0xd594…3eD0`) carried the pre-fix bytecode and is abandoned.
 
 #### Changed
 
@@ -82,9 +82,16 @@ that was never fixed. The rest of its output is settings and runbook steps for m
 - SCC admin role: recommend renouncing at deploy rather than keeping it — Why: the vault address is fixed, so the role has no legitimate future use and could mint unlimited SCC if the key leaked.
 - Three behaviours the client should know: pausing either contract freezes vault collateral with no user exit; the owner key can re-price all open inventory to near zero, so the owner should be a multisig; USDC accrued to a producer that Circle blocklists is stranded.
 
+### Dependencies
+
+#### Changed
+
+- `npm audit fix` (no forced upgrades) at the root and in the webapp; seven unused root dependencies removed; OpenZeppelin pinned to the exact version the contracts were compiled with (5.4.0, bytecode unchanged); wagmi pinned to 2.16.1 because the newer connector package breaks the build — Why: cuts open advisories from 131 to 86 and removes every critical from the deploy tooling. The one remaining critical is Next.js 14 itself, whose fix is the Next 15 migration, a separate job (blocked on React 19 and connectkit). The webapp's viem moved 2.33 → 2.56, so the Sepolia QA round doubles as the wallet-flow test for it.
+- Webapp `engines.node` pinned to 22.x — Why: Vercel's default is now Node 24 and local is 22; an unpinned project builds on whatever Vercel's default is that week.
+
 ### Still to come in this section
 
-Dependency updates judged safe; the Sepolia QA round; the mainnet deployment and handoff; the production cutover.
+The Sepolia QA round; the mainnet deployment and handoff; the production cutover.
 
 ## [Unreleased] - 2025-08-26
 

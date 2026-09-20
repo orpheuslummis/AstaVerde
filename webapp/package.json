@@ -2,6 +2,9 @@
   "name": "webapp",
   "version": "0.0.1",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "NODE_OPTIONS='--max-old-space-size=2048' next dev",
     "dev:turbo": "next dev --turbo",
