@@ -35,12 +35,17 @@ async function main() {
 
         astaVerdeAddress = astaDeployment.address;
         vaultAddress = vaultDeployment?.address;
-    } else if (network === "arbitrum-sepolia" || network === "sepolia") {
-        const rpcUrl =
-            process.env.ARBITRUM_SEPOLIA_RPC_URL ||
-            (process.env.RPC_API_KEY ? `https://arb-sepolia.g.alchemy.com/v2/${process.env.RPC_API_KEY}` : "");
+    } else if (network === "ethereum-sepolia" || network === "sepolia" || network === "arbitrum-sepolia") {
+        const isArbitrum = network === "arbitrum-sepolia";
+        const rpcUrl = isArbitrum
+            ? process.env.ARBITRUM_SEPOLIA_RPC_URL ||
+              (process.env.RPC_API_KEY ? `https://arb-sepolia.g.alchemy.com/v2/${process.env.RPC_API_KEY}` : "")
+            : process.env.ETHEREUM_SEPOLIA_RPC_URL ||
+              (process.env.RPC_API_KEY ? `https://eth-sepolia.g.alchemy.com/v2/${process.env.RPC_API_KEY}` : "");
         if (!rpcUrl) {
-            console.error("Missing RPC URL. Set ARBITRUM_SEPOLIA_RPC_URL (preferred) or RPC_API_KEY.");
+            console.error(
+                `Missing RPC URL. Set ${isArbitrum ? "ARBITRUM" : "ETHEREUM"}_SEPOLIA_RPC_URL (preferred) or RPC_API_KEY.`,
+            );
             process.exit(1);
         }
         provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -55,7 +60,7 @@ async function main() {
         astaVerdeAddress = process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS;
         vaultAddress = process.env.NEXT_PUBLIC_ECOSTABILIZER_ADDRESS;
     } else {
-        console.error("Unsupported network. Use 'localhost' or 'sepolia'");
+        console.error("Unsupported network. Use 'localhost', 'sepolia' (Ethereum Sepolia) or 'arbitrum-sepolia'");
         process.exit(1);
     }
 

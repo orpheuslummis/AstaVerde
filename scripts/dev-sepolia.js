@@ -84,17 +84,17 @@ class SepoliaDevEnvironment {
             );
         }
 
-        const rpcOverride = (config.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || "").trim();
+        const rpcOverride = (config.NEXT_PUBLIC_ETHEREUM_SEPOLIA_RPC_URL || "").trim();
         if (rpcOverride.toLowerCase().includes("infura.io")) {
             console.log("\n⚠️  Warning: RPC override points at Infura:");
-            console.log(`   NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL=${rpcOverride}`);
+            console.log(`   NEXT_PUBLIC_ETHEREUM_SEPOLIA_RPC_URL=${rpcOverride}`);
             console.log("   Remove it or replace with your Alchemy RPC URL to avoid rate limits.\n");
         }
         const alchemyKey = (config.NEXT_PUBLIC_ALCHEMY_API_KEY || "").trim();
         if (!rpcOverride && !alchemyKey) {
             console.log("\n⚠️  Warning: No Arbitrum Sepolia RPC configured.");
             console.log(
-                "   Set NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL (recommended) or NEXT_PUBLIC_ALCHEMY_API_KEY in webapp/.env.local.\n",
+                "   Set NEXT_PUBLIC_ETHEREUM_SEPOLIA_RPC_URL (recommended) or NEXT_PUBLIC_ALCHEMY_API_KEY in webapp/.env.local.\n",
             );
         }
 
@@ -132,7 +132,7 @@ class SepoliaDevEnvironment {
         });
 
         console.log("\n📡 Network: Arbitrum Sepolia (Chain ID: 421614)");
-        console.log("🔗 Explorer: https://sepolia.arbiscan.io");
+        console.log("🔗 Explorer: https://sepolia.etherscan.io");
     }
 
     async startWebapp() {
