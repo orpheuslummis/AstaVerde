@@ -49,5 +49,10 @@ export const TX_RETRY_DELAY = 5_000; // 5 seconds between polling attempts
 // Outcomes of the receipt wait, kept here so the UI can tell "still pending"
 // (not a failure) apart from a genuine on-chain revert.
 export const TX_REVERTED_MESSAGE = "Transaction reverted on-chain.";
+// Buy preflight verdicts. These are user-facing outcomes of a SUCCESSFUL read,
+// not RPC failures, so they propagate to the caller and the toast verbatim.
+export const MARKETPLACE_PAUSED_MESSAGE = "Marketplace is paused. Please try again later.";
+export const INSUFFICIENT_INVENTORY_MESSAGE = "Not enough tokens available in this batch";
+
 export const TX_STILL_PENDING_MESSAGE =
   "Transaction is still pending after 3 minutes. It may still confirm - check your wallet or a block explorer before retrying.";

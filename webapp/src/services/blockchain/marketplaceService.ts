@@ -8,6 +8,8 @@ import {
   TX_RETRY_COUNT,
   TX_RETRY_DELAY,
   TX_REVERTED_MESSAGE,
+  MARKETPLACE_PAUSED_MESSAGE,
+  INSUFFICIENT_INVENTORY_MESSAGE,
   TX_STILL_PENDING_MESSAGE,
 } from "../../config/constants";
 import { ENV } from "../../config/environment";
@@ -103,27 +105,32 @@ export class MarketplaceService {
     const exactTotalCost = currentUnitPrice * BigInt(tokenAmount);
 
     // Preflight: ensure marketplace not paused and inventory is available
+    // Only the READ is guarded: a failing read degrades gracefully (we fall back
+    // to the on-chain checks), but a successful read that says "paused" or
+    // "sold out" is a user-facing verdict and must propagate to the caller.
     const astaVerde = getAstaVerdeContract();
+    let paused: boolean | undefined;
     try {
-      const paused = (await this.publicClient.readContract({
+      paused = (await this.publicClient.readContract({
         ...astaVerde,
         functionName: "paused",
       })) as boolean;
-      if (paused) {
-        throw new Error("Marketplace is paused. Please try again later.");
-      }
     } catch {
-      // ignore if paused() unavailable in ABI/env
+      // paused() unavailable in this ABI/env: fall through to on-chain checks
+    }
+    if (paused) {
+      throw new Error(MARKETPLACE_PAUSED_MESSAGE);
     }
 
     // Preflight: check remaining items before attempting tx
+    let itemsLeft: bigint | undefined;
     try {
-      const info = await this.getBatchInfo(batchId);
-      if (BigInt(tokenAmount) > info.itemsLeft) {
-        throw new Error("Not enough tokens available in this batch");
-      }
+      itemsLeft = (await this.getBatchInfo(batchId)).itemsLeft;
     } catch {
-      // If batch info fetch fails, continue and rely on on-chain checks
+      // Batch info fetch failed: continue and rely on on-chain checks
+    }
+    if (itemsLeft !== undefined && BigInt(tokenAmount) > itemsLeft) {
+      throw new Error(INSUFFICIENT_INVENTORY_MESSAGE);
     }
 
     // Check USDC balance first

@@ -3,7 +3,12 @@ import { useWalletClient, useBalance } from "wagmi";
 import { MarketplaceService } from "../../../services/blockchain/marketplaceService";
 import { getUsdcContract } from "../../../config/contracts";
 import { customToast } from "../../../shared/utils/customToast";
-import { TX_REVERTED_MESSAGE, TX_STILL_PENDING_MESSAGE } from "../../../config/constants";
+import {
+  INSUFFICIENT_INVENTORY_MESSAGE,
+  MARKETPLACE_PAUSED_MESSAGE,
+  TX_REVERTED_MESSAGE,
+  TX_STILL_PENDING_MESSAGE,
+} from "../../../config/constants";
 import { useRateLimitedPublicClient } from "@/hooks/useRateLimitedPublicClient";
 
 export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
@@ -58,7 +63,13 @@ export function useBatchOperations(batchId: bigint, totalPrice: bigint) {
           if (errorMessage === TX_STILL_PENDING_MESSAGE) {
             // On L1 a slow tx is not a failed tx: do not tell the user it failed.
             customToast.warning(errorMessage, 12000);
-          } else if (errorMessage === TX_REVERTED_MESSAGE) {
+          } else if (
+            errorMessage === TX_REVERTED_MESSAGE ||
+            errorMessage === MARKETPLACE_PAUSED_MESSAGE ||
+            errorMessage === INSUFFICIENT_INVENTORY_MESSAGE
+          ) {
+            // Preflight verdicts and reverts are already user-facing: show them
+            // as-is rather than wrapping them in "Transaction failed: ...".
             customToast.error(errorMessage);
           } else if (errorMessage.includes("Wrong network")) {
             customToast.error(errorMessage);
