@@ -532,6 +532,13 @@ export function getExplorerUrl(txHash: string, chainId?: number): string {
   let baseExplorerUrl: string;
 
   switch (chainId) {
+    // Ethereum
+    case 1:
+      baseExplorerUrl = "https://etherscan.io";
+      break;
+    case 11155111:
+      baseExplorerUrl = "https://sepolia.etherscan.io";
+      break;
     // Arbitrum
     case 42161:
       baseExplorerUrl = "https://arbiscan.io";
