@@ -84,7 +84,6 @@
         "validate:abis": "node scripts/validate-abis.js",
         "dev:local": "node scripts/start-local.js",
         "dev:local:stop": "node scripts/stop-local.js",
-        "dev:local:seed": "cross-env TS_NODE_TRANSPILE_ONLY=true npx hardhat run scripts/seed-local.js --network localhost",
         "dev:sepolia": "node scripts/dev-sepolia.js",
         "deploy:testnet": "node scripts/deploy-with-validation.js --network ethereum-sepolia",
         "deploy:mainnet": "node scripts/deploy-with-validation.js --network ethereum-mainnet",

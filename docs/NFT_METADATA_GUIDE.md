@@ -2,7 +2,7 @@
 
 ## Issue: NFTs Not Visible in Wallets
 
-This guide addresses the common issue where NFTs minted on AstaVerde are not visible in wallets, particularly on testnets like Sepolia (currently Arbitrum Sepolia).
+This guide addresses the common issue where NFTs minted on AstaVerde are not visible in wallets, particularly on testnets like Ethereum Sepolia.
 
 ## Root Causes
 
@@ -53,7 +53,7 @@ Before minting, ensure:
 Run the provided script to ensure the contract's base URI is properly configured:
 
 ```bash
-# For Sepolia testnet (currently Arbitrum Sepolia)
+# For Ethereum Sepolia testnet
 node scripts/set-metadata-uri.js sepolia
 
 # For local development
@@ -93,7 +93,7 @@ node scripts/check-nft-metadata.js sepolia 1
 
 ### OpenSea Testnet
 
-If you use a marketplace/indexer for verification, make sure it supports your target network (Sepolia / Arbitrum Sepolia).
+If you use a marketplace/indexer for verification, make sure it supports your target network (Ethereum Sepolia / Ethereum mainnet).
 Otherwise, validate directly by reading onchain `uri(tokenId)` and fetching the IPFS JSON via a public gateway.
 
 ## Minting Process with Proper Metadata
@@ -195,4 +195,4 @@ For mainnet deployment:
 - [ERC-1155 Metadata Standard](https://eips.ethereum.org/EIPS/eip-1155#metadata)
 - [OpenSea Metadata Standards](https://docs.opensea.io/docs/metadata-standards)
 - [IPFS Best Practices](https://docs.ipfs.io/how-to/best-practices-for-nfts/)
-- [Arbitrum Documentation](https://docs.arbitrum.io/)
+- [Ethereum Developer Documentation](https://ethereum.org/en/developers/docs/)

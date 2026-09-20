@@ -13,8 +13,9 @@ This repository uses Hardhat (contracts), a Next.js webapp, and helper scripts. 
 - Format: `npm run prettier:write`
 - QA (fast status → full localhost): `npm run qa:status` → `npm run qa:fast` → `npm run qa:full`
 - (Legacy) Local dev stack (HH node + deploy + webapp): `npm run dev:local` (webapp on 3000; may fall back to 3001)
-- Sepolia webapp (Arbitrum Sepolia; uses `webapp/.env.local`): `npm run dev:sepolia` (webapp on 3002)
-- Deploy (scripts with validation): `npm run deploy:testnet` | `npm run deploy:mainnet` | `npm run deploy:safe`
+- Sepolia webapp (Ethereum Sepolia; uses `webapp/.env.local`): `npm run dev:sepolia` (webapp on 3002)
+- Deploy (scripts with validation): `npm run deploy:testnet` (Ethereum Sepolia) | `npm run deploy:mainnet` (Ethereum mainnet) | `npm run deploy:safe`
+- Deploy to Arbitrum (previous target, still live): `npm run deploy:arbitrum-testnet` | `npm run deploy:arbitrum-mainnet`
 - ABI sanity check: `npm run validate:abis`
 
 ## Project Map
@@ -28,7 +29,7 @@ This repository uses Hardhat (contracts), a Next.js webapp, and helper scripts. 
 
 ## Current Architecture (2025‑08‑27)
 
-- v1 (2024‑11‑15): Dutch‑auction ERC‑1155 marketplace (originally on Base; current focus Arbitrum).
+- v1 (2024‑11‑15): Dutch‑auction ERC‑1155 marketplace (originally on Base, then Arbitrum; current focus Ethereum).
 - v2 (2025‑08‑25): EcoStabilizer vault and SCC token.
     - Fixed issuance: 20 SCC per NFT (`SCC_PER_ASSET = 20e18`).
     - No liquidations: Withdraw exact NFT by repaying 20 SCC.
@@ -45,12 +46,12 @@ This repository uses Hardhat (contracts), a Next.js webapp, and helper scripts. 
     - If 3000 is busy, falls back to 3001. Stop via Ctrl+C or `npm run dev:local:stop`.
 
 - Sepolia webapp (testnet-only local dev): `npm run dev:sepolia`
-    - Runs the webapp on port 3002 against Arbitrum Sepolia.
+    - Runs the webapp on port 3002 against Ethereum Sepolia. Set `CHAIN_SELECTION=arbitrum_sepolia` in the shell to point the same runner at the Arbitrum testnet.
     - Requires `webapp/.env.local` (untracked) with deployed addresses + RPC config.
 
 ### RPC Endpoints
 
-- Prefer using direct RPC URLs to avoid rate limits: set `ARBITRUM_SEPOLIA_RPC_URL` and/or `ARBITRUM_MAINNET_RPC_URL` in `.env.local`.
+- Prefer using direct RPC URLs to avoid rate limits: set `ETHEREUM_SEPOLIA_RPC_URL` and/or `ETHEREUM_MAINNET_RPC_URL` in `.env.local`. The `ARBITRUM_*_RPC_URL` equivalents still apply to the `arbitrum-*` targets.
 - If not set, deploy scripts/build use Alchemy via `RPC_API_KEY`; the `demo` key will 429 on live deploys.
 
 ## Webapp Configuration (updated)
@@ -122,5 +123,5 @@ This repository uses Hardhat (contracts), a Next.js webapp, and helper scripts. 
 ## Pointers
 
 - Need a quick sanity check? `npm run qa:status`.
-- Local minting/example data: see `scripts/mint-local-batch.js` and `scripts/seed-local.js`.
+- Local minting/example data: see `scripts/mint-local-batch.js`.
 - Events/monitoring: `scripts/events/`.

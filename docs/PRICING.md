@@ -78,6 +78,13 @@ These behaviors are intentional guardrails for gas and stability, but they do me
     - `dayIncreaseThreshold` and `dayDecreaseThreshold`: widen to reduce churn; narrow to react faster (with higher gas across events).
     - Consider operationally preferring larger `mintBatch` sizes (up to `maxBatchSize`) to reduce total batch count and scan work.
 
+> **Note (2026-09-20): the iteration and batch-size numbers above were written for L2 gas (Base, then
+> Arbitrum) and are under review for the Ethereum mainnet redeploy.** On L1 the buyer pays for the
+> `updateBasePrice` scan in real ETH, and a large `mintBatch` is a single expensive transaction rather
+> than a cheap one. Re-derive `maxPriceUpdateIterations` and the preferred batch size against measured
+> L1 gas before setting them in production. The pricing mechanics described elsewhere in this document
+> are unchanged.
+
 ## Test Coverage Snapshot
 
 Covered in `test/AstaVerde.test.ts` and `test/AstaVerdeCoverageGaps.test.ts`:

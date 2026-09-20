@@ -1,14 +1,20 @@
 # AstaVerde - Carbon Offset NFT Ecosystem
 
-Carbon offset NFT marketplace with Dutch auction pricing and collateralized lending vault on Arbitrum.
+Carbon offset NFT marketplace with Dutch auction pricing and collateralized lending vault on Ethereum.
 
 ## System Status
 
 - **v1**: ✅ Dutch auction marketplace
-- **v2**: ✅ Released (2025-08-25) - EcoStabilizer vault (221 tests passing)
-- **QA Testing**: 🧪 Available on Arbitrum Sepolia testnet
-- **Deployment**: Ready for Arbitrum One mainnet
+- **v2**: ✅ Released (2025-08-25) - EcoStabilizer vault (236 tests passing)
+- **QA Testing**: 🧪 Available on Ethereum Sepolia testnet
+- **Deployment**: Ready for Ethereum mainnet
 - **Gas Efficiency**: Deposit <150k, Withdraw <120k
+
+### Networks
+
+Current target is Ethereum mainnet, with Ethereum Sepolia as the QA testnet. The earlier Arbitrum One
+deployment remains live and is untouched by this workflow; its commands survive under the `arbitrum-*`
+script names. See the [Deployment Guide](./docs/DEPLOYMENT.md) for the network table and env setup.
 
 ## 📚 Documentation
 
@@ -33,7 +39,7 @@ Carbon offset NFT marketplace with Dutch auction pricing and collateralized lend
 - Deposit NFTs to mint 20 SCC stablecoins
 - No liquidations - withdraw your exact NFT by repaying loan
 - Redeemed NFTs cannot be used as collateral
-- Access control with automated admin renunciation
+- Access control; SCC admin renunciation is opt-in (`RENOUNCE_SCC_ADMIN=true`, non-Sepolia networks only)
 
 ## Quick Start
 
@@ -47,7 +53,7 @@ npm run test
 # Configure webapp env (untracked)
 cp webapp/.env.local.example webapp/.env.local
 
-# Start dev webapp (Arbitrum Sepolia)
+# Start dev webapp (Ethereum Sepolia)
 npm run dev:sepolia
 
 # Access webapp at http://localhost:3002
@@ -58,10 +64,10 @@ npm run dev:sepolia
 ```bash
 npm run test              # Run all tests
 npm run compile           # Compile contracts
-npm run dev:sepolia       # Start webapp (Arbitrum Sepolia)
+npm run dev:sepolia       # Start webapp (Ethereum Sepolia)
 npm run qa:fast           # Quick contract verification
-npm run deploy:testnet    # Deploy to Arbitrum Sepolia
-npm run deploy:mainnet    # Deploy to Arbitrum One
+npm run deploy:testnet    # Deploy to Ethereum Sepolia
+npm run deploy:mainnet    # Deploy to Ethereum mainnet
 ```
 
 See [AGENTS.md](AGENTS.md) for the complete command reference and workflows.
@@ -77,20 +83,20 @@ See [AGENTS.md](AGENTS.md) for the complete command reference and workflows.
 ## Security
 
 - Immutable contracts with no upgrade mechanisms
-- Role-based access control with automated admin renunciation
+- Role-based access control; SCC admin renunciation is opt-in at deploy time
 - Reentrancy protection and pausability
-- Comprehensive test coverage (221 tests)
+- Comprehensive test coverage (236 tests)
 - Redeemed NFT protection in vault
 
 ## 🧪 v2 QA Testing
 
-The EcoStabilizer vault system is deployed on Arbitrum Sepolia testnet for client testing.
+The EcoStabilizer vault system is deployed on Ethereum Sepolia testnet for client testing.
 
 ### For Testers
 
 - **[QA Testing Guide](./docs/QA_TESTING.md)** - Complete guide for testing the vault system
 - **Test URL**: [Vercel deployment URL - to be provided]
-- **Network**: Arbitrum Sepolia (testnet)
+- **Network**: Ethereum Sepolia (testnet)
 
 ### For Developers
 
