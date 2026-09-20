@@ -15,6 +15,7 @@ import { TokenGroupCard } from "./components/TokenGroupCard";
 import { TokenTabs } from "./components/TokenTabs";
 import { StatsDisplay } from "./components/StatsDisplay";
 import { resolveIpfsUriToUrl } from "../../utils/ipfsHelper";
+import { customToast } from "../../utils/customToast";
 
 /**
  * MyTokensPage - Simplified main component using extracted hooks and components
@@ -227,6 +228,7 @@ export default function MyTokensPage() {
 
       // Verify that the tokens to withdraw match the actual vault loans
       if (tokenIds.length !== vaultedTokens.length) {
+        customToast.warning("Your vault list changed, please review and try again");
         await fetchTokens(); // Refresh to ensure we have latest data
         return;
       }
