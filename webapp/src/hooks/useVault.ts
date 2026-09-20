@@ -623,9 +623,11 @@ export function useVault(): VaultHook {
           throw new Error("Transaction failed");
         }
       } catch (err) {
-        setError((err as Error)?.message || "Failed to deposit batch");
+        const parsed = parseVaultError(err, { operation: "depositBatch" });
+        setError(parsed.message || "Failed to deposit batch");
+        setVaultError(parsed);
         setTxStatus(TxStatus.ERROR);
-        customToast.error("Batch deposit failed");
+        customToast.error(`Batch deposit failed: ${parsed.message}`);
         throw err;
       } finally {
         setIsLoading(false);
@@ -718,9 +720,12 @@ export function useVault(): VaultHook {
           throw new Error("Transaction failed");
         }
       } catch (err) {
-        setError((err as Error)?.message || "Failed to withdraw batch");
+        // Surface the parsed reason (nonce, rejection, revert) instead of a bare "failed".
+        const parsed = parseVaultError(err, { operation: "withdrawBatch" });
+        setError(parsed.message || "Failed to withdraw batch");
+        setVaultError(parsed);
         setTxStatus(TxStatus.ERROR);
-        customToast.error("Batch withdrawal failed");
+        customToast.error(`Batch withdrawal failed: ${parsed.message}`);
         throw err;
       } finally {
         setIsLoading(false);
