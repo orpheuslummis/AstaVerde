@@ -51,6 +51,11 @@ modified. This section is the client-readable summary; the engineering record is
 - "Marketplace is paused" and "Not enough tokens available" now reach the user before the wallet prompt — Why: those checks threw inside a handler that discarded them.
 - Vault gas fallbacks raised (withdraw 120k → 160k, deposit 230k → 280k) — Why: the old withdraw fallback was below the measured worst case.
 - USDC approval buffer reduced from 100× to 2× the purchase amount — Why: after one 230 USDC purchase the marketplace held a 23,000 USDC standing allowance, oversized for real USDC on mainnet; 2× still spares a repeat buyer the second approval.
+- Admin mint form stops adding tokens at the contract's `maxBatchSize` and says so — Why: it used to upload every image to IPFS and then fail at the contract.
+- Admin and producer event feeds read two blocks behind the chain head — Why: a one-block reorg on Ethereum could otherwise drop a recorded event permanently.
+- Bulk vault withdraw shows a message when the vault list changed under it instead of silently doing nothing.
+- Dead Cloudflare IPFS gateway removed from the metadata fallback chain — Why: it could only time out.
+- A missing shared type module restored, so seven type errors are real types again (typecheck errors 57 → 50). No runtime change.
 
 ### Documentation and scripts
 
