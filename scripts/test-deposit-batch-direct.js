@@ -1,4 +1,4 @@
-const { ethers } = require("hardhat");
+const { ethers, deployments } = require("hardhat");
 
 async function main() {
     console.log("\n=== Testing Deposit Batch Directly ===\n");
@@ -6,8 +6,8 @@ async function main() {
     const [signer] = await ethers.getSigners();
     console.log("User:", signer.address);
 
-    const VAULT_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
-    const ASSET_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+    const VAULT_ADDRESS = (await deployments.get("EcoStabilizer")).address;
+    const ASSET_ADDRESS = (await deployments.get("AstaVerde")).address;
 
     const vaultAbi = require("../artifacts/contracts/EcoStabilizer.sol/EcoStabilizer.json").abi;
     const assetAbi = require("../artifacts/contracts/AstaVerde.sol/AstaVerde.json").abi;

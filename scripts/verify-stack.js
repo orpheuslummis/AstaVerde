@@ -7,12 +7,12 @@ async function main() {
     let errors = [];
     let warnings = [];
 
-    // Contract addresses
+    // Contract addresses from hardhat-deploy's records (throws if deployments/localhost is missing)
     const contracts = {
-        MockUSDC: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-        AstaVerde: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-        SCC: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-        EcoStabilizer: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        MockUSDC: (await hre.deployments.get("MockUSDC")).address,
+        AstaVerde: (await hre.deployments.get("AstaVerde")).address,
+        SCC: (await hre.deployments.get("StabilizedCarbonCoin")).address,
+        EcoStabilizer: (await hre.deployments.get("EcoStabilizer")).address,
     };
 
     console.log("1️⃣  CONTRACT DEPLOYMENT STATUS");
