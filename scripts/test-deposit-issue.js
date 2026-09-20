@@ -1,10 +1,10 @@
-const { ethers } = require("hardhat");
+const { ethers, deployments } = require("hardhat");
 
 async function main() {
     const [owner, alice] = await ethers.getSigners();
 
-    const astaverdeAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-    const vaultAddress = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
+    const astaverdeAddress = (await deployments.get("AstaVerde")).address;
+    const vaultAddress = (await deployments.get("EcoStabilizer")).address;
 
     const astaverde = await ethers.getContractAt("AstaVerde", astaverdeAddress);
     const vault = await ethers.getContractAt("EcoStabilizer", vaultAddress);

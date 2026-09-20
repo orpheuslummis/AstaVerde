@@ -1,6 +1,8 @@
+const { ethers, deployments } = require("hardhat");
+
 async function main() {
     const alice = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-    const astaVerde = await ethers.getContractAt("AstaVerde", "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512");
+    const astaVerde = await ethers.getContractAt("AstaVerde", (await deployments.get("AstaVerde")).address);
 
     console.log("Checking tokens for Alice:", alice);
 
@@ -18,4 +20,7 @@ async function main() {
     console.log("Total tokens owned by Alice:", totalTokens);
 }
 
-main().catch(console.error);
+main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+});

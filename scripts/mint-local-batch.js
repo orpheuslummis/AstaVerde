@@ -2,10 +2,11 @@
 
 const { ethers } = require("ethers");
 const fs = require("fs");
+const { deploymentAddress, assertDeployed } = require("./lib/addresses");
 
 // Configuration for local development
 const LOCAL_RPC_URL = "http://localhost:8545";
-const CONTRACT_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"; // AstaVerde contract address
+const CONTRACT_ADDRESS = deploymentAddress("AstaVerde"); // throws if deployments/localhost is missing
 const PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // Default Hardhat account #0
 
 // Load ABI
@@ -19,6 +20,7 @@ async function mintBatch(tokenCount = 3) {
         // Setup provider and wallet
         const provider = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
         const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+        await assertDeployed(provider, { AstaVerde: CONTRACT_ADDRESS });
         const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, wallet);
 
         // Check connection

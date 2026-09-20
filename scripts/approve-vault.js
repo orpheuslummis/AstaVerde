@@ -1,4 +1,5 @@
 const { ethers } = require("ethers");
+const { deploymentAddress, assertDeployed } = require("./lib/addresses");
 
 async function approveVault() {
     const provider = new ethers.JsonRpcProvider("http://localhost:8545");
@@ -7,8 +8,9 @@ async function approveVault() {
     const privateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
     const wallet = new ethers.Wallet(privateKey, provider);
 
-    const astaVerdeAddr = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-    const vaultAddr = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
+    const astaVerdeAddr = deploymentAddress("AstaVerde");
+    const vaultAddr = deploymentAddress("EcoStabilizer");
+    await assertDeployed(provider, { AstaVerde: astaVerdeAddr, EcoStabilizer: vaultAddr });
 
     const abi = [
         "function setApprovalForAll(address operator, bool approved)",
@@ -29,4 +31,7 @@ async function approveVault() {
     console.log("Vault approved:", isApproved);
 }
 
-approveVault().catch(console.error);
+approveVault().catch((error) => {
+    console.error(error);
+    process.exit(1);
+});
