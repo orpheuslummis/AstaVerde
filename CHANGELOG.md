@@ -44,9 +44,16 @@ modified. This section is the client-readable summary; the engineering record is
 - All user-facing copy now names Ethereum and Circle USDC: page metadata, the welcome modal, the About page FAQ and the required-USDC paragraph. The Arbitrum-only warning about bridged USDC.e is removed — Why: it does not apply on mainnet.
 - Two About-page items await the client's wording and are marked in the code: the first FAQ item (the old question was Arbitrum-specific) and the "how to get USDC into your wallet" section (the CowSwap and Revolut walkthroughs were Arbitrum routes). The eco-asset PDF may also need a new version.
 
+#### Fixed
+
+- Transaction confirmation waits up to about three minutes in total instead of 100 seconds, and a transaction that is still pending is reported as pending, not failed — Why: Ethereum blocks take 12 seconds; the old budget was tuned for Arbitrum's sub-second blocks. Retries only re-check the receipt and never re-send.
+- A reverted transaction is reported as reverted immediately — Why: it used to be caught by the retry loop and surface as a timeout.
+- "Marketplace is paused" and "Not enough tokens available" now reach the user before the wallet prompt — Why: those checks threw inside a handler that discarded them.
+- Vault gas fallbacks raised (withdraw 120k → 160k, deposit 230k → 280k) — Why: the old withdraw fallback was below the measured worst case.
+
 ### Still to come in this section
 
-Web-app tuning for 12-second blocks (transaction timeouts, error messages, gas fallbacks); documentation refresh; archiving of Base-era scripts; dependency updates judged safe; the Sepolia QA round; the mainnet deployment and handoff; the production cutover.
+Documentation refresh; archiving of Base-era scripts; dependency updates judged safe; the Sepolia QA round; the mainnet deployment and handoff; the production cutover.
 
 ## [Unreleased] - 2025-08-26
 
