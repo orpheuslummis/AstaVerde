@@ -18,6 +18,8 @@ const BASE_MAINNET_RPC_URL: string | undefined = process.env.BASE_MAINNET_RPC_UR
 const BASE_SEPOLIA_RPC_URL: string | undefined = process.env.BASE_SEPOLIA_RPC_URL;
 const ARBITRUM_MAINNET_RPC_URL: string | undefined = process.env.ARBITRUM_MAINNET_RPC_URL;
 const ARBITRUM_SEPOLIA_RPC_URL: string | undefined = process.env.ARBITRUM_SEPOLIA_RPC_URL;
+const ETHEREUM_MAINNET_RPC_URL: string | undefined = process.env.ETHEREUM_MAINNET_RPC_URL;
+const ETHEREUM_SEPOLIA_RPC_URL: string | undefined = process.env.ETHEREUM_SEPOLIA_RPC_URL;
 
 const chainIds = {
     hardhat: 31337,
@@ -25,6 +27,8 @@ const chainIds = {
     "base-mainnet": 8453,
     "arbitrum-sepolia": 421_614,
     "arbitrum-one": 42_161,
+    "ethereum-sepolia": 11_155_111,
+    "ethereum-mainnet": 1,
 };
 
 function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
@@ -44,6 +48,12 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
             break;
         case "arbitrum-sepolia":
             jsonRpcUrl = ARBITRUM_SEPOLIA_RPC_URL || `https://arb-sepolia.g.alchemy.com/v2/${rpcApiKey}`;
+            break;
+        case "ethereum-mainnet":
+            jsonRpcUrl = ETHEREUM_MAINNET_RPC_URL || `https://eth-mainnet.g.alchemy.com/v2/${rpcApiKey}`;
+            break;
+        case "ethereum-sepolia":
+            jsonRpcUrl = ETHEREUM_SEPOLIA_RPC_URL || `https://eth-sepolia.g.alchemy.com/v2/${rpcApiKey}`;
             break;
         default:
             jsonRpcUrl = "";
@@ -134,6 +144,30 @@ const config: HardhatUserConfig = {
             gasPrice: "auto",
             gasMultiplier: 1.2,
         },
+        "ethereum-mainnet": {
+            ...getChainConfig("ethereum-mainnet"),
+            accounts: privateKey ? [privateKey] : [],
+            verify: {
+                etherscan: {
+                    apiKey: process.env.ETHERSCAN_API_KEY,
+                },
+            },
+            timeout: 300000,
+            gasPrice: "auto",
+            gasMultiplier: 1.1,
+        },
+        "ethereum-sepolia": {
+            ...getChainConfig("ethereum-sepolia"),
+            accounts: privateKey ? [privateKey] : [],
+            verify: {
+                etherscan: {
+                    apiKey: process.env.ETHERSCAN_API_KEY,
+                },
+            },
+            timeout: 300000,
+            gasPrice: "auto",
+            gasMultiplier: 1.2,
+        },
     },
     etherscan: {
         apiKey: {
@@ -145,6 +179,12 @@ const config: HardhatUserConfig = {
             "arbitrum-sepolia": process.env.ARBITRUM_SEPOLIA_EXPLORER_API_KEY!,
             arbitrumOne: process.env.ARBITRUM_MAINNET_EXPLORER_API_KEY!,
             arbitrumSepolia: process.env.ARBITRUM_SEPOLIA_EXPLORER_API_KEY!,
+            // Ethereum L1 uses a single Etherscan (V2) key. `sepolia` and `mainnet` are the
+            // built-in hardhat-verify chain names; the aliases match our network names.
+            sepolia: process.env.ETHERSCAN_API_KEY!,
+            mainnet: process.env.ETHERSCAN_API_KEY!,
+            "ethereum-sepolia": process.env.ETHERSCAN_API_KEY!,
+            "ethereum-mainnet": process.env.ETHERSCAN_API_KEY!,
         },
         customChains: [
             {

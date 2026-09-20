@@ -107,6 +107,11 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
     console.log(`Current nonce: ${nonce}, Pending nonce: ${pendingNonce}`);
 
+    // Number of confirmations to wait for after each transaction. Defaults to 1 (the previous
+    // hard-coded value); raise it on L1 (e.g. DEPLOY_WAIT_CONFIRMATIONS=2) so dependent reads
+    // such as the SCC MINTER_ROLE check below do not race a reorg-prone head block.
+    const waitConfirmations = Math.max(1, Number(process.env.DEPLOY_WAIT_CONFIRMATIONS) || 1);
+
     const feeData = await provider.getFeeData();
 
     console.log("Current fee data:", {
@@ -157,7 +162,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
                 from: deployer,
                 args: args,
                 log: true,
-                waitConfirmations: 1,
+                waitConfirmations,
                 maxFeePerGas: maxFeePerGas.toString(),
                 maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
             });
@@ -284,6 +289,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         const nativeUsdcAddresses: Record<string, string> = {
             "arbitrum-one": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
             "arbitrum-sepolia": "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
+            "ethereum-mainnet": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         };
 
         const resolvedUsdcAddress = process.env.USDC_ADDRESS || nativeUsdcAddresses[network.name];
@@ -370,7 +376,8 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         console.log("\nConfiguring SCC minter role...");
         const sccContract = await hre.ethers.getContractAt("StabilizedCarbonCoin", scc.address);
         const MINTER_ROLE = await sccContract.MINTER_ROLE();
-        await sccContract.grantRole(MINTER_ROLE, vault.address);
+        const grantTx = await sccContract.grantRole(MINTER_ROLE, vault.address);
+        await grantTx.wait(waitConfirmations);
         console.log(`✓ Granted MINTER_ROLE to vault at ${vault.address}`);
 
         // Optional: Renounce SCC admin role on production after guards pass
