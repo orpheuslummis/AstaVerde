@@ -14,6 +14,9 @@ const fs = require("fs");
 const path = require("path");
 const dotenv = require("dotenv");
 
+// Which chain the webapp is pointed at. Override with CHAIN_SELECTION (e.g. arbitrum_sepolia).
+const CHAIN_SELECTION = (process.env.CHAIN_SELECTION || "ethereum_sepolia").trim();
+
 class SepoliaDevEnvironment {
     constructor() {
         this.webappProcess = null;
@@ -56,10 +59,10 @@ class SepoliaDevEnvironment {
         const config = dotenv.parse(envContent);
 
         const chainSelection = (config.NEXT_PUBLIC_CHAIN_SELECTION || "").trim();
-        if (chainSelection && chainSelection !== "arbitrum_sepolia") {
+        if (chainSelection && chainSelection !== CHAIN_SELECTION) {
             throw new Error(
-                `webapp/.env.local has NEXT_PUBLIC_CHAIN_SELECTION=${chainSelection}, but dev:sepolia expects arbitrum_sepolia.\n` +
-                    "Update webapp/.env.local (copy from webapp/.env.local.example) and re-run.",
+                `webapp/.env.local has NEXT_PUBLIC_CHAIN_SELECTION=${chainSelection}, but dev:sepolia expects ${CHAIN_SELECTION}.\n` +
+                    "Update webapp/.env.local (copy from webapp/.env.local.example), or set CHAIN_SELECTION, and re-run.",
             );
         }
 
@@ -136,7 +139,7 @@ class SepoliaDevEnvironment {
         console.log(`\n🚀 Starting webapp on port ${this.webappPort}...`);
 
         // Force chain selection to prevent accidental mainnet connections.
-        const forcedEnv = { NEXT_PUBLIC_CHAIN_SELECTION: "arbitrum_sepolia" };
+        const forcedEnv = { NEXT_PUBLIC_CHAIN_SELECTION: CHAIN_SELECTION };
 
         // Pass through only explicit webapp config keys to avoid surprises from shell env.
         const allowlisted = {};
