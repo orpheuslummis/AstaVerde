@@ -1,10 +1,12 @@
 const { ethers } = require("ethers");
+const { deploymentAddress, assertDeployed } = require("./lib/addresses");
 
 async function checkVaultState() {
     const provider = new ethers.JsonRpcProvider("http://localhost:8545");
 
     const aliceAddr = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-    const vaultAddr = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
+    const vaultAddr = deploymentAddress("EcoStabilizer");
+    await assertDeployed(provider, { EcoStabilizer: vaultAddr });
 
     const vaultAbi = [
         "function getUserLoans(address user) view returns (uint256[])",
@@ -69,4 +71,7 @@ async function checkVaultState() {
     }
 }
 
-checkVaultState().catch(console.error);
+checkVaultState().catch((error) => {
+    console.error(error);
+    process.exit(1);
+});

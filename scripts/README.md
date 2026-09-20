@@ -148,17 +148,21 @@ node scripts/randomethaddress.mjs
 PRIVATE_KEY=0x...
 ETHEREUM_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your-key
 ETHEREUM_MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/your-key
-
-# Optional: Custom contract addresses
-AV_ADDR=0x...  # Existing AstaVerde contract
 ```
 
 ### Contract Addresses
 
-Scripts automatically detect or deploy contracts. For production testing, ensure:
+No script that targets the local node hardcodes a contract address (`scripts/events/contracts.mjs` carries the
+testnet and mainnet ones). `npx hardhat deploy --network localhost` (hardhat-deploy) writes
+`deployments/localhost/<Contract>.json`, and every script reads from there:
 
-- `deployments/ecostabilizer-{chainId}.json` exists with contract addresses
-- Or use environment variable `AV_ADDR` for existing AstaVerde contract
+- Scripts run through `npx hardhat run ... --network localhost` use `(await deployments.get("AstaVerde")).address`.
+- Scripts run with plain `node` (own `JsonRpcProvider`) use `scripts/lib/addresses.js`: `deploymentAddress("AstaVerde")`
+  reads the record, `assertDeployed(provider, { AstaVerde: addr })` checks the address actually has code.
+
+Both throw instead of guessing. An `eth_call` against an address with no code returns empty data, not a revert, so a
+stale address makes a balance check print 0. If the records are missing, run the deploy; if the node was restarted
+without one, run it with `--reset`.
 
 ## 🌐 Webapp Development & Debugging
 
@@ -289,10 +293,13 @@ Scripts validate all Phase 2 specifications:
 
 ### Common Issues
 
-**"Deployment file not found"**
+**"No deployment found for: <Name>"** (also `deployments/localhost/<Name>.json` missing)
 
-- Run `node scripts/start-local-node.js` first
-- Or set `AV_ADDR` environment variable
+- Run `npx hardhat deploy --network localhost` against a running node, or `node scripts/start-local-node.js`
+
+**"<Name> has no code at 0x..."**
+
+- The node was restarted without a redeploy; run `npx hardhat deploy --network localhost --reset`
 
 **"No test NFTs available"**
 
