@@ -2,6 +2,52 @@
 
 All notable changes to the AstaVerde project are documented in this file.
 
+## Ethereum mainnet redeploy – 2026-09 (in progress, branch `ethereum`)
+
+The marketplace moves from Arbitrum One to Ethereum mainnet by fresh deploy. The Arbitrum
+deployment stays where it is; no tokens or history are migrated. The smart contracts are not
+modified. This section is the client-readable summary; the engineering record is in
+`JOURNAL.md` and `journal/`.
+
+### Networks and deployment
+
+#### Added
+
+- Hardhat networks `ethereum-sepolia` (chain 11155111, the QA testnet) and `ethereum-mainnet` (chain 1) — Why: the deploy tooling only knew Base and Arbitrum.
+- Circle USDC on Ethereum mainnet (`0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`) as the payment token in the deploy script's native-USDC map. On Sepolia a MockUSDC is deployed automatically for testing — Why: same pattern as Arbitrum: canonical USDC on mainnet, a mintable test token on the testnet.
+- Env templates `.env.ethereum-sepolia.example` and `.env.ethereum-mainnet.example` with every deploy flag named — Why: mainnet flags (`DEPLOY_VAULT_V2`, `RENOUNCE_SCC_ADMIN` / `TRANSFER_SCC_ADMIN`) must be explicit, not inherited.
+- `npm run handoff` (`scripts/handoff.js`): transfers ownership of AstaVerde and the EcoStabilizer vault to a new owner, optionally moves or renounces the SCC admin role, and reads every owner and role back on-chain before reporting success — Why: in December the vault ownership had to be transferred by hand; the mainnet handoff should be one command with a built-in check.
+- The deploy script transfers vault ownership to `OWNER_ADDRESS` when one is set — Why: the vault is owned by whoever deploys it; AstaVerde already took its owner as a parameter, the vault did not.
+- Deployment records for Ethereum (`deployments/ethereum-sepolia/`, later `deployments/ethereum-mainnet/`) are now tracked in git — Why: the Arbitrum addresses were only ever on one laptop.
+- First Ethereum Sepolia deployment (2026-09-20), all four contracts verified on Sepolia Etherscan: AstaVerde `0xd5949461Ac560619a5d9261a5b4F3E5373123eD0`, StabilizedCarbonCoin `0xFBfcE641BCB6BF1E06CB859c41788699BBC84B46`, EcoStabilizer `0xed338C3aFD53186dC1128B1971C2413aCc8F7407`, MockUSDC `0x34eceD602B9DB47e0B56932B491ca59c4b02Ecc5`.
+
+#### Changed
+
+- `npm run deploy:testnet` / `deploy:mainnet` / `mint:testnet` now target Ethereum. The Arbitrum commands remain as `deploy:arbitrum-testnet`, `deploy:arbitrum-mainnet`, `mint:arbitrum-testnet` — Why: the default should be the live target; the old ones stay reachable for the Arbitrum deployment.
+- Contract verification uses Etherscan's V2 API with a single `ETHERSCAN_API_KEY` — Why: the old per-explorer keys hit Etherscan's retired V1 endpoint and failed on the first Sepolia deploy.
+
+#### Fixed
+
+- The deploy script waited for the SCC minter-role transaction to be sent, not mined, before checking it. Harmless on Arbitrum's sub-second blocks; on Ethereum's 12-second blocks it would have aborted a mainnet deploy with `RENOUNCE_SCC_ADMIN=true` — Why: the check read stale state.
+- A USDC token with the wrong number of decimals now aborts the deploy instead of printing a warning — Why: the check threw inside its own error handler, so it could never fail.
+- The deploy wrapper now exits with an error if a post-deployment step fails, instead of always printing success.
+- Helper scripts (`set-metadata-uri`, `check-vault-tokens`, `check-nft-metadata`, `dev-sepolia`) read `sepolia` as Ethereum Sepolia; `arbitrum-sepolia` stays explicit.
+
+### Web app
+
+#### Added
+
+- Ethereum mainnet and Ethereum Sepolia as selectable chains: RPC configuration, wallet chain list, testnet detection, Etherscan links, and the admin test-USDC faucet on Sepolia.
+
+#### Changed
+
+- All user-facing copy now names Ethereum and Circle USDC: page metadata, the welcome modal, the About page FAQ and the required-USDC paragraph. The Arbitrum-only warning about bridged USDC.e is removed — Why: it does not apply on mainnet.
+- Two About-page items await the client's wording and are marked in the code: the first FAQ item (the old question was Arbitrum-specific) and the "how to get USDC into your wallet" section (the CowSwap and Revolut walkthroughs were Arbitrum routes). The eco-asset PDF may also need a new version.
+
+### Still to come in this section
+
+Web-app tuning for 12-second blocks (transaction timeouts, error messages, gas fallbacks); documentation refresh; archiving of Base-era scripts; dependency updates judged safe; the Sepolia QA round; the mainnet deployment and handoff; the production cutover.
+
 ## [Unreleased] - 2025-08-26
 
 ### Development Infrastructure
