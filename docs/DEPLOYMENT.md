@@ -65,6 +65,14 @@ ETHERSCAN_API_KEY=...
 override. Templates are tracked as `.env.ethereum-sepolia.example` and `.env.ethereum-mainnet.example`;
 copy and fill. Put chain-specific flags there rather than in `.env.local`.
 
+**Precedence gotcha.** The wrapper applies `.env.<network>` last, but then spawns
+`npx hardhat deploy`, and `hardhat.config.ts` re-loads `.env.local` with override inside that child
+process. Any key present in `.env.local` therefore wins — including an empty `KEY=`, which dotenv
+parses as `""`. Keep `DEPLOY_VAULT_V2`, `USE_EXISTING_ASTAVERDE`, `AV_ADDR`, `RENOUNCE_SCC_ADMIN`,
+`DEPLOY_WAIT_CONFIRMATIONS` and `USDC_ADDRESS` out of `.env.local` (commented out in the example)
+so the per-network file is the one that decides. This predates the Ethereum work; it applies to the
+`arbitrum-*` targets too.
+
 ### Webapp `webapp/.env.local` (public, untracked)
 
 Create from `webapp/.env.local.example`. This is the **single source of truth** for local webapp runtime config.
@@ -155,11 +163,18 @@ explicitly whether to renounce it (irreversible) or grant it elsewhere.
 
 ## Verification
 
-Verification runs inline during deploy. To re-run it:
+Verification runs inline during deploy (`deploy/deploy.ts` calls `verify:verify` from
+`@nomicfoundation/hardhat-verify`). To re-run it for one contract:
 
-- Contract verification helper: `npm run verify:contracts`
-- Single contract: `npx hardhat verify --network ethereum-mainnet <address> <constructor args...>`
-- ABI sanity check: `npm run validate:abis`
+```bash
+npx hardhat verify --network ethereum-mainnet <address> <constructor args...>
+```
+
+ABI sanity check: `npm run validate:abis`.
+
+Do **not** rely on `npm run verify:contracts` for Ethereum: that is `hardhat-deploy`'s
+`etherscan-verify`, which builds Etherscan **V1** hosts (`api.etherscan.io`,
+`api-sepolia.etherscan.io`) with no `chainid` parameter. Use `npx hardhat verify` instead.
 
 `@nomicfoundation/hardhat-verify` is Etherscan V2 capable, so **one** `ETHERSCAN_API_KEY` covers both
 `mainnet` and `sepolia`. Neither needs a `customChains` entry: both are built into the plugin
