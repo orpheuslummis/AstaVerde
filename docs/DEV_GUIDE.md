@@ -60,10 +60,10 @@ cp webapp/.env.local.example webapp/.env.local
 ### Start Development Environment
 
 ```bash
-# Deploy contracts to Arbitrum Sepolia
+# Deploy contracts to Ethereum Sepolia
 npm run deploy:testnet
 
-# Start the webapp on Arbitrum Sepolia (http://localhost:3002)
+# Start the webapp on Ethereum Sepolia (http://localhost:3002)
 npm run dev:sepolia
 ```
 
@@ -93,9 +93,6 @@ npm run dev
 
 # Build for production
 npm run build
-
-# Run type checking
-npm run type-check
 ```
 
 ### Key Webapp Features
@@ -117,12 +114,14 @@ PRIVATE_KEY=0xac09...           # Deployer private key
 OWNER_ADDRESS=0x...             # Owner / Safe address (required for AstaVerde deploy)
 
 # RPC (choose one approach)
-ARBITRUM_SEPOLIA_RPC_URL=https://arb-sepolia.g.alchemy.com/v2/your-key
-ARBITRUM_MAINNET_RPC_URL=https://arb-mainnet.g.alchemy.com/v2/your-key
+ETHEREUM_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your-key
+ETHEREUM_MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/your-key
 # Or: provide a single Alchemy key used for templated URLs
 RPC_API_KEY=your-alchemy-key
 
-# Explorer verification
+# Explorer verification (Etherscan V2: one key covers mainnet and Sepolia)
+ETHERSCAN_API_KEY=...
+# The per-chain Arbitrum keys still apply to the arbitrum-* targets
 ARBITRUM_SEPOLIA_EXPLORER_API_KEY=...
 ARBITRUM_MAINNET_EXPLORER_API_KEY=...
 
@@ -137,7 +136,7 @@ RENOUNCE_SCC_ADMIN=false
 
 ```bash
 # Chain selection
-NEXT_PUBLIC_CHAIN_SELECTION=arbitrum_sepolia
+NEXT_PUBLIC_CHAIN_SELECTION=ethereum_sepolia
 
 # Contract addresses
 NEXT_PUBLIC_ASTAVERDE_ADDRESS=0x...
@@ -146,7 +145,7 @@ NEXT_PUBLIC_ECOSTABILIZER_ADDRESS=0x...
 NEXT_PUBLIC_SCC_ADDRESS=0x...
 
 # RPC (choose one)
-NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL=https://arb-sepolia.g.alchemy.com/v2/your-key
+NEXT_PUBLIC_ETHEREUM_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your-key
 NEXT_PUBLIC_ALCHEMY_API_KEY=
 
 # WalletConnect (optional)
@@ -160,8 +159,10 @@ NEXT_PUBLIC_IPFS_GATEWAY_URL=https://w3s.link/ipfs/
 
 Supported networks configured in `hardhat.config.ts`:
 
-- **arbitrum-sepolia**: Arbitrum Sepolia testnet
-- **arbitrum-one**: Arbitrum One mainnet
+- **ethereum-sepolia**: Ethereum Sepolia testnet (chain 11155111) — current QA target
+- **ethereum-mainnet**: Ethereum mainnet (chain 1) — current production target
+- **arbitrum-sepolia**: Arbitrum Sepolia testnet (chain 421614) — previous target
+- **arbitrum-one**: Arbitrum One mainnet (chain 42161) — previous target, still live
 - **localhost**: Local Hardhat node (legacy/local-only flows)
 
 ## 📦 Module Guidelines
@@ -229,7 +230,7 @@ type: subject
 npm run lint          # Lint all code
 npm run prettier:check # Check formatting
 npm run test          # Run tests
-npm run build:all     # Verify builds
+npm run compile       # Verify contracts build
 ```
 
 ## 🛠️ Common Tasks
@@ -328,24 +329,21 @@ npx hardhat clean
 
 ```bash
 # Development
-npm run dev           # Start everything
-npm run dev:basic     # Minimal test data
-npm run dev:local  # Local full stack (HH node + deploy + webapp)
+npm run dev:sepolia   # Webapp against Ethereum Sepolia (port 3002)
+npm run dev:local     # Local full stack (HH node + deploy + webapp)
 
 # Testing
 npm run test          # Run all tests
-npm run test:watch    # Watch mode
 npm run coverage      # Coverage report
 npm run qa:fast       # Quick QA check
 
 # Building
 npm run compile       # Compile contracts
-npm run build:all     # Build everything
-npm run verify:deploy # Pre-deployment check
+npm run validate:abis # Pre-deployment ABI check
 
 # Utilities
-npm run task:mint:local  # Mint test NFTs
-npm run task:fund-all    # Fund test accounts
+npx hardhat run scripts/mint-local-batch.js --network localhost   # Mint test NFTs
+npx hardhat run scripts/fund-all-accounts.js --network localhost  # Fund test accounts
 npx hardhat accounts     # List accounts
 npx hardhat balance <address> # Check balance
 ```
@@ -356,7 +354,7 @@ npx hardhat balance <address> # Check balance
 - [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts)
 - [Wagmi Documentation](https://wagmi.sh)
 - [Next.js Documentation](https://nextjs.org/docs)
-- [Arbitrum Documentation](https://docs.arbitrum.io)
+- [Ethereum Developer Documentation](https://ethereum.org/en/developers/docs/)
 
 ## 🤝 Contributing
 

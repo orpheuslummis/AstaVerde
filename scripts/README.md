@@ -128,7 +128,7 @@ node index.mjs
 **Configuration (in `events/index.mjs`):**
 
 ```javascript
-const chain = baseSepolia; // or base for mainnet
+const chain = baseSepolia; // Base-era default: change to `sepolia` or `mainnet` before use
 const fromBlock = BigInt("5282940");
 const toBlock = BigInt("5282950");
 ```
@@ -206,7 +206,7 @@ node scripts/webapp-debug.js help
 
 - `Module not found` → Suggests `npm install` in webapp directory
 - `EADDRINUSE :3000` → Suggests killing existing process or using different port
-- `Contract not found` → Suggests running `node scripts/deploy-local-qa.js`
+- `Contract not found` → Suggests running `node scripts/start-local-node.js`
 - `Failed to compile` → Suggests checking TypeScript types and imports
 - `RPC connection` → Suggests checking network configuration
 - `Wallet not connected` → Suggests checking wallet setup
@@ -215,7 +215,7 @@ node scripts/webapp-debug.js help
 
 ```bash
 # Terminal 1: Start local blockchain with contracts
-node scripts/deploy-local-qa.js
+node scripts/start-local-node.js
 
 # Terminal 2: Start webapp with error monitoring
 node scripts/webapp-debug.js
@@ -243,7 +243,7 @@ node scripts/qa-scenarios.js
 
 ```bash
 # 1. Setup environment and run comprehensive testing
-node scripts/deploy-local-qa.js
+node scripts/start-local-node.js
 node scripts/claude-friendly-qa.js
 
 # 2. Start webapp with error monitoring
@@ -278,10 +278,10 @@ These scripts integrate with the main development workflow:
 npm run compile
 
 # Then use scripts for testing
-node scripts/deploy-local-qa.js
+node scripts/start-local-node.js
 
 # For webapp development
-npm run webapp:dev  # Uses contracts deployed by scripts
+cd webapp && npm run dev  # Uses contracts deployed by scripts
 ```
 
 ## ⚠️ Important Notes
@@ -313,13 +313,13 @@ Scripts validate all Phase 2 specifications:
 
 **"Deployment file not found"**
 
-- Run `node scripts/deploy-local-qa.js` first
+- Run `node scripts/start-local-node.js` first
 - Or set `AV_ADDR` environment variable
 
 **"No test NFTs available"**
 
 - Use manual QA flows to create and buy NFTs first
-- Or run `node scripts/deploy-local-qa.js` which pre-creates test data
+- Or run `node scripts/start-local-node.js` which pre-creates test data
 
 **Gas usage exceeds targets**
 
@@ -333,7 +333,7 @@ Scripts validate all Phase 2 specifications:
 
 **Webapp errors not visible**
 
-- Use `node scripts/webapp-debug.js` instead of `npm run webapp:dev`
+- Use `node scripts/webapp-debug.js` instead of running the webapp dev server directly
 - Check `webapp-debug.log` for complete error history
 - Run `node scripts/webapp-debug.js logs` to view recent issues
 
@@ -341,7 +341,7 @@ Scripts validate all Phase 2 specifications:
 
 - Run `node scripts/claude-friendly-qa.js` for detailed failure analysis
 - Check gas usage targets and contract deployment
-- Verify all contracts deployed with `node scripts/deploy-local-qa.js`
+- Verify all contracts deployed with `node scripts/start-local-node.js`
 
 **Claude Code can't see webapp issues**
 
@@ -352,5 +352,5 @@ Scripts validate all Phase 2 specifications:
 ### Getting Help
 
 - Check contract test suite: `npm run test`
-- Review Phase 2 specifications: `PHASE2_PLAN.md`, `SSC_PLAN.md`
-- Run build verification: `npm run verify:deploy`
+- Review Phase 2 specifications: `docs/SSC_PLAN.md`
+- Run ABI verification: `npm run validate:abis`

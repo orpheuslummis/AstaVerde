@@ -17,7 +17,7 @@ We've implemented a comprehensive ABI validation and deployment system that ensu
 ### For Development
 
 ```bash
-# Run the webapp against Sepolia (currently Arbitrum Sepolia)
+# Run the webapp against Ethereum Sepolia
 npm run dev:sepolia
 
 # Validate ABIs are properly generated
@@ -30,10 +30,10 @@ npm run deploy:safe
 ### For Production Deployment
 
 ```bash
-# Deploy to Sepolia (currently Arbitrum Sepolia) with validation
+# Deploy to Ethereum Sepolia with validation
 npm run deploy:testnet
 
-# Deploy to Arbitrum One (with validation)
+# Deploy to Ethereum mainnet (with validation)
 npm run deploy:mainnet
 ```
 
@@ -77,19 +77,19 @@ The `scripts/validate-abis.js` tool:
 1. Run `npm run dev:local`
 2. Everything is handled automatically (deploys + writes `webapp/.env.local`)
 
-### For Sepolia (Arbitrum Sepolia)
+### For Ethereum Sepolia
 
 1. Set deploy secrets in `.env.local` (copy from `.env.local.example`)
 2. Run `npm run deploy:testnet`
 3. Copy displayed addresses to `webapp/.env.local`
 4. Run `npm run dev:sepolia`
 
-### For Arbitrum One Mainnet
+### For Ethereum Mainnet
 
 1. Set production environment variables
 2. Run `npm run deploy:mainnet`
 3. Copy displayed addresses to production config
-4. Verify contracts on Arbiscan
+4. Verify contracts on Etherscan: `npx hardhat verify --network ethereum-mainnet <address> <constructor args...>`
 5. Run smoke tests
 
 ## Troubleshooting

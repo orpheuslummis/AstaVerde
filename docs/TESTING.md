@@ -7,7 +7,7 @@ Comprehensive testing guide for AstaVerde - covering automated tests, local QA, 
 ### One-Command Testing Solutions
 
 ```bash
-# Start the webapp against Sepolia (currently Arbitrum Sepolia)
+# Start the webapp against Ethereum Sepolia
 npm run dev:sepolia
 
 # Fast QA testing (~450ms)
@@ -22,7 +22,7 @@ npm run coverage
 
 ## 📊 Test Coverage Status
 
-**173/173 tests passing** covering:
+**236/236 tests passing** covering:
 
 - ✅ Contract logic: deposit, withdraw, redemption, access control
 - ✅ Security: reentrancy, redeemed NFT rejection, role management
@@ -38,7 +38,7 @@ Provides a testnet-connected webapp for manual QA:
 
 - Uses `webapp/.env.local` (untracked) for addresses + RPC
 - Runs on `http://localhost:3002`
-- Wallet + UI flows test against the current Sepolia target (Arbitrum Sepolia)
+- Wallet + UI flows test against the current Sepolia target (Ethereum Sepolia)
 
 Note: `npm run dev:local` (local Hardhat full stack) is considered legacy in the current workflow.
 
@@ -130,13 +130,10 @@ Since contracts are thoroughly tested (173 passing tests), focus webapp testing 
 
 ```bash
 # Fund all test accounts with USDC and ETH
-npm run task:fund-all
+npx hardhat run scripts/fund-all-accounts.js --network localhost
 
 # Mint test NFT batches
-npm run task:mint:local
-
-# Setup vault test scenarios
-node scripts/setup-vault-webapp.js
+npx hardhat run scripts/mint-local-batch.js --network localhost
 ```
 
 ### Test Accounts (Local)
@@ -177,11 +174,6 @@ await ethereum.request({
 # Verify contract state
 node scripts/verify-vault.js
 
-# Debug approval issues
-node scripts/debug-approve.js
-
-# Reset vault to clean state
-node scripts/reset-vault-state.js
 ```
 
 ## 📈 Performance Benchmarks
@@ -209,7 +201,7 @@ node scripts/reset-vault-state.js
 
 ### Issue: "Insufficient funds"
 
-**Solution**: Run `npm run task:fund-all` to fund test accounts
+**Solution**: Run `npx hardhat run scripts/fund-all-accounts.js --network localhost` to fund test accounts
 
 ### Issue: "Transaction reverted"
 
@@ -241,7 +233,7 @@ node scripts/reset-vault-state.js
 npm run lint          # Solidity + TypeScript linting
 npm run prettier:check # Code formatting
 npm run test          # Full test suite
-npm run build:all     # Verify builds
+npm run compile       # Verify contracts build
 ```
 
 ## 📝 Writing New Tests

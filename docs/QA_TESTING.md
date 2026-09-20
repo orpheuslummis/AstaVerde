@@ -4,7 +4,7 @@
 **Last Updated:** 2025-08-31  
 **Contracts:** AstaVerde.sol, EcoStabilizer.sol, StabilizedCarbonCoin.sol
 
-This comprehensive testing plan covers both the Phase 1 marketplace and Phase 2 EcoStabilizer vault system for the Sepolia testnet deployment (currently Arbitrum Sepolia).
+This comprehensive testing plan covers both the Phase 1 marketplace and Phase 2 EcoStabilizer vault system for the Ethereum Sepolia testnet deployment.
 
 Notes:
 
@@ -73,7 +73,7 @@ These flows test the most important contract interactions via the webapp UI:
 2. **Check Status**: View paused state for AstaVerde
 3. **Pause Marketplace**: Click pause button for AstaVerde contract
 4. **Verify**: No purchases allowed, existing NFTs still visible
-5. **Pause Vault**: Use Arbiscan (or a script) to call `pause()` on `EcoStabilizer` (no current UI control)
+5. **Pause Vault**: Use Etherscan (or a script) to call `pause()` on `EcoStabilizer` (no current UI control)
 6. **Verify**: No deposits/withdrawals, but SCC transfers still work
 7. **Unpause**: Resume operations (unpause marketplace in UI; unpause vault via explorer) and verify functionality restored
 
@@ -214,19 +214,16 @@ These flows test the most important contract interactions via the webapp UI:
 
 1. Install MetaMask browser extension from [metamask.io](https://metamask.io)
 2. Create or import a wallet
-3. **Add Arbitrum Sepolia Network** - Click "Add Network" and use these settings:
-    - Network Name: `Arbitrum Sepolia`
-    - RPC URL: `https://sepolia-rollup.arbitrum.io/rpc`
-    - Chain ID: `421614`
-    - Currency Symbol: `ETH`
-    - Explorer: `https://sepolia.arbiscan.io`
+3. **Select Ethereum Sepolia** - MetaMask ships with it: enable Settings → Advanced → "Show test
+   networks", then pick `Sepolia` from the network dropdown (chain ID `11155111`, currency `ETH`,
+   explorer https://sepolia.etherscan.io). No manual RPC entry is needed.
 
 ### 2. Get Test Funds
 
 You'll need test ETH for transactions and test USDC for purchases:
 
 1. **Get Test ETH** (for gas fees):
-    - Visit: https://www.alchemy.com/faucets/arbitrum-sepolia
+    - Use a Sepolia faucet (for example Alchemy's or Google Cloud's Sepolia faucet)
     - Enter your wallet address
     - Receive 0.1 ETH (enough for many transactions)
 
@@ -238,7 +235,7 @@ You'll need test ETH for transactions and test USDC for purchases:
 
 🌐 **Test URL**: [To be provided after deployment]
 
-Connect your wallet when prompted. Make sure you're on Arbitrum Sepolia network!
+Connect your wallet when prompted. Make sure you're on the Ethereum Sepolia network!
 
 ## Test data requirements
 
@@ -412,7 +409,7 @@ Use this checklist to systematically test all features. Check off items as you c
 ### Setup verification
 
 - [ ] MetaMask installed and configured
-- [ ] Connected to Arbitrum Sepolia network
+- [ ] Connected to Ethereum Sepolia network
 - [ ] Test wallet funded with ETH (minimum 0.05 ETH)
 - [ ] Webapp loads without errors
 - [ ] Wallet connects successfully
@@ -570,7 +567,7 @@ Use this checklist to systematically test all features. Check off items as you c
 
 - [ ] **Header navigation** → Links to Home, My Tokens, About, Producer/Admin (if applicable)
 - [ ] **SCC balance** → Always visible in header when wallet connected
-- [ ] **Network indicator** → Shows current network (Arbitrum Sepolia/Mainnet)
+- [ ] **Network indicator** → Shows current network (Ethereum Sepolia/Mainnet)
 - [ ] **Wallet connection** → ConnectKit modal for wallet selection
 
 ##### 7.2 Transaction feedback
@@ -749,7 +746,7 @@ If something doesn't work as expected:
 [Your test wallet address]
 
 **Transaction hash (if applicable):**
-[Link from Arbiscan]
+[Link from Etherscan]
 ```
 
 ### Where to Report
@@ -764,7 +761,7 @@ If something doesn't work as expected:
 ### "Transaction Failed"
 
 - ✅ Check you have enough ETH for gas (need ~0.01 ETH)
-- ✅ Make sure you're on Arbitrum Sepolia network
+- ✅ Make sure you're on the Ethereum Sepolia network
 - ✅ Try refreshing the page
 
 ### "Can't see my NFTs"
@@ -914,7 +911,7 @@ The system is ready for production when:
 ### Testing Tools & Techniques
 
 - **Browser DevTools**: Monitor network requests and console errors
-- **Explorer (Arbiscan)**: Verify contract interactions
+- **Explorer (Etherscan)**: Verify contract interactions
 - **Gas Profiler**: Track actual vs estimated gas
 - **Multiple Wallets**: Test with MetaMask, WalletConnect, Coinbase
 - **Time Manipulation**: Use test environment time controls for auction testing
@@ -962,9 +959,6 @@ npm run test
 # Coverage report
 npm run coverage
 
-# Gas usage report
-npm run test:gas
-
 # Quick QA check
 npm run qa:status
 
@@ -991,20 +985,17 @@ npm run validate:abis
 npx hardhat size-contracts
 
 # Verify deployment addresses
-npm run check:deployment
+node scripts/check-current-state.js
 ```
 
 ### Monitoring Commands
 
 ```bash
-# Watch events on local
-npm run events:local
-
-# Watch events on Sepolia
-npm run events:sepolia
+# Watch contract events (edit the chain/block range in events/index.mjs first)
+cd scripts/events && node index.mjs
 
 # Check current state
-npm run check:state
+node scripts/check-current-state.js
 ```
 
 ---

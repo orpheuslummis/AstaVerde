@@ -1,3 +1,13 @@
+> **Status note (2026-09-20) — this is a historical document.** It records the December 2025 move
+> from Base to Arbitrum, and its "current" statements describe that work, not the present state of
+> the repo. Since then the project has moved again: the marketplace is being redeployed fresh on
+> **Ethereum mainnet**, with **Ethereum Sepolia** as the QA testnet. The Arbitrum One deployment
+> remains live but is no longer the target. Treat every network name, address, chain ID, RPC URL and
+> command below as a record of the Arbitrum migration rather than instructions to follow. For the
+> current workflow see `docs/DEPLOYMENT.md`; the Arbitrum commands survive under the `arbitrum-*`
+> npm script names. The webapp copy items in the checklist were completed for Arbitrum and have since
+> been reworded for Ethereum.
+
 we have new requirements for the project ...
 
 =======================================================
