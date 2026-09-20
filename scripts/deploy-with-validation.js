@@ -28,6 +28,7 @@ if (fs.existsSync(networkEnv)) {
     dotenv.config({ path: networkEnv, override: true });
 }
 
+let postDeployFailed = false;
 console.log(`🚀 Starting deployment process for network: ${network}`);
 console.log("═".repeat(60));
 
@@ -205,10 +206,7 @@ if (network === "localhost") {
             MockUSDC: {
                 address: deploymentInfo.usdc,
                 abi: JSON.parse(
-                    fs.readFileSync(
-                        path.join(__dirname, "../artifacts/contracts/test/MockUSDC.sol/MockUSDC.json"),
-                        "utf8",
-                    ),
+                    fs.readFileSync(path.join(__dirname, "../artifacts/contracts/MockUSDC.sol/MockUSDC.json"), "utf8"),
                 ).abi,
             },
         };
@@ -244,7 +242,8 @@ if (network === "localhost") {
         );
         console.log("   ✅ Webapp configuration updated");
     } catch (error) {
-        console.error("   ⚠️  Failed to copy some ABIs:", error.message);
+        console.error("   ❌ Failed to copy ABIs into webapp/src/config/local-dev.json:", error.message);
+        postDeployFailed = true;
     }
 }
 
@@ -253,7 +252,9 @@ if (network !== "localhost" && network !== "hardhat") {
     console.log("\n✅ Step 5: Post-deployment tasks...");
     console.log("\n📝 Next steps:");
     console.log("1. Update webapp/.env.local with deployed addresses");
-    console.log("2. Run contract verification if needed: npm run verify:contracts");
+    console.log(
+        `2. If the inline verification failed, run: npx hardhat verify --network ${network} <address> <constructor args>`,
+    );
     console.log("3. Test the deployment: npm run qa:status");
 
     // Try to read and display deployed addresses
@@ -275,5 +276,10 @@ if (network !== "localhost" && network !== "hardhat") {
 }
 
 console.log("\n" + "═".repeat(60));
+if (postDeployFailed) {
+    console.log("⚠️  Contracts deployed, but a post-deployment step failed (see above).");
+    console.log("═".repeat(60));
+    process.exit(1);
+}
 console.log("✅ Deployment process completed successfully!");
 console.log("═".repeat(60));

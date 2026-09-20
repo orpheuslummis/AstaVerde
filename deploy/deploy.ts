@@ -304,15 +304,19 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         console.log("Using existing USDC at address:", usdcTokenAddress);
 
         // Verify USDC has 6 decimals
+        // A wrong-decimals token must abort the deploy; only an unreadable decimals() is a warning.
+        let usdcDecimals: bigint | undefined;
         try {
             const usdcContract = await hre.ethers.getContractAt("IERC20Metadata", usdcTokenAddress);
-            const decimals = await usdcContract.decimals();
-            if (decimals !== 6n) {
-                throw new Error(`USDC token must have 6 decimals, found ${decimals}`);
-            }
-            console.log("✓ USDC decimals verified: 6");
+            usdcDecimals = await usdcContract.decimals();
         } catch (error) {
             console.warn("Warning: Could not verify USDC decimals (contract may not implement decimals())");
+        }
+        if (usdcDecimals !== undefined) {
+            if (usdcDecimals !== 6n) {
+                throw new Error(`USDC token must have 6 decimals, found ${usdcDecimals}`);
+            }
+            console.log("✓ USDC decimals verified: 6");
         }
     }
 
