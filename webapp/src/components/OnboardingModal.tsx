@@ -62,10 +62,10 @@ export function OnboardingModal() {
                 {
                   icon: <CurrencyDollarIcon className="h-8 w-8 text-emerald-500 flex-shrink-0" />,
                   title: "USDC Transactions",
-                  description: "We use Arbitrum native USDC for all transactions. Ensure your wallet is compatible and funded.",
+                  description: "We use USDC (issued by Circle) on Ethereum mainnet for all transactions. Ensure your wallet is compatible and funded.",
                   link: {
-                    text: "Learn more about Arbitrum and USDC",
-                    href: "https://docs.arbitrum.io/arbitrum-bridge/usdc-arbitrum-one",
+                    text: "Learn more about USDC",
+                    href: "https://www.circle.com/usdc",
                   },
                 },
                 {
