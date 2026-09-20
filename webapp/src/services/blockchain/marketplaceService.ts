@@ -7,6 +7,8 @@ import {
   TX_CONFIRMATION_TIMEOUT,
   TX_RETRY_COUNT,
   TX_RETRY_DELAY,
+  TX_REVERTED_MESSAGE,
+  TX_STILL_PENDING_MESSAGE,
 } from "../../config/constants";
 import { ENV } from "../../config/environment";
 import type { BatchData, TokenDataObj, TokenDataTuple } from "../../features/marketplace/types";
@@ -337,38 +339,44 @@ export class MarketplaceService {
     let retryCount = 0;
 
     while (retryCount < TX_RETRY_COUNT) {
+      let receipt: { status: "success" | "reverted" } | undefined;
+
       try {
-        const receipt = await this.publicClient.waitForTransactionReceipt({
+        // Re-poll only. The transaction is already broadcast at this point, so a
+        // timeout here can never cause a duplicate send.
+        receipt = await this.publicClient.waitForTransactionReceipt({
           hash,
           timeout: TX_CONFIRMATION_TIMEOUT,
           confirmations: 1,
         });
-
-        if (receipt.status === "success") {
-          return;
-        } else {
-          throw new Error("Transaction failed");
-        }
-      } catch (error: any) {
+      } catch {
         retryCount++;
 
         if (retryCount === TX_RETRY_COUNT) {
-          // Final check
+          // Final check: the receipt may have landed between polls.
+          let finalReceipt: { status: "success" | "reverted" } | undefined;
           try {
-            const receipt = await this.publicClient.getTransactionReceipt({ hash });
-            if (receipt && receipt.status === "success") {
-              return;
-            }
+            finalReceipt = await this.publicClient.getTransactionReceipt({ hash });
           } catch {
-            // Ignore and throw timeout error
+            finalReceipt = undefined;
           }
 
-          throw new Error("Transaction confirmation timed out. Please refresh to check status.");
+          if (finalReceipt?.status === "success") return;
+          if (finalReceipt) throw new Error(TX_REVERTED_MESSAGE);
+
+          // No receipt yet: on L1 this means still pending, not failed.
+          throw new Error(TX_STILL_PENDING_MESSAGE);
         }
 
-        // Wait before retry
+        // Wait before polling again
         await new Promise((resolve) => setTimeout(resolve, TX_RETRY_DELAY));
+        continue;
       }
+
+      // A receipt is final: a revert must surface immediately rather than being
+      // re-polled until the budget runs out and reported as a timeout.
+      if (receipt.status === "success") return;
+      throw new Error(TX_REVERTED_MESSAGE);
     }
   }
 
