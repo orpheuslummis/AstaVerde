@@ -66,9 +66,16 @@ modified. This section is the client-readable summary; the engineering record is
 
 ### Contracts
 
-No Solidity changes. A mechanism-level examination of the contracts (journal entry
-`2026-09-20-agent-contracts-review.md`) found no bug and re-confirmed the accounting invariant
-and the closed refund-siphon fix. Its output is settings and runbook steps for mainnet:
+One targeted change, everything else unchanged. A mechanism-level examination of the contracts
+(journal entry `2026-09-20-agent-contracts-review.md`) found no bug in what the code does, re-confirmed
+the accounting invariant and the closed refund-siphon fix, and found one documented-as-fixed issue
+that was never fixed. The rest of its output is settings and runbook steps for mainnet.
+
+#### Fixed
+
+- Pausing no longer traps vault collateral. `EcoStabilizer.withdraw` and `withdrawBatch` work while the vault is paused (deposits stay blocked), and AstaVerde gains `trustedVault`: while the marketplace is paused, the vault can still return NFTs to their owners; every other transfer stays blocked, and deposits into the vault stay blocked too — Why: ticket 003 (2025-08) recorded this as fixed, but the code was never written; an emergency pause of either contract would have locked every user's collateral with no exit. The deploy script sets `trustedVault` and the handoff script refuses to transfer ownership without it. 8 new tests; the one existing test that asserted the old behaviour was updated. Mainnet bytecode therefore differs from the Cantina-audited Arbitrum contracts by this change alone.
+
+#### Settings and runbook
 
 - `maxPriceUpdateIterations` set to 25 by the owner right after handoff (the default 100 was tuned for L2 gas; on Ethereum it can add over 1M gas to a buyer's purchase when many batches sit unsold) — Why: caps the buyer's gas tax at about 230k while keeping price updates working for up to 25 live batches per quarter.
 - `maxBatchSize` stays at 50 — Why: a 100-token mint is 21M gas, a third of an Ethereum block.
