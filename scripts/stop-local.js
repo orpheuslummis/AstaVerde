@@ -6,6 +6,11 @@
  */
 
 const { execSync } = require("child_process");
+const path = require("path");
+
+// Scope process cleanup to this checkout, so a bare "hardhat node" or "next dev"
+// belonging to another repo on this machine is never killed.
+const repoRoot = path.resolve(__dirname, "..");
 
 console.log("🛑 Stopping AstaVerde Local Development\n");
 
@@ -30,10 +35,10 @@ try {
 // Also try to clean up any node processes related to our project
 console.log("Cleaning up any orphaned processes...");
 try {
-    // Kill any processes with "hardhat" in the command
-    execSync("pkill -f 'hardhat node' 2>/dev/null", { stdio: "ignore" });
-    // Kill any Next.js dev server processes in our webapp directory
-    execSync("pkill -f 'next dev' 2>/dev/null", { stdio: "ignore" });
+    // Kill any hardhat node started from this checkout
+    execSync(`pkill -f "${repoRoot}.*hardhat node" 2>/dev/null`, { stdio: "ignore" });
+    // Kill any Next.js dev server started from this checkout
+    execSync(`pkill -f "${repoRoot}.*next dev" 2>/dev/null`, { stdio: "ignore" });
 } catch (e) {
     // Ignore - these might not exist
 }
