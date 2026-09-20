@@ -38,11 +38,15 @@ if (network !== "localhost" && network !== "hardhat") {
     const isBaseMainnet = network === "base-mainnet" || network === "base";
     const isArbitrumSepolia = network === "arbitrum-sepolia";
     const isArbitrumMainnet = network === "arbitrum-one" || network === "arbitrum";
+    const isEthereumSepolia = network === "ethereum-sepolia" || network === "sepolia";
+    const isEthereumMainnet = network === "ethereum-mainnet" || network === "mainnet";
     const haveDirectUrl =
         (isBaseSepolia && !!env.BASE_SEPOLIA_RPC_URL) ||
         (isBaseMainnet && !!env.BASE_MAINNET_RPC_URL) ||
         (isArbitrumSepolia && !!env.ARBITRUM_SEPOLIA_RPC_URL) ||
-        (isArbitrumMainnet && !!env.ARBITRUM_MAINNET_RPC_URL);
+        (isArbitrumMainnet && !!env.ARBITRUM_MAINNET_RPC_URL) ||
+        (isEthereumSepolia && !!env.ETHEREUM_SEPOLIA_RPC_URL) ||
+        (isEthereumMainnet && !!env.ETHEREUM_MAINNET_RPC_URL);
     const apiKey = env.RPC_API_KEY || "";
 
     if (!haveDirectUrl) {
@@ -71,6 +75,16 @@ if (network !== "localhost" && network !== "hardhat") {
                     "   Set ARBITRUM_MAINNET_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key.",
                 );
                 console.error("   Example: export ARBITRUM_MAINNET_RPC_URL=https://<provider>/<path>\n");
+            } else if (isEthereumSepolia) {
+                console.error(
+                    "   Set ETHEREUM_SEPOLIA_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key.",
+                );
+                console.error("   Example: export ETHEREUM_SEPOLIA_RPC_URL=https://<provider>/<path>\n");
+            } else if (isEthereumMainnet) {
+                console.error(
+                    "   Set ETHEREUM_MAINNET_RPC_URL to a full RPC URL (preferred), or set RPC_API_KEY to a real Alchemy key.",
+                );
+                console.error("   Example: export ETHEREUM_MAINNET_RPC_URL=https://<provider>/<path>\n");
             }
             process.exit(1);
         }
