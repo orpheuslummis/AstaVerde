@@ -51,9 +51,22 @@ modified. This section is the client-readable summary; the engineering record is
 - "Marketplace is paused" and "Not enough tokens available" now reach the user before the wallet prompt — Why: those checks threw inside a handler that discarded them.
 - Vault gas fallbacks raised (withdraw 120k → 160k, deposit 230k → 280k) — Why: the old withdraw fallback was below the measured worst case.
 
+### Documentation and scripts
+
+#### Changed
+
+- README, AGENTS.md, the developer and QA guides, the testing and metadata guides, and the scripts READMEs now describe Ethereum Sepolia as the testnet and Ethereum mainnet as the target, with Arbitrum labelled as the previous target — Why: every guide still said Arbitrum Sepolia.
+- README no longer claims "automated admin renunciation": the SCC admin role is renounced only when `RENOUNCE_SCC_ADMIN=true` on a non-test network — Why: the claim did not match the deploy script.
+- Thirteen dead command references in the docs replaced with the commands that exist.
+- Pricing guide: a dated note that the iteration-cap and batch-size advice was written for L2 gas and is under review for L1.
+
+#### Archived (moved to `scripts/archive/`, nothing deleted)
+
+- `mint.mjs`, `testmint.mjs` (Base-only, random producer addresses), `verify-vault.js` (calls a getter that does not exist), `smoke_test_vault.mjs` (assertions that cannot fail), `seed-local.js` (calls `ownerOf` on an ERC-1155) — Why: broken or Base-era; each is listed with its reason in `scripts/archive/README.md`.
+
 ### Still to come in this section
 
-Documentation refresh; archiving of Base-era scripts; dependency updates judged safe; the Sepolia QA round; the mainnet deployment and handoff; the production cutover.
+Dependency updates judged safe; the Sepolia QA round; the mainnet deployment and handoff; the production cutover.
 
 ## [Unreleased] - 2025-08-26
 
