@@ -1,5 +1,5 @@
 // Shared RPC rate limiter used by all transports to avoid provider 429s.
-// Infura throughput is credit-based (method-weighted), so we rate limit by estimated credit cost.
+// Provider throughput is method-weighted, so we rate limit by estimated per-method cost.
 import { http } from "wagmi";
 
 type Task<T> = () => Promise<T>;
@@ -17,7 +17,13 @@ let cooldownUntil = 0;
 let rateLimitStrikes = 0;
 let drainTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Infura free tier is commonly 500 credits/sec. Keep headroom for method-cost variance.
+// A deliberately conservative, provider-generic throughput cap. The unit is our
+// own estimated cost (see METHOD_CREDITS below), which is app-sized and matches
+// no provider's published weights, so this number is not a provider quota:
+// it is a ceiling chosen to stay well inside the smallest plan we expect to run
+// on. All configured URLs are Alchemy, whose unit is compute units per second
+// (free tier 330 CU/s at the time of writing, pay-as-you-go higher); this cap
+// plus the 429 backoff below keeps us under that without tracking CU exactly.
 const CREDIT_BUDGET_PER_SECOND = 450;
 const CREDIT_WINDOW_MS = 1000;
 
@@ -25,8 +31,9 @@ const MAX_CONCURRENT = 4;
 const COOLDOWN_BASE_MS = 2_000;
 const COOLDOWN_MAX_MS = 60_000;
 
-// Default cost for unknown methods. Keep this relatively low to avoid
-// over-throttling common reads like `eth_call` while still enforcing a cap.
+// Estimated per-method costs, app-sized rather than copied from any provider's
+// published weight table. Default cost for unknown methods: keep this relatively
+// low to avoid over-throttling common reads like `eth_call` while still capping.
 const DEFAULT_METHOD_CREDITS = 25;
 const METHOD_CREDITS: Record<string, number> = {
   eth_chainId: 2,
