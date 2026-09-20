@@ -5,8 +5,8 @@ All notable changes to the AstaVerde project are documented in this file.
 ## Ethereum mainnet redeploy – 2026-09 (in progress, branch `ethereum`)
 
 The marketplace moves from Arbitrum One to Ethereum mainnet by fresh deploy. The Arbitrum
-deployment stays where it is; no tokens or history are migrated. The smart contracts are not
-modified. This section is the client-readable summary; the engineering record is in
+deployment stays where it is; no tokens or history are migrated. The smart contracts carry one
+change, described under Contracts. This section is the client-readable summary; the engineering record is in
 `JOURNAL.md` and `journal/`.
 
 ### Networks and deployment
@@ -95,7 +95,7 @@ that was never fixed. The rest of its output is settings and runbook steps for m
 - `maxPriceUpdateIterations` set to 25 by the owner right after handoff (the default 100 was tuned for L2 gas; on Ethereum it can add over 1M gas to a buyer's purchase when many batches sit unsold) — Why: caps the buyer's gas tax at about 230k while keeping price updates working for up to 25 live batches per quarter.
 - `maxBatchSize` stays at 50 — Why: a 100-token mint is 21M gas, a third of an Ethereum block.
 - SCC admin role: recommend renouncing at deploy rather than keeping it — Why: the vault address is fixed, so the role has no legitimate future use and could mint unlimited SCC if the key leaked.
-- Three behaviours the client should know: pausing either contract freezes vault collateral with no user exit; the owner key can re-price all open inventory to near zero, so the owner should be a multisig; USDC accrued to a producer that Circle blocklists is stranded.
+- Three behaviours the client should know: pausing blocks new vault deposits and marketplace transfers, while vault withdrawals keep working (see Fixed above); the owner key can re-price all open inventory to near zero, so the owner should be a multisig; USDC accrued to a producer that Circle blocklists is stranded.
 
 ### Dependencies
 
