@@ -11,6 +11,8 @@ import {
   MARKETPLACE_PAUSED_MESSAGE,
   INSUFFICIENT_INVENTORY_MESSAGE,
   TX_STILL_PENDING_MESSAGE,
+  SIMULATION_RETRY_DELAY,
+  GAS_HEADROOM_PERCENT,
 } from "../../config/constants";
 import { ENV } from "../../config/environment";
 import type { BatchData, TokenDataObj, TokenDataTuple } from "../../features/marketplace/types";
@@ -162,16 +164,35 @@ export class MarketplaceService {
     // Execute purchase
     const contract = getAstaVerdeContract();
 
-    // Try simulate first for clearer errors; fall back to direct write if it fails
+    // Simulate first for clearer errors and attach our own gas estimate, so the wallet
+    // never has to estimate against an RPC node that may lag ours (a wallet that cannot
+    // estimate shows "missing gas limit" and refuses). If the simulation fails, retry once
+    // after a short pause: right after the approval confirms, some nodes have not yet seen
+    // the new allowance. Only then fall back to a direct write.
     let rawHash: `0x${string}`;
     try {
-      const { request } = await this.publicClient.simulateContract({
+      const buyArgs = [BigInt(batchId), exactTotalCost, BigInt(tokenAmount)] as const;
+      // Captured so the closure keeps the non-null narrowing from the guard above.
+      const walletClient = this.walletClient;
+      const simulate = () =>
+        this.publicClient.simulateContract({
+          ...contract,
+          functionName: "buyBatch",
+          args: buyArgs,
+          account: walletClient.account,
+        });
+      const simulated = await simulate().catch(async () => {
+        await new Promise((resolve) => setTimeout(resolve, SIMULATION_RETRY_DELAY));
+        return simulate();
+      });
+      const { request } = simulated;
+      const gas = await this.publicClient.estimateContractGas({
         ...contract,
         functionName: "buyBatch",
-        args: [BigInt(batchId), exactTotalCost, BigInt(tokenAmount)],
-        account: this.walletClient.account,
+        args: buyArgs,
+        account: walletClient.account,
       });
-      rawHash = await this.walletClient.writeContract(request);
+      rawHash = await walletClient.writeContract({ ...request, gas: (gas * GAS_HEADROOM_PERCENT) / 100n });
     } catch (simError) {
       try {
         rawHash = await this.walletClient.writeContract({

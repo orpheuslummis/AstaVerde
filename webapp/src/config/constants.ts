@@ -51,6 +51,12 @@ export const BATCH_SIZE_FOR_TOKEN_QUERY = 500;
 // after a single 230 USDC buy, which wallets flag and which is oversized on mainnet).
 export const APPROVAL_BUFFER_FACTOR = 2n;
 
+// Purchase submission: retry the pre-flight simulation once after this pause (RPC nodes can
+// lag a just-confirmed approval), and send the wallet our own gas estimate plus headroom so
+// it never has to estimate against its own, possibly lagging, node.
+export const SIMULATION_RETRY_DELAY = 4_000;
+export const GAS_HEADROOM_PERCENT = 120n;
+
 // Transaction Settings
 // Receipt polling budget, sized for Ethereum L1 (~12 s blocks).
 // A normally-priced tx confirms in 1-5 blocks (12-60 s); an underpriced one can
