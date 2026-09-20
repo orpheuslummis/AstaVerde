@@ -6,8 +6,7 @@ All notable changes to the AstaVerde project are documented in this file.
 
 The marketplace moves from Arbitrum One to Ethereum mainnet by fresh deploy. The Arbitrum
 deployment stays where it is; no tokens or history are migrated. The smart contracts carry one
-change, described under Contracts. This section is the client-readable summary; the engineering record is in
-`JOURNAL.md` and `journal/`.
+change, described under Contracts. This section is the client-readable summary of the work.
 
 ### Networks and deployment
 
