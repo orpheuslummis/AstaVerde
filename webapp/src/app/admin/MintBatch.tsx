@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useReadContract } from "wagmi";
 import { EXTERNAL_URL, IPFS_PREFIX } from "@/config/constants";
 import { useAppContext } from "@/contexts/AppContext";
 import { useWallet } from "@/contexts/WalletContext";
@@ -35,6 +36,14 @@ export default function MintBatch() {
   const [lastTokenId, setLastTokenId] = useState<number | null>(null);
   const [uploadImages, setUploadImages] = useState(true);
   const [web3StorageClient, setWeb3StorageClient] = useState<unknown>(null);
+
+  // The contract reverts a mintBatch above maxBatchSize (owner-settable), so cap
+  // the form at it. If the read fails the cap is null and behaviour is unchanged.
+  const { data: maxBatchSizeData } = useReadContract({
+    ...astaverdeContractConfig,
+    functionName: "maxBatchSize",
+  });
+  const maxBatchSize = typeof maxBatchSizeData === "bigint" ? Number(maxBatchSizeData) : null;
 
   const { execute: mintBatch } = useContractInteraction(astaverdeContractConfig, "mintBatch");
   const { execute: getLastTokenId } = useContractInteraction(astaverdeContractConfig, "lastTokenID");
@@ -242,8 +251,12 @@ export default function MintBatch() {
   }, [isConnected, isAdmin, email, web3StorageClient, tokens, uploadImages, lastTokenId, mintBatch, refetchBatches, cancelRequested, step]);
 
   const addToken = useCallback(() => {
-    setTokens((prev) => [...prev, { name: "", description: "", producer_address: "", image: null }]);
-  }, []);
+    setTokens((prev) =>
+      maxBatchSize !== null && prev.length >= maxBatchSize
+        ? prev
+        : [...prev, { name: "", description: "", producer_address: "", image: null }],
+    );
+  }, [maxBatchSize]);
 
   if (!isAdmin) {
     return <div>You do not have permission to access this page.</div>;
@@ -298,6 +311,7 @@ export default function MintBatch() {
           addToken={addToken}
           handleMint={handleMint}
           isUploading={isUploading}
+          maxBatchSize={maxBatchSize}
         />
       )}
     </div>
@@ -316,6 +330,7 @@ interface MintFormProps {
   addToken: () => void;
   handleMint: () => Promise<void>;
   isUploading: boolean;
+  maxBatchSize: number | null;
 }
 
 function MintForm({
@@ -330,6 +345,7 @@ function MintForm({
   addToken,
   handleMint,
   isUploading,
+  maxBatchSize,
 }: MintFormProps) {
   const [showHelp, setShowHelp] = useState(false);
   return (
@@ -358,9 +374,17 @@ function MintForm({
           uploadImages={uploadImages}
         />
       ))}
-      <button type="button" className="btn btn-secondary w-full" onClick={addToken}>
+      <button
+        type="button"
+        className="btn btn-secondary w-full"
+        onClick={addToken}
+        disabled={maxBatchSize !== null && tokens.length >= maxBatchSize}
+      >
         Add Another Token
       </button>
+      {maxBatchSize !== null && tokens.length >= maxBatchSize && (
+        <p className="text-xs text-gray-500">Batch limit reached: the contract allows {maxBatchSize} tokens per mint.</p>
+      )}
       <button type="button" className="btn btn-primary w-full" onClick={handleMint} disabled={isUploading}>
         {isUploading ? "Uploading..." : "Mint Batch"}
       </button>
