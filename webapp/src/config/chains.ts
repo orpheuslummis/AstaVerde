@@ -1,4 +1,4 @@
-import { arbitrum, arbitrumSepolia, base, baseSepolia } from "wagmi/chains";
+import { arbitrum, arbitrumSepolia, base, baseSepolia, mainnet, sepolia } from "wagmi/chains";
 import { ENV } from "./environment";
 import type { Chain } from "wagmi/chains";
 
@@ -56,6 +56,16 @@ const arbitrumSepoliaRpc = buildHttpUrls(
   ENV.ALCHEMY_API_KEY ? `https://arb-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}` : undefined,
   arbitrumSepolia.rpcUrls.default.http,
 );
+const ethereumMainnetRpc = buildHttpUrls(
+  ENV.ETHEREUM_MAINNET_RPC_URL,
+  ENV.ALCHEMY_API_KEY ? `https://eth-mainnet.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}` : undefined,
+  mainnet.rpcUrls.default.http,
+);
+const ethereumSepoliaRpc = buildHttpUrls(
+  ENV.ETHEREUM_SEPOLIA_RPC_URL,
+  ENV.ALCHEMY_API_KEY ? `https://eth-sepolia.g.alchemy.com/v2/${ENV.ALCHEMY_API_KEY}` : undefined,
+  sepolia.rpcUrls.default.http,
+);
 
 // Chain configurations with custom RPC endpoints
 export const chainConfigs = {
@@ -87,6 +97,20 @@ export const chainConfigs = {
       public: { http: arbitrumSepoliaRpc },
     },
   },
+  ethereum_mainnet: {
+    ...mainnet,
+    rpcUrls: {
+      default: { http: ethereumMainnetRpc },
+      public: { http: ethereumMainnetRpc },
+    },
+  },
+  ethereum_sepolia: {
+    ...sepolia,
+    rpcUrls: {
+      default: { http: ethereumSepoliaRpc },
+      public: { http: ethereumSepoliaRpc },
+    },
+  },
   local: localChain,
 } as const;
 
@@ -109,6 +133,7 @@ export function isTestnet(): boolean {
   return (
     ENV.CHAIN_SELECTION === "base_sepolia" ||
     ENV.CHAIN_SELECTION === "arbitrum_sepolia" ||
+    ENV.CHAIN_SELECTION === "ethereum_sepolia" ||
     ENV.CHAIN_SELECTION === "local"
   );
 }
@@ -129,6 +154,10 @@ export function getChainDisplayName(): string {
       return "Arbitrum One";
     case "arbitrum_sepolia":
       return "Arbitrum Sepolia";
+    case "ethereum_mainnet":
+      return "Ethereum";
+    case "ethereum_sepolia":
+      return "Ethereum Sepolia";
     case "local":
       return "Local Network";
     default:

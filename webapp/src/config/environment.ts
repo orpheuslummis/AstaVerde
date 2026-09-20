@@ -3,11 +3,13 @@
 
 export const ENV = {
   // Chain configuration
-  CHAIN_SELECTION: (process.env.NEXT_PUBLIC_CHAIN_SELECTION || "arbitrum_sepolia") as ChainSelection,
+  CHAIN_SELECTION: (process.env.NEXT_PUBLIC_CHAIN_SELECTION || "ethereum_sepolia") as ChainSelection,
   BASE_MAINNET_RPC_URL: process.env.NEXT_PUBLIC_BASE_MAINNET_RPC_URL || "",
   BASE_SEPOLIA_RPC_URL: process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || "",
   ARBITRUM_MAINNET_RPC_URL: process.env.NEXT_PUBLIC_ARBITRUM_MAINNET_RPC_URL || "",
   ARBITRUM_SEPOLIA_RPC_URL: process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC_URL || "",
+  ETHEREUM_MAINNET_RPC_URL: process.env.NEXT_PUBLIC_ETHEREUM_MAINNET_RPC_URL || "",
+  ETHEREUM_SEPOLIA_RPC_URL: process.env.NEXT_PUBLIC_ETHEREUM_SEPOLIA_RPC_URL || "",
 
   // Contract addresses - single system (new)
   ASTAVERDE_ADDRESS: process.env.NEXT_PUBLIC_ASTAVERDE_ADDRESS || "",
@@ -30,7 +32,15 @@ export const ENV = {
   DEBUG: (process.env.NEXT_PUBLIC_DEBUG || "false").toLowerCase() === "true",
 } as const;
 
-export const CHAIN_OPTIONS = ["local", "base_sepolia", "base_mainnet", "arbitrum_sepolia", "arbitrum_mainnet"] as const;
+export const CHAIN_OPTIONS = [
+  "local",
+  "base_sepolia",
+  "base_mainnet",
+  "arbitrum_sepolia",
+  "arbitrum_mainnet",
+  "ethereum_sepolia",
+  "ethereum_mainnet",
+] as const;
 export type ChainSelection = (typeof CHAIN_OPTIONS)[number];
 
 // Validate required environment variables
