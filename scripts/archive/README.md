@@ -15,6 +15,7 @@ file against the current contracts; the line references below were verified, not
 | `verify-vault.js`     | Broken, and mutating despite the name. Calls `vault.astaVerde()` (`:32`); no such getter exists — `EcoStabilizer.sol:60` declares `ecoAsset`. Hardcodes three stale local addresses (`:7-9`). Sends real transactions: `grantRole` (`:53`), `setApprovalForAll` (`:82`), `deposit(1)` (`:96`), `withdraw(1)` (`:106`). Ends with `main().catch(console.error)`, so it exits 0 even when the check throws. |
 | `smoke_test_vault.mjs` | Broken, and cannot fail. References an undeclared `tokenInfo` at `:195` (the variable is `redeemed`, `:93-97`). Every assertion is a `console.log` of a boolean, so the run reports success regardless of outcome. Reads the deployment from `deployments/ecostabilizer-${chainId}.json` (`:46`), a path `hardhat-deploy` never writes — it writes `deployments/<network>/<Contract>.json`. RPC comes from `BASE_RPC` (`:38`) with no chain-id assertion. |
 | `seed-local.js`       | Broken in two places, both swallowed. Calls `astaVerde.ownerOf(i)` (`:162`) on an ERC-1155, which has no `ownerOf`. Passes the per-token price as the `usdcAmount` argument while buying `needed` tokens (`:195`), which `AstaVerde.buyBatch` rejects; the correct `charlieTotal` is computed at `:189` and used for the `approve` two lines earlier. Both throw into a catch that only warns, so the script prints "Seeding complete!" and exits 0 without creating the redeemed-token fixture the QA docs describe. |
+| `dev-dashboard.html`  | Unreferenced and unsafe. Nothing in the repo loads it: the only mention was a stale `.eslintrc.js` ignore entry for `scripts/dev-dashboard-server.js`, a file that does not exist. Loads `ethers` 5.7.2 from `https://cdn.ethers.io/...` (`:297`) while the repo is on ethers v6. Hardcodes four stale local addresses (`:222-234`, `:317-318`). Ships a "Copy Private Key" button for the well-known Hardhat account #0 key (`:255-256`), which invites pasting a key into a page that also talks to a live RPC. |
 
 ## References removed alongside the move
 
@@ -23,6 +24,8 @@ file against the current contracts; the line references below were verified, not
 - `scripts/DEV_TOOLS_README.md`: the "Seed" step in the legacy local stack.
 - `AGENTS.md`: the `seed-local.js` pointer under "Pointers".
 - `docs/TESTING.md`: two `verify-vault.js` pointers, repointed at `scripts/check-vault-state.js`.
+- `.eslintrc.js`: the `scripts/dev-dashboard-server.js` ignore entry, which pointed at a file
+  that never existed and was the last mention of the dashboard anywhere in the repo.
 - `scripts/README.md`: the `smoke_test_vault.mjs` table row and usage blocks, the legacy
   `mint.mjs` / `testmint.mjs` block, and the `BASE_RPC` environment block that existed only for
   `smoke_test_vault.mjs`.
