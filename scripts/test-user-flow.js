@@ -2,7 +2,6 @@
 
 const { ethers } = require("ethers");
 const fs = require("fs");
-const chalk = require("chalk");
 
 // Configuration
 const RPC_URL = "http://localhost:8545";
@@ -29,23 +28,23 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Helper to log step
 const logStep = (step, description) => {
-    console.log(chalk.bold.cyan(`\n📍 Step ${step}: ${description}`));
-    console.log(chalk.gray("-".repeat(60)));
+    console.log(`\n📍 Step ${step}: ${description}`);
+    console.log("-".repeat(60));
 };
 
 // Helper to log success
 const logSuccess = (message) => {
-    console.log(chalk.green(`✅ ${message}`));
+    console.log(`✅ ${message}`);
 };
 
 // Helper to log info
 const logInfo = (label, value) => {
-    console.log(chalk.yellow(`   ${label}:`), value);
+    console.log(`   ${label}:`, value);
 };
 
 async function runUserFlow() {
-    console.log(chalk.bold.magenta("\n🚀 Starting Automated User Flow Test\n"));
-    console.log(chalk.gray("=".repeat(80)));
+    console.log("\n🚀 Starting Automated User Flow Test\n");
+    console.log("=".repeat(80));
 
     try {
         // Setup
@@ -62,7 +61,7 @@ async function runUserFlow() {
         const ecoStabilizer = new ethers.Contract(CONTRACTS.ECOSTABILIZER, loadABI("EcoStabilizer"), wallet);
         const scc = new ethers.Contract(CONTRACTS.SCC, loadABI("StabilizedCarbonCoin"), wallet);
 
-        console.log(chalk.bold("Test Account:"), wallet.address);
+        console.log("Test Account:", wallet.address);
 
         // Step 1: Check initial balances
         logStep(1, "Check Initial Balances");
@@ -88,7 +87,7 @@ async function runUserFlow() {
         }
 
         if (!availableBatch) {
-            console.log(chalk.yellow("⚠️  No batches with available tokens. Minting new batch..."));
+            console.log("⚠️  No batches with available tokens. Minting new batch...");
             // Mint a new batch
             const tx = await astaverde.mintBatch([wallet.address, wallet.address], ["QmTest1", "QmTest2"], {
                 nonce: nonce++,
@@ -209,27 +208,27 @@ async function runUserFlow() {
         }
 
         // Final Summary
-        console.log(chalk.bold.green("\n" + "=".repeat(80)));
-        console.log(chalk.bold.green("✅ User Flow Test Complete!"));
-        console.log(chalk.gray("=".repeat(80)));
+        console.log("\n" + "=".repeat(80));
+        console.log("✅ User Flow Test Complete!");
+        console.log("=".repeat(80));
 
         // Final balances
         const finalUSDC = await usdc.balanceOf(wallet.address);
         const finalSCC = await scc.balanceOf(wallet.address);
 
-        console.log(chalk.bold.cyan("\n📊 Final Balances:"));
+        console.log("\n📊 Final Balances:");
         logInfo("USDC", ethers.formatUnits(finalUSDC, 6));
         logInfo("SCC", ethers.formatUnits(finalSCC, 18));
         logInfo("USDC spent", ethers.formatUnits(initialUSDC - finalUSDC, 6));
     } catch (error) {
-        console.error(chalk.red("\n❌ Error in user flow:"), error.message);
+        console.error("\n❌ Error in user flow:", error.message);
         if (error.data) {
-            console.error(chalk.red("Error data:"), error.data);
+            console.error("Error data:", error.data);
         }
         process.exit(1);
     }
 }
 
 // Run the flow
-console.log(chalk.gray("\n💡 Make sure 'npm run dev' is running before executing this test\n"));
+console.log("\n💡 Make sure 'npm run dev' is running before executing this test\n");
 runUserFlow();

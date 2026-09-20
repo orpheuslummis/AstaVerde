@@ -7,7 +7,7 @@ async function main() {
     const [deployer, alice, bob, charlie, dave] = await hre.ethers.getSigners();
 
     // Get USDC contract
-    const usdcAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+    const usdcAddress = (await hre.deployments.get("MockUSDC")).address;
     const MockUSDC = await hre.ethers.getContractFactory("MockUSDC");
     const usdc = MockUSDC.attach(usdcAddress);
 

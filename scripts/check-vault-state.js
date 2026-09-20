@@ -39,7 +39,7 @@ async function checkVaultState() {
         // Check getUserLoansIndexed
         console.log("\n2. Using getUserLoansIndexed():");
         try {
-            const result = await vaultContract.getUserLoansIndexed(aliceAddr, 1n, 2000n);
+            const result = await vaultContract.getUserLoansIndexed(aliceAddr, 0n, 2000n);
             console.log(
                 "   Token IDs:",
                 result.tokenIds.map((id) => id.toString()),

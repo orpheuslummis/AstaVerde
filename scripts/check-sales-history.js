@@ -7,6 +7,10 @@ async function main() {
     const deployment = await hre.deployments.get("AstaVerde");
     const astaVerde = await hre.ethers.getContractAt("AstaVerde", deployment.address);
 
+    // Revenue split comes from the contract, not a hardcoded 70/30
+    const platformPct = Number(await astaVerde.platformSharePercentage());
+    const producerPct = 100 - platformPct;
+
     // Get recent Purchase events
     const filter = astaVerde.filters.Purchase();
     const events = await astaVerde.queryFilter(filter, 0, "latest");
@@ -23,9 +27,9 @@ async function main() {
         const price = event.args.price;
         const priceInUSDC = Number(hre.ethers.formatUnits(price, 6));
 
-        // Calculate splits (70% producer, 30% platform)
-        const producerAmount = priceInUSDC * 0.7;
-        const platformAmount = priceInUSDC * 0.3;
+        // Calculate splits using the contract's configured platform share
+        const producerAmount = (priceInUSDC * producerPct) / 100;
+        const platformAmount = (priceInUSDC * platformPct) / 100;
 
         totalSales += priceInUSDC;
         producerRevenue += producerAmount;
@@ -35,14 +39,14 @@ async function main() {
         console.log(`  Buyer: ${buyer}`);
         console.log(`  Token ID: ${tokenId}`);
         console.log(`  Total Price: ${priceInUSDC} USDC`);
-        console.log(`  Producer gets: ${producerAmount.toFixed(2)} USDC (70%)`);
-        console.log(`  Platform gets: ${platformAmount.toFixed(2)} USDC (30%)`);
+        console.log(`  Producer gets: ${producerAmount.toFixed(2)} USDC (${producerPct}%)`);
+        console.log(`  Platform gets: ${platformAmount.toFixed(2)} USDC (${platformPct}%)`);
     }
 
     console.log("\n=== SUMMARY ===");
     console.log(`Total Sales: ${totalSales.toFixed(2)} USDC`);
-    console.log(`Producer Revenue (70%): ${producerRevenue.toFixed(2)} USDC`);
-    console.log(`Platform Revenue (30%): ${platformRevenue.toFixed(2)} USDC`);
+    console.log(`Producer Revenue (${producerPct}%): ${producerRevenue.toFixed(2)} USDC`);
+    console.log(`Platform Revenue (${platformPct}%): ${platformRevenue.toFixed(2)} USDC`);
 
     // Verify against contract state
     const balance = await astaVerde.producerBalances(producerAddress);

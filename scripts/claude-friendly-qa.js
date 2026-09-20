@@ -84,7 +84,7 @@ async function runPhase1Tests(contracts, users) {
         const batchInfo = await astaVerde.getBatchInfo(batchId);
         results.priceInfo = {
             currentPrice: ethers.formatUnits(currentPrice, 6),
-            basePrice: ethers.formatUnits(batchInfo[2], 6), // startingPrice from batch
+            basePrice: ethers.formatUnits(batchInfo[3], 6), // current batch price from getBatchInfo
             remainingAmount: batchInfo[4].toString(), // remainingTokens
         };
         console.log(

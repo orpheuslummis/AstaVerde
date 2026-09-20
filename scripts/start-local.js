@@ -10,6 +10,10 @@ const path = require("path");
 const fs = require("fs");
 const net = require("net");
 
+// Scope process cleanup to this checkout, so a bare "hardhat node" or "next dev"
+// belonging to another repo on this machine is never killed.
+const repoRoot = path.resolve(__dirname, "..");
+
 let hardhatProcess = null;
 let webappProcess = null;
 let isCleaningUp = false;
@@ -65,14 +69,14 @@ function cleanupPorts() {
         } catch (e) {}
     }
 
-    // Kill any Next.js dev processes
+    // Kill any Next.js dev processes started from this checkout
     try {
-        execSync("pkill -f 'next dev' 2>/dev/null", { stdio: "ignore" });
+        execSync(`pkill -f "${repoRoot}.*next dev" 2>/dev/null`, { stdio: "ignore" });
     } catch (e) {}
 
-    // Kill any Hardhat node processes
+    // Kill any Hardhat node processes started from this checkout
     try {
-        execSync("pkill -f 'hardhat node' 2>/dev/null", { stdio: "ignore" });
+        execSync(`pkill -f "${repoRoot}.*hardhat node" 2>/dev/null`, { stdio: "ignore" });
     } catch (e) {}
 }
 

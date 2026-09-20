@@ -22,6 +22,8 @@ async function main() {
 
     // Check platform settings
     const platformShare = await astaVerde.platformSharePercentage();
+    const platformPct = Number(platformShare);
+    const producerPct = 100 - platformPct;
     const platformFees = await astaVerde.platformShareAccumulated();
     const totalProducerBalances = await astaVerde.totalProducerBalances();
 
@@ -91,11 +93,11 @@ async function main() {
             const soldCount = tokenIds.length - Number(remainingTokens);
             if (soldCount > 0) {
                 const revenue = (Number(currentPrice) * soldCount) / 1000000;
-                const producerRevenue = revenue * 0.7;
-                const platformRevenue = revenue * 0.3;
+                const producerRevenue = (revenue * producerPct) / 100;
+                const platformRevenue = (revenue * platformPct) / 100;
                 console.log(`     Revenue from sales: ${revenue.toFixed(2)} USDC`);
-                console.log(`       → Producer (70%): ${producerRevenue.toFixed(2)} USDC`);
-                console.log(`       → Platform (30%): ${platformRevenue.toFixed(2)} USDC`);
+                console.log(`       → Producer (${producerPct}%): ${producerRevenue.toFixed(2)} USDC`);
+                console.log(`       → Platform (${platformPct}%): ${platformRevenue.toFixed(2)} USDC`);
             }
         } catch (e) {
             // Batch doesn't exist
@@ -137,18 +139,18 @@ async function main() {
     if (totalRevenue > 0) {
         console.log("\n📈 REVENUE SUMMARY:");
         console.log(`   Total Sales Revenue: ${ethers.formatUnits(totalRevenue, 6)} USDC`);
-        console.log(`   Platform Share (30%): ${ethers.formatUnits(platformFees, 6)} USDC`);
-        console.log(`   Producer Share (70%): ${ethers.formatUnits(totalProducerBalances, 6)} USDC`);
+        console.log(`   Platform Share (${platformPct}%): ${ethers.formatUnits(platformFees, 6)} USDC`);
+        console.log(`   Producer Share (${producerPct}%): ${ethers.formatUnits(totalProducerBalances, 6)} USDC`);
 
-        // Verify the 70/30 split
-        const expectedPlatform = (totalRevenue * 30) / 100;
-        const expectedProducer = (totalRevenue * 70) / 100;
+        // Verify the split against the contract's configured platform share
+        const expectedPlatform = (totalRevenue * platformPct) / 100;
+        const expectedProducer = (totalRevenue * producerPct) / 100;
         const platformDiff = Math.abs(Number(platformFees) - expectedPlatform);
         const producerDiff = Math.abs(Number(totalProducerBalances) - expectedProducer);
 
         if (platformDiff < 1000000 && producerDiff < 1000000) {
             // Within 1 USDC tolerance
-            console.log("   ✅ Revenue split correctly maintained at 70/30");
+            console.log(`   ✅ Revenue split correctly maintained at ${producerPct}/${platformPct}`);
         } else {
             console.log("   ⚠️  Revenue split variance detected");
         }

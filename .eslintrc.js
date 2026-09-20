@@ -31,7 +31,6 @@ module.exports = {
         "scripts/**/*.mjs",
         "scripts/events/**",
         "scripts/manual-qa-flows.js",
-        "scripts/dev-dashboard-server.js",
     ],
     rules: {
         semi: ["error", "always"],
