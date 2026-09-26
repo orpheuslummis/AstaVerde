@@ -301,11 +301,20 @@ function ClaimPlatformFunds() {
     functionName: "platformShareAccumulated",
   });
 
+  // Recipient of the claimed USDC: the connected owner wallet by default, or any address
+  // (e.g. a treasury Safe) typed here. The contract pays whatever address the owner names.
+  const [recipient, setRecipient] = useState("");
+  const payTo = recipient.trim() || address || "";
+
   const handleClaim = async () => {
     if (!address || !platformFunds || platformFunds === 0n) return;
+    if (!isAddress(payTo)) {
+      customToast.error("Enter a valid recipient address");
+      return;
+    }
 
     try {
-      await adminControls.claimPlatformFunds(address);
+      await adminControls.claimPlatformFunds(payTo);
       dispatchBalancesRefetch();
       customToast.success("Platform funds claimed successfully");
     } catch (error) {
@@ -322,6 +331,13 @@ function ClaimPlatformFunds() {
             Available Funds: {formatUSDCWithUnit(platformFunds)}
           </div>
         )}
+        <input
+          type="text"
+          placeholder={address ? `Recipient (default: ${address})` : "Recipient address"}
+          value={recipient}
+          onChange={(e) => setRecipient(e.target.value)}
+          className="input"
+        />
         <button
           type="button"
           className="btn btn-primary w-full"
