@@ -32,6 +32,13 @@ change, described under Contracts. This section is the client-readable summary o
 - The deploy wrapper now exits with an error if a post-deployment step fails, instead of always printing success.
 - Helper scripts (`set-metadata-uri`, `check-vault-tokens`, `check-nft-metadata`, `dev-sepolia`) read `sepolia` as Ethereum Sepolia; `arbitrum-sepolia` stays explicit.
 
+#### Hardened before the mainnet run (2026-09-26)
+
+- The deploy script sets the transaction tip itself on Ethereum mainnet, between 0.1 and 1 gwei — Why: RPCs suggest tips from zero to a few thousand wei, which can leave a deploy pending, and a suggestion of exactly zero used to fall back to 2 gwei, which would have cost about 0.015 ETH instead of about 0.0013 ETH.
+- A misconfigured owner address now stops the deploy before anything is deployed — Why: it used to stop only after the irreversible SCC admin renounce.
+- The handoff script checks that the new owner is the expected Safe (threshold and owner list) before transferring — Why: ownership transfer is one step and cannot be undone.
+- Two helper scripts for the runbook (price-update cap, read-back of every owner and role) and six more pause-exit tests from an independent audit. The deployment guide's mainnet section is now the rehearsed runbook, including recovery steps.
+
 ### Web app
 
 #### Added

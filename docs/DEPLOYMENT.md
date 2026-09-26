@@ -135,29 +135,61 @@ DEPLOY_WAIT_CONFIRMATIONS=2       # L1 blocks are ~12s; 2 confirmations before d
 USDC_ADDRESS=                     # empty: Circle USDC 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
 ```
 
-2. Deploy:
+Keep `PRIVATE_KEY`, `ETHEREUM_MAINNET_RPC_URL` and `ETHERSCAN_API_KEY` in the root `.env.local`; the
+per-network file only needs the flags. Plain `npx hardhat deploy` does not read `.env.ethereum-mainnet`;
+`npm run deploy:mainnet` does, so use that entry point.
+
+2. Pre-checks, all must hold:
+
+- `deployments/ethereum-mainnet/` does not exist (hardhat-deploy would reuse recorded addresses).
+- The base fee is under about 1 gwei (the deployer then pays about 0.0013 ETH in total; the whole run is
+  about 7M gas). The script clamps the mainnet tip to 0.1–1 gwei.
+- `npx hardhat test` passes.
+
+3. Deploy:
 
 ```bash
 npm run deploy:mainnet
 ```
 
-The script deploys AstaVerde, then SCC, then EcoStabilizer, then grants `MINTER_ROLE` on SCC to the
-vault and waits for that receipt before any dependent read.
+It deploys AstaVerde (owner = deployer), SCC and EcoStabilizer, grants `MINTER_ROLE` on SCC to the vault
+and waits for that receipt, renounces the deployer's SCC admin role when `RENOUNCE_SCC_ADMIN=true`, and
+sets `AstaVerde.trustedVault` to the vault. Inline Etherscan verification usually fails this soon after
+deployment; that is not fatal (see Verification below).
 
-3. Hand over ownership and read it back:
+If the run is interrupted and restarted: when hardhat-deploy asks about a pending transaction, choose
+**continue waiting**, never _skip_ (skip deploys a second AstaVerde). Do not change `OWNER_ADDRESS` or
+`USDC_ADDRESS` between runs (that also forces a second AstaVerde). A re-run after the SCC renounce stops at
+`grantRole` with `AccessControlUnauthorizedAccount`: that is expected; continue with step 4, `handoff`
+sets `trustedVault` if it is missing.
+
+4. Set the L1 price-update cap while the deployer still owns AstaVerde (the marketplace must be unpaused):
 
 ```bash
-npx hardhat console --network ethereum-mainnet
-> const av = await ethers.getContractAt("AstaVerde", "<AstaVerde address>")
-> await (await av.transferOwnership("<final owner>")).wait()
-> await av.owner()   // must equal <final owner>
+npx hardhat run scripts/set-price-update-iterations.js --network ethereum-mainnet
 ```
 
-Do the same for anything else the deployer holds that should not stay with it. If
-`RENOUNCE_SCC_ADMIN` was left `false`, the deployer still holds SCC `DEFAULT_ADMIN_ROLE`; decide
-explicitly whether to renounce it (irreversible) or grant it elsewhere.
+5. Hand over to the owner Safe. The script refuses unless the Safe matches what you verified:
 
-4. In Vercel, set `NEXT_PUBLIC_*` env vars (see `webapp/.env.local.example`) for Ethereum mainnet.
+```bash
+NEW_OWNER=0x... EXPECTED_SAFE_THRESHOLD=<n> EXPECTED_SAFE_OWNERS=0x..,0x..,0x.. RENOUNCE_SCC_ADMIN=true \
+  npm run handoff -- --network ethereum-mainnet
+```
+
+6. Read everything back and verify the three contracts on Etherscan (next section):
+
+```bash
+npx hardhat run scripts/check-deployment.js --network ethereum-mainnet
+```
+
+Expect: both owners = the Safe, `usdcToken` = Circle USDC, `trustedVault` = the vault, the vault holds
+`MINTER_ROLE`, the deployer is not SCC admin, `maxBatchSize` 50, `maxPriceUpdateIterations` 25. Commit
+`deployments/ethereum-mainnet/`.
+
+7. In Vercel, set the Production `NEXT_PUBLIC_*` env vars for Ethereum mainnet (see
+   `webapp/.env.local.example`), including a dedicated `NEXT_PUBLIC_ETHEREUM_MAINNET_RPC_URL` and the server-side
+   `PINATA_JWT`, and remove `NEXT_PUBLIC_ARBITRUM_MAINNET_RPC_URL` (it would be inlined into the bundle).
+   `NEXT_PUBLIC_*` values are build-time: redeploy after changing them.
 
 ---
 
