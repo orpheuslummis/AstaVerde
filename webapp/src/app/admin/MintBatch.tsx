@@ -107,6 +107,10 @@ export default function MintBatch() {
       customToast.error("Connect the owner wallet to mint.");
       return;
     }
+    if (lastTokenId === null) {
+      customToast.error("Still reading the next token ID from the contract; try again in a moment.");
+      return;
+    }
     if (keyStatus && !keyStatus.configured) {
       customToast.error("Uploads are not configured on this deployment (storage key missing).");
       return;
@@ -145,15 +149,17 @@ export default function MintBatch() {
         const token = tokens[i];
         setStatus(`Preparing token ${i + 1} of ${total}…`);
         try {
-          const tokenNumber = lastTokenId ? lastTokenId + i + 1 : i + 1;
+          // lastTokenId is 0 on a fresh contract: test for null, not truthiness,
+          // or the first batch loses its token numbers.
+          const tokenNumber = lastTokenId !== null ? lastTokenId + i + 1 : null;
           const imageCid =
             uploadImages && token.image
-              ? await uploadToIPFS(auth, token.image, token.image.type, `astaverde-token-${tokenNumber}-image`)
+              ? await uploadToIPFS(auth, token.image, token.image.type, `astaverde-token-${tokenNumber ?? "new"}-image`)
               : "";
           const metadata: Record<string, unknown> = {
             name: token.name,
             description: token.description,
-            external_url: `${EXTERNAL_URL}${lastTokenId ? lastTokenId + i + 1 : ""}`,
+            external_url: `${EXTERNAL_URL}${tokenNumber ?? ""}`,
             attributes: [
               { trait_type: "Type", value: "Carbon Offset" },
               { trait_type: "Producer Address", value: token.producer_address },
@@ -168,7 +174,7 @@ export default function MintBatch() {
             auth,
             JSON.stringify(metadata),
             "application/json",
-            `astaverde-token-${tokenNumber}-metadata.json`,
+            `astaverde-token-${tokenNumber ?? "new"}-metadata.json`,
           );
           producers.push(token.producer_address);
           cids.push(metadataCid);
