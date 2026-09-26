@@ -44,10 +44,11 @@ export const VAULT_GAS_LIMITS = {
 // Batch Operations
 export const BATCH_SIZE_FOR_TOKEN_QUERY = 500;
 // USDC allowance granted when a purchase needs approval, as a multiple of that purchase.
-// 2x lets a buyer make a second purchase of the same size without a new approval while
-// keeping the standing allowance small (the previous 100x left a 23,000 USDC allowance
-// after a single 230 USDC buy, which wallets flag and which is oversized on mainnet).
-export const APPROVAL_BUFFER_FACTOR = 2n;
+// The allowance stays on-chain and is reused: a new approval is asked for only once
+// earlier approvals are used up. 10x (client's choice, 2026-09-26) covers roughly ten
+// purchases of the first size; the previous 100x left a 23,000 USDC allowance after a
+// single 230 USDC buy.
+export const APPROVAL_BUFFER_FACTOR = 10n;
 
 // Purchase submission: retry the pre-flight simulation once after this pause (RPC nodes can
 // lag a just-confirmed approval), and send the wallet our own gas estimate plus headroom so
