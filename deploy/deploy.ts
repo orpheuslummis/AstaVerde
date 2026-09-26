@@ -101,6 +101,24 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const ownerAddress = deploymentConfig.ownerAddress || deployer;
     console.log("Owner address:", ownerAddress);
 
+    // Fail before anything is deployed: with the vault enabled on a fresh AstaVerde, the deployer
+    // must own AstaVerde to call setTrustedVault, and it would otherwise only find out after the
+    // irreversible SCC admin renounce. Deploy with OWNER_ADDRESS empty, then run npm run handoff.
+    {
+        const vaultWillDeploy =
+            network.name === "hardhat" ||
+            network.name === "localhost" ||
+            network.name.includes("sepolia") ||
+            process.env.DEPLOY_VAULT_V2 === "true";
+        const freshAstaVerde = process.env.USE_EXISTING_ASTAVERDE !== "true";
+        if (vaultWillDeploy && freshAstaVerde && ownerAddress.toLowerCase() !== deployer.toLowerCase()) {
+            throw new Error(
+                "OWNER_ADDRESS differs from the deployer. Deploy with OWNER_ADDRESS empty (the deployer sets " +
+                    "trustedVault), then hand over with npm run handoff. Nothing was deployed.",
+            );
+        }
+    }
+
     const provider = hre.ethers.provider;
     const nonce = await provider.getTransactionCount(deployer);
     const pendingNonce = await provider.getTransactionCount(deployer, "pending");
@@ -122,6 +140,33 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
             : "N/A",
     });
 
+    // EIP-1559 fees for every transaction this script sends: 120% of the RPC's suggestion. On Ethereum
+    // mainnet the tip is clamped to [0.1, 1] gwei: RPCs there suggest anything from 0 to a few thousand
+    // wei, which can leave a deploy pending (no timeouts here), and a suggestion of exactly 0 used to
+    // hit the 2 gwei fallback (0n is falsy). The floor costs ~0.0007 ETH over 7M gas.
+    const chainId = Number((await provider.getNetwork()).chainId);
+    const gwei = (v: string) => ethers.parseUnits(v, "gwei");
+    const minPriorityFee = chainId === 1 ? gwei(process.env.DEPLOY_MIN_PRIORITY_FEE_GWEI || "0.1") : 0n;
+    const maxPriorityFee = chainId === 1 ? gwei(process.env.DEPLOY_MAX_PRIORITY_FEE_GWEI || "1") : null;
+    const feeOverrides = async () => {
+        const latestFeeData = await provider.getFeeData();
+        let maxPriorityFeePerGas =
+            latestFeeData.maxPriorityFeePerGas != null
+                ? (latestFeeData.maxPriorityFeePerGas * 120n) / 100n // 120% of the current maxPriorityFeePerGas
+                : chainId === 1
+                  ? minPriorityFee
+                  : gwei("2"); // fallback when the RPC gives no suggestion
+        if (maxPriorityFeePerGas < minPriorityFee) maxPriorityFeePerGas = minPriorityFee;
+        if (maxPriorityFee !== null && maxPriorityFeePerGas > maxPriorityFee) maxPriorityFeePerGas = maxPriorityFee;
+        let maxFeePerGas =
+            latestFeeData.maxFeePerGas != null
+                ? (latestFeeData.maxFeePerGas * 120n) / 100n // 120% of the current maxFeePerGas
+                : gwei("30"); // fallback when the RPC gives no suggestion
+        const baseFee = (await provider.getBlock("latest"))?.baseFeePerGas ?? 0n;
+        if (maxFeePerGas < baseFee * 2n + maxPriorityFeePerGas) maxFeePerGas = baseFee * 2n + maxPriorityFeePerGas;
+        return { maxFeePerGas, maxPriorityFeePerGas };
+    };
+
     const waitForCode = async (address: string, label: string) => {
         const maxMs = 30000;
         const start = Date.now();
@@ -141,17 +186,8 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         console.log("Constructor arguments:", args);
 
         try {
-            // Get the latest fee data before each deployment
-            const latestFeeData = await provider.getFeeData();
-
-            // Calculate a slightly higher maxFeePerGas and maxPriorityFeePerGas
-            const maxFeePerGas = latestFeeData.maxFeePerGas
-                ? (latestFeeData.maxFeePerGas * 120n) / 100n // 120% of the current maxFeePerGas
-                : ethers.parseUnits("30", "gwei"); // fallback to 30 gwei if maxFeePerGas is null
-
-            const maxPriorityFeePerGas = latestFeeData.maxPriorityFeePerGas
-                ? (latestFeeData.maxPriorityFeePerGas * 120n) / 100n // 120% of the current maxPriorityFeePerGas
-                : ethers.parseUnits("2", "gwei"); // fallback to 2 gwei if maxPriorityFeePerGas is null
+            // Fresh fees before each deployment (see feeOverrides)
+            const { maxFeePerGas, maxPriorityFeePerGas } = await feeOverrides();
 
             console.log(`Deploying ${contractName} with gas settings:`, {
                 maxFeePerGas: `${ethers.formatUnits(maxFeePerGas, "gwei")} gwei`,
@@ -380,7 +416,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         console.log("\nConfiguring SCC minter role...");
         const sccContract = await hre.ethers.getContractAt("StabilizedCarbonCoin", scc.address);
         const MINTER_ROLE = await sccContract.MINTER_ROLE();
-        const grantTx = await sccContract.grantRole(MINTER_ROLE, vault.address);
+        const grantTx = await sccContract.grantRole(MINTER_ROLE, vault.address, await feeOverrides());
         await grantTx.wait(waitConfirmations);
         console.log(`✓ Granted MINTER_ROLE to vault at ${vault.address}`);
 
@@ -398,7 +434,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
             }
             const isAdmin = await sccContract.hasRole(DEFAULT_ADMIN_ROLE, deployer);
             if (isAdmin) {
-                const tx = await sccContract.renounceRole(DEFAULT_ADMIN_ROLE, deployer);
+                const tx = await sccContract.renounceRole(DEFAULT_ADMIN_ROLE, deployer, await feeOverrides());
                 await tx.wait();
                 console.log("✓ SCC admin role renounced by deployer");
             } else {
@@ -422,7 +458,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
             );
         } else if (ownerAddress.toLowerCase() === deployer.toLowerCase()) {
             const avForVault = await hre.ethers.getContractAt("AstaVerde", astaVerdeAddress);
-            const tvTx = await avForVault.setTrustedVault(vault.address);
+            const tvTx = await avForVault.setTrustedVault(vault.address, await feeOverrides());
             await tvTx.wait(waitConfirmations);
             const tv = await avForVault.trustedVault();
             if (tv.toLowerCase() !== vault.address.toLowerCase()) {
@@ -440,7 +476,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
         // owner when one is set, so AstaVerde and the vault end up under the same owner.
         if (ownerAddress.toLowerCase() !== deployer.toLowerCase()) {
             console.log(`\nTransferring EcoStabilizer ownership to ${ownerAddress}...`);
-            const transferTx = await vaultContract.transferOwnership(ownerAddress);
+            const transferTx = await vaultContract.transferOwnership(ownerAddress, await feeOverrides());
             await transferTx.wait(waitConfirmations);
             const newVaultOwner = await vaultContract.owner();
             if (newVaultOwner.toLowerCase() !== ownerAddress.toLowerCase()) {

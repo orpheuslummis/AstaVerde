@@ -3,7 +3,8 @@
  * Hand a deployment over to its final owner, then read every role back on-chain.
  *
  *   NEW_OWNER=0x... npx hardhat run scripts/handoff.js --network ethereum-sepolia
- *   NEW_OWNER=0x... RENOUNCE_SCC_ADMIN=true npx hardhat run scripts/handoff.js --network ethereum-mainnet
+ *   NEW_OWNER=0x... EXPECTED_SAFE_THRESHOLD=4 EXPECTED_SAFE_OWNERS=0x..,0x.. RENOUNCE_SCC_ADMIN=true \
+ *     npx hardhat run scripts/handoff.js --network ethereum-mainnet
  *
  * - AstaVerde.transferOwnership(NEW_OWNER)      (skipped if already the owner)
  * - EcoStabilizer.transferOwnership(NEW_OWNER)  (skipped if not deployed or already the owner)
@@ -32,6 +33,52 @@ async function main() {
 
     const failures = [];
     const want = newOwner.toLowerCase();
+
+    // Ownership transfer is one step and irreversible, so check what NEW_OWNER is before sending.
+    // A contract owner must look like a Safe and, on Ethereum mainnet, match EXPECTED_SAFE_THRESHOLD
+    // and EXPECTED_SAFE_OWNERS (comma-separated) exactly. A plain wallet on mainnet needs ALLOW_EOA_OWNER=true.
+    {
+        const chainId = Number((await ethers.provider.getNetwork()).chainId);
+        const code = await ethers.provider.getCode(newOwner);
+        if (code && code !== "0x") {
+            const safe = new ethers.Contract(
+                newOwner,
+                ["function getThreshold() view returns (uint256)", "function getOwners() view returns (address[])"],
+                ethers.provider,
+            );
+            let threshold;
+            let owners;
+            try {
+                threshold = Number(await safe.getThreshold());
+                owners = (await safe.getOwners()).map((o) => o.toLowerCase());
+            } catch {
+                throw new Error(`NEW_OWNER ${newOwner} has code but is not a Safe (getThreshold/getOwners failed)`);
+            }
+            console.log(`NEW_OWNER is a Safe: threshold ${threshold} of ${owners.length}: ${owners.join(", ")}`);
+            const expThreshold = process.env.EXPECTED_SAFE_THRESHOLD;
+            const expOwners = process.env.EXPECTED_SAFE_OWNERS;
+            if (chainId === 1 && (!expThreshold || !expOwners)) {
+                throw new Error(
+                    "On mainnet set EXPECTED_SAFE_THRESHOLD and EXPECTED_SAFE_OWNERS to the Safe you verified",
+                );
+            }
+            if (expThreshold && Number(expThreshold) !== threshold) {
+                throw new Error(`Safe threshold is ${threshold}, expected ${expThreshold}`);
+            }
+            if (expOwners) {
+                const exp = expOwners
+                    .split(",")
+                    .map((o) => o.trim().toLowerCase())
+                    .filter(Boolean);
+                const same = exp.length === owners.length && exp.every((o) => owners.includes(o));
+                if (!same) throw new Error(`Safe owners differ from EXPECTED_SAFE_OWNERS`);
+            }
+        } else if (chainId === 1 && process.env.ALLOW_EOA_OWNER !== "true") {
+            throw new Error(
+                `NEW_OWNER ${newOwner} has no code; set ALLOW_EOA_OWNER=true if a plain wallet is intended`,
+            );
+        }
+    }
 
     // Refuse to hand AstaVerde over while the vault is not registered as trustedVault: after the
     // transfer only the new owner could fix it, and until then a pause would lock vault collateral.
