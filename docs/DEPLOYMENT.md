@@ -163,10 +163,12 @@ If the run is interrupted and restarted: when hardhat-deploy asks about a pendin
 `grantRole` with `AccessControlUnauthorizedAccount`: that is expected; continue with step 4, `handoff`
 sets `trustedVault` if it is missing.
 
-4. Set the L1 price-update cap while the deployer still owns AstaVerde (the marketplace must be unpaused):
+4. Set the L1 price-update cap and the client's launch prices while the deployer still owns AstaVerde (the
+   marketplace must be unpaused; each variable is optional, the script is idempotent and reads back):
 
 ```bash
-npx hardhat run scripts/set-price-update-iterations.js --network ethereum-mainnet
+ITERATIONS=25 BASE_PRICE_USDC=<price> DAILY_DECAY_USDC=<decay> \
+  npx hardhat run scripts/set-market-settings.js --network ethereum-mainnet
 ```
 
 5. Hand over to the owner Safe. The script refuses unless the Safe matches what you verified:
