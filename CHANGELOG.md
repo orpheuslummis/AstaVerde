@@ -20,6 +20,9 @@ change, described under Contracts. This section is the client-readable summary o
 - Deployment records for Ethereum (`deployments/ethereum-sepolia/`, later `deployments/ethereum-mainnet/`) are now tracked in git — Why: the Arbitrum addresses were only ever on one laptop.
 - Ethereum Sepolia QA deployment (2026-09-20, second deploy, includes the pause-exit fix), all four contracts verified on Sepolia Etherscan: AstaVerde `0x088c523088389a4E6a69A8a2Cc7E765EB1038523`, StabilizedCarbonCoin `0xB31D17B9BA321D576dC9B3d90a7D0F79ceB265BD`, EcoStabilizer `0x0eFDfD5b07Cd1717eb822Ed4A73924F1070F13eB`, MockUSDC `0xB72FAA704cd5b39E4a04D89F913567C8a6D8cC5d`. The first deployment of the same night (AstaVerde `0xd594…3eD0`) carried the pre-fix bytecode and is abandoned.
 
+- **Ethereum mainnet deployment (2026-10-02)**, all three contracts verified on Etherscan: AstaVerde `0x34eceD602B9DB47e0B56932B491ca59c4b02Ecc5`, StabilizedCarbonCoin `0xd5949461Ac560619a5d9261a5b4F3E5373123eD0`, EcoStabilizer `0xFBfcE641BCB6BF1E06CB859c41788699BBC84B46`; payment token Circle USDC `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`. Both contracts are owned by the client's hardware wallet `0xf34f6538836d2794C15e77485cD4D9355e435498`; the deployer's SCC admin role is renounced, so only the vault can mint SCC. Launch settings: base price 150 USDC, daily price decay 5 USDC, price-update cap 25, batch size 50. Deployment cost 0.003 ETH.
+- The web app's copy of the AstaVerde ABI includes `trustedVault`, `setTrustedVault` and `TrustedVaultSet` — Why: the copy is regenerated at compile time and had not been refreshed since the pause-exit change; nothing in the app calls them.
+
 #### Changed
 
 - `npm run deploy:testnet` / `deploy:mainnet` / `mint:testnet` now target Ethereum. The Arbitrum commands remain as `deploy:arbitrum-testnet`, `deploy:arbitrum-mainnet`, `mint:arbitrum-testnet` — Why: the default should be the live target; the old ones stay reachable for the Arbitrum deployment.
