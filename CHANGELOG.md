@@ -2,7 +2,7 @@
 
 All notable changes to the AstaVerde project are documented in this file.
 
-## Ethereum mainnet redeploy – 2026-09 to 2026-10 (live since 2026-10-04)
+## Ethereum mainnet redeploy – 2026-09 to 2026-10 (contracts deployed 2026-10-02, site live since 2026-10-04)
 
 The marketplace moved from Arbitrum One to Ethereum mainnet by fresh deploy. The Arbitrum
 deployment stays where it is; no tokens or history are migrated. The smart contracts carry one
@@ -15,10 +15,10 @@ change, described under Contracts. This section is the client-readable summary o
 - Hardhat networks `ethereum-sepolia` (chain 11155111, the QA testnet) and `ethereum-mainnet` (chain 1) — Why: the deploy tooling only knew Base and Arbitrum.
 - Circle USDC on Ethereum mainnet (`0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`) as the payment token in the deploy script's native-USDC map. On Sepolia a MockUSDC is deployed automatically for testing — Why: same pattern as Arbitrum: canonical USDC on mainnet, a mintable test token on the testnet.
 - Env templates `.env.ethereum-sepolia.example` and `.env.ethereum-mainnet.example` with every deploy flag named — Why: mainnet flags (`DEPLOY_VAULT_V2`, `RENOUNCE_SCC_ADMIN`) must be explicit, not inherited.
-- `npm run handoff` (`scripts/handoff.js`): transfers ownership of AstaVerde and the EcoStabilizer vault to a new owner, optionally moves or renounces the SCC admin role, and reads every owner and role back on-chain before reporting success — Why: in December the vault ownership had to be transferred by hand; the mainnet handoff should be one command with a built-in check.
+- `npm run handoff` (`scripts/handoff.js`): transfers ownership of AstaVerde and the EcoStabilizer vault to a new owner, renounces the deployer's SCC admin role when `RENOUNCE_SCC_ADMIN=true`, and reads every owner and role back on-chain before reporting success — Why: in December the vault ownership had to be transferred by hand; the mainnet handoff should be one command with a built-in check.
 - The deploy script transfers vault ownership to `OWNER_ADDRESS` when one is set — Why: the vault is owned by whoever deploys it; AstaVerde already took its owner as a parameter, the vault did not.
 - Deployment records for Ethereum (`deployments/ethereum-sepolia/`, later `deployments/ethereum-mainnet/`) are now tracked in git — Why: the Arbitrum addresses were only ever on one laptop.
-- Ethereum Sepolia QA deployment (2026-09-20, second deploy, includes the pause-exit fix), all four contracts verified on Sepolia Etherscan: AstaVerde `0x088c523088389a4E6a69A8a2Cc7E765EB1038523`, StabilizedCarbonCoin `0xB31D17B9BA321D576dC9B3d90a7D0F79ceB265BD`, EcoStabilizer `0x0eFDfD5b07Cd1717eb822Ed4A73924F1070F13eB`, MockUSDC `0xB72FAA704cd5b39E4a04D89F913567C8a6D8cC5d`. The first deployment of the same night (AstaVerde `0xd594…3eD0`) carried the pre-fix bytecode and is abandoned.
+- Ethereum Sepolia QA deployment (2026-09-20, second deploy, includes the pause-exit fix), all four contracts verified on Sepolia Etherscan: AstaVerde `0x088c523088389a4E6a69A8a2Cc7E765EB1038523`, StabilizedCarbonCoin `0xB31D17B9BA321D576dC9B3d90a7D0F79ceB265BD`, EcoStabilizer `0x0eFDfD5b07Cd1717eb822Ed4A73924F1070F13eB`, MockUSDC `0xB72FAA704cd5b39E4a04D89F913567C8a6D8cC5d`. The first Sepolia deployment of the same night (AstaVerde at `0xd594…3eD0` on Sepolia) carried the pre-fix bytecode and is abandoned. On mainnet the same address is the live SCC: the same deployer wallet created both at the same transaction count, on two different chains.
 
 - **Ethereum mainnet deployment (2026-10-02)**, all three contracts verified on Etherscan: AstaVerde `0x34eceD602B9DB47e0B56932B491ca59c4b02Ecc5`, StabilizedCarbonCoin `0xd5949461Ac560619a5d9261a5b4F3E5373123eD0`, EcoStabilizer `0xFBfcE641BCB6BF1E06CB859c41788699BBC84B46`; payment token Circle USDC `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`. Both contracts are owned by the client's hardware wallet `0xf34f6538836d2794C15e77485cD4D9355e435498`; the deployer's SCC admin role is renounced, so only the vault can mint SCC. Launch settings: base price 150 USDC, daily price decay 5 USDC, price-update cap 25, batch size 50. Deployment cost 0.003 ETH.
 - The web app's copy of the AstaVerde ABI includes `trustedVault`, `setTrustedVault` and `TrustedVaultSet` — Why: the copy is regenerated at compile time and had not been refreshed since the pause-exit change; nothing in the app calls them.
@@ -34,28 +34,28 @@ change, described under Contracts. This section is the client-readable summary o
 - A USDC token with the wrong number of decimals now aborts the deploy instead of printing a warning — Why: the check threw inside its own error handler, so it could never fail.
 - The deploy wrapper now exits with an error if a post-deployment step fails, instead of always printing success.
 - Helper scripts (`set-metadata-uri`, `check-vault-tokens`, `check-nft-metadata`, `dev-sepolia`) read `sepolia` as Ethereum Sepolia; `arbitrum-sepolia` stays explicit.
+- The deploy flags are commented out of `.env.local.example`, and the templates and deployment guide say to keep them out of `.env.local` — Why: the Hardhat config re-loads `.env.local` with override, so a flag left there (even empty) silently beats the per-network file; a `.env.local` copied from the old example would have deployed mainnet without the vault.
 
 #### Hardened before the mainnet run (2026-09-26)
 
-- The deploy script sets the transaction tip itself on Ethereum mainnet, between 0.1 and 1 gwei — Why: RPCs suggest tips from zero to a few thousand wei, which can leave a deploy pending, and a suggestion of exactly zero used to fall back to 2 gwei, which would have cost about 0.015 ETH instead of about 0.0013 ETH.
+- The deploy script sets the transaction tip itself on Ethereum mainnet, between 0.1 and 1 gwei — Why: RPCs suggest tips from zero to a few thousand wei, which can leave a deploy pending, and a suggestion of exactly zero used to fall back to 2 gwei, which would have cost about 0.015 ETH; the mainnet run paid 0.003 ETH in total.
 - A misconfigured owner address now stops the deploy before anything is deployed — Why: it used to stop only after the irreversible SCC admin renounce.
-- The handoff script checks that the new owner is the expected Safe (threshold and owner list) before transferring — Why: ownership transfer is one step and cannot be undone.
-- Two helper scripts for the runbook (price-update cap, read-back of every owner and role) and six more pause-exit tests from an independent audit. The deployment guide's mainnet section is now the rehearsed runbook, including recovery steps.
+- The handoff script checks that the new owner is the expected Safe (threshold and owner list) before transferring, and on mainnet refuses a plain wallet owner unless `ALLOW_EOA_OWNER=true` is set (the setting used for the hardware-wallet handoff) — Why: ownership transfer is one step and cannot be undone.
+- Helper scripts for the runbook (`set-market-settings.js` sets the price-update cap, base price and daily decay while the deployer still owns the marketplace, idempotent with read-back; `check-deployment.js` reads back every owner, role and market setting, prices included) and six more pause-exit tests from a pre-deploy review. The deployment guide's mainnet section is now the rehearsed runbook, including recovery steps.
 
 ### Web app
 
 #### Added
 
-- Token files (images and metadata) are uploaded to and served from Pinata, on the client's own account, instead of web3.storage — Why: web3.storage (later Storacha) announced on 2026-04-03 that uploads would stop on 2026-04-15 and its gateway on 2026-05-31; since then the admin page could not upload and every token page on the live site showed "Failed to load metadata". The Pinata key stays on the server: the admin page asks the wallet for one signature per mint, a server route checks that the signer is the contract owner (a Safe signing through WalletConnect works too) and hands back short-lived upload URLs, and the browser uploads directly. The admin page shows when the storage key expires. The IPFS gateway is now configured per deployment (`NEXT_PUBLIC_IPFS_GATEWAY_URL`, optional fallback) with no provider hostnames in the code. The web3.storage library is removed. Verified end to end on a local chain: owner-signed upload lands in the Pinata account and reads back through the dedicated gateway; forged, stale and non-owner requests are refused.
+- Token files (images and metadata) are uploaded to and served from Pinata, on the client's own account, instead of web3.storage — Why: web3.storage (later Storacha) announced on 2026-04-03 that uploads would stop on 2026-04-15 and its gateway on 2026-05-31; since then the admin page could not upload and every token page on the live site showed "Failed to load metadata". The Pinata key stays on the server: the admin page asks the wallet for one signature per mint, a server route checks that the signer is the contract owner (a Safe signing through WalletConnect works too) and hands back short-lived upload URLs, and the browser uploads directly. The admin page shows when the storage key expires. The gateway the app reads token files from is now configured per deployment (`NEXT_PUBLIC_IPFS_GATEWAY_URL`, optional fallback) instead of hardcoded storage-provider hostnames; the token page's "View on IPFS" link still opens the public ipfs.io gateway. The web3.storage library is removed. Verified end to end on a local chain: owner-signed upload lands in the Pinata account and reads back through the dedicated gateway; forged, stale and non-owner requests are refused.
 - Ethereum mainnet and Ethereum Sepolia as selectable chains: RPC configuration, wallet chain list, testnet detection, Etherscan links, and the admin test-USDC faucet on Sepolia.
 
 #### Changed
 
 - Client QA round, 2026-09-20: the welcome modal's two placeholder links ("Explore Eco Assets", "Read our Terms of Service", both pointing nowhere) removed; the "Eco Asset Guide (PDF)" downloads removed from the About and Eco Assets pages together with the PDF itself; the Eco Assets page carries the client's new wording for the description component and the ISO 14064-3 paragraph; the About-page FAQ wording confirmed by the client — Why: requested by the client after his test round.
 - The admin page's Claim Platform Funds control takes an optional recipient address (default: the connected owner wallet) — Why: the client's owner is a hardware wallet and the treasury is his Safe; the contract already pays any address the owner names, so funds can go straight to the Safe in one transaction.
-- WalletConnect's verification frame is allowed by the site's Content Security Policy — Why: the mainnet owner is a Safe, which connects through WalletConnect; without this the frame was blocked and logged an error.
+- WalletConnect's verification frame is allowed by the site's Content Security Policy — Why: wallets that connect through WalletConnect (a Safe among them) were blocked from loading that frame, which logged an error.
 - All user-facing copy now names Ethereum and Circle USDC: page metadata, the welcome modal, the About page FAQ and the required-USDC paragraph. The Arbitrum-only warning about bridged USDC.e is removed — Why: it does not apply on mainnet.
-- Two About-page items await the client's wording and are marked in the code: the first FAQ item (the old question was Arbitrum-specific) and the "how to get USDC into your wallet" section (the CowSwap and Revolut walkthroughs were Arbitrum routes). The eco-asset PDF may also need a new version.
 
 #### Fixed
 
@@ -67,6 +67,7 @@ change, described under Contracts. This section is the client-readable summary o
 - Purchases now carry the app's own gas estimate and retry their pre-flight check once after a short pause — Why: right after an approval confirms, a wallet whose RPC node lags can fail to estimate gas and refuse the purchase with "missing gas limit" (seen in Sepolia testing).
 - A wallet connected on the wrong network now gets a "switch network" prompt instead of a warning badge and a refused purchase — Why: seen in Sepolia testing; the app is single-chain and buyers should be steered, not blocked.
 - Vault batch deposit and withdrawal errors now say why (wallet rejection, nonce error, contract revert) instead of a bare "failed" — Why: in Sepolia testing a MetaMask nonce error was invisible outside the browser console.
+- The admin mint form waits until it has read the contract's last token id before minting, and numbers each token's page link from it — Why: before that read finished it numbered tokens from 1, which gives wrong links on a contract that already has tokens.
 - Admin mint form stops adding tokens at the contract's `maxBatchSize` and says so — Why: it used to upload every image to IPFS and then fail at the contract.
 - Admin and producer event feeds read two blocks behind the chain head — Why: a one-block reorg on Ethereum could otherwise drop a recorded event permanently.
 - Bulk vault withdraw shows a message when the vault list changed under it instead of silently doing nothing.
@@ -80,7 +81,10 @@ change, described under Contracts. This section is the client-readable summary o
 - README, AGENTS.md, the developer and QA guides, the testing and metadata guides, and the scripts READMEs now describe Ethereum Sepolia as the testnet and Ethereum mainnet as the target, with Arbitrum labelled as the previous target — Why: every guide still said Arbitrum Sepolia.
 - README no longer claims "automated admin renunciation": the SCC admin role is renounced only when `RENOUNCE_SCC_ADMIN=true` on a non-test network — Why: the claim did not match the deploy script.
 - Thirteen dead command references in the docs replaced with the commands that exist.
-- Pricing guide: a dated note that the iteration-cap and batch-size advice was written for L2 gas and is under review for L1.
+- New operating guide for the owner (`docs/OPERATING.md`): minting, prices, claiming platform funds to the treasury, pausing, renewing the upload key, the Alchemy key restriction, and claiming leftovers on the old Arbitrum contracts.
+- The admin page's price-update cap control (its description and input hint) says mainnet is set to 25 and that raising it costs buyers gas; it used to suggest leaving the default of 100.
+- `scripts/check-deployment.js` also prints the prices (base price, daily decay, floor, adjustment step) and the platform share.
+- Pricing guide: the Ethereum launch settings (base price 150, daily decay 5, price-update cap 25, batch size 50) and why the cap and batch size differ from the L2 advice.
 
 #### Archived (moved to `scripts/archive/`, nothing deleted)
 
@@ -105,10 +109,10 @@ that was never fixed. The rest of its output is settings and runbook steps for m
 
 #### Settings and runbook
 
-- `maxPriceUpdateIterations` set to 25 by the owner right after handoff (the default 100 was tuned for L2 gas; on Ethereum it can add over 1M gas to a buyer's purchase when many batches sit unsold) — Why: caps the buyer's gas tax at about 230k while keeping price updates working for up to 25 live batches per quarter.
-- `maxBatchSize` stays at 50 — Why: a 100-token mint is 21M gas, a third of an Ethereum block.
-- SCC admin role: recommend renouncing at deploy rather than keeping it — Why: the vault address is fixed, so the role has no legitimate future use and could mint unlimited SCC if the key leaked.
-- Three behaviours the client should know: pausing blocks new vault deposits and marketplace transfers, while vault withdrawals keep working (see Fixed above); the owner key can re-price all open inventory to near zero, so the owner should be a multisig; USDC accrued to a producer that Circle blocklists is stranded.
+- `maxPriceUpdateIterations` set to 25 by the deployer before handoff (`scripts/set-market-settings.js`, together with the client's base price 150 and daily decay 5) (the default 100 was tuned for L2 gas; on Ethereum it can add over 1M gas to a buyer's purchase when many batches sit unsold) — Why: caps the buyer's gas tax at about 230k while keeping price updates working for up to 25 live batches per quarter.
+- `maxBatchSize` stays at 50 — Why: a 100-token mint is about 16.6M gas, within 1% of Ethereum's 16.78M per-transaction cap (EIP-7825, live since December 2025).
+- SCC admin role renounced at deploy, on the client's decision — Why: the vault address is fixed, so the role has no legitimate future use and could mint unlimited SCC if the key leaked.
+- Three behaviours the client should know: pausing blocks new vault deposits and marketplace transfers, while vault withdrawals keep working (see Fixed above); the owner key can pause the marketplace and re-price all open inventory to near zero (the owner is a single hardware wallet for day-to-day minting, the treasury is the client's Safe, and ownership can move to the Safe later, one transaction per contract); USDC accrued to a producer that Circle blocklists stays locked in the contract for as long as the block lasts, since it can only be paid to that address and nobody, the owner included, can send it elsewhere.
 
 ### Dependencies
 
@@ -122,7 +126,7 @@ that was never fixed. The rest of its output is settings and runbook steps for m
 
 - Sepolia QA round with the client: done (2026-09-20 to 2026-10-02), including a mint from the client's hardware wallet.
 - Mainnet deployment and handoff: done 2026-10-02 (addresses under Networks and deployment).
-- Production cutover: `ecotradezone.bionerg.com` serves the Ethereum build since 2026-10-04. Vercel did not build automatically from the push to `main`, so production was built from the same commit with the Vercel CLI; until the GitHub link is restored, a push to `main` does not deploy.
+- Production cutover: `ecotradezone.bionerg.com` serves the Ethereum build since 2026-10-04. Vercel did not build automatically from the push to `main` (its GitHub app was not installed on the repository owner's account), so production was built from the same commit with the Vercel CLI. The app was installed on 2026-10-04 so that pushes to `main` deploy again.
 - The 14 Arbitrum tokens' images and metadata are pinned again in the client's Pinata account under their original IPFS addresses.
 
 ## [Unreleased] - 2025-08-26

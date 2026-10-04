@@ -75,7 +75,7 @@ export function MaxPriceUpdateIterationsControl({
             type="number"
             value={iterations}
             onChange={(e) => setIterations(e.target.value)}
-            placeholder="Enter iterations (1-1000, default: 100)"
+            placeholder="Enter iterations (1-1000; mainnet uses 25)"
             className="w-full px-4 py-2 rounded-lg border border-gray-300
                              focus:ring-2 focus:ring-emerald-500 focus:border-transparent
                              dark:border-gray-600 dark:bg-gray-700 dark:text-white

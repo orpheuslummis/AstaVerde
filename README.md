@@ -5,22 +5,23 @@ Carbon offset NFT marketplace with Dutch auction pricing and collateralized lend
 ## System Status
 
 - **v1**: ✅ Dutch auction marketplace
-- **v2**: ✅ Released (2025-08-25) - EcoStabilizer vault (236 tests passing)
+- **v2**: ✅ Released (2025-08-25) - EcoStabilizer vault (250 tests passing)
 - **QA Testing**: 🧪 Available on Ethereum Sepolia testnet
-- **Deployment**: Ready for Ethereum mainnet
-- **Gas Efficiency**: Deposit <150k, Withdraw <120k
+- **Deployment**: Live on Ethereum mainnet since 2026-10-04 (contracts deployed 2026-10-02; addresses in [CHANGELOG.md](./CHANGELOG.md) and `deployments/ethereum-mainnet/`)
+- **Gas** (measured on a mainnet fork, 2026-10-04): vault deposit 167k–216k, withdraw 109k–120k, purchase of one token 176k–287k, mint about 245k + 163k per token (a 50-token mint is 8.4M gas)
 
 ### Networks
 
-Current target is Ethereum mainnet, with Ethereum Sepolia as the QA testnet. The earlier Arbitrum One
-deployment remains live and is untouched by this workflow; its commands survive under the `arbitrum-*`
-script names. See the [Deployment Guide](./docs/DEPLOYMENT.md) for the network table and env setup.
+The marketplace runs on Ethereum mainnet (https://ecotradezone.bionerg.com), with Ethereum Sepolia as the
+QA testnet (https://test.ecotradezone.bionerg.com). The earlier Arbitrum One deployment remains on chain
+and is untouched by this workflow; its commands survive under the `arbitrum-*` script names. See the [Deployment Guide](./docs/DEPLOYMENT.md) for the network table and env setup.
 
 ## 📚 Documentation
 
 - **[Agents Guide](./AGENTS.md)** - Canonical instructions for AI assistants and contributors
 - **[Development Guide](./docs/DEV_GUIDE.md)** - Setup, structure, and workflow
 - **[Testing Guide](./docs/TESTING.md)** - Comprehensive testing documentation
+- **[Operating Guide](./docs/OPERATING.md)** - Running the live marketplace: minting, prices, funds, pausing, the upload key
 - **[Deployment Guide](./docs/DEPLOYMENT.md)** - Production deployment and checklist
 - **[QA Testing Guide](./docs/QA_TESTING.md)** - QA testing guide and checklist
 - **[SSC Plan](./docs/SSC_PLAN.md)** - v2 vault technical specification
@@ -31,7 +32,7 @@ script names. See the [Deployment Guide](./docs/DEPLOYMENT.md) for the network t
 
 - ERC-1155 NFTs representing verified carbon offsets
 - Dynamic pricing: Base price adjusts with market demand
-- Dutch auction: Daily 1 USDC decrease to 40 USDC floor
+- Dutch auction: price drops daily to a 40 USDC floor (contract default 1 USDC a day; the mainnet launch setting is 5 USDC, see [Pricing](./docs/PRICING.md))
 - 30% default platform commission (configurable up to 50%), remainder to producers
 
 ### v2: EcoStabilizer Vault (Released)
@@ -85,7 +86,7 @@ See [AGENTS.md](AGENTS.md) for the complete command reference and workflows.
 - Immutable contracts with no upgrade mechanisms
 - Role-based access control; SCC admin renunciation is opt-in at deploy time
 - Reentrancy protection and pausability
-- Comprehensive test coverage (236 tests)
+- Comprehensive test coverage (250 tests)
 - Redeemed NFT protection in vault
 
 ## 🧪 v2 QA Testing
@@ -95,7 +96,7 @@ The EcoStabilizer vault system is deployed on Ethereum Sepolia testnet for clien
 ### For Testers
 
 - **[QA Testing Guide](./docs/QA_TESTING.md)** - Complete guide for testing the vault system
-- **Test URL**: [Vercel deployment URL - to be provided]
+- **Test URL**: https://test.ecotradezone.bionerg.com
 - **Network**: Ethereum Sepolia (testnet)
 
 ### For Developers

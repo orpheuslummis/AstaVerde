@@ -104,7 +104,7 @@ function AdminControls() {
         <MaxBatchSizeControl />
         <CollapsibleSection
           title="Advanced: Gas Optimization"
-          subtitle="Controls iteration cap for price updates. Most can leave default (100)."
+          subtitle="Controls iteration cap for price updates. Mainnet is set to 25 to keep buyers' gas low; raising it makes purchases cost more gas."
           defaultOpen={false}
           forceOpen={highlightGasControl}
         >

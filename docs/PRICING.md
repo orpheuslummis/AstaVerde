@@ -78,12 +78,22 @@ These behaviors are intentional guardrails for gas and stability, but they do me
     - `dayIncreaseThreshold` and `dayDecreaseThreshold`: widen to reduce churn; narrow to react faster (with higher gas across events).
     - Consider operationally preferring larger `mintBatch` sizes (up to `maxBatchSize`) to reduce total batch count and scan work.
 
-> **Note (2026-09-20): the iteration and batch-size numbers above were written for L2 gas (Base, then
-> Arbitrum) and are under review for the Ethereum mainnet redeploy.** On L1 the buyer pays for the
-> `updateBasePrice` scan in real ETH, and a large `mintBatch` is a single expensive transaction rather
-> than a cheap one. Re-derive `maxPriceUpdateIterations` and the preferred batch size against measured
-> L1 gas before setting them in production. The pricing mechanics described elsewhere in this document
-> are unchanged.
+### Ethereum mainnet launch settings (2026-10-02)
+
+The tuning advice above was written for L2 gas (Base, then Arbitrum). On Ethereum the buyer pays for the
+`updateBasePrice` scan in real ETH, and a large `mintBatch` is one expensive transaction. The mainnet
+contract was set before handoff (`scripts/set-market-settings.js`) to:
+
+- `basePrice`: 150 USDC (the client's choice; applies to batches minted from then on).
+- `dailyPriceDecay`: 5 USDC/day per batch.
+- `maxPriceUpdateIterations`: 25. The default 100 can add over 1M gas to a purchase when many batches sit
+  unsold; 25 keeps price updates working for up to 25 live batches in the 90-day window.
+- `maxBatchSize`: 50 (contract default, unchanged). A 100-token mint is about 16.6M gas, within 1% of
+  Ethereum's 16.78M per-transaction cap.
+
+The other parameters keep their defaults. The owner can change base price, daily decay and the iteration
+cap from the admin page (the marketplace must be unpaused); `scripts/check-deployment.js` reads the live
+values back.
 
 ## Test Coverage Snapshot
 

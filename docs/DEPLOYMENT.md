@@ -142,8 +142,9 @@ per-network file only needs the flags. Plain `npx hardhat deploy` does not read 
 2. Pre-checks, all must hold:
 
 - `deployments/ethereum-mainnet/` does not exist (hardhat-deploy would reuse recorded addresses).
-- The base fee is under about 1 gwei (the deployer then pays about 0.0013 ETH in total; the whole run is
-  about 7M gas). The script clamps the mainnet tip to 0.1–1 gwei.
+- The base fee is under about 1 gwei. The whole run (deploy, settings, handoff) is about 7M gas; the
+  2026-10-02 run paid 0.003 ETH in total (7,051,139 gas). The script clamps the mainnet tip to 0.1–1 gwei
+  (`DEPLOY_MIN_PRIORITY_FEE_GWEI` / `DEPLOY_MAX_PRIORITY_FEE_GWEI` override the bounds).
 - `npx hardhat test` passes.
 
 3. Deploy:
@@ -171,12 +172,22 @@ ITERATIONS=25 BASE_PRICE_USDC=<price> DAILY_DECAY_USDC=<decay> \
   npx hardhat run scripts/set-market-settings.js --network ethereum-mainnet
 ```
 
-5. Hand over to the owner Safe. The script refuses unless the Safe matches what you verified:
+5. Hand over to the owner. `handoff` transfers both contracts, sets `trustedVault` first if it is missing,
+   renounces the deployer's SCC admin role when `RENOUNCE_SCC_ADMIN=true` (a no-op if the deploy already
+   did), and reads every owner and role back. On mainnet it refuses an owner it cannot check:
+    - Owner is a Safe: the script refuses unless the Safe matches what you verified.
 
-```bash
-NEW_OWNER=0x... EXPECTED_SAFE_THRESHOLD=<n> EXPECTED_SAFE_OWNERS=0x..,0x..,0x.. RENOUNCE_SCC_ADMIN=true \
-  npm run handoff -- --network ethereum-mainnet
-```
+        ```bash
+        NEW_OWNER=0x... EXPECTED_SAFE_THRESHOLD=<n> EXPECTED_SAFE_OWNERS=0x..,0x..,0x.. \
+          npm run handoff -- --network ethereum-mainnet
+        ```
+
+    - Owner is a plain wallet (an EOA, such as a hardware wallet): the script refuses unless you say so.
+      This is how the 2026-10-02 mainnet handoff to the client's hardware wallet ran:
+
+        ```bash
+        NEW_OWNER=0x... ALLOW_EOA_OWNER=true npm run handoff -- --network ethereum-mainnet
+        ```
 
 6. Read everything back and verify the three contracts on Etherscan (next section):
 
@@ -184,7 +195,7 @@ NEW_OWNER=0x... EXPECTED_SAFE_THRESHOLD=<n> EXPECTED_SAFE_OWNERS=0x..,0x..,0x.. 
 npx hardhat run scripts/check-deployment.js --network ethereum-mainnet
 ```
 
-Expect: both owners = the Safe, `usdcToken` = Circle USDC, `trustedVault` = the vault, the vault holds
+Expect: both owners = `NEW_OWNER`, `usdcToken` = Circle USDC, `trustedVault` = the vault, the vault holds
 `MINTER_ROLE`, the deployer is not SCC admin, `maxBatchSize` 50, `maxPriceUpdateIterations` 25. Commit
 `deployments/ethereum-mainnet/`.
 
