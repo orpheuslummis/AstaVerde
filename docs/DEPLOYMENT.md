@@ -200,9 +200,12 @@ Expect: both owners = `NEW_OWNER`, `usdcToken` = Circle USDC, `trustedVault` = t
 `deployments/ethereum-mainnet/`.
 
 7. In Vercel, set the Production `NEXT_PUBLIC_*` env vars for Ethereum mainnet (see
-   `webapp/.env.local.example`), including a dedicated `NEXT_PUBLIC_ETHEREUM_MAINNET_RPC_URL` and the server-side
-   `PINATA_JWT`, and remove `NEXT_PUBLIC_ARBITRUM_MAINNET_RPC_URL` (it would be inlined into the bundle).
-   `NEXT_PUBLIC_*` values are build-time: redeploy after changing them.
+   `webapp/.env.local.example`), including a dedicated `NEXT_PUBLIC_ETHEREUM_MAINNET_RPC_URL`, the server-side
+   `PINATA_JWT`, and the server-side `SERVER_RPC_URL` (a second RPC key used only by the upload route, so the
+   public key can be restricted to the site's domains), and remove `NEXT_PUBLIC_ARBITRUM_MAINNET_RPC_URL` (it would be inlined into the bundle).
+   `NEXT_PUBLIC_*` values are build-time, and Vercel applies any env change only to new deployments: redeploy
+   after changing them. `GET /api/ipfs/upload-url` reports `configured` and `serverRpc` without revealing
+   either value.
 
 ---
 

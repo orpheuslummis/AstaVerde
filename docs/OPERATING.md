@@ -88,8 +88,12 @@ sees it. The key in use expires on 2027-09-20; the Mint card on the admin page s
 
 ## Other upkeep
 
-- The site's Alchemy key is visible in the page code by design. In the Alchemy dashboard, restrict it to
-  `ecotradezone.bionerg.com` and `test.ecotradezone.bionerg.com` so nobody else can spend its quota.
+- The site uses two Alchemy keys. The public one is visible in the page code by design; restrict it in the
+  Alchemy dashboard to `ecotradezone.bionerg.com` and `test.ecotradezone.bionerg.com` so nobody else can
+  spend its quota. The server one (Vercel env var `SERVER_RPC_URL`, never in the page code) checks the
+  owner before each upload and must stay unrestricted, because server requests carry no domain. Restrict
+  the public key only once `GET /api/ipfs/upload-url` on the site reports `"serverRpc": true`; before that,
+  restricting it would stop minting.
 - Pushes to `main` on GitHub deploy to production through Vercel; after a push, check that a new production
   deployment appears in Vercel.
 - The previous Arbitrum One deployment stays on chain, owned by the treasury Safe: AstaVerde

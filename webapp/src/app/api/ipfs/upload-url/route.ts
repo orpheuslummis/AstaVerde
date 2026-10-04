@@ -36,9 +36,15 @@ function decodeJwtExpiry(jwt: string): Date | null {
   }
 }
 
+// These reads run on the server. Prefer SERVER_RPC_URL (server-only, never in the
+// page code): the public NEXT_PUBLIC_* RPC key can then be restricted to the site's
+// domains, which an RPC provider enforces through the Origin header that server
+// requests do not send (Alchemy refuses them once a domain allowlist is set).
+// Falls back to the chain's public RPC when unset.
 function publicClient() {
   const chain = getCurrentChain();
-  return createPublicClient({ chain, transport: http(chain.rpcUrls.default.http[0]) });
+  const url = process.env.SERVER_RPC_URL || chain.rpcUrls.default.http[0];
+  return createPublicClient({ chain, transport: http(url) });
 }
 
 // GET: is uploading configured, and until when. No secrets in the response.
@@ -49,6 +55,7 @@ export async function GET() {
     configured: Boolean(jwt),
     expiresAt: expiresAt ? expiresAt.toISOString() : null,
     gateway: ENV.IPFS_GATEWAY_URL || null,
+    serverRpc: Boolean(process.env.SERVER_RPC_URL),
   });
 }
 
@@ -88,6 +95,16 @@ export async function POST(request: Request) {
   }
 
   const client = publicClient();
+  // Fail closed if the server RPC points at another network: every check below would
+  // otherwise read the wrong chain.
+  try {
+    if ((await client.getChainId()) !== chain.id) {
+      return NextResponse.json({ error: "Server RPC is on the wrong network" }, { status: 500 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Could not reach the chain" }, { status: 502 });
+  }
+
   let validSignature = false;
   try {
     // Handles EOAs and ERC-1271 smart accounts (Safe included).
