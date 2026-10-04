@@ -2,9 +2,9 @@
 
 All notable changes to the AstaVerde project are documented in this file.
 
-## Ethereum mainnet redeploy – 2026-09 (in progress, branch `ethereum`)
+## Ethereum mainnet redeploy – 2026-09 to 2026-10 (live since 2026-10-04)
 
-The marketplace moves from Arbitrum One to Ethereum mainnet by fresh deploy. The Arbitrum
+The marketplace moved from Arbitrum One to Ethereum mainnet by fresh deploy. The Arbitrum
 deployment stays where it is; no tokens or history are migrated. The smart contracts carry one
 change, described under Contracts. This section is the client-readable summary of the work.
 
@@ -118,9 +118,12 @@ that was never fixed. The rest of its output is settings and runbook steps for m
 - Webapp: Next.js 14.2.31 → 14.2.35 only — Why: the only webapp advisories that are both reachable on the server and fixable on the 14.x line (two React Server Components denial-of-service issues and a middleware redirect issue). No wallet-library versions changed. Next.js 14 is otherwise end-of-life for security fixes; the Next 15 migration is a separate job.
 - Webapp `engines.node` pinned to 22.x — Why: Vercel's default is now Node 24 and local is 22; an unpinned project builds on whatever Vercel's default is that week.
 
-### Still to come in this section
+### Status
 
-The Sepolia QA round with the client (the contracts and the web app have each had one end-to-end run on Sepolia already); the mainnet deployment and handoff; the production cutover.
+- Sepolia QA round with the client: done (2026-09-20 to 2026-10-02), including a mint from the client's hardware wallet.
+- Mainnet deployment and handoff: done 2026-10-02 (addresses under Networks and deployment).
+- Production cutover: `ecotradezone.bionerg.com` serves the Ethereum build since 2026-10-04. Vercel did not build automatically from the push to `main`, so production was built from the same commit with the Vercel CLI; until the GitHub link is restored, a push to `main` does not deploy.
+- The 14 Arbitrum tokens' images and metadata are pinned again in the client's Pinata account under their original IPFS addresses.
 
 ## [Unreleased] - 2025-08-26
 

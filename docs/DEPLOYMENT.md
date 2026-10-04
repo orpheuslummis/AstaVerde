@@ -223,7 +223,7 @@ Hardhat Deploy artifacts are written under:
 
 - `deployments/ethereum-sepolia/*.json`
 - `deployments/ethereum-mainnet/*.json`
-- `deployments/arbitrum-sepolia/*.json` (previous target)
-- `deployments/arbitrum-one/*.json` (previous target, still live)
+- The Arbitrum One deployment (previous target) was never recorded in this repository; its AstaVerde is
+  `0x688A8fADA4c684Cc7d0fc32806F359B20ebd0672`.
 
 Each contract file contains an `address` field.
